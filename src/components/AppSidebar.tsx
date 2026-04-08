@@ -8,7 +8,9 @@ import {
   Sparkles,
   PanelLeftClose,
   PanelLeft,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
@@ -21,6 +23,12 @@ export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <aside
@@ -67,8 +75,13 @@ export default function AppSidebar() {
         })}
       </nav>
 
-      {/* Bottom upgrade */}
-      <div className="p-3 border-t border-sidebar-border">
+      {/* Bottom section */}
+      <div className="p-3 border-t border-sidebar-border space-y-2">
+        {user && !collapsed && (
+          <div className="px-3 py-1.5 text-xs text-muted-foreground truncate">
+            {user.email}
+          </div>
+        )}
         <button className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
           <Sparkles className="w-4 h-4 flex-shrink-0" />
           {!collapsed && (
@@ -76,6 +89,13 @@ export default function AppSidebar() {
               Upgrade <span className="text-xs opacity-70">Pro</span>
             </span>
           )}
+        </button>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="w-4 h-4 flex-shrink-0" />
+          {!collapsed && <span>Logout</span>}
         </button>
       </div>
     </aside>
