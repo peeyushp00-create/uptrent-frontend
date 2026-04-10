@@ -38,8 +38,8 @@ export default function AppSidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-4 h-4 text-primary-foreground" />
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+         <img src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-lg" />
         </div>
         {!collapsed && (
           <span className="font-heading font-bold text-foreground text-lg tracking-tight">
