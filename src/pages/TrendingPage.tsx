@@ -43,8 +43,9 @@ const SUGGESTED = [
 
 export default function TrendingPage() {
   const location = useLocation();
-  const [query, setQuery] = useState((location.state as any)?.query || "");
-  const [searchInput, setSearchInput] = useState((location.state as any)?.query || "");
+  const initialQuery = (location.state as any)?.query || "";
+  const [query, setQuery] = useState(initialQuery);
+  const [searchInput, setSearchInput] = useState(initialQuery);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,7 @@ export default function TrendingPage() {
   const [activeSection, setActiveSection] = useState<"topics" | "news">("topics");
 
   useEffect(() => {
-    if (query) handleSearch(query);
+    if (initialQuery) handleSearch(initialQuery);
   }, []);
 
   const handleSearch = async (q: string) => {
@@ -70,25 +71,22 @@ export default function TrendingPage() {
     setNews([]);
 
     try {
-      const [topicsData, newsData] = await Promise.all([
-        getTopics("7d").then((data: Topic[]) => {
-          const arr = Array.isArray(data) ? data : (data as any).topics ?? [];
-          return arr.filter((t: Topic) =>
-            t.name.toLowerCase().includes(q.toLowerCase()) ||
-            t.hashtags?.some((h: string) => h.toLowerCase().includes(q.toLowerCase()))
-          );
-        }),
-        getNews().then((data: any) => {
-          const arr = Array.isArray(data) ? data : data.articles ?? [];
-          return arr.filter((n: NewsArticle) =>
-            n.headline?.toLowerCase().includes(q.toLowerCase()) ||
-            n.summary?.toLowerCase().includes(q.toLowerCase())
-          );
-        })
-      ]);
+      const topicsRaw = await getTopics("7d");
+      const topicsArr: Topic[] = Array.isArray(topicsRaw) ? topicsRaw : topicsRaw.topics ?? [];
+      const filteredTopics = topicsArr.filter((t: Topic) =>
+        t.name.toLowerCase().includes(q.toLowerCase()) ||
+        t.hashtags?.some((h: string) => h.toLowerCase().includes(q.toLowerCase()))
+      );
 
-      setTopics(topicsData);
-      setNews(newsData);
+      const newsRaw = await getNews();
+      const newsArr: NewsArticle[] = Array.isArray(newsRaw) ? newsRaw : newsRaw.articles ?? [];
+      const filteredNews = newsArr.filter((n: NewsArticle) =>
+        n.headline?.toLowerCase().includes(q.toLowerCase()) ||
+        n.summary?.toLowerCase().includes(q.toLowerCase())
+      );
+
+      setTopics(filteredTopics);
+      setNews(filteredNews);
     } catch {
       setError("Failed to load data. Is the backend running?");
     } finally {
@@ -125,6 +123,19 @@ export default function TrendingPage() {
   const momentumColor = (m: string) =>
     m === "rising" ? "text-green-400" : m === "falling" ? "text-red-400" : "text-muted-foreground";
 
+const renderReadLink = (url: string) => {
+  return (
+    
+     <a href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+    >
+      Read
+    </a>
+  );
+};
+
   return (
     <div className="flex-1 p-6 md:p-10 overflow-auto">
       <motion.div
@@ -132,7 +143,6 @@ export default function TrendingPage() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-4xl mx-auto space-y-6"
       >
-        {/* Header */}
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-primary" />
@@ -141,7 +151,6 @@ export default function TrendingPage() {
           <p className="text-sm text-muted-foreground mt-1">Search any finance topic to discover trends</p>
         </div>
 
-        {/* Search bar */}
         <div className="flex gap-3">
           <input
             type="text"
@@ -161,7 +170,6 @@ export default function TrendingPage() {
           </button>
         </div>
 
-        {/* Suggested chips */}
         {!query && (
           <div className="flex flex-wrap gap-2">
             <p className="w-full text-xs text-muted-foreground mb-1">Try searching:</p>
@@ -177,7 +185,6 @@ export default function TrendingPage() {
           </div>
         )}
 
-        {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -185,16 +192,12 @@ export default function TrendingPage() {
           </div>
         )}
 
-        {/* Error */}
         {error && !loading && (
           <div className="text-center py-16 text-muted-foreground text-sm">{error}</div>
         )}
 
-        {/* Results */}
         {!loading && !error && query && (
           <div className="space-y-6">
-
-            {/* Section tabs */}
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <button
                 onClick={() => setActiveSection("topics")}
@@ -230,7 +233,6 @@ export default function TrendingPage() {
               </button>
             </div>
 
-            {/* Topics section */}
             {activeSection === "topics" && (
               <div className="grid gap-3">
                 {topics.length === 0 ? (
@@ -297,7 +299,6 @@ export default function TrendingPage() {
               </div>
             )}
 
-            {/* News section */}
             {activeSection === "news" && (
               <div className="grid gap-3">
                 {news.length === 0 ? (
@@ -335,16 +336,7 @@ export default function TrendingPage() {
                             )}
                           </div>
                         </div>
-                        {article.url && (
-                          
-                            href={article.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
-                          >
-                            Read
-                          </a>
-                        )}
+                        {article.url && renderReadLink(article.url)}
                       </div>
                     </motion.div>
                   ))
@@ -355,7 +347,6 @@ export default function TrendingPage() {
         )}
       </motion.div>
 
-      {/* Script Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
