@@ -11,6 +11,7 @@ import TrendingPage from "./pages/TrendingPage";
 import NewsPage from "./pages/NewsPage";
 import ScriptsPage from "./pages/ScriptsPage";
 import AIChatPage from "./pages/AIChatPage";
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
@@ -25,8 +26,12 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Public routes */}
+            <Route path="/landing" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+
+            {/* Protected routes */}
             <Route
               element={
                 <ProtectedRoute>
