@@ -36,11 +36,12 @@ interface ScriptResult {
 }
 
 const SUGGESTED = [
-  "SIP Investment", "Mutual Funds", "Stock Market",
-  "RBI Policy", "Budget 2025", "Gold Investment",
-  "Crypto India", "Personal Finance"
+  "Fitness", "Motivation", "Stock Market", "Crypto",
+  "Travel", "Food", "Tech", "Business",
+  "Fashion", "Gaming", "Comedy", "Cricket",
+  "Education", "Yoga", "Entrepreneur", "Bollywood",
+  "Cooking", "Investing", "Skincare", "Mental Health"
 ];
-
 export default function TrendingPage() {
   const location = useLocation();
   const initialQuery = (location.state as any)?.query || "";
@@ -148,7 +149,7 @@ const renderReadLink = (url: string) => {
             <TrendingUp className="w-6 h-6 text-primary" />
             Trending Topics
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Search any finance topic to discover trends</p>
+        <p className="text-sm text-muted-foreground mt-1">Search any topic to discover trending content ideas</p>
         </div>
 
         <div className="flex gap-3">
@@ -157,7 +158,7 @@ const renderReadLink = (url: string) => {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch(searchInput)}
-            placeholder="Search finance topics (e.g. SIP Investment)..."
+           placeholder="Search any topic (e.g. Fitness, Travel, Finance)..."
             className="flex-1 px-5 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
           />
           <button
