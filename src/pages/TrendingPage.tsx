@@ -72,8 +72,13 @@ export default function TrendingPage() {
     setNews([]);
 
     try {
-      const topicsRaw = await getTopics("7d");
-      const topicsArr: Topic[] = Array.isArray(topicsRaw) ? topicsRaw : topicsRaw.topics ?? [];
+     const [topicsRaw1, topicsRaw2] = await Promise.all([
+  getTopics("7d", "finance"),
+  getTopics("7d", "instagram")
+]);
+const topicsArr1: Topic[] = Array.isArray(topicsRaw1) ? topicsRaw1 : topicsRaw1.topics ?? [];
+const topicsArr2: Topic[] = Array.isArray(topicsRaw2) ? topicsRaw2 : topicsRaw2.topics ?? [];
+const topicsArr: Topic[] = [...topicsArr1, ...topicsArr2];
       const searchTerms = q.toLowerCase().split(' ');
 const filteredTopics = topicsArr.filter((t: Topic) => {
   const q_lower = q.toLowerCase();
