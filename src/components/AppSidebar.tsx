@@ -17,6 +17,7 @@ const navItems = [
   { icon: TrendingUp, label: "Trending", path: "/trending" },
   { icon: Newspaper, label: "News Feed", path: "/news" },
   { icon: FileText, label: "Scripts", path: "/scripts" },
+  { icon: Sparkles, label: "AI Chat", path: "/ai-chat" },
 ];
 
 export default function AppSidebar() {
