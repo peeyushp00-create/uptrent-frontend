@@ -267,15 +267,12 @@ const renderReadLink = (url: string) => {
                           <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">
                             {topic.name}
                           </h3>
-                          {topic.type && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              topic.type === "instagram"
-                                ? "bg-pink-500/10 text-pink-400"
-                                : "bg-blue-500/10 text-blue-400"
-                            }`}>
-                              {topic.type}
-                            </span>
-                          )}
+                          {topic.type === "instagram" && (
+  <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400">
+    Instagram
+  </span>
+)}
+                          
                         </div>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-xs text-muted-foreground">{topic.volume} posts</span>
