@@ -16,3 +16,9 @@ export const generateScript = (topicId: string) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ topicId })
   }).then(r => r.json());
+  export const chatWithAI = (message: string) =>
+  fetch(`${BASE}/api/scripts/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message })
+  }).then(r => r.json());

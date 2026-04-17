@@ -1,30 +1,66 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Sparkles, Send, Loader2 } from "lucide-react";
+import { chatWithAI } from "@/lib/api";
 
 const chips = [
-  "SIP investment",
-  "Mutual funds",
-  "Stock market",
-  "RBI policy",
-  "Budget 2025",
-  "Gold investment",
-  "Crypto India",
-  "Personal finance",
+  "Fitness", "Motivation", "Stock Market", "Crypto",
+  "Travel", "Food", "Tech", "Business",
+  "Fashion", "Gaming", "Comedy", "Cricket",
+  "Education", "Yoga", "Entrepreneur", "Bollywood",
+];
+
+const quickActions = [
+  { label: "Trending topics", action: "trending" },
+  { label: "Generate script", action: "script" },
+  { label: "Find hashtags", action: "hashtags" },
+  { label: "Content ideas", action: "ideas" },
+  { label: "Latest news", action: "news" },
+  { label: "Quick hook", action: "hook" },
 ];
 
 export default function Index() {
   const navigate = useNavigate();
   const [platform, setPlatform] = useState<"instagram" | "youtube">("instagram");
   const [search, setSearch] = useState("");
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const handleSearch = () => {
     if (!search.trim()) return;
-    if (platform === "instagram") {
-      navigate("/trending", { state: { query: search, type: "instagram" } });
-    } else {
-      navigate("/trending", { state: { query: search, type: "youtube" } });
+    navigate("/trending", { state: { query: search, type: platform } });
+  };
+
+  const handleChat = async (message?: string) => {
+    const msg = message || chatInput;
+    if (!msg.trim()) return;
+    setShowChat(true);
+    setChatInput("");
+    setChatMessages(prev => [...prev, { role: "user", text: msg }]);
+    setChatLoading(true);
+    try {
+      const data = await chatWithAI(msg);
+      setChatMessages(prev => [...prev, { role: "ai", text: data.reply }]);
+    } catch {
+      setChatMessages(prev => [...prev, { role: "ai", text: "Sorry, I couldn't process that. Please try again." }]);
+    } finally {
+      setChatLoading(false);
     }
+  };
+
+  const handleQuickAction = (action: string) => {
+    const messages: Record<string, string> = {
+      trending: "What are the trending topics right now for content creators?",
+      script: "Help me write a viral script for my next video",
+      hashtags: "Give me the best hashtags for my content",
+      ideas: "Give me 5 content ideas for my niche",
+      news: "What's the latest news I can create content about?",
+      hook: "Write me a viral hook for my next video",
+    };
+    handleChat(messages[action]);
   };
 
   return (
@@ -46,11 +82,11 @@ export default function Index() {
           <h1 className="text-4xl md:text-5xl font-heading font-bold leading-tight">
             Discover{" "}
             <span className="text-pink-500">Viral</span>{" "}
-            <span className="text-orange-500">Finance</span>{" "}
+            <span className="text-orange-500">Content</span>{" "}
             Ideas
           </h1>
           <p className="text-muted-foreground text-base">
-            Find scroll-stopping content ideas for finance creators in seconds
+            Find scroll-stopping content ideas for Instagram & YouTube creators
           </p>
         </div>
 
@@ -59,9 +95,7 @@ export default function Index() {
           <button
             onClick={() => setPlatform("instagram")}
             className={`flex-1 flex items-center justify-between px-5 py-4 rounded-xl border transition-all ${
-              platform === "instagram"
-                ? "border-pink-500 border-2"
-                : "border-border"
+              platform === "instagram" ? "border-pink-500 border-2" : "border-border"
             } bg-card`}
           >
             <div className="flex items-center gap-3">
@@ -75,18 +109,14 @@ export default function Index() {
               <span className="font-medium text-foreground">Instagram</span>
             </div>
             {platform === "instagram" && (
-              <span className="text-xs font-medium px-3 py-1 rounded-full bg-pink-500 text-white">
-                Selected
-              </span>
+              <span className="text-xs font-medium px-3 py-1 rounded-full bg-pink-500 text-white">Selected</span>
             )}
           </button>
 
           <button
             onClick={() => setPlatform("youtube")}
             className={`flex-1 flex items-center justify-between px-5 py-4 rounded-xl border transition-all ${
-              platform === "youtube"
-                ? "border-red-500 border-2"
-                : "border-border"
+              platform === "youtube" ? "border-red-500 border-2" : "border-border"
             } bg-card`}
           >
             <div className="flex items-center gap-3">
@@ -99,9 +129,7 @@ export default function Index() {
               <span className="font-medium text-foreground">YouTube</span>
             </div>
             {platform === "youtube" && (
-              <span className="text-xs font-medium px-3 py-1 rounded-full bg-red-500 text-white">
-                Selected
-              </span>
+              <span className="text-xs font-medium px-3 py-1 rounded-full bg-red-500 text-white">Selected</span>
             )}
           </button>
         </div>
@@ -113,11 +141,7 @@ export default function Index() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder={
-              platform === "instagram"
-                ? "Search Instagram finance ideas..."
-                : "Search YouTube finance ideas..."
-            }
+            placeholder={platform === "instagram" ? "Search Instagram content ideas..." : "Search YouTube content ideas..."}
             className="flex-1 px-5 py-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
           />
           <button
@@ -137,13 +161,78 @@ export default function Index() {
               <button
                 key={chip}
                 onClick={() => setSearch(chip)}
-                className="px-4 py-2 rounded-full border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:border-border/80 hover:bg-accent transition-colors"
+                className="px-4 py-2 rounded-full border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 {chip}
               </button>
             ))}
           </div>
         </div>
+
+        {/* AI Chat Section */}
+        <div className="w-full border border-border rounded-2xl bg-card overflow-hidden">
+          {/* Chat messages */}
+          {showChat && chatMessages.length > 0 && (
+            <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[80%] px-4 py-2 rounded-xl text-sm ${
+                    msg.role === "user"
+                      ? "text-white rounded-br-none"
+                      : "bg-accent text-foreground rounded-bl-none"
+                  }`}
+                  style={msg.role === "user" ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-accent px-4 py-2 rounded-xl rounded-bl-none">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Quick actions */}
+          {!showChat && (
+            <div className="p-3 flex flex-wrap gap-2 border-b border-border">
+              {quickActions.map((action) => (
+                <button
+                  key={action.action}
+                  onClick={() => handleQuickAction(action.action)}
+                  className="px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Chat input */}
+          <div className="flex items-center gap-2 p-3">
+            <Sparkles className="w-4 h-4 text-muted-foreground shrink-0" />
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleChat()}
+              placeholder="Ask AI anything about content creation..."
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+            />
+            <button
+              onClick={() => handleChat()}
+              disabled={!chatInput.trim() || chatLoading}
+              className="p-2 rounded-lg text-white disabled:opacity-40 transition-all"
+              style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
       </motion.div>
     </div>
   );
