@@ -74,10 +74,13 @@ export default function TrendingPage() {
     try {
       const topicsRaw = await getTopics("7d");
       const topicsArr: Topic[] = Array.isArray(topicsRaw) ? topicsRaw : topicsRaw.topics ?? [];
-      const filteredTopics = topicsArr.filter((t: Topic) =>
-        t.name.toLowerCase().includes(q.toLowerCase()) ||
-        t.hashtags?.some((h: string) => h.toLowerCase().includes(q.toLowerCase()))
-      );
+      const searchTerms = q.toLowerCase().split(' ');
+const filteredTopics = topicsArr.filter((t: Topic) =>
+  searchTerms.some(term =>
+    t.name.toLowerCase().includes(term) ||
+    t.hashtags?.some((h: string) => h.toLowerCase().includes(term))
+  )
+);
 
       const newsRaw = await getNews();
       const newsArr: NewsArticle[] = Array.isArray(newsRaw) ? newsRaw : newsRaw.articles ?? [];
