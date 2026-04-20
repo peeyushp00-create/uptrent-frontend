@@ -107,10 +107,14 @@ export default function ScriptsPage() {
             </div>
           )}
 
-          <button
-            onClick={() => handleGenerate(topicInput)}
-            disabled={generating}
-            className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+         <button
+  onClick={() => handleGenerate(selectedTopic || topicInput)}
+  disabled={generating}
+  className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+>
+  <RefreshCw className="w-4 h-4" />
+  {generating ? 'Generating...' : 'Generate Another Script'}
+</button>
           >
             <RefreshCw className="w-4 h-4" />
             {generating ? 'Generating...' : 'Generate Another Script'}
