@@ -7,7 +7,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/layouts/AppLayout";
 import Index from "./pages/Index";
-import TrendingPage from "./pages/TrendingPage";
 import NewsPage from "./pages/NewsPage";
 import ScriptsPage from "./pages/ScriptsPage";
 import AIChatPage from "./pages/AIChatPage";
@@ -42,7 +41,6 @@ const App = () => (
               }
             >
               <Route path="/" element={<Index />} />
-              <Route path="/trending" element={<TrendingPage />} />
               <Route path="/news" element={<NewsPage />} />
               <Route path="/scripts" element={<ScriptsPage />} />
               <Route path="/trending" element={<TrendingDashboard />} />
