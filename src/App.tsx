@@ -14,6 +14,7 @@ import AIChatPage from "./pages/AIChatPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import TrendingDashboard from "./pages/TrendingDashboard";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/trending" element={<TrendingPage />} />
               <Route path="/news" element={<NewsPage />} />
               <Route path="/scripts" element={<ScriptsPage />} />
+              <Route path="/trending" element={<TrendingDashboard />} />
               <Route path="/ai-chat" element={<AIChatPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
