@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,15 +9,16 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
-  { icon: Settings, label: "Settings", path: "/settings" },
   { icon: TrendingUp, label: "Trending", path: "/trending" },
   { icon: Newspaper, label: "News Feed", path: "/news" },
   { icon: FileText, label: "Scripts", path: "/scripts" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 export default function AppSidebar() {
@@ -41,8 +41,8 @@ export default function AppSidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border">
         <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
-  <img src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-lg object-cover" />
-</div>
+          <img src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-lg object-cover" />
+        </div>
         {!collapsed && (
           <span className="font-heading font-bold text-foreground text-lg tracking-tight">
             Uptrent
