@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Newspaper, ExternalLink, Loader2, X, Search } from "lucide-react";
 import { getNews } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 
 interface NewsArticle {
@@ -19,6 +20,7 @@ interface NewsArticle {
   topicName?: string;
   topic?: string;
   url?: string;
+  image_url?: string;
 }
 
 const SUGGESTED = [
@@ -28,14 +30,17 @@ const SUGGESTED = [
 
 export default function NewsPage() {
   const location = useLocation();
+  const { user } = useAuth();
+  const userNiche = user?.user_metadata?.niche || '';
   const initialQuery = (location.state as any)?.query || "";
+
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [filteredArticles, setFilteredArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
-  const [searchInput, setSearchInput] = useState(initialQuery);
-  const [query, setQuery] = useState(initialQuery);
+  const [searchInput, setSearchInput] = useState(initialQuery || userNiche);
+  const [query, setQuery] = useState(initialQuery || userNiche);
 
   useEffect(() => {
     setLoading(true);
@@ -44,8 +49,11 @@ export default function NewsPage() {
       .then((data) => {
         const list = Array.isArray(data) ? data : data?.articles ?? data?.data ?? [];
         setArticles(list);
-        if (initialQuery) {
-          filterArticles(list, initialQuery);
+        const defaultQuery = initialQuery || userNiche;
+        if (defaultQuery) {
+          setQuery(defaultQuery);
+          setSearchInput(defaultQuery);
+          filterArticles(list, defaultQuery);
         } else {
           setFilteredArticles(list);
         }
@@ -84,7 +92,10 @@ export default function NewsPage() {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Newspaper className="w-6 h-6" /> News Feed
         </h1>
-        <p className="text-muted-foreground mt-1">Search any topic to find related news</p>
+        <p className="text-muted-foreground mt-1">
+          Latest news for content creators
+          {userNiche && <span className="ml-1 text-pink-500">· {userNiche}</span>}
+        </p>
       </div>
 
       {/* Search bar */}
@@ -160,10 +171,40 @@ export default function NewsPage() {
                 transition={{ delay: i * 0.05 }}
                 className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-colors"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  {item.image_url && (
+                    <img
+                      src={item.image_url}
+                      alt={headline}
+                      className="w-24 h-20 rounded-lg object-cover shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-foreground">{headline}</h3>
-                    <div className="flex items-center gap-3 mt-3 flex-wrap">
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="font-medium text-foreground text-sm leading-snug">{headline}</h3>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {summary && (
+                          <button
+                            onClick={() => setSelectedArticle(item)}
+                            className="text-xs px-3 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors whitespace-nowrap"
+                          >
+                            Summary
+                          </button>
+                        )}
+                        {item.url && (
+                          <button
+                            onClick={() => window.open(item.url, '_blank')}
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
                       {source && <span className="text-xs text-muted-foreground">{source}</span>}
                       {source && date && <span className="text-xs text-muted-foreground">·</span>}
                       {date && (
@@ -177,24 +218,6 @@ export default function NewsPage() {
                         </Badge>
                       )}
                     </div>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0 mt-1">
-                    {summary && (
-                      <button
-                        onClick={() => setSelectedArticle(item)}
-                        className="text-xs px-3 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                      >
-                        Summary
-                      </button>
-                    )}
-                    {item.url && (
-                      <button
-                        onClick={() => window.open(item.url, '_blank')}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 </div>
               </motion.div>
@@ -231,6 +254,16 @@ export default function NewsPage() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
+              {selectedArticle.image_url && (
+                <img
+                  src={selectedArticle.image_url}
+                  alt={selectedArticle.title || selectedArticle.headline}
+                  className="w-full h-40 object-cover rounded-lg mb-4"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              )}
               <p className="text-muted-foreground text-sm leading-relaxed mb-4">
                 {selectedArticle.summary || "No summary available."}
               </p>
