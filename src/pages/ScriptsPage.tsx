@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "react-router-motion";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FileText, Sparkles, Copy, Check, Clock, RefreshCw } from "lucide-react";
 import { generateScript } from "@/lib/api";
