@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -14,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
+  { icon: Settings, label: "Settings", path: "/settings" },
   { icon: TrendingUp, label: "Trending", path: "/trending" },
   { icon: Newspaper, label: "News Feed", path: "/news" },
   { icon: FileText, label: "Scripts", path: "/scripts" },
