@@ -49,36 +49,40 @@ export default function NewsPage() {
       .then((data) => {
         const list = Array.isArray(data) ? data : data?.articles ?? data?.data ?? [];
         setArticles(list);
-        const defaultQuery = initialQuery || userNiche;
-        if (defaultQuery) {
-          setQuery(defaultQuery);
-          setSearchInput(defaultQuery);
-          filterArticles(list, defaultQuery);
-        } else {
-          setFilteredArticles(list);
-        }
+      const defaultQuery = initialQuery || userNiche;
+if (defaultQuery) {
+  setQuery(defaultQuery);
+  setSearchInput(defaultQuery);
+  // Show all articles for niche - they are already filtered by niche in DB
+  const filtered = filterArticlesLogic(list, defaultQuery);
+  // If no results found, show all articles
+  setFilteredArticles(filtered.length > 0 ? filtered : list);
+} else {
+  setFilteredArticles(list);
+}
       })
       .catch(() => setError("Failed to load news"))
       .finally(() => setLoading(false));
   }, []);
 
-  const filterArticles = (list: NewsArticle[], q: string) => {
-    if (!q.trim()) {
-      setFilteredArticles(list);
-      return;
-    }
-    const q_lower = q.toLowerCase();
-    const terms = q_lower.split(' ');
-    const filtered = list.filter((item) => {
-      const text = (
-        (item.title || item.headline || '') + ' ' +
-        (item.summary || '') + ' ' +
-        (item.topicName || item.topic || item.tag || '')
-      ).toLowerCase();
-      return terms.some(term => text.includes(term));
-    });
-    setFilteredArticles(filtered);
-  };
+  const filterArticlesLogic = (list: NewsArticle[], q: string) => {
+  if (!q.trim()) return list;
+  const q_lower = q.toLowerCase();
+  const terms = q_lower.split(' ');
+  return list.filter((item) => {
+    const text = (
+      (item.title || item.headline || '') + ' ' +
+      (item.summary || '') + ' ' +
+      (item.topicName || item.topic || item.tag || '')
+    ).toLowerCase();
+    return terms.some(term => text.includes(term));
+  });
+};
+
+const filterArticles = (list: NewsArticle[], q: string) => {
+  const filtered = filterArticlesLogic(list, q);
+  setFilteredArticles(filtered.length > 0 ? filtered : list);
+};
 
   const handleSearch = (q: string) => {
     setQuery(q);
