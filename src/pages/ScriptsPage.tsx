@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router-motion";
 import { motion } from "framer-motion";
 import { FileText, Sparkles, Copy, Check, Clock, RefreshCw } from "lucide-react";
 import { generateScript } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ScriptsPage() {
   const location = useLocation();
+  const { user } = useAuth();
+  const userNiche = user?.user_metadata?.niche || '';
+
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [script, setScript] = useState<any | null>(null);
   const [copied, setCopied] = useState(false);
@@ -19,7 +23,7 @@ export default function ScriptsPage() {
     setError('');
     setSelectedTopic(topic);
     try {
-      const result = await generateScript(topic);
+      const result = await generateScript(topic, userNiche);
       setScript(result);
     } catch (err) {
       setError('Failed to generate script. Please try again.');
@@ -43,7 +47,10 @@ export default function ScriptsPage() {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <FileText className="w-6 h-6" /> Script Generator
         </h1>
-        <p className="text-muted-foreground mt-1">Generate unique ready-to-film scripts from any topic</p>
+        <p className="text-muted-foreground mt-1">
+          Generate unique ready-to-film scripts from any topic
+          {userNiche && <span className="ml-1 text-pink-500">· {userNiche} creator</span>}
+        </p>
       </div>
 
       <div className="flex gap-3 mb-8">
@@ -107,14 +114,10 @@ export default function ScriptsPage() {
             </div>
           )}
 
-         <button
-  onClick={() => handleGenerate(selectedTopic || topicInput)}
-  disabled={generating}
-  className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
->
-  <RefreshCw className="w-4 h-4" />
-  {generating ? 'Generating...' : 'Generate Another Script'}
-</button>
+          <button
+            onClick={() => handleGenerate(selectedTopic || topicInput)}
+            disabled={generating}
+            className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
           >
             <RefreshCw className="w-4 h-4" />
             {generating ? 'Generating...' : 'Generate Another Script'}
