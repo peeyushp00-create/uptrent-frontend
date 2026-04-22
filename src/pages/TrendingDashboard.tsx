@@ -164,7 +164,7 @@ export default function TrendingDashboard() {
                 No trending topics found for your niche yet.
               </p>
             )}
-            {displayTopics.slice(0, 10).map((topic, i) => (
+          {displayTopics.map((topic, i) => (
               <motion.div
                 key={topic.name}
                 initial={{ opacity: 0, y: 8 }}
