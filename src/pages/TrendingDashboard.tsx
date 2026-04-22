@@ -50,11 +50,29 @@ export default function TrendingDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const forYouTopics = topics.filter(t =>
-    t.name.toLowerCase().includes(userNiche.toLowerCase()) ||
-    t.hashtags?.some(h => h.toLowerCase().includes(userNiche.toLowerCase()))
-  );
+  const nicheKeywords: Record<string, string[]> = {
+  'Finance': ['finance', 'stock', 'invest', 'money', 'crypto', 'mutual', 'trading', 'wealth', 'income', 'passive'],
+  'Fitness': ['fitness', 'gym', 'workout', 'yoga', 'weight', 'nutrition', 'diet', 'exercise', 'health'],
+  'Tech': ['tech', 'ai', 'coding', 'programming', 'gadget', 'software', 'digital', 'tools'],
+  'Business': ['business', 'startup', 'entrepreneur', 'marketing', 'ecommerce', 'brand'],
+  'Motivation': ['motivation', 'mindset', 'success', 'self', 'improvement', 'habits', 'discipline'],
+  'Food': ['food', 'cooking', 'recipe', 'street', 'nutrition', 'diet'],
+  'Travel': ['travel', 'adventure', 'india', 'explore', 'wanderlust'],
+  'Education': ['education', 'study', 'learning', 'career', 'tips'],
+  'Fashion': ['fashion', 'style', 'skincare', 'beauty', 'ootd'],
+  'Gaming': ['gaming', 'pubg', 'freefire', 'game'],
+  'Cricket': ['cricket', 'ipl', 'sports'],
+  'Bollywood': ['bollywood', 'movies', 'entertainment', 'comedy'],
+};
 
+const keywords = nicheKeywords[userNiche] || [userNiche.toLowerCase()];
+
+const forYouTopics = topics.filter(t =>
+  keywords.some(keyword =>
+    t.name.toLowerCase().includes(keyword) ||
+    t.hashtags?.some(h => h.toLowerCase().includes(keyword))
+  )
+);
   const baseTopics = activeTab === 'forYou' && forYouTopics.length > 0
     ? forYouTopics
     : topics;
