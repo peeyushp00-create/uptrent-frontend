@@ -15,8 +15,10 @@ const LANGUAGES = [
   { value: "english", label: "English" },
   { value: "hindi", label: "Hindi" },
   { value: "hinglish", label: "Hinglish (Hindi + English)" },
+  { value: "tamil", label: "Tamil" },
+  { value: "telugu", label: "Telugu" },
+  { value: "malayalam", label: "Malayalam" },
 ];
-
 const STYLES = [
   { value: "casual", label: "Casual & Friendly" },
   { value: "professional", label: "Professional" },

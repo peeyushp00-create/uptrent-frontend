@@ -10,11 +10,11 @@ export const getNews = (topicId?: string) => {
   return fetch(url).then(r => r.json());
 };
 
-export const generateScript = (topicId: string, niche?: string) =>
+export const generateScript = (topicId: string, niche?: string, language?: string) =>
   fetch(`${BASE}/api/scripts/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ topicId, niche })
+    body: JSON.stringify({ topicId, niche, language })
   }).then(r => r.json());
   export const chatWithAI = (message: string) =>
   fetch(`${BASE}/api/scripts/chat`, {

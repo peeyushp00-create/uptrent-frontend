@@ -89,7 +89,7 @@ const forYouTopics = topics.filter(t =>
     setGenerating(true);
     setScript(null);
     setDialogOpen(true);
-    generateScript(topic.id || topic.name, user?.user_metadata?.niche)
+    generateScript(topic.id || topic.name, user?.user_metadata?.niche, user?.user_metadata?.language)
       .then((data: any) => {
         setScript({ hook: data.hook ?? "", body: data.body ?? "", cta: data.cta ?? "" });
       })

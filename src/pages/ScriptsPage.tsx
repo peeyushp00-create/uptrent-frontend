@@ -9,6 +9,7 @@ export default function ScriptsPage() {
   const location = useLocation();
   const { user } = useAuth();
   const userNiche = user?.user_metadata?.niche || '';
+  const userLanguage = user?.user_metadata?.language || 'hinglish';
 
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [script, setScript] = useState<any | null>(null);
@@ -23,7 +24,7 @@ export default function ScriptsPage() {
     setError('');
     setSelectedTopic(topic);
     try {
-      const result = await generateScript(topic, userNiche);
+     const result = await generateScript(topic, userNiche, userLanguage);
       setScript(result);
     } catch (err) {
       setError('Failed to generate script. Please try again.');
