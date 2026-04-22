@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, ArrowUpRight, ArrowDownRight, Minus, Sparkles, Loader2, Flame, BarChart2 } from "lucide-react";
+import { TrendingUp, ArrowUpRight, ArrowDownRight, Minus, Sparkles, Loader2, Flame, BarChart2, Search } from "lucide-react";
 import { getTopics, generateScript } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,14 +35,14 @@ export default function TrendingDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'forYou' | 'all'>('forYou');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     setLoading(true);
     getTopics("7d")
       .then((data: any) => {
         const arr = Array.isArray(data) ? data : data.topics ?? [];
-        // Sort by trend_score
-        const sorted = arr.sort((a: Topic, b: Topic) => 
+        const sorted = arr.sort((a: Topic, b: Topic) =>
           (b.trend_score || 0) - (a.trend_score || 0)
         );
         setTopics(sorted);
@@ -55,9 +55,16 @@ export default function TrendingDashboard() {
     t.hashtags?.some(h => h.toLowerCase().includes(userNiche.toLowerCase()))
   );
 
-  const displayTopics = activeTab === 'forYou' && forYouTopics.length > 0
+  const baseTopics = activeTab === 'forYou' && forYouTopics.length > 0
     ? forYouTopics
     : topics;
+
+  const displayTopics = searchQuery.trim()
+    ? baseTopics.filter(t =>
+        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.hashtags?.some(h => h.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : baseTopics;
 
   const handleGenerate = (topic: Topic) => {
     setSelectedTopic(topic);
@@ -125,6 +132,28 @@ export default function TrendingDashboard() {
           </div>
         </div>
 
+        {/* Search bar */}
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search trending topics..."
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
+            />
+          </div>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="px-4 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
         {/* Tabs */}
         <div className="flex gap-2 border-b border-border pb-3">
           <button
@@ -151,6 +180,13 @@ export default function TrendingDashboard() {
           </button>
         </div>
 
+        {/* Results count when searching */}
+        {searchQuery && !loading && (
+          <p className="text-xs text-muted-foreground">
+            {displayTopics.length} topics found for "{searchQuery}"
+          </p>
+        )}
+
         {loading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -161,10 +197,10 @@ export default function TrendingDashboard() {
           <div className="grid gap-3">
             {displayTopics.length === 0 && (
               <p className="text-center text-muted-foreground py-12 text-sm">
-                No trending topics found for your niche yet.
+                {searchQuery ? `No topics found for "${searchQuery}"` : "No trending topics found for your niche yet."}
               </p>
             )}
-          {displayTopics.map((topic, i) => (
+            {displayTopics.map((topic, i) => (
               <motion.div
                 key={topic.name}
                 initial={{ opacity: 0, y: 8 }}
