@@ -30,7 +30,6 @@ export default function SignupPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Voice recording
   const [isRecording, setIsRecording] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState("");
   const [voiceStyle, setVoiceStyle] = useState("");
@@ -164,10 +163,12 @@ export default function SignupPage() {
         <div className="flex items-center gap-2 justify-center">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                step >= s ? 'text-white' : 'border border-border text-muted-foreground'
-              }`}
-              style={step >= s ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  step >= s ? 'text-white' : 'border border-border text-muted-foreground'
+                }`}
+                style={step >= s ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+              >
                 {step > s ? <Check className="w-4 h-4" /> : s}
               </div>
               {s < 3 && <div className={`w-8 h-0.5 ${step > s ? 'bg-pink-500' : 'bg-border'}`} />}
@@ -219,6 +220,7 @@ export default function SignupPage() {
                   className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
                 />
               </div>
+              {error && <p className="text-sm text-red-400">{error}</p>}
               <button
                 type="button"
                 onClick={() => {
@@ -279,6 +281,8 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              {error && <p className="text-sm text-red-400">{error}</p>}
+
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -306,116 +310,129 @@ export default function SignupPage() {
             </motion.div>
           )}
 
-         {/* Step 3 - Voice Recording */}
-{step === 3 && (
-  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-    
-    {/* Explanation */}
-    <div className="text-center space-y-1">
-      <h2 className="font-semibold text-foreground">🎤 Set up your Voice Style</h2>
-      <p className="text-sm text-muted-foreground">Optional but highly recommended!</p>
+          {/* Step 3 - Voice Recording */}
+          {step === 3 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+
+              {/* Explanation */}
+              <div className="text-center space-y-1">
+                <h2 className="font-semibold text-foreground">🎤 Set up your Voice Style</h2>
+                <p className="text-sm text-muted-foreground">Optional but highly recommended!</p>
+              </div>
+
+              {/* Explanation cards */}
+              <div className="grid grid-cols-1 gap-2">
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-card border border-border">
+                  <span className="text-lg">🎯</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Personalized Scripts</p>
+                    <p className="text-xs text-muted-foreground">Scripts written exactly like YOU — not a robot.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-card border border-border">
+                  <span className="text-lg">🗣️</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Your Natural Tone</p>
+                    <p className="text-xs text-muted-foreground">Casual, energetic or formal — scripts match your style.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-card border border-border">
+                  <span className="text-lg">⚡</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Ready to Film</p>
+                    <p className="text-xs text-muted-foreground">So natural you can film immediately without rewriting.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-pink-500/10 border border-pink-500/30">
+                  <span className="text-lg">🔒</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">100% Private</p>
+                    <p className="text-xs text-muted-foreground">We never store or share your actual voice recording.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sample text */}
+              <div className="p-4 rounded-xl bg-card border border-border space-y-2">
+                <p className="text-xs text-pink-500 font-medium">📖 Read this text aloud while recording:</p>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {language === 'hindi' && "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं। मैंने देखा है कि बहुत सारे क्रिएटर्स सही कंटेंट बनाने में struggle करते हैं। लेकिन असल में यह इतना मुश्किल नहीं है। सबसे जरूरी बात है कि आप consistent रहें और अपने audience को हमेशा value दें।"}
+                  {language === 'english' && "Hey guys, welcome back! Today I want to share some really important tips that I have personally used. I have noticed that many creators struggle with making the right content. But actually it is not that difficult. The key is to stay consistent and always provide value to your audience."}
+                  {language === 'tamil' && "வணக்கம் நண்பர்களே! இன்று நான் உங்களுடன் சில முக்கியமான tips பகிர்ந்துகொள்ள விரும்புகிறேன். நான் பார்த்தேன், பல creators சரியான content உருவாக்குவதில் கஷ்டப்படுகிறார்கள். ஆனால் உண்மையில் அது அவ்வளவு கஷ்டமில்லை. முக்கியமான விஷயம் என்னவென்றால், நீங்கள் consistent ஆக இருக்க வேண்டும்."}
+                  {language === 'telugu' && "నమస్కారం నేస్తాలు! ఈరోజు నేను మీతో కొన్ని చాలా ముఖ్యమైన tips share చేయాలనుకుంటున్నాను. చాలా మంది creators సరైన content తయారు చేయడంలో struggle చేస్తున్నారని నేను గమనించాను. కానీ వాస్తవానికి అది అంత కష్టం కాదు. అత్యంత ముఖ్యమైన విషయం ఏమిటంటే మీరు consistent గా ఉండటం."}
+                  {language === 'malayalam' && "നമസ്കാരം സുഹൃത്തുക്കളേ! ഇന്ന് ഞാൻ നിങ്ങളുമായി ചില പ്രധാനപ്പെട്ട tips പങ്കിടാൻ ആഗ്രഹിക്കുന്നു. ഒരുപാട് creators ശരിയായ content ഉണ്ടാക്കുന്നതിൽ struggle ചെയ്യുന്നതായി ഞാൻ കണ്ടിട്ടുണ്ട്. പക്ഷേ യഥാർത്ഥത്തിൽ അത് അത്ര ബുദ്ധിമുട്ടുള്ളതല്ല. ഏറ്റവും പ്രധാനപ്പെട്ട കാര്യം consistent ആയി ഇരിക്കുക എന്നതാണ്."}
+                </p>
+              </div>
+
+              {voiceTranscript && !analyzingVoice && (
+                <div className="p-3 rounded-xl bg-secondary/30 border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Transcript:</p>
+                  <p className="text-sm text-foreground">{voiceTranscript.slice(0, 150)}...</p>
+                </div>
+              )}
+
+              {voiceStyle && (
+                <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30">
+                  <p className="text-xs text-green-400 mb-1">✅ Voice style analyzed!</p>
+                  <p className="text-sm text-foreground">{voiceStyle}</p>
+                </div>
+              )}
+
+              {analyzingVoice && (
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analyzing your speaking style...
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={isRecording ? stopRecording : startRecording}
+                className={`w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-all ${
+                  isRecording ? 'bg-red-500 animate-pulse' : ''
+                }`}
+                style={!isRecording ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+              >
+                {isRecording ? (
+                  <><MicOff className="w-4 h-4" /> Stop Recording ({recordingTime}s)</>
+                ) : (
+                  <><Mic className="w-4 h-4" /> {voiceTranscript ? 'Re-record Voice' : 'Start Recording'}</>
+                )}
+              </button>
+
+              {error && <p className="text-sm text-red-400">{error}</p>}
+              {success && <p className="text-sm text-green-400">{success}</p>}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="flex-1 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  ← Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {loading ? "Creating..." : voiceStyle ? "Create Account ✨" : "Skip & Create Account"}
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+        </form>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link to="/login" className="text-pink-500 hover:underline font-medium">
+            Login
+          </Link>
+        </p>
+      </motion.div>
     </div>
-
-    {/* Explanation cards */}
-    <div className="grid grid-cols-1 gap-2">
-      <div className="flex items-start gap-3 p-3 rounded-xl bg-card border border-border">
-        <span className="text-lg">🎯</span>
-        <div>
-          <p className="text-sm font-medium text-foreground">Personalized Scripts</p>
-          <p className="text-xs text-muted-foreground">Scripts written exactly like YOU — not a robot.</p>
-        </div>
-      </div>
-      <div className="flex items-start gap-3 p-3 rounded-xl bg-card border border-border">
-        <span className="text-lg">🗣️</span>
-        <div>
-          <p className="text-sm font-medium text-foreground">Your Natural Tone</p>
-          <p className="text-xs text-muted-foreground">Casual, energetic or formal — scripts match your style.</p>
-        </div>
-      </div>
-      <div className="flex items-start gap-3 p-3 rounded-xl bg-card border border-border">
-        <span className="text-lg">⚡</span>
-        <div>
-          <p className="text-sm font-medium text-foreground">Ready to Film</p>
-          <p className="text-xs text-muted-foreground">So natural you can film immediately without rewriting.</p>
-        </div>
-      </div>
-      <div className="flex items-start gap-3 p-3 rounded-xl bg-pink-500/10 border border-pink-500/30">
-        <span className="text-lg">🔒</span>
-        <div>
-          <p className="text-sm font-medium text-foreground">100% Private</p>
-          <p className="text-xs text-muted-foreground">We never store or share your actual voice recording.</p>
-        </div>
-      </div>
-    </div>
-
-    {/* Sample text to read */}
-    <div className="p-4 rounded-xl bg-card border border-border space-y-2">
-      <p className="text-xs text-pink-500 font-medium">📖 Read this text aloud while recording:</p>
-      <p className="text-sm text-foreground leading-relaxed">
-        {language === 'hindi' && "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं। मैंने देखा है कि बहुत सारे क्रिएटर्स सही कंटेंट बनाने में struggle करते हैं। लेकिन असल में यह इतना मुश्किल नहीं है। सबसे जरूरी बात है कि आप consistent रहें और अपने audience को हमेशा value दें।"}
-        {language === 'english' && "Hey guys, welcome back! Today I want to share some really important tips that I have personally used. I have noticed that many creators struggle with making the right content. But actually it is not that difficult. The key is to stay consistent and always provide value to your audience."}
-        {language === 'tamil' && "வணக்கம் நண்பர்களே! இன்று நான் உங்களுடன் சில முக்கியமான tips பகிர்ந்துகொள்ள விரும்புகிறேன். நான் பார்த்தேன், பல creators சரியான content உருவாக்குவதில் கஷ்டப்படுகிறார்கள். ஆனால் உண்மையில் அது அவ்வளவு கஷ்டமில்லை. முக்கியமான விஷயம் என்னவென்றால், நீங்கள் consistent ஆக இருக்க வேண்டும்."}
-        {language === 'telugu' && "నమస్కారం నేస్తాలు! ఈరోజు నేను మీతో కొన్ని చాలా ముఖ్యమైన tips share చేయాలనుకుంటున్నాను. చాలా మంది creators సరైన content తయారు చేయడంలో struggle చేస్తున్నారని నేను గమనించాను. కానీ వాస్తవానికి అది అంత కష్టం కాదు. అత్యంత ముఖ్యమైన విషయం ఏమిటంటే మీరు consistent గా ఉండటం."}
-        {language === 'malayalam' && "നമസ്കാരം സുഹൃത്തുക്കളേ! ഇന്ന് ഞാൻ നിങ്ങളുമായി ചില പ്രധാനപ്പെട്ട tips പങ്കിടാൻ ആഗ്രഹിക്കുന്നു. ഒരുപാട് creators ശരിയായ content ഉണ്ടാക്കുന്നതിൽ struggle ചെയ്യുന്നതായി ഞാൻ കണ്ടിട്ടുണ്ട്. പക്ഷേ യഥാർത്ഥത്തിൽ അത് അത്ര ബുദ്ധിമുട്ടുള്ളതല്ല. ഏറ്റവും പ്രധാനപ്പെട്ട കാര്യം consistent ആയി ഇരിക്കുക എന്നതാണ്."}
-      </p>
-    </div>
-
-    {voiceTranscript && !analyzingVoice && (
-      <div className="p-3 rounded-xl bg-secondary/30 border border-border">
-        <p className="text-xs text-muted-foreground mb-1">Transcript:</p>
-        <p className="text-sm text-foreground">{voiceTranscript.slice(0, 150)}...</p>
-      </div>
-    )}
-
-    {voiceStyle && (
-      <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30">
-        <p className="text-xs text-green-400 mb-1">✅ Voice style analyzed!</p>
-        <p className="text-sm text-foreground">{voiceStyle}</p>
-      </div>
-    )}
-
-    {analyzingVoice && (
-      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="w-4 h-4 animate-spin" />
-        Analyzing your speaking style...
-      </div>
-    )}
-
-    <button
-      type="button"
-      onClick={isRecording ? stopRecording : startRecording}
-      className={`w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-all ${
-        isRecording ? 'bg-red-500 animate-pulse' : ''
-      }`}
-      style={!isRecording ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
-    >
-      {isRecording ? (
-        <><MicOff className="w-4 h-4" /> Stop Recording ({recordingTime}s)</>
-      ) : (
-        <><Mic className="w-4 h-4" /> {voiceTranscript ? 'Re-record Voice' : 'Start Recording'}</>
-      )}
-    </button>
-
-    {error && <p className="text-sm text-red-400">{error}</p>}
-    {success && <p className="text-sm text-green-400">{success}</p>}
-
-    <div className="flex gap-3">
-      <button
-        type="button"
-        onClick={() => setStep(2)}
-        className="flex-1 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        ← Back
-      </button>
-      <button
-        type="submit"
-        disabled={loading}
-        className="flex-1 py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-        style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
-      >
-        {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-        {loading ? "Creating..." : voiceStyle ? "Create Account ✨" : "Skip & Create Account"}
-      </button>
-    </div>
-  </motion.div>
-)}
+  );
+}
