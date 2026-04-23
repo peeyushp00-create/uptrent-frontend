@@ -42,7 +42,7 @@ export default function Index() {
             Ideas
           </h1>
           <p className="text-muted-foreground text-base">
-            Find scroll-stopping content ideas for Instagram & YouTube creators
+            Find scroll-stopping content ideas for Instagram 
           </p>
         </div>
 
