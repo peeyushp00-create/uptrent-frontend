@@ -48,13 +48,28 @@ export default function NewsPage() {
     getNews()
       .then((data) => {
         const list = Array.isArray(data) ? data : data?.articles ?? data?.data ?? [];
-        setArticles(list);
-        if (initialQuery) {
-          const filtered = filterByQuery(list, initialQuery);
-          setFilteredArticles(filtered.length > 0 ? filtered : list);
-        } else {
-          setFilteredArticles(list);
-        }
+setArticles(list);
+if (initialQuery) {
+  const filtered = filterByQuery(list, initialQuery);
+  setFilteredArticles(filtered.length > 0 ? filtered : list);
+} else {
+  // Sort niche-related articles to top
+  if (userNiche) {
+    const nicheKeywords = userNiche.toLowerCase().split(' ');
+    const sorted = [...list].sort((a, b) => {
+      const aText = ((a.title || a.headline || '') + ' ' + (a.summary || '')).toLowerCase();
+      const bText = ((b.title || b.headline || '') + ' ' + (b.summary || '')).toLowerCase();
+      const aMatch = nicheKeywords.some(k => aText.includes(k));
+      const bMatch = nicheKeywords.some(k => bText.includes(k));
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return 0;
+    });
+    setFilteredArticles(sorted);
+  } else {
+    setFilteredArticles(list);
+  }
+}
       })
       .catch(() => setError("Failed to load news"))
       .finally(() => setLoading(false));
