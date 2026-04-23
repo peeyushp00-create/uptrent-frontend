@@ -311,7 +311,17 @@ export default function SignupPage() {
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
               <div className="text-center space-y-2">
                 <h2 className="font-semibold text-foreground">Set up your voice style</h2>
-                <p className="text-xs text-muted-foreground">Record 30-60 seconds of yourself talking naturally. We'll analyze your style to personalize your scripts.</p>
+                {/* Sample text to read */}
+<div className="p-4 rounded-xl bg-card border border-border space-y-2">
+  <p className="text-xs text-pink-500 font-medium">📖 Read this text aloud:</p>
+  <p className="text-sm text-foreground leading-relaxed">
+    {language === 'hindi' && "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं। मैंने देखा है कि बहुत सारे क्रिएटर्स सही कंटेंट बनाने में struggle करते हैं। लेकिन असल में यह इतना मुश्किल नहीं है। सबसे जरूरी बात है कि आप consistent रहें और अपने audience को हमेशा value दें। मैंने खुद इस journey में बहुत कुछ सीखा है।"}
+    {language === 'english' && "Hey guys, welcome back! Today I want to share some really important tips that I have personally used. I have noticed that many creators struggle with making the right content. But actually it is not that difficult. The key is to stay consistent and always provide value to your audience. I have learned a lot in this journey myself. And the tips I am sharing today genuinely work. So if you want to level up your content game, make sure you watch this video till the end!"}
+    {language === 'tamil' && "வணக்கம் நண்பர்களே! இன்று நான் உங்களுடன் சில முக்கியமான tips பகிர்ந்துகொள்ள விரும்புகிறேன். நான் பார்த்தேன், பல creators சரியான content உருவாக்குவதில் கஷ்டப்படுகிறார்கள். ஆனால் உண்மையில் அது அவ்வளவு கஷ்டமில்லை. முக்கியமான விஷயம் என்னவென்றால், நீங்கள் consistent ஆக இருக்க வேண்டும். நான் இந்த journey-ல் நிறைய கற்றுக்கொண்டேன்."}
+    {language === 'telugu' && "నమస్కారం నేస్తాలు! ఈరోజు నేను మీతో కొన్ని చాలా ముఖ్యమైన tips share చేయాలనుకుంటున్నాను. చాలా మంది creators సరైన content తయారు చేయడంలో struggle చేస్తున్నారని నేను గమనించాను. కానీ వాస్తవానికి అది అంత కష్టం కాదు. అత్యంత ముఖ్యమైన విషయం ఏమిటంటే మీరు consistent గా ఉండటం. నేను ఈ journey లో చాలా నేర్చుకున్నాను."}
+    {language === 'malayalam' && "നമസ്കാരം സുഹൃത്തുക്കളേ! ഇന്ന് ഞാൻ നിങ്ങളുമായി ചില പ്രധാനപ്പെട്ട tips പങ്കിടാൻ ആഗ്രഹിക്കുന്നു. ഒരുപാട് creators ശരിയായ content ഉണ്ടാക്കുന്നതിൽ struggle ചെയ്യുന്നതായി ഞാൻ കണ്ടിട്ടുണ്ട്. പക്ഷേ യഥാർത്ഥത്തിൽ അത് അത്ര ബുദ്ധിമുട്ടുള്ളതല്ല. ഏറ്റവും പ്രധാനപ്പെട്ട കാര്യം consistent ആയി ഇരിക്കുക എന്നതാണ്. ഞാൻ ഈ journey-ൽ ഒരുപാട് പഠിച്ചു."}
+  </p>
+</div>
                 <p className="text-xs text-muted-foreground">You can skip this step and do it later in Settings.</p>
               </div>
 
