@@ -39,8 +39,8 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
-  const [searchInput, setSearchInput] = useState(initialQuery || userNiche);
-  const [query, setQuery] = useState(initialQuery || userNiche);
+  const [searchInput, setSearchInput] = useState(initialQuery);
+  const [query, setQuery] = useState(initialQuery);
 
   useEffect(() => {
     setLoading(true);
@@ -49,43 +49,40 @@ export default function NewsPage() {
       .then((data) => {
         const list = Array.isArray(data) ? data : data?.articles ?? data?.data ?? [];
         setArticles(list);
-const defaultQuery = initialQuery;
-if (defaultQuery) {
-  setQuery(defaultQuery);
-  setSearchInput(defaultQuery);
-  const filtered = filterArticlesLogic(list, defaultQuery);
-  setFilteredArticles(filtered.length > 0 ? filtered : list);
-} else {
-  setFilteredArticles(list);
-}
+        if (initialQuery) {
+          const filtered = filterByQuery(list, initialQuery);
+          setFilteredArticles(filtered.length > 0 ? filtered : list);
+        } else {
+          setFilteredArticles(list);
+        }
       })
       .catch(() => setError("Failed to load news"))
       .finally(() => setLoading(false));
   }, []);
 
-  const filterArticlesLogic = (list: NewsArticle[], q: string) => {
-  if (!q.trim()) return list;
-  const q_lower = q.toLowerCase();
-  const terms = q_lower.split(' ');
-  return list.filter((item) => {
-    const text = (
-      (item.title || item.headline || '') + ' ' +
-      (item.summary || '') + ' ' +
-      (item.topicName || item.topic || item.tag || '')
-    ).toLowerCase();
-    return terms.some(term => text.includes(term));
-  });
-};
-
-const filterArticles = (list: NewsArticle[], q: string) => {
-  const filtered = filterArticlesLogic(list, q);
-  setFilteredArticles(filtered.length > 0 ? filtered : list);
-};
+  const filterByQuery = (list: NewsArticle[], q: string) => {
+    if (!q.trim()) return list;
+    const q_lower = q.toLowerCase();
+    const terms = q_lower.split(' ');
+    return list.filter((item) => {
+      const text = (
+        (item.title || item.headline || '') + ' ' +
+        (item.summary || '') + ' ' +
+        (item.topicName || item.topic || item.tag || '')
+      ).toLowerCase();
+      return terms.some(term => text.includes(term));
+    });
+  };
 
   const handleSearch = (q: string) => {
     setQuery(q);
     setSearchInput(q);
-    filterArticles(articles, q);
+    if (!q.trim()) {
+      setFilteredArticles(articles);
+      return;
+    }
+    const filtered = filterByQuery(articles, q);
+    setFilteredArticles(filtered.length > 0 ? filtered : articles);
   };
 
   return (
