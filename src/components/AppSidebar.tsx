@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { useTheme } from "@/contexts/ThemeContext";
-import { Sun, Moon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,8 +10,11 @@ import {
   PanelLeft,
   LogOut,
   Settings,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
@@ -22,22 +23,13 @@ const navItems = [
   { icon: FileText, label: "Scripts", path: "/scripts" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
-const { theme, toggleTheme } = useTheme();
-<button
-  onClick={toggleTheme}
-  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors text-muted-foreground"
->
-  {theme === "dark" ? (
-    <><Sun className="w-4 h-4 flex-shrink-0" />{!collapsed && <span>Light Mode</span>}</>
-  ) : (
-    <><Moon className="w-4 h-4 flex-shrink-0" />{!collapsed && <span>Dark Mode</span>}</>
-  )}
-</button>
+
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     await signOut();
@@ -96,6 +88,19 @@ export default function AppSidebar() {
             {user.email}
           </div>
         )}
+
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors text-muted-foreground"
+        >
+          {theme === "dark" ? (
+            <><Sun className="w-4 h-4 flex-shrink-0" />{!collapsed && <span>Light Mode</span>}</>
+          ) : (
+            <><Moon className="w-4 h-4 flex-shrink-0" />{!collapsed && <span>Dark Mode</span>}</>
+          )}
+        </button>
+
         <button className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
           <Sparkles className="w-4 h-4 flex-shrink-0" />
           {!collapsed && (
