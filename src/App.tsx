@@ -9,7 +9,6 @@ import AppLayout from "@/layouts/AppLayout";
 import Index from "./pages/Index";
 import NewsPage from "./pages/NewsPage";
 import ScriptsPage from "./pages/ScriptsPage";
-import AIChatPage from "./pages/AIChatPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -44,7 +43,6 @@ const App = () => (
               <Route path="/news" element={<NewsPage />} />
               <Route path="/scripts" element={<ScriptsPage />} />
               <Route path="/trending" element={<TrendingDashboard />} />
-              <Route path="/ai-chat" element={<AIChatPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
