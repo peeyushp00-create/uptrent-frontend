@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Sun, Moon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -20,7 +22,17 @@ const navItems = [
   { icon: FileText, label: "Scripts", path: "/scripts" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
-
+const { theme, toggleTheme } = useTheme();
+<button
+  onClick={toggleTheme}
+  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors text-muted-foreground"
+>
+  {theme === "dark" ? (
+    <><Sun className="w-4 h-4 flex-shrink-0" />{!collapsed && <span>Light Mode</span>}</>
+  ) : (
+    <><Moon className="w-4 h-4 flex-shrink-0" />{!collapsed && <span>Dark Mode</span>}</>
+  )}
+</button>
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
