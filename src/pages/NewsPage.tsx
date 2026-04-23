@@ -49,19 +49,12 @@ export default function NewsPage() {
       .then((data) => {
         const list = Array.isArray(data) ? data : data?.articles ?? data?.data ?? [];
         setArticles(list);
-      const defaultQuery = initialQuery || userNiche;
+const defaultQuery = initialQuery;
 if (defaultQuery) {
   setQuery(defaultQuery);
   setSearchInput(defaultQuery);
-  // Show all articles for niche - they are already filtered by niche in DB
   const filtered = filterArticlesLogic(list, defaultQuery);
-  // If no results found, show all articles
   setFilteredArticles(filtered.length > 0 ? filtered : list);
-// If no niche match found, clear search so user sees all news
-if (filtered.length === 0 && defaultQuery === userNiche) {
-  setQuery('');
-  setSearchInput('');
-}
 } else {
   setFilteredArticles(list);
 }
