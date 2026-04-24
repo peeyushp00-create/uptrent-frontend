@@ -258,7 +258,7 @@ export default function NewsPage() {
             const date = item.published_at || item.publishedAt || item.date || "";
             const topic = item.topicName || item.topic || item.tag || "";
             const timeAgo = getTimeAgo(date);
-            const thumbnail = item.image_url || getCategoryImage(headline);
+           const thumbnail = item.image_url;
 
             return (
               <motion.div
@@ -269,14 +269,16 @@ export default function NewsPage() {
                 className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors"
               >
                 <div className="flex items-start gap-4">
-                  <img
-                    src={thumbnail}
-                    alt={headline}
-                    className="w-24 h-20 rounded-lg object-cover shrink-0"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400';
-                    }}
-                  />
+                  {thumbnail && (
+  <img
+    src={thumbnail}
+    alt={headline}
+    className="w-24 h-20 rounded-lg object-cover shrink-0"
+    onError={(e) => {
+      (e.target as HTMLImageElement).style.display = 'none';
+    }}
+  />
+)}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <h3 className="font-medium text-foreground text-sm leading-snug">{headline}</h3>
