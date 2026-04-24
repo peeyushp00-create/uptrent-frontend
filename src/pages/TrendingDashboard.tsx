@@ -141,7 +141,7 @@ const forYouTopics = topics.filter(t =>
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Top trending topics · Updated daily
-              {userNiche && <span className="ml-1 text-pink-500">· {userNiche} creator</span>}
+            {userNiche && <span className="ml-1 text-pink-500">· {userNiche}</span>}
             </p>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 text-pink-500 text-xs font-medium">

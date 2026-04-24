@@ -38,12 +38,14 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [name, setName] = useState(user?.user_metadata?.full_name || '');
-  const [niche, setNiche] = useState(user?.user_metadata?.niche || '');
+  const [niches, setNiches] = useState<string[]>(
+    user?.user_metadata?.niches ||
+    (user?.user_metadata?.niche ? [user.user_metadata.niche] : [])
+  );
   const [language, setLanguage] = useState(user?.user_metadata?.language || 'hindi');
   const [style, setStyle] = useState(user?.user_metadata?.style || 'casual');
   const [platform, setPlatform] = useState(user?.user_metadata?.platform || 'both');
 
-  // Voice recording
   const [isRecording, setIsRecording] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState(user?.user_metadata?.voice_transcript || '');
   const [voiceStyle, setVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
@@ -51,6 +53,12 @@ export default function SettingsPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<any>(null);
+
+  const toggleNiche = (n: string) => {
+    setNiches(prev =>
+      prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]
+    );
+  };
 
   const startRecording = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -127,7 +135,8 @@ export default function SettingsPage() {
     const { error } = await supabase.auth.updateUser({
       data: {
         full_name: name,
-        niche,
+        niche: niches[0] || '',
+        niches: niches,
         language,
         style,
         platform,
@@ -208,20 +217,22 @@ export default function SettingsPage() {
         {/* Niche Section */}
         <div className="bg-card border border-border rounded-xl p-6 space-y-4">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
-            <Target className="w-4 h-4 text-pink-500" /> Content Niche
+            <Target className="w-4 h-4 text-pink-500" /> Content Niches
           </h2>
-          <p className="text-xs text-muted-foreground">This personalizes your scripts and trending topics</p>
+          <p className="text-xs text-muted-foreground">Select multiple niches to personalize your experience
+            {niches.length > 0 && <span className="ml-1 text-pink-500">({niches.length} selected)</span>}
+          </p>
           <div className="flex flex-wrap gap-2">
             {NICHES.map((n) => (
               <button
                 key={n}
-                onClick={() => setNiche(n)}
+                onClick={() => toggleNiche(n)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                  niche === n ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
+                  niches.includes(n) ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                 }`}
-                style={niche === n ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+                style={niches.includes(n) ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
               >
-                {n}
+                {niches.includes(n) && '✓ '}{n}
               </button>
             ))}
           </div>
@@ -300,7 +311,6 @@ export default function SettingsPage() {
           </h2>
           <p className="text-xs text-muted-foreground">Record your voice so we can personalize scripts to match your natural speaking style</p>
 
-          {/* Sample text */}
           <div className="p-3 rounded-xl bg-secondary/30 border border-border space-y-1">
             <p className="text-xs text-pink-500 font-medium">📖 Read this text aloud while recording:</p>
             <p className="text-sm text-foreground leading-relaxed">

@@ -24,7 +24,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [niche, setNiche] = useState("");
+ const [niches, setNiches] = useState<string[]>([]);
   const [language, setLanguage] = useState("hindi");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -250,11 +250,13 @@ export default function SignupPage() {
                     <button
                       key={n}
                       type="button"
-                      onClick={() => setNiche(n)}
+                      onClick={() => setNiches(prev => 
+  prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]
+)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                        niche === n ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
+                        niches.includes(n) ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                       }`}
-                      style={niche === n ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+                      style={niches.includes(n) ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
                     >
                       {n}
                     </button>
@@ -294,7 +296,7 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (!niche) {
+                    if (niches.length === 0) {
                       setError("Please select your niche");
                       return;
                     }
