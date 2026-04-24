@@ -28,12 +28,36 @@ const SUGGESTED = [
   "Travel", "Food", "Tech", "Cricket", "Bollywood", "Gaming"
 ];
 
+const DATE_FILTERS = [
+  { label: "Today", value: "today" },
+  { label: "Yesterday", value: "yesterday" },
+  { label: "Last Week", value: "week" },
+  { label: "All", value: "all" },
+];
+
+const getCategoryImage = (headline: string) => {
+  const h = headline.toLowerCase();
+  if (h.includes('cricket') || h.includes('ipl') || h.includes('kohli')) return 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400';
+  if (h.includes('fitness') || h.includes('workout') || h.includes('gym')) return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400';
+  if (h.includes('ai') || h.includes('tech') || h.includes('chatgpt') || h.includes('software')) return 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400';
+  if (h.includes('bollywood') || h.includes('movie') || h.includes('film')) return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400';
+  if (h.includes('travel') || h.includes('tourism') || h.includes('trip')) return 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400';
+  if (h.includes('food') || h.includes('recipe') || h.includes('cooking')) return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400';
+  if (h.includes('stock') || h.includes('market') || h.includes('invest') || h.includes('finance')) return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400';
+  if (h.includes('fashion') || h.includes('style')) return 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400';
+  if (h.includes('gaming') || h.includes('game')) return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400';
+  if (h.includes('education') || h.includes('study') || h.includes('exam')) return 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400';
+  if (h.includes('yoga') || h.includes('meditation') || h.includes('wellness')) return 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400';
+  if (h.includes('business') || h.includes('startup') || h.includes('entrepreneur')) return 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400';
+  if (h.includes('crypto') || h.includes('bitcoin')) return 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=400';
+  return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400';
+};
+
 const getTimeAgo = (dateStr: string) => {
   if (!dateStr) return '';
   const now = new Date();
   const date = new Date(dateStr);
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-
   if (diff < 60) return 'Just now';
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
@@ -41,10 +65,29 @@ const getTimeAgo = (dateStr: string) => {
   return date.toLocaleDateString();
 };
 
+const isToday = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  return date.toDateString() === now.toDateString();
+};
+
+const isYesterday = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return date.toDateString() === yesterday.toDateString();
+};
+
+const isLastWeek = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  return date >= weekAgo;
+};
+
 export default function NewsPage() {
   const location = useLocation();
   const { user } = useAuth();
-  const userNiche = user?.user_metadata?.niche || '';
   const initialQuery = (location.state as any)?.query || "";
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -54,6 +97,7 @@ export default function NewsPage() {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
+  const [dateFilter, setDateFilter] = useState("all");
 
   useEffect(() => {
     setLoading(true);
@@ -61,16 +105,12 @@ export default function NewsPage() {
     getNews()
       .then((data) => {
         const list = Array.isArray(data) ? data : data?.articles ?? data?.data ?? [];
-        
-        // Sort by date - newest first
         const sorted = [...list].sort((a, b) => {
           const dateA = new Date(a.published_at || a.publishedAt || a.date || 0).getTime();
           const dateB = new Date(b.published_at || b.publishedAt || b.date || 0).getTime();
           return dateB - dateA;
         });
-
         setArticles(sorted);
-
         if (initialQuery) {
           const filtered = filterByQuery(sorted, initialQuery);
           setFilteredArticles(filtered.length > 0 ? filtered : sorted);
@@ -96,15 +136,34 @@ export default function NewsPage() {
     });
   };
 
+  const filterByDate = (list: NewsArticle[], filter: string) => {
+    if (filter === 'all') return list;
+    return list.filter(item => {
+      const date = item.published_at || item.publishedAt || item.date || '';
+      if (!date) return false;
+      if (filter === 'today') return isToday(date);
+      if (filter === 'yesterday') return isYesterday(date);
+      if (filter === 'week') return isLastWeek(date);
+      return true;
+    });
+  };
+
   const handleSearch = (q: string) => {
     setQuery(q);
     setSearchInput(q);
+    let base = articles;
     if (!q.trim()) {
-      setFilteredArticles(articles);
+      setFilteredArticles(filterByDate(base, dateFilter));
       return;
     }
-    const filtered = filterByQuery(articles, q);
-    setFilteredArticles(filtered.length > 0 ? filtered : articles);
+    const filtered = filterByQuery(base, q);
+    setFilteredArticles(filterByDate(filtered.length > 0 ? filtered : base, dateFilter));
+  };
+
+  const handleDateFilter = (filter: string) => {
+    setDateFilter(filter);
+    let base = query ? filterByQuery(articles, query) : articles;
+    setFilteredArticles(filterByDate(base, filter));
   };
 
   return (
@@ -136,6 +195,24 @@ export default function NewsPage() {
         </button>
       </div>
 
+      {/* Date filter buttons */}
+      <div className="flex gap-2 mb-4">
+        {DATE_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => handleDateFilter(f.value)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+              dateFilter === f.value
+                ? "text-white border-transparent"
+                : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+            style={dateFilter === f.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {/* Suggested chips */}
       {!query && (
         <div className="flex flex-wrap gap-2 mb-6">
@@ -153,9 +230,9 @@ export default function NewsPage() {
       )}
 
       {/* Results count */}
-      {query && !loading && (
+      {!loading && (
         <p className="text-xs text-muted-foreground mb-4">
-          {filteredArticles.length} articles found for "{query}"
+          {filteredArticles.length} articles {query ? `for "${query}"` : ''}
         </p>
       )}
 
@@ -167,8 +244,8 @@ export default function NewsPage() {
       {error && <div className="text-center py-16 text-red-400">{error}</div>}
       {!loading && !error && filteredArticles.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
-          <p>No news found {query ? `for "${query}"` : ""}</p>
-          <p className="text-xs mt-1">Try a different search term</p>
+          <p>No news found {query ? `for "${query}"` : `for ${dateFilter}`}</p>
+          <p className="text-xs mt-1">Try a different filter or search term</p>
         </div>
       )}
 
@@ -181,6 +258,7 @@ export default function NewsPage() {
             const date = item.published_at || item.publishedAt || item.date || "";
             const topic = item.topicName || item.topic || item.tag || "";
             const timeAgo = getTimeAgo(date);
+            const thumbnail = item.image_url || getCategoryImage(headline);
 
             return (
               <motion.div
@@ -188,19 +266,17 @@ export default function NewsPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-colors"
+                className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors"
               >
                 <div className="flex items-start gap-4">
-                  {item.image_url && (
-                    <img
-                      src={item.image_url}
-                      alt={headline}
-                      className="w-24 h-20 rounded-lg object-cover shrink-0"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  )}
+                  <img
+                    src={thumbnail}
+                    alt={headline}
+                    className="w-24 h-20 rounded-lg object-cover shrink-0"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400';
+                    }}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <h3 className="font-medium text-foreground text-sm leading-snug">{headline}</h3>
@@ -227,9 +303,7 @@ export default function NewsPage() {
                       {source && <span className="text-xs text-muted-foreground">{source}</span>}
                       {source && timeAgo && <span className="text-xs text-muted-foreground">·</span>}
                       {timeAgo && (
-                        <span className="text-xs text-pink-500 font-medium">
-                          {timeAgo}
-                        </span>
+                        <span className="text-xs text-pink-500 font-medium">{timeAgo}</span>
                       )}
                       {topic && (
                         <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-0">
@@ -273,16 +347,14 @@ export default function NewsPage() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              {selectedArticle.image_url && (
-                <img
-                  src={selectedArticle.image_url}
-                  alt={selectedArticle.title || selectedArticle.headline}
-                  className="w-full h-40 object-cover rounded-lg mb-4"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              )}
+              <img
+                src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '')}
+                alt={selectedArticle.title || selectedArticle.headline}
+                className="w-full h-40 object-cover rounded-lg mb-4"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400';
+                }}
+              />
               <p className="text-muted-foreground text-sm leading-relaxed mb-4">
                 {selectedArticle.summary || "No summary available."}
               </p>
