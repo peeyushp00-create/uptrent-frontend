@@ -12,6 +12,9 @@ import {
   Settings,
   Sun,
   Moon,
+  User,
+  ChevronUp,
+  Crown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -21,11 +24,11 @@ const navItems = [
   { icon: TrendingUp, label: "Trending", path: "/trending" },
   { icon: Newspaper, label: "News Feed", path: "/news" },
   { icon: FileText, label: "Scripts", path: "/scripts" },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -36,9 +39,13 @@ export default function AppSidebar() {
     navigate("/login");
   };
 
+  const avatarInitials = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : user?.email?.[0].toUpperCase() || 'U';
+
   return (
     <aside
-      className={`flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 ${
+      className={`flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 relative ${
         collapsed ? "w-16" : "w-60"
       }`}
     >
@@ -81,40 +88,91 @@ export default function AppSidebar() {
         })}
       </nav>
 
-      {/* Bottom section */}
-      <div className="p-3 border-t border-sidebar-border space-y-2">
-        {user && !collapsed && (
-          <div className="px-3 py-1.5 text-xs text-muted-foreground truncate">
-            {user.email}
+      {/* Profile popup menu */}
+      {showProfileMenu && (
+        <div className={`absolute bottom-16 left-2 right-2 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden`}>
+          {/* User info */}
+          <div className="p-3 border-b border-border">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}>
+                {avatarInitials}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {user?.user_metadata?.full_name || 'Creator'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Theme toggle */}
+          {/* Menu items */}
+          <div className="p-1">
+            <button
+              onClick={() => { navigate('/settings'); setShowProfileMenu(false); }}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent transition-colors"
+            >
+              <Settings className="w-4 h-4 text-muted-foreground" />
+              Settings
+            </button>
+
+            <button
+              onClick={() => { toggleTheme(); setShowProfileMenu(false); }}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent transition-colors"
+            >
+              {theme === "dark" ? (
+                <><Sun className="w-4 h-4 text-muted-foreground" /> Light Mode</>
+              ) : (
+                <><Moon className="w-4 h-4 text-muted-foreground" /> Dark Mode</>
+              )}
+            </button>
+
+            <div className="border-t border-border my-1" />
+
+            <button
+              onClick={() => { navigate('/settings'); setShowProfileMenu(false); }}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors"
+              style={{ color: '#D4537E' }}
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade to Pro
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom profile button */}
+      <div className="p-2 border-t border-sidebar-border">
         <button
-          onClick={toggleTheme}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors text-muted-foreground"
+          onClick={() => setShowProfileMenu(!showProfileMenu)}
+          className={`flex items-center gap-3 w-full px-2 py-2 rounded-lg hover:bg-sidebar-accent/50 transition-colors ${
+            showProfileMenu ? 'bg-sidebar-accent' : ''
+          }`}
         >
-          {theme === "dark" ? (
-            <><Sun className="w-4 h-4 flex-shrink-0" />{!collapsed && <span>Light Mode</span>}</>
-          ) : (
-            <><Moon className="w-4 h-4 flex-shrink-0" />{!collapsed && <span>Dark Mode</span>}</>
-          )}
-        </button>
-
-        <button className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
-          <Sparkles className="w-4 h-4 flex-shrink-0" />
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+            style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}>
+            {avatarInitials}
+          </div>
           {!collapsed && (
-            <span>
-              Upgrade <span className="text-xs opacity-70">Pro</span>
-            </span>
+            <>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-xs font-medium text-foreground truncate">
+                  {user?.user_metadata?.full_name || 'Creator'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <ChevronUp className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileMenu ? '' : 'rotate-180'}`} />
+            </>
           )}
-        </button>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors"
-        >
-          <LogOut className="w-4 h-4 flex-shrink-0" />
-          {!collapsed && <span>Logout</span>}
         </button>
       </div>
     </aside>
