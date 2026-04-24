@@ -24,7 +24,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
- const [niches, setNiches] = useState<string[]>([]);
+  const [niches, setNiches] = useState<string[]>([]);
   const [language, setLanguage] = useState("hindi");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -39,6 +39,12 @@ export default function SignupPage() {
   const timerRef = useRef<any>(null);
 
   const navigate = useNavigate();
+
+  const toggleNiche = (n: string) => {
+    setNiches(prev =>
+      prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]
+    );
+  };
 
   const startRecording = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -113,8 +119,8 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!niche) {
-      setError("Please select your content niche");
+    if (niches.length === 0) {
+      setError("Please select at least one niche");
       return;
     }
     setLoading(true);
@@ -126,7 +132,8 @@ export default function SignupPage() {
       options: {
         data: {
           full_name: name,
-          niche,
+          niche: niches[0],
+          niches: niches,
           language,
           voice_transcript: voiceTranscript,
           voice_style: voiceStyle
@@ -243,22 +250,23 @@ export default function SignupPage() {
           {step === 2 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Your Content Niche</label>
-                <p className="text-xs text-muted-foreground">This personalizes your trending topics and scripts</p>
+                <label className="text-sm font-medium text-foreground">Your Content Niches</label>
+                <p className="text-xs text-muted-foreground">
+                  Select one or more niches that match your content
+                  {niches.length > 0 && <span className="ml-1 text-pink-500">({niches.length} selected)</span>}
+                </p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {NICHES.map((n) => (
                     <button
                       key={n}
                       type="button"
-                      onClick={() => setNiches(prev => 
-  prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]
-)}
+                      onClick={() => toggleNiche(n)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                         niches.includes(n) ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                       }`}
                       style={niches.includes(n) ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
                     >
-                      {n}
+                      {niches.includes(n) && '✓ '}{n}
                     </button>
                   ))}
                 </div>
@@ -297,7 +305,7 @@ export default function SignupPage() {
                   type="button"
                   onClick={() => {
                     if (niches.length === 0) {
-                      setError("Please select your niche");
+                      setError("Please select at least one niche");
                       return;
                     }
                     setError("");
@@ -316,13 +324,11 @@ export default function SignupPage() {
           {step === 3 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
 
-              {/* Explanation */}
               <div className="text-center space-y-1">
                 <h2 className="font-semibold text-foreground">🎤 Set up your Voice Style</h2>
                 <p className="text-sm text-muted-foreground">Optional but highly recommended!</p>
               </div>
 
-              {/* Explanation cards */}
               <div className="grid grid-cols-1 gap-2">
                 <div className="flex items-start gap-3 p-3 rounded-xl bg-card border border-border">
                   <span className="text-lg">🎯</span>
@@ -354,15 +360,14 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* Sample text */}
               <div className="p-4 rounded-xl bg-card border border-border space-y-2">
                 <p className="text-xs text-pink-500 font-medium">📖 Read this text aloud while recording:</p>
                 <p className="text-sm text-foreground leading-relaxed">
-                  {language === 'hindi' && "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं। मैंने देखा है कि बहुत सारे क्रिएटर्स सही कंटेंट बनाने में struggle करते हैं। लेकिन असल में यह इतना मुश्किल नहीं है। सबसे जरूरी बात है कि आप consistent रहें और अपने audience को हमेशा value दें।"}
-                  {language === 'english' && "Hey guys, welcome back! Today I want to share some really important tips that I have personally used. I have noticed that many creators struggle with making the right content. But actually it is not that difficult. The key is to stay consistent and always provide value to your audience."}
-                  {language === 'tamil' && "வணக்கம் நண்பர்களே! இன்று நான் உங்களுடன் சில முக்கியமான tips பகிர்ந்துகொள்ள விரும்புகிறேன். நான் பார்த்தேன், பல creators சரியான content உருவாக்குவதில் கஷ்டப்படுகிறார்கள். ஆனால் உண்மையில் அது அவ்வளவு கஷ்டமில்லை. முக்கியமான விஷயம் என்னவென்றால், நீங்கள் consistent ஆக இருக்க வேண்டும்."}
-                  {language === 'telugu' && "నమస్కారం నేస్తాలు! ఈరోజు నేను మీతో కొన్ని చాలా ముఖ్యమైన tips share చేయాలనుకుంటున్నాను. చాలా మంది creators సరైన content తయారు చేయడంలో struggle చేస్తున్నారని నేను గమనించాను. కానీ వాస్తవానికి అది అంత కష్టం కాదు. అత్యంత ముఖ్యమైన విషయం ఏమిటంటే మీరు consistent గా ఉండటం."}
-                  {language === 'malayalam' && "നമസ്കാരം സുഹൃത്തുക്കളേ! ഇന്ന് ഞാൻ നിങ്ങളുമായി ചില പ്രധാനപ്പെട്ട tips പങ്കിടാൻ ആഗ്രഹിക്കുന്നു. ഒരുപാട് creators ശരിയായ content ഉണ്ടാക്കുന്നതിൽ struggle ചെയ്യുന്നതായി ഞാൻ കണ്ടിട്ടുണ്ട്. പക്ഷേ യഥാർത്ഥത്തിൽ അത് അത്ര ബുദ്ധിമുട്ടുള്ളതല്ല. ഏറ്റവും പ്രധാനപ്പെട്ട കാര്യം consistent ആയി ഇരിക്കുക എന്നതാണ്."}
+                  {language === 'hindi' && "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं। मैंने देखा है कि बहुत सारे क्रिएटर्स सही कंटेंट बनाने में struggle करते हैं। लेकिन असल में यह इतना मुश्किल नहीं है।"}
+                  {language === 'english' && "Hey guys, welcome back! Today I want to share some really important tips that I have personally used. I have noticed that many creators struggle with making the right content. But actually it is not that difficult."}
+                  {language === 'tamil' && "வணக்கம் நண்பர்களே! இன்று நான் உங்களுடன் சில முக்கியமான tips பகிர்ந்துகொள்ள விரும்புகிறேன். நான் பார்த்தேன், பல creators சரியான content உருவாக்குவதில் கஷ்டப்படுகிறார்கள்."}
+                  {language === 'telugu' && "నమస్కారం నేస్తాలు! ఈరోజు నేను మీతో కొన్ని చాలా ముఖ్యమైన tips share చేయాలనుకుంటున్నాను. చాలా మంది creators సరైన content తయారు చేయడంలో struggle చేస్తున్నారని నేను గమనించాను."}
+                  {language === 'malayalam' && "നമസ്കാരം സുഹൃത്തുക്കളേ! ഇന്ന് ഞാൻ നിങ്ങളുമായി ചില പ്രധാനപ്പെട്ട tips പങ്കിടാൻ ആഗ്രഹിക്കുന്നു. ഒരുപാട് creators ശരിയായ content ഉണ്ടാക്കുന്നതിൽ struggle ചെയ്യുന്നതായി ഞാൻ കണ്ടിട്ടുണ്ട്."}
                 </p>
               </div>
 
