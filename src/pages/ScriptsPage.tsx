@@ -25,7 +25,6 @@ export default function ScriptsPage() {
   const [mode, setMode] = useState('full');
   const [history, setHistory] = useState<string[]>([]);
 
-  // Load history from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('script_history');
     if (saved) setHistory(JSON.parse(saved));
@@ -45,7 +44,6 @@ export default function ScriptsPage() {
     saveToHistory(topic);
     try {
       const result = await generateScript(topic, userNiche, userLanguage);
-      // Filter result based on mode
       if (mode === 'hook') setScript({ hook: result.hook });
       else if (mode === 'body') setScript({ body: result.body });
       else if (mode === 'cta') setScript({ cta: result.cta });
@@ -82,7 +80,6 @@ export default function ScriptsPage() {
         </h1>
         <p className="text-muted-foreground mt-1">
           Generate unique ready-to-film scripts from any topic
-          {userNiche && <span className="ml-1 text-pink-500">· {userNiche}</span>}
         </p>
       </div>
 
