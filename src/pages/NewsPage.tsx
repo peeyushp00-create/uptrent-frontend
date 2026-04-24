@@ -28,6 +28,19 @@ const SUGGESTED = [
   "Travel", "Food", "Tech", "Cricket", "Bollywood", "Gaming"
 ];
 
+const getTimeAgo = (dateStr: string) => {
+  if (!dateStr) return '';
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 172800) return 'Yesterday';
+  return date.toLocaleDateString();
+};
+
 export default function NewsPage() {
   const location = useLocation();
   const { user } = useAuth();
@@ -48,28 +61,22 @@ export default function NewsPage() {
     getNews()
       .then((data) => {
         const list = Array.isArray(data) ? data : data?.articles ?? data?.data ?? [];
-setArticles(list);
-if (initialQuery) {
-  const filtered = filterByQuery(list, initialQuery);
-  setFilteredArticles(filtered.length > 0 ? filtered : list);
-} else {
-  // Sort niche-related articles to top
-  if (userNiche) {
-    const nicheKeywords = userNiche.toLowerCase().split(' ');
-    const sorted = [...list].sort((a, b) => {
-      const aText = ((a.title || a.headline || '') + ' ' + (a.summary || '')).toLowerCase();
-      const bText = ((b.title || b.headline || '') + ' ' + (b.summary || '')).toLowerCase();
-      const aMatch = nicheKeywords.some(k => aText.includes(k));
-      const bMatch = nicheKeywords.some(k => bText.includes(k));
-      if (aMatch && !bMatch) return -1;
-      if (!aMatch && bMatch) return 1;
-      return 0;
-    });
-    setFilteredArticles(sorted);
-  } else {
-    setFilteredArticles(list);
-  }
-}
+        
+        // Sort by date - newest first
+        const sorted = [...list].sort((a, b) => {
+          const dateA = new Date(a.published_at || a.publishedAt || a.date || 0).getTime();
+          const dateB = new Date(b.published_at || b.publishedAt || b.date || 0).getTime();
+          return dateB - dateA;
+        });
+
+        setArticles(sorted);
+
+        if (initialQuery) {
+          const filtered = filterByQuery(sorted, initialQuery);
+          setFilteredArticles(filtered.length > 0 ? filtered : sorted);
+        } else {
+          setFilteredArticles(sorted);
+        }
       })
       .catch(() => setError("Failed to load news"))
       .finally(() => setLoading(false));
@@ -106,10 +113,7 @@ if (initialQuery) {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Newspaper className="w-6 h-6" /> News Feed
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Latest news for content creators
-          {userNiche && <span className="ml-1 text-pink-500">· {userNiche}</span>}
-        </p>
+        <p className="text-muted-foreground mt-1">Latest news for content creators</p>
       </div>
 
       {/* Search bar */}
@@ -174,15 +178,16 @@ if (initialQuery) {
             const headline = item.title || item.headline || "Untitled";
             const summary = item.summary || "";
             const source = item.sourceName || item.source || "";
-            const date = item.publishedAt || item.published_at || item.date || "";
+            const date = item.published_at || item.publishedAt || item.date || "";
             const topic = item.topicName || item.topic || item.tag || "";
+            const timeAgo = getTimeAgo(date);
 
             return (
               <motion.div
                 key={item.id || i}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: i * 0.03 }}
                 className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-colors"
               >
                 <div className="flex items-start gap-4">
@@ -220,10 +225,10 @@ if (initialQuery) {
                     </div>
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                       {source && <span className="text-xs text-muted-foreground">{source}</span>}
-                      {source && date && <span className="text-xs text-muted-foreground">·</span>}
-                      {date && (
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(date).toLocaleDateString()}
+                      {source && timeAgo && <span className="text-xs text-muted-foreground">·</span>}
+                      {timeAgo && (
+                        <span className="text-xs text-pink-500 font-medium">
+                          {timeAgo}
                         </span>
                       )}
                       {topic && (
