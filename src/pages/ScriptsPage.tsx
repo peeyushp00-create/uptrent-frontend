@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, Sparkles, Copy, Check, Clock, RefreshCw } from "lucide-react";
+import { FileText, Sparkles, Copy, Check, Clock, RefreshCw, Mic } from "lucide-react";
 import { generateScript } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -15,6 +15,7 @@ export default function ScriptsPage() {
   const { user } = useAuth();
   const userNiche = user?.user_metadata?.niche || '';
   const userLanguage = user?.user_metadata?.language || 'hindi';
+  const userVoiceStyle = user?.user_metadata?.voice_style || '';
 
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [script, setScript] = useState<any | null>(null);
@@ -43,7 +44,7 @@ export default function ScriptsPage() {
     setSelectedTopic(topic);
     saveToHistory(topic);
     try {
-      const result = await generateScript(topic, userNiche, userLanguage);
+      const result = await generateScript(topic, userNiche, userLanguage, userVoiceStyle);
       if (mode === 'hook') setScript({ hook: result.hook });
       else if (mode === 'body') setScript({ body: result.body });
       else if (mode === 'cta') setScript({ cta: result.cta });
@@ -81,6 +82,12 @@ export default function ScriptsPage() {
         <p className="text-muted-foreground mt-1">
           Generate unique ready-to-film scripts from any topic
         </p>
+        {userVoiceStyle && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-green-400">
+            <Mic className="w-3 h-3" />
+            Voice style active — scripts personalized to your speaking style
+          </div>
+        )}
       </div>
 
       {/* Mode selector */}
