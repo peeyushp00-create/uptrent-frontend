@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Settings, User, Target, Globe, Palette, Save, Loader2, Check, Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 const NICHES = [
@@ -118,12 +119,7 @@ export default function SettingsPage() {
   const analyzeVoiceStyle = async (transcript: string) => {
     setAnalyzingVoice(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/scripts/analyze-voice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript })
-      });
-      const data = await response.json();
+      const data = await analyzeVoiceStyleRequest(transcript);
       setVoiceStyle(data.style);
     } catch (err) {
       console.error('Voice analysis failed');

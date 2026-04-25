@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Mic, MicOff, Check } from "lucide-react";
 
@@ -105,12 +106,7 @@ export default function SignupPage() {
   const analyzeVoiceStyle = async (transcript: string) => {
     setAnalyzingVoice(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/scripts/analyze-voice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript })
-      });
-      const data = await response.json();
+      const data = await analyzeVoiceStyleRequest(transcript);
       setVoiceStyle(data.style);
     } catch (err) {
       console.error('Voice analysis failed');
