@@ -14,9 +14,11 @@ const NICHES = [
 const LANGUAGES = [
   { value: "english", label: "English" },
   { value: "hindi", label: "Hindi" },
+  { value: "hinglish", label: "Hinglish (Hindi + English)" },
   { value: "tamil", label: "Tamil" },
   { value: "telugu", label: "Telugu" },
   { value: "malayalam", label: "Malayalam" },
+  { value: "manglish", label: "Manglish (Malayalam + English)" },
 ];
 
 const STYLES = [
@@ -161,6 +163,8 @@ export default function SettingsPage() {
     tamil: "வணக்கம் நண்பர்களே! இன்று நான் உங்களுடன் சில முக்கியமான tips பகிர்ந்துகொள்ள விரும்புகிறேன். நான் பார்த்தேன், பல creators சரியான content உருவாக்குவதில் கஷ்டப்படுகிறார்கள்.",
     telugu: "నమస్కారం నేస్తాలు! ఈరోజు నేను మీతో కొన్ని చాలా ముఖ్యమైన tips share చేయాలనుకుంటున్నాను. చాలా మంది creators సరైన content తయారు చేయడంలో struggle చేస్తున్నారని నేను గమనించాను.",
     malayalam: "നമസ്കാരം സുഹൃത്തുക്കളേ! ഇന്ന് ഞാൻ നിങ്ങളുമായി ചില പ്രധാനപ്പെട്ട tips പങ്കിടാൻ ആഗ്രഹിക്കുന്നു. ഒരുപാട് creators ശരിയായ content ഉണ്ടാക്കുന്നതിൽ struggle ചെയ്യുന്നതായി ഞാൻ കണ്ടിട്ടുണ്ട്.",
+    hinglish: "Hey guys, welcome back! Aaj main aapke saath kuch bahut important tips share karna chahta hoon. Maine dekha hai ki bahut saare creators struggle karte hain. But actually it's not that difficult!",
+    manglish: "Hello guys! Innu njaan ningalude koodey share cheyyaan pokunnathu chila important tips aanu. Kurachu creators content undakkaan struggle cheyyunnathu. But actually athu athra difficult alla!",
   };
 
   return (
