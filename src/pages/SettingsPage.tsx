@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Settings, User, Target, Globe, Palette, Save, Loader2, Check, Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,8 +38,8 @@ const PLATFORMS = [
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [voiceSaving, setVoiceSaving] = useState(false);
+  const [voiceSaved, setVoiceSaved] = useState(false);
   const [name, setName] = useState(user?.user_metadata?.full_name || '');
   const [niches, setNiches] = useState<string[]>(
     user?.user_metadata?.niches ||
@@ -56,11 +56,40 @@ export default function SettingsPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<any>(null);
+  const autoSaveTimer = useRef<any>(null);
+
+  // Auto-save profile settings
+  const autoSave = useCallback(async (updates: Record<string, any>) => {
+    clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      await supabase.auth.updateUser({ data: updates });
+    }, 1000);
+  }, []);
+
+  const handleNameChange = (val: string) => {
+    setName(val);
+    autoSave({ full_name: val, niche: niches[0] || '', niches, language, style, platform });
+  };
 
   const toggleNiche = (n: string) => {
-    setNiches(prev =>
-      prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]
-    );
+    const updated = niches.includes(n) ? niches.filter(x => x !== n) : [...niches, n];
+    setNiches(updated);
+    autoSave({ full_name: name, niche: updated[0] || '', niches: updated, language, style, platform });
+  };
+
+  const handleLanguageChange = (val: string) => {
+    setLanguage(val);
+    autoSave({ full_name: name, niche: niches[0] || '', niches, language: val, style, platform });
+  };
+
+  const handleStyleChange = (val: string) => {
+    setStyle(val);
+    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style: val, platform });
+  };
+
+  const handlePlatformChange = (val: string) => {
+    setPlatform(val);
+    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style, platform: val });
   };
 
   const startRecording = () => {
@@ -75,8 +104,8 @@ export default function SettingsPage() {
     recognition.interimResults = true;
     recognition.lang = language === 'tamil' ? 'ta-IN' :
                        language === 'telugu' ? 'te-IN' :
-                       language === 'malayalam' ? 'ml-IN' :
-                       language === 'hindi' ? 'hi-IN' : 'en-IN';
+                       language === 'malayalam' || language === 'manglish' ? 'ml-IN' :
+                       language === 'hindi' || language === 'hinglish' ? 'hi-IN' : 'en-IN';
 
     let finalTranscript = '';
 
@@ -106,17 +135,13 @@ export default function SettingsPage() {
   };
 
   const stopRecording = async () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
+    if (recognitionRef.current) recognitionRef.current.stop();
     clearInterval(timerRef.current);
     setIsRecording(false);
-    if (voiceTranscript) {
-      await analyzeVoiceStyle(voiceTranscript);
-    }
+    if (voiceTranscript) await analyzeVoice(voiceTranscript);
   };
 
-  const analyzeVoiceStyle = async (transcript: string) => {
+  const analyzeVoice = async (transcript: string) => {
     setAnalyzingVoice(true);
     try {
       const data = await analyzeVoiceStyleRequest(transcript);
@@ -128,13 +153,13 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSave = async () => {
-    setSaving(true);
+  const handleSaveVoice = async () => {
+    setVoiceSaving(true);
     const { error } = await supabase.auth.updateUser({
       data: {
         full_name: name,
         niche: niches[0] || '',
-        niches: niches,
+        niches,
         language,
         style,
         platform,
@@ -142,10 +167,10 @@ export default function SettingsPage() {
         voice_style: voiceStyle
       }
     });
-    setSaving(false);
+    setVoiceSaving(false);
     if (!error) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setVoiceSaved(true);
+      setTimeout(() => setVoiceSaved(false), 3000);
     }
   };
 
@@ -175,7 +200,7 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Settings className="w-6 h-6" /> Settings
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Customize your Uptrent experience</p>
+          <p className="text-sm text-muted-foreground mt-1">Changes are saved automatically</p>
         </div>
 
         {/* Profile Section */}
@@ -198,7 +223,7 @@ export default function SettingsPage() {
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => handleNameChange(e.target.value)}
               placeholder="Your full name"
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
             />
@@ -248,7 +273,7 @@ export default function SettingsPage() {
             {PLATFORMS.map((p) => (
               <button
                 key={p.value}
-                onClick={() => setPlatform(p.value)}
+                onClick={() => handlePlatformChange(p.value)}
                 className={`flex-1 py-3 rounded-xl border text-sm font-medium transition-all ${
                   platform === p.value ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                 }`}
@@ -270,7 +295,7 @@ export default function SettingsPage() {
             {LANGUAGES.map((l) => (
               <button
                 key={l.value}
-                onClick={() => setLanguage(l.value)}
+                onClick={() => handleLanguageChange(l.value)}
                 className={`w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left ${
                   language === l.value ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                 }`}
@@ -292,7 +317,7 @@ export default function SettingsPage() {
             {STYLES.map((s) => (
               <button
                 key={s.value}
-                onClick={() => setStyle(s.value)}
+                onClick={() => handleStyleChange(s.value)}
                 className={`w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left ${
                   style === s.value ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                 }`}
@@ -352,23 +377,25 @@ export default function SettingsPage() {
               <><Mic className="w-4 h-4" /> {voiceStyle ? 'Re-record Voice' : 'Record Your Voice'}</>
             )}
           </button>
-        </div>
 
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-          style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
-        >
-          {saving ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-          ) : saved ? (
-            <><Check className="w-4 h-4" /> Saved!</>
-          ) : (
-            <><Save className="w-4 h-4" /> Save Changes</>
+          {/* Save Voice Button */}
+          {voiceStyle && (
+            <button
+              onClick={handleSaveVoice}
+              disabled={voiceSaving}
+              className="w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
+            >
+              {voiceSaving ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+              ) : voiceSaved ? (
+                <><Check className="w-4 h-4" /> Voice Style Saved!</>
+              ) : (
+                <><Save className="w-4 h-4" /> Save Voice Style</>
+              )}
+            </button>
           )}
-        </button>
+        </div>
 
       </motion.div>
     </div>
