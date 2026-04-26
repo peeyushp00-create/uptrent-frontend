@@ -149,23 +149,23 @@ export default function NewsPage() {
   };
 
   const handleSearch = (q: string) => {
-    setQuery(q);
-    setSearchInput(q);
-    let base = articles;
-    if (!q.trim()) {
-      setFilteredArticles(filterByDate(base, dateFilter));
-      return;
-    }
-    const filtered = filterByQuery(base, q);
-    setFilteredArticles(filterByDate(filtered.length > 0 ? filtered : base, dateFilter));
-  };
+  setQuery(q);
+  setSearchInput(q);
+  if (!q.trim()) {
+    setFilteredArticles(filterByDate(articles, dateFilter));
+    return;
+  }
+  const dateFiltered = filterByDate(articles, dateFilter);
+  const filtered = filterByQuery(dateFiltered, q);
+  setFilteredArticles(filtered.length > 0 ? filtered : dateFiltered);
+};
 
   const handleDateFilter = (filter: string) => {
-    setDateFilter(filter);
-    let base = query ? filterByQuery(articles, query) : articles;
-    setFilteredArticles(filterByDate(base, filter));
-  };
-
+  setDateFilter(filter);
+  const dateFiltered = filterByDate(articles, filter);
+  const base = query ? filterByQuery(dateFiltered, query) : dateFiltered;
+  setFilteredArticles(base.length > 0 ? base : dateFiltered);
+};
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <div className="mb-6">
