@@ -24,8 +24,8 @@ interface NewsArticle {
 }
 
 const SUGGESTED = [
-  "Fitness", "Motivation", "Stock Market", "Crypto",
-  "Travel", "Food", "Tech", "Cricket", "Bollywood", "Gaming"
+  "Fitness", "Motivation", "Crypto", "Travel", "Food",
+  "Tech", "Cricket", "Bollywood", "Gaming", "Finance"
 ];
 
 const DATE_FILTERS = [
@@ -34,6 +34,46 @@ const DATE_FILTERS = [
   { label: "Last Week", value: "week" },
   { label: "All", value: "all" },
 ];
+
+// Micro niche map — only used as fallback when no exact topic match
+const NICHE_MICRO_MAP: Record<string, string[]> = {
+  finance: ["stock market", "investing", "mutual funds", "sip", "budgeting", "saving", "credit card", "debt", "financial independence", "crypto", "real estate", "tax", "insurance", "financial literacy", "income tax", "personal finance", "sensex", "nifty", "nse", "bse"],
+  "personal finance": ["budgeting", "saving", "credit card", "debt", "fire", "side hustle", "passive income", "tax saving", "insurance"],
+  "stock market": ["sensex", "nifty", "nse", "bse", "investing", "stocks", "equity", "trading", "ipo"],
+  crypto: ["bitcoin", "ethereum", "web3", "blockchain", "defi", "nft", "cryptocurrency"],
+  "mutual funds": ["sip", "returns", "equity fund", "debt fund", "elss", "index fund"],
+  fitness: ["home workout", "gym workout", "weight loss", "muscle building", "bodybuilding", "pilates", "calisthenics", "running", "marathon", "hiit", "cycling", "crossfit", "mobility", "stretching", "transformation", "zumba"],
+  "weight loss": ["diet", "calorie", "fat loss", "obesity"],
+  yoga: ["meditation", "wellness", "mindfulness", "pranayama", "flexibility", "asana"],
+  tech: ["artificial intelligence", "chatgpt", "gadgets", "smartphone", "coding", "software", "cybersecurity", "app", "laptop", "smart home", "wearable", "electric vehicle", "ev", "space"],
+  "ai news": ["chatgpt", "claude", "artificial intelligence", "machine learning", "deep learning", "llm", "openai", "google ai", "ai tools"],
+  business: ["startup", "entrepreneur", "freelancing", "ecommerce", "dropshipping", "digital marketing", "branding", "linkedin", "productivity", "leadership", "networking", "bootstrapping", "founder"],
+  cricket: ["test match", "odi", "t20", "bcci", "kohli", "rohit", "bumrah", "india cricket"],
+  ipl: ["ipl 2026", "ipl match", "ipl results", "csk", "mi", "rcb", "kkr", "srh", "dc", "lsg", "pbks", "gt"],
+  bollywood: ["movie", "film", "actor", "actress", "netflix", "ott", "prime video", "celebrity", "box office", "trailer", "hindi film", "releasing"],
+  travel: ["budget travel", "luxury travel", "solo travel", "road trip", "backpacking", "hidden gems", "travel hacks", "hotel", "resort", "adventure travel", "pilgrimage", "beach", "mountain", "trekking", "visa"],
+  food: ["recipe", "cooking", "meal prep", "baking", "dessert", "healthy eating", "vegan", "keto", "street food", "restaurant", "indian cuisine", "comfort food", "snack", "smoothie"],
+  gaming: ["mobile gaming", "bgmi", "free fire", "esports", "game review", "gaming setup", "pc gaming", "console", "pubg"],
+  education: ["upsc", "jee", "neet", "cat", "mba", "exam", "college", "school", "memory", "book summary", "current affairs", "scholarship"],
+  fashion: ["ootd", "street style", "thrift", "luxury fashion", "sustainable fashion", "mens fashion", "capsule wardrobe", "budget fashion", "vintage", "ethnic wear", "saree", "athleisure"],
+  motivation: ["success", "mindset", "discipline", "consistency", "habit", "morning routine", "goal setting", "stoicism", "personal growth", "confidence"],
+  skincare: ["skincare routine", "makeup", "drugstore beauty", "luxury beauty", "glass skin", "k-beauty", "acne", "anti-aging", "natural beauty", "nail art", "grwm"],
+  comedy: ["memes", "relatable", "pov", "sketch", "parody", "humour", "funny", "sarcasm", "roast"],
+  "real estate": ["property", "home loan", "rera", "property investment", "rental", "affordable housing", "luxury real estate", "nri property", "smart city", "vastu", "plot", "farmhouse"],
+  jobs: ["career", "employment", "resume", "interview", "salary negotiation", "internship", "work life balance", "remote work", "switching careers", "freshers", "government job", "freelance"],
+};
+
+const expandQueryWithMicroNiches = (q: string): string[] => {
+  const q_lower = q.toLowerCase().trim();
+  const terms = [q_lower];
+  for (const [niche, microNiches] of Object.entries(NICHE_MICRO_MAP)) {
+    if (niche === q_lower || niche.includes(q_lower) || q_lower.includes(niche)) {
+      terms.push(...microNiches);
+      break;
+    }
+  }
+  return [...new Set(terms)];
+};
 
 const getCategoryImage = (headline: string) => {
   const h = headline.toLowerCase();
@@ -112,60 +152,48 @@ export default function NewsPage() {
         });
         setArticles(sorted);
         if (initialQuery) {
-          cconst filterByQuery = (list: NewsArticle[], q: string) => {
-  if (!q.trim()) return list;
-  const q_lower = q.toLowerCase().trim();
-  const expandedTerms = expandQueryWithMicroNiches(q);
+          const filtered = filterByQuery(sorted, initialQuery);
+          setFilteredArticles(filtered.length > 0 ? filtered : sorted);
+        } else {
+          setFilteredArticles(sorted);
+        }
+      })
+      .catch(() => setError("Failed to load news"))
+      .finally(() => setLoading(false));
+  }, []);
 
-  // ✅ STEP 1: Get exact topic matches first (e.g. topic="Fitness" for "Fitness" search)
-  const exactTopicMatches = list.filter(item => {
-    const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
-    return topic === q_lower || topic.replace(/\s/g, '') === q_lower.replace(/\s/g, '');
-  });
+  const filterByQuery = (list: NewsArticle[], q: string) => {
+    if (!q.trim()) return list;
+    const q_lower = q.toLowerCase().trim();
 
-  // ✅ STEP 2: If we have exact topic matches, return only those
-  if (exactTopicMatches.length > 0) return exactTopicMatches;
-
-  // ✅ STEP 3: Otherwise fall back to micro niche expanded search
-  return list.filter((item) => {
-    const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
-    const text = (
-      (item.title || item.headline || '') + ' ' +
-      (item.summary || '')
-    ).toLowerCase();
-    const fullText = topic + ' ' + text;
-
-    return expandedTerms.some(term => {
-      if (term.length <= 2) {
-        const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
-        return wordBoundary.test(fullText);
-      }
-      return fullText.includes(term);
+    // ✅ STEP 1: Exact topic match — "Fitness" only shows topic="Fitness" articles
+    const exactTopicMatches = list.filter(item => {
+      const topic = (item.topicName || item.topic || item.tag || '').toLowerCase().trim();
+      return topic === q_lower || topic.replace(/\s/g, '') === q_lower.replace(/\s/g, '');
     });
-  });
-};
 
-  return list.filter((item) => {
-    const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
-    const text = (
-      (item.title || item.headline || '') + ' ' +
-      (item.summary || '')
-    ).toLowerCase();
-    const fullText = topic + ' ' + text;
+    // ✅ STEP 2: If exact topic matches found, return ONLY those
+    if (exactTopicMatches.length > 0) return exactTopicMatches;
 
-    // ✅ Direct topic match first — "Bollywood" search matches topic="Bollywood"
-    if (topic.includes(q_lower) || q_lower.includes(topic)) return true;
+    // ✅ STEP 3: Fallback — expand to micro niches and search text
+    const expandedTerms = expandQueryWithMicroNiches(q);
+    return list.filter((item) => {
+      const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
+      const text = (
+        (item.title || item.headline || '') + ' ' +
+        (item.summary || '')
+      ).toLowerCase();
+      const fullText = topic + ' ' + text;
 
-    // ✅ Then check expanded micro niche terms
-    return expandedTerms.some(term => {
-      if (term.length <= 2) {
-        const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
-        return wordBoundary.test(fullText);
-      }
-      return fullText.includes(term);
+      return expandedTerms.some(term => {
+        if (term.length <= 2) {
+          const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
+          return wordBoundary.test(fullText);
+        }
+        return fullText.includes(term);
+      });
     });
-  });
-};
+  };
 
   const filterByDate = (list: NewsArticle[], filter: string) => {
     if (filter === 'all') return list;
@@ -179,28 +207,24 @@ export default function NewsPage() {
     });
   };
 
-  // ✅ FIXED: removed the duplicate broken block that had orphaned code after the closing brace
+  const applyAllFilters = (list: NewsArticle[], q: string, date: string) => {
+    let result = filterByDate(list, date);
+    if (q.trim()) {
+      const searched = filterByQuery(result, q);
+      result = searched.length > 0 ? searched : result;
+    }
+    return result;
+  };
+
   const handleSearch = (q: string) => {
     setQuery(q);
     setSearchInput(q);
-    const dateFiltered = filterByDate(articles, dateFilter);
-    if (!q.trim()) {
-      setFilteredArticles(dateFiltered);
-      return;
-    }
-    const filtered = filterByQuery(dateFiltered, q);
-    setFilteredArticles(filtered.length > 0 ? filtered : dateFiltered);
+    setFilteredArticles(applyAllFilters(articles, q, dateFilter));
   };
 
   const handleDateFilter = (filter: string) => {
     setDateFilter(filter);
-    const dateFiltered = filterByDate(articles, filter);
-    if (query) {
-      const filtered = filterByQuery(dateFiltered, query);
-      setFilteredArticles(filtered);
-    } else {
-      setFilteredArticles(dateFiltered);
-    }
+    setFilteredArticles(applyAllFilters(articles, query, filter));
   };
 
   return (
@@ -219,7 +243,7 @@ export default function NewsPage() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch(searchInput)}
-          placeholder="Search news (e.g. Fitness, Cricket, Tech)..."
+          placeholder="Search news (e.g. Finance, Fitness, Cricket)..."
           className="flex-1 px-5 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
         />
         <button
@@ -345,7 +369,11 @@ export default function NewsPage() {
                         <span className="text-xs text-pink-500 font-medium">{timeAgo}</span>
                       )}
                       {topic && (
-                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-0">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-primary/10 text-primary border-0 cursor-pointer hover:bg-primary/20"
+                          onClick={() => handleSearch(topic)}
+                        >
                           {topic}
                         </Badge>
                       )}
