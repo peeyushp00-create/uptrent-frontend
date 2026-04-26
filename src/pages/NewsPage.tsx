@@ -157,14 +157,22 @@ export default function NewsPage() {
   }
   const dateFiltered = filterByDate(articles, dateFilter);
   const filtered = filterByQuery(dateFiltered, q);
+  setFilteredArticles(filtered);
+};
+  const dateFiltered = filterByDate(articles, dateFilter);
+  const filtered = filterByQuery(dateFiltered, q);
   setFilteredArticles(filtered.length > 0 ? filtered : dateFiltered);
 };
 
   const handleDateFilter = (filter: string) => {
   setDateFilter(filter);
   const dateFiltered = filterByDate(articles, filter);
-  const base = query ? filterByQuery(dateFiltered, query) : dateFiltered;
-  setFilteredArticles(base.length > 0 ? base : dateFiltered);
+  if (query) {
+    const filtered = filterByQuery(dateFiltered, query);
+    setFilteredArticles(filtered);
+  } else {
+    setFilteredArticles(dateFiltered);
+  }
 };
   return (
     <div className="p-6 max-w-3xl mx-auto">
