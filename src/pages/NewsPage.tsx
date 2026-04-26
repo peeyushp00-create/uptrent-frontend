@@ -164,12 +164,15 @@ export default function NewsPage() {
       ).toLowerCase();
 
       return terms.every(term => {
-        // Match topic exactly first (e.g. "ai" matches "AINews" topic)
-        if (topic.includes(term)) return true;
-        // Match whole words only to avoid partial matches
-        // e.g. "ai" won't match "retail" or "derivatives"
-        const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
-        return wordBoundary.test(text);
+        // Match topic first (e.g. "ai" matches "AINews")
+        if (topic.toLowerCase().includes(term)) return true;
+        // For short terms (2 chars or less), use word boundary to avoid false matches
+        // For longer terms, use simple includes for better recall
+        if (term.length <= 2) {
+          const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
+          return wordBoundary.test(text);
+        }
+        return text.includes(term);
       });
     });
   };
@@ -274,23 +277,7 @@ export default function NewsPage() {
         ))}
       </div>
 
-      {/* ✅ Topic filter scrollable bar */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
-        {TOPIC_FILTERS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => handleTopicFilter(t.value)}
-            className={`px-4 py-2 rounded-full text-sm font-medium border whitespace-nowrap transition-all ${
-              topicFilter === t.value
-                ? "text-white border-transparent"
-                : "border-border text-muted-foreground hover:text-foreground"
-            }`}
-            style={topicFilter === t.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+
 
       {/* Suggested chips — only show when no topic or query selected */}
       {!query && !topicFilter && (
