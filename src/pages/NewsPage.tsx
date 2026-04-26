@@ -122,19 +122,32 @@ export default function NewsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filterByQuery = (list: NewsArticle[], q: string) => {
-    if (!q.trim()) return list;
-    const q_lower = q.toLowerCase();
-    const terms = q_lower.split(' ');
-    return list.filter((item) => {
-      const text = (
-        (item.title || item.headline || '') + ' ' +
-        (item.summary || '') + ' ' +
-        (item.topicName || item.topic || item.tag || '')
-      ).toLowerCase();
-      return terms.some(term => text.includes(term));
+ const filterByQuery = (list: NewsArticle[], q: string) => {
+  if (!q.trim()) return list;
+  const q_lower = q.toLowerCase().trim();
+  const expandedTerms = expandQueryWithMicroNiches(q);
+
+  return list.filter((item) => {
+    const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
+    const text = (
+      (item.title || item.headline || '') + ' ' +
+      (item.summary || '')
+    ).toLowerCase();
+    const fullText = topic + ' ' + text;
+
+    // ✅ Direct topic match first — "Bollywood" search matches topic="Bollywood"
+    if (topic.includes(q_lower) || q_lower.includes(topic)) return true;
+
+    // ✅ Then check expanded micro niche terms
+    return expandedTerms.some(term => {
+      if (term.length <= 2) {
+        const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
+        return wordBoundary.test(fullText);
+      }
+      return fullText.includes(term);
     });
-  };
+  });
+};
 
   const filterByDate = (list: NewsArticle[], filter: string) => {
     if (filter === 'all') return list;
