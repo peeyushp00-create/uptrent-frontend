@@ -148,32 +148,30 @@ export default function NewsPage() {
     });
   };
 
+  // ✅ FIXED: removed the duplicate broken block that had orphaned code after the closing brace
   const handleSearch = (q: string) => {
-  setQuery(q);
-  setSearchInput(q);
-  if (!q.trim()) {
-    setFilteredArticles(filterByDate(articles, dateFilter));
-    return;
-  }
-  const dateFiltered = filterByDate(articles, dateFilter);
-  const filtered = filterByQuery(dateFiltered, q);
-  setFilteredArticles(filtered);
-};
-  const dateFiltered = filterByDate(articles, dateFilter);
-  const filtered = filterByQuery(dateFiltered, q);
-  setFilteredArticles(filtered.length > 0 ? filtered : dateFiltered);
-};
+    setQuery(q);
+    setSearchInput(q);
+    const dateFiltered = filterByDate(articles, dateFilter);
+    if (!q.trim()) {
+      setFilteredArticles(dateFiltered);
+      return;
+    }
+    const filtered = filterByQuery(dateFiltered, q);
+    setFilteredArticles(filtered.length > 0 ? filtered : dateFiltered);
+  };
 
   const handleDateFilter = (filter: string) => {
-  setDateFilter(filter);
-  const dateFiltered = filterByDate(articles, filter);
-  if (query) {
-    const filtered = filterByQuery(dateFiltered, query);
-    setFilteredArticles(filtered);
-  } else {
-    setFilteredArticles(dateFiltered);
-  }
-};
+    setDateFilter(filter);
+    const dateFiltered = filterByDate(articles, filter);
+    if (query) {
+      const filtered = filterByQuery(dateFiltered, query);
+      setFilteredArticles(filtered);
+    } else {
+      setFilteredArticles(dateFiltered);
+    }
+  };
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <div className="mb-6">
@@ -266,7 +264,7 @@ export default function NewsPage() {
             const date = item.published_at || item.publishedAt || item.date || "";
             const topic = item.topicName || item.topic || item.tag || "";
             const timeAgo = getTimeAgo(date);
-           const thumbnail = item.image_url;
+            const thumbnail = item.image_url;
 
             return (
               <motion.div
@@ -278,15 +276,15 @@ export default function NewsPage() {
               >
                 <div className="flex items-start gap-4">
                   {thumbnail && (
-  <img
-    src={thumbnail}
-    alt={headline}
-    className="w-24 h-20 rounded-lg object-cover shrink-0"
-    onError={(e) => {
-      (e.target as HTMLImageElement).style.display = 'none';
-    }}
-  />
-)}
+                    <img
+                      src={thumbnail}
+                      alt={headline}
+                      className="w-24 h-20 rounded-lg object-cover shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <h3 className="font-medium text-foreground text-sm leading-snug">{headline}</h3>
