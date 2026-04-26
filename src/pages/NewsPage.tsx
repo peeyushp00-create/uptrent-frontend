@@ -112,20 +112,38 @@ export default function NewsPage() {
         });
         setArticles(sorted);
         if (initialQuery) {
-          const filtered = filterByQuery(sorted, initialQuery);
-          setFilteredArticles(filtered.length > 0 ? filtered : sorted);
-        } else {
-          setFilteredArticles(sorted);
-        }
-      })
-      .catch(() => setError("Failed to load news"))
-      .finally(() => setLoading(false));
-  }, []);
-
- const filterByQuery = (list: NewsArticle[], q: string) => {
+          cconst filterByQuery = (list: NewsArticle[], q: string) => {
   if (!q.trim()) return list;
   const q_lower = q.toLowerCase().trim();
   const expandedTerms = expandQueryWithMicroNiches(q);
+
+  // ✅ STEP 1: Get exact topic matches first (e.g. topic="Fitness" for "Fitness" search)
+  const exactTopicMatches = list.filter(item => {
+    const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
+    return topic === q_lower || topic.replace(/\s/g, '') === q_lower.replace(/\s/g, '');
+  });
+
+  // ✅ STEP 2: If we have exact topic matches, return only those
+  if (exactTopicMatches.length > 0) return exactTopicMatches;
+
+  // ✅ STEP 3: Otherwise fall back to micro niche expanded search
+  return list.filter((item) => {
+    const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
+    const text = (
+      (item.title || item.headline || '') + ' ' +
+      (item.summary || '')
+    ).toLowerCase();
+    const fullText = topic + ' ' + text;
+
+    return expandedTerms.some(term => {
+      if (term.length <= 2) {
+        const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
+        return wordBoundary.test(fullText);
+      }
+      return fullText.includes(term);
+    });
+  });
+};
 
   return list.filter((item) => {
     const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
