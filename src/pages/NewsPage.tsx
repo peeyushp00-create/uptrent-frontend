@@ -28,6 +28,35 @@ const SUGGESTED = [
   "Travel", "Food", "Tech", "Cricket", "Bollywood", "Gaming"
 ];
 
+// ✅ Topic filter tabs matching backend niche keys
+const TOPIC_FILTERS = [
+  { label: "All", value: "" },
+  { label: "Finance", value: "Finance" },
+  { label: "Stock Market", value: "StockMarket" },
+  { label: "Crypto", value: "Crypto" },
+  { label: "Mutual Funds", value: "MutualFunds" },
+  { label: "Personal Finance", value: "PersonalFinance" },
+  { label: "Tech", value: "Tech" },
+  { label: "AI", value: "AINews" },
+  { label: "Business", value: "Business" },
+  { label: "Cricket", value: "Cricket" },
+  { label: "IPL", value: "IPL" },
+  { label: "Bollywood", value: "Bollywood" },
+  { label: "Fitness", value: "Fitness" },
+  { label: "Weight Loss", value: "WeightLoss" },
+  { label: "Travel", value: "Travel" },
+  { label: "Food", value: "Food" },
+  { label: "Gaming", value: "Gaming" },
+  { label: "Education", value: "Education" },
+  { label: "Fashion", value: "Fashion" },
+  { label: "Motivation", value: "Motivation" },
+  { label: "Skincare", value: "Skincare" },
+  { label: "Yoga", value: "Yoga" },
+  { label: "Comedy", value: "Comedy" },
+  { label: "Real Estate", value: "RealEstate" },
+  { label: "Jobs", value: "Jobs" },
+];
+
 const DATE_FILTERS = [
   { label: "Today", value: "today" },
   { label: "Yesterday", value: "yesterday" },
@@ -98,6 +127,7 @@ export default function NewsPage() {
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [dateFilter, setDateFilter] = useState("all");
+  const [topicFilter, setTopicFilter] = useState(""); // ✅ new topic filter state
 
   useEffect(() => {
     setLoading(true);
@@ -124,15 +154,23 @@ export default function NewsPage() {
 
   const filterByQuery = (list: NewsArticle[], q: string) => {
     if (!q.trim()) return list;
-    const q_lower = q.toLowerCase();
-    const terms = q_lower.split(' ');
+    const q_lower = q.toLowerCase().trim();
+    const terms = q_lower.split(' ').filter(Boolean);
     return list.filter((item) => {
+      const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
       const text = (
         (item.title || item.headline || '') + ' ' +
-        (item.summary || '') + ' ' +
-        (item.topicName || item.topic || item.tag || '')
+        (item.summary || '')
       ).toLowerCase();
-      return terms.some(term => text.includes(term));
+
+      return terms.every(term => {
+        // Match topic exactly first (e.g. "ai" matches "AINews" topic)
+        if (topic.includes(term)) return true;
+        // Match whole words only to avoid partial matches
+        // e.g. "ai" won't match "retail" or "derivatives"
+        const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
+        return wordBoundary.test(text);
+      });
     });
   };
 
@@ -148,28 +186,45 @@ export default function NewsPage() {
     });
   };
 
-  // ✅ FIXED: removed the duplicate broken block that had orphaned code after the closing brace
+  // ✅ Filter by topic
+  const filterByTopic = (list: NewsArticle[], topic: string) => {
+    if (!topic) return list;
+    return list.filter(item => (item.topic || item.topicName || item.tag || '') === topic);
+  };
+
+  // ✅ Apply all filters together
+  const applyAllFilters = (
+    list: NewsArticle[],
+    q: string,
+    date: string,
+    topic: string
+  ) => {
+    let result = filterByDate(list, date);
+    result = filterByTopic(result, topic);
+    if (q.trim()) {
+      const searched = filterByQuery(result, q);
+      result = searched.length > 0 ? searched : result;
+    }
+    return result;
+  };
+
   const handleSearch = (q: string) => {
     setQuery(q);
     setSearchInput(q);
-    const dateFiltered = filterByDate(articles, dateFilter);
-    if (!q.trim()) {
-      setFilteredArticles(dateFiltered);
-      return;
-    }
-    const filtered = filterByQuery(dateFiltered, q);
-    setFilteredArticles(filtered.length > 0 ? filtered : dateFiltered);
+    setFilteredArticles(applyAllFilters(articles, q, dateFilter, topicFilter));
   };
 
   const handleDateFilter = (filter: string) => {
     setDateFilter(filter);
-    const dateFiltered = filterByDate(articles, filter);
-    if (query) {
-      const filtered = filterByQuery(dateFiltered, query);
-      setFilteredArticles(filtered);
-    } else {
-      setFilteredArticles(dateFiltered);
-    }
+    setFilteredArticles(applyAllFilters(articles, query, filter, topicFilter));
+  };
+
+  // ✅ Handle topic filter click
+  const handleTopicFilter = (topic: string) => {
+    setTopicFilter(topic);
+    setQuery("");
+    setSearchInput("");
+    setFilteredArticles(applyAllFilters(articles, "", dateFilter, topic));
   };
 
   return (
@@ -219,8 +274,26 @@ export default function NewsPage() {
         ))}
       </div>
 
-      {/* Suggested chips */}
-      {!query && (
+      {/* ✅ Topic filter scrollable bar */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+        {TOPIC_FILTERS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => handleTopicFilter(t.value)}
+            className={`px-4 py-2 rounded-full text-sm font-medium border whitespace-nowrap transition-all ${
+              topicFilter === t.value
+                ? "text-white border-transparent"
+                : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+            style={topicFilter === t.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Suggested chips — only show when no topic or query selected */}
+      {!query && !topicFilter && (
         <div className="flex flex-wrap gap-2 mb-6">
           <p className="w-full text-xs text-muted-foreground mb-1">Try searching:</p>
           {SUGGESTED.map((s) => (
@@ -238,7 +311,9 @@ export default function NewsPage() {
       {/* Results count */}
       {!loading && (
         <p className="text-xs text-muted-foreground mb-4">
-          {filteredArticles.length} articles {query ? `for "${query}"` : ''}
+          {filteredArticles.length} articles
+          {topicFilter ? ` in "${TOPIC_FILTERS.find(t => t.value === topicFilter)?.label}"` : ''}
+          {query ? ` for "${query}"` : ''}
         </p>
       )}
 
@@ -250,7 +325,7 @@ export default function NewsPage() {
       {error && <div className="text-center py-16 text-red-400">{error}</div>}
       {!loading && !error && filteredArticles.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
-          <p>No news found {query ? `for "${query}"` : `for ${dateFilter}`}</p>
+          <p>No news found {query ? `for "${query}"` : topicFilter ? `in "${topicFilter}"` : `for ${dateFilter}`}</p>
           <p className="text-xs mt-1">Try a different filter or search term</p>
         </div>
       )}
@@ -314,7 +389,11 @@ export default function NewsPage() {
                         <span className="text-xs text-pink-500 font-medium">{timeAgo}</span>
                       )}
                       {topic && (
-                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-0">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-primary/10 text-primary border-0 cursor-pointer hover:bg-primary/20"
+                          onClick={() => handleTopicFilter(topic)}
+                        >
                           {topic}
                         </Badge>
                       )}
