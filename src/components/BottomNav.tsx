@@ -1,7 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, TrendingUp, Newspaper, FileText, Settings } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
