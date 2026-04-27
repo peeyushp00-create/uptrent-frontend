@@ -35,44 +35,34 @@ const DATE_FILTERS = [
   { label: "All", value: "all" },
 ];
 
-// Micro niche map — only used as fallback when no exact topic match
-const NICHE_MICRO_MAP: Record<string, string[]> = {
-  finance: ["stock market", "investing", "mutual funds", "sip", "budgeting", "saving", "credit card", "debt", "financial independence", "crypto", "real estate", "tax", "insurance", "financial literacy", "income tax", "personal finance", "sensex", "nifty", "nse", "bse"],
-  "personal finance": ["budgeting", "saving", "credit card", "debt", "fire", "side hustle", "passive income", "tax saving", "insurance"],
-  "stock market": ["sensex", "nifty", "nse", "bse", "investing", "stocks", "equity", "trading", "ipo"],
-  crypto: ["bitcoin", "ethereum", "web3", "blockchain", "defi", "nft", "cryptocurrency"],
-  "mutual funds": ["sip", "returns", "equity fund", "debt fund", "elss", "index fund"],
-  fitness: ["home workout", "gym workout", "weight loss", "muscle building", "bodybuilding", "pilates", "calisthenics", "running", "marathon", "hiit", "cycling", "crossfit", "mobility", "stretching", "transformation", "zumba"],
-  "weight loss": ["diet", "calorie", "fat loss", "obesity"],
-  yoga: ["meditation", "wellness", "mindfulness", "pranayama", "flexibility", "asana"],
-  tech: ["artificial intelligence", "chatgpt", "gadgets", "smartphone", "coding", "software", "cybersecurity", "app", "laptop", "smart home", "wearable", "electric vehicle", "ev", "space"],
-  "ai news": ["chatgpt", "claude", "artificial intelligence", "machine learning", "deep learning", "llm", "openai", "google ai", "ai tools"],
-  business: ["startup", "entrepreneur", "freelancing", "ecommerce", "dropshipping", "digital marketing", "branding", "linkedin", "productivity", "leadership", "networking", "bootstrapping", "founder"],
-  cricket: ["test match", "odi", "t20", "bcci", "kohli", "rohit", "bumrah", "india cricket"],
-  ipl: ["ipl 2026", "ipl match", "ipl results", "csk", "mi", "rcb", "kkr", "srh", "dc", "lsg", "pbks", "gt"],
-  bollywood: ["movie", "film", "actor", "actress", "netflix", "ott", "prime video", "celebrity", "box office", "trailer", "hindi film", "releasing"],
-  travel: ["budget travel", "luxury travel", "solo travel", "road trip", "backpacking", "hidden gems", "travel hacks", "hotel", "resort", "adventure travel", "pilgrimage", "beach", "mountain", "trekking", "visa"],
-  food: ["recipe", "cooking", "meal prep", "baking", "dessert", "healthy eating", "vegan", "keto", "street food", "restaurant", "indian cuisine", "comfort food", "snack", "smoothie"],
-  gaming: ["mobile gaming", "bgmi", "free fire", "esports", "game review", "gaming setup", "pc gaming", "console", "pubg"],
-  education: ["upsc", "jee", "neet", "cat", "mba", "exam", "college", "school", "memory", "book summary", "current affairs", "scholarship"],
-  fashion: ["ootd", "street style", "thrift", "luxury fashion", "sustainable fashion", "mens fashion", "capsule wardrobe", "budget fashion", "vintage", "ethnic wear", "saree", "athleisure"],
-  motivation: ["success", "mindset", "discipline", "consistency", "habit", "morning routine", "goal setting", "stoicism", "personal growth", "confidence"],
-  skincare: ["skincare routine", "makeup", "drugstore beauty", "luxury beauty", "glass skin", "k-beauty", "acne", "anti-aging", "natural beauty", "nail art", "grwm"],
-  comedy: ["memes", "relatable", "pov", "sketch", "parody", "humour", "funny", "sarcasm", "roast"],
-  "real estate": ["property", "home loan", "rera", "property investment", "rental", "affordable housing", "luxury real estate", "nri property", "smart city", "vastu", "plot", "farmhouse"],
-  jobs: ["career", "employment", "resume", "interview", "salary negotiation", "internship", "work life balance", "remote work", "switching careers", "freshers", "government job", "freelance"],
-};
-
-const expandQueryWithMicroNiches = (q: string): string[] => {
-  const q_lower = q.toLowerCase().trim();
-  const terms = [q_lower];
-  for (const [niche, microNiches] of Object.entries(NICHE_MICRO_MAP)) {
-    if (niche === q_lower || niche.includes(q_lower) || q_lower.includes(niche)) {
-      terms.push(...microNiches);
-      break;
-    }
-  }
-  return [...new Set(terms)];
+// ✅ Maps each main niche to its related backend topic keys
+// When user searches "Finance", we show all these topics together
+const NICHE_TOPIC_MAP: Record<string, string[]> = {
+  finance: ["Finance", "MutualFunds", "StockMarket", "Crypto", "PersonalFinance", "RealEstate"],
+  "stock market": ["StockMarket", "Finance"],
+  "mutual funds": ["MutualFunds", "Finance"],
+  crypto: ["Crypto", "Finance"],
+  "personal finance": ["PersonalFinance", "Finance"],
+  fitness: ["Fitness", "WeightLoss", "Yoga"],
+  "weight loss": ["WeightLoss", "Fitness"],
+  yoga: ["Yoga", "Fitness"],
+  tech: ["Tech", "AINews"],
+  ai: ["AINews", "Tech"],
+  "ai news": ["AINews", "Tech"],
+  business: ["Business"],
+  cricket: ["Cricket", "IPL"],
+  ipl: ["IPL", "Cricket"],
+  bollywood: ["Bollywood"],
+  travel: ["Travel"],
+  food: ["Food"],
+  gaming: ["Gaming"],
+  education: ["Education"],
+  fashion: ["Fashion"],
+  motivation: ["Motivation"],
+  skincare: ["Skincare"],
+  comedy: ["Comedy"],
+  "real estate": ["RealEstate", "Finance"],
+  jobs: ["Jobs"],
 };
 
 const getCategoryImage = (headline: string) => {
@@ -125,6 +115,18 @@ const isLastWeek = (dateStr: string) => {
   return date >= weekAgo;
 };
 
+// ✅ Get all related topic keys for a search query
+const getRelatedTopics = (q: string): string[] => {
+  const q_lower = q.toLowerCase().trim();
+  for (const [niche, topics] of Object.entries(NICHE_TOPIC_MAP)) {
+    if (niche === q_lower || niche.includes(q_lower) || q_lower.includes(niche)) {
+      return topics;
+    }
+  }
+  // No map found — return the query itself as a topic (capitalize first letter)
+  return [q.trim()];
+};
+
 export default function NewsPage() {
   const location = useLocation();
   const { user } = useAuth();
@@ -164,34 +166,32 @@ export default function NewsPage() {
 
   const filterByQuery = (list: NewsArticle[], q: string) => {
     if (!q.trim()) return list;
-    const q_lower = q.toLowerCase().trim();
 
-    // ✅ STEP 1: Exact topic match — "Fitness" only shows topic="Fitness" articles
-    const exactTopicMatches = list.filter(item => {
-      const topic = (item.topicName || item.topic || item.tag || '').toLowerCase().trim();
-      return topic === q_lower || topic.replace(/\s/g, '') === q_lower.replace(/\s/g, '');
+    // ✅ Get all related topic keys (e.g. Finance → ["Finance","MutualFunds","StockMarket","Crypto","PersonalFinance","RealEstate"])
+    const relatedTopics = getRelatedTopics(q);
+
+    // ✅ Filter articles whose topic matches any of the related topics
+    const topicMatches = list.filter(item => {
+      const topic = (item.topicName || item.topic || item.tag || '').trim();
+      return relatedTopics.some(t => t.toLowerCase() === topic.toLowerCase());
     });
 
-    // ✅ STEP 2: If exact topic matches found, return ONLY those
-    if (exactTopicMatches.length > 0) return exactTopicMatches;
+    // ✅ If we found topic matches, return them
+    if (topicMatches.length > 0) return topicMatches;
 
-    // ✅ STEP 3: Fallback — expand to micro niches and search text
-    const expandedTerms = expandQueryWithMicroNiches(q);
-    return list.filter((item) => {
-      const topic = (item.topicName || item.topic || item.tag || '').toLowerCase();
+    // ✅ Fallback: text search in headline/summary
+    const q_lower = q.toLowerCase().trim();
+    return list.filter(item => {
       const text = (
         (item.title || item.headline || '') + ' ' +
-        (item.summary || '')
+        (item.summary || '') + ' ' +
+        (item.topicName || item.topic || item.tag || '')
       ).toLowerCase();
-      const fullText = topic + ' ' + text;
-
-      return expandedTerms.some(term => {
-        if (term.length <= 2) {
-          const wordBoundary = new RegExp(`\\b${term}\\b`, 'i');
-          return wordBoundary.test(fullText);
-        }
-        return fullText.includes(term);
-      });
+      if (q_lower.length <= 2) {
+        const wordBoundary = new RegExp(`\\b${q_lower}\\b`, 'i');
+        return wordBoundary.test(text);
+      }
+      return text.includes(q_lower);
     });
   };
 
