@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Outlet } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,7 +36,7 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
 
-            {/* Protected routes */}
+            {/* Instagram routes — with sidebar */}
             <Route
               element={
                 <ProtectedRoute>
@@ -49,7 +49,18 @@ const App = () => (
               <Route path="/scripts" element={<ScriptsPage />} />
               <Route path="/trending" element={<TrendingDashboard />} />
               <Route path="/settings" element={<SettingsPage />} />
-              {/* ✅ YouTube routes */}
+            </Route>
+
+            {/* YouTube routes — no sidebar, just top tab dashboard */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-background">
+                    <Outlet />
+                  </div>
+                </ProtectedRoute>
+              }
+            >
               <Route path="/youtube" element={<YouTubePage />} />
               <Route path="/youtube/seo" element={<YouTubeSEO />} />
               <Route path="/youtube/script" element={<YouTubeScript />} />
