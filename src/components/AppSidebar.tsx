@@ -99,7 +99,9 @@ export default function AppSidebar() {
       {/* Nav items */}
       <nav className="flex-1 py-3 px-2 space-y-1">
         {navItems.map((item) => {
-          const active = location.pathname === item.path;
+          const active = location.pathname + location.search === item.path ||
+  (item.path.includes('/youtube') && location.pathname === '/youtube' &&
+   location.search.includes(item.path.split('?tab=')[1]));
           return (
             <button
               key={item.path}

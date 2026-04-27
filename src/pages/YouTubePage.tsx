@@ -31,7 +31,8 @@ export default function YouTubePage() {
   const { user } = useAuth();
   const location = useLocation();
   const initialQuery = (location.state as any)?.query || "";
-  const [activeTab, setActiveTab] = useState("seo");
+const [searchParams] = useState(() => new URLSearchParams(window.location.search));
+const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "seo");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
