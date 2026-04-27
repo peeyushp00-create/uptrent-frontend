@@ -1,22 +1,31 @@
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import AppSidebar from "@/components/AppSidebar";
 import BottomNav from "@/components/BottomNav";
 
-const isMobile = () => window.innerWidth < 768;
-
 export default function AppLayout() {
-  return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar — only on desktop */}
-      {!isMobile() && <AppSidebar />}
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-      {/* Main content — full width on mobile */}
-      <main className="flex-1 overflow-auto" style={{ paddingBottom: isMobile() ? '70px' : '0' }}>
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'hsl(var(--background))' }}>
+
+      {/* Sidebar — desktop only */}
+      {!isMobile && <AppSidebar />}
+
+      {/* Main content */}
+      <main style={{ flex: 1, overflowY: 'auto', paddingBottom: isMobile ? '70px' : '0' }}>
         <Outlet />
       </main>
 
-      {/* Bottom nav — only on mobile */}
-      {isMobile() && <BottomNav />}
+      {/* Bottom nav — mobile only */}
+      {isMobile && <BottomNav />}
+
     </div>
   );
 }
