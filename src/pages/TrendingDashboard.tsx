@@ -120,11 +120,19 @@ export default function TrendingDashboard() {
     : topics;
 
   const displayTopics = searchQuery.trim()
-    ? baseTopics.filter(t =>
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.hashtags?.some(h => h.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : baseTopics;
+  ? baseTopics.filter(t => {
+      const q = searchQuery.toLowerCase().trim();
+      const name = t.name.toLowerCase();
+      const hashtags = t.hashtags?.map(h => h.toLowerCase()) || [];
+
+      // ✅ For short terms (2 chars or less), match whole word only
+      if (q.length <= 2) {
+        const wordBoundary = new RegExp(`\\b${q}\\b`, 'i');
+        return wordBoundary.test(name) || hashtags.some(h => wordBoundary.test(h));
+      }
+      return name.includes(q) || hashtags.some(h => h.includes(q));
+    })
+  : baseTopics;
 
   const handleGenerate = (topic: Topic) => {
     setSelectedTopic(topic);
