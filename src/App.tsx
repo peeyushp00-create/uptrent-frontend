@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Outlet } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,7 +15,6 @@ import SignupPage from "./pages/SignupPage";
 import TrendingDashboard from "./pages/TrendingDashboard";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
-import YouTubePage from "./pages/YouTubePage";
 import YouTubeSEO from "./pages/YouTubeSEO";
 import YouTubeScript from "./pages/YouTubeScript";
 import YouTubeAnalyzer from "./pages/YouTubeAnalyzer";
@@ -36,7 +35,7 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
 
-            {/* Instagram routes — with sidebar */}
+            {/* Protected routes — all with sidebar */}
             <Route
               element={
                 <ProtectedRoute>
@@ -49,19 +48,7 @@ const App = () => (
               <Route path="/scripts" element={<ScriptsPage />} />
               <Route path="/trending" element={<TrendingDashboard />} />
               <Route path="/settings" element={<SettingsPage />} />
-            </Route>
-
-            {/* YouTube routes — no sidebar, just top tab dashboard */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <div className="min-h-screen bg-background">
-                    <Outlet />
-                  </div>
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/youtube" element={<YouTubePage />} />
+              {/* ✅ YouTube pages — with sidebar, no top dashboard */}
               <Route path="/youtube/seo" element={<YouTubeSEO />} />
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
