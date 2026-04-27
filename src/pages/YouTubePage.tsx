@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Youtube, Search, Sparkles, Copy, Check, Loader2,
-  Tag, FileText, TrendingUp, Link, ChevronRight, X
+  Tag, FileText, TrendingUp, ChevronRight
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const TABS = [
-  { id: "seo", label: "SEO", icon: Tag, description: "Titles, descriptions & tags" },
-  { id: "script", label: "Script", icon: FileText, description: "Full video scripts" },
-  { id: "analyzer", label: "Analyzer", icon: Search, description: "Analyze any channel" },
-  { id: "trending", label: "Trending", icon: TrendingUp, description: "Trending topics" },
+  { id: "seo", label: "SEO", icon: Tag },
+  { id: "script", label: "Script", icon: FileText },
+  { id: "analyzer", label: "Analyzer", icon: Search },
+  { id: "trending", label: "Trending", icon: TrendingUp },
 ];
 
 const TRENDING_TOPICS = [
@@ -29,30 +29,31 @@ const TRENDING_TOPICS = [
 
 export default function YouTubePage() {
   const { user } = useAuth();
-  const location = useLocation();
-  const initialQuery = (location.state as any)?.query || "";
-const [searchParams] = useSearchParams();
-const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "seo");
-
-useEffect(() => {
-  const tab = searchParams.get("tab");
-  if (tab) setActiveTab(tab);
-}, [searchParams]);
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState("seo");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   // SEO state
-  const [seoTopic, setSeoTopic] = useState(initialQuery);
+  const [seoTopic, setSeoTopic] = useState("");
   const [seoResult, setSeoResult] = useState<any>(null);
 
   // Script state
-  const [scriptTopic, setScriptTopic] = useState(initialQuery);
+  const [scriptTopic, setScriptTopic] = useState("");
   const [scriptDuration, setScriptDuration] = useState(5);
   const [scriptResult, setScriptResult] = useState<any>(null);
 
   // Analyzer state
   const [channelUrl, setChannelUrl] = useState("");
   const [analyzerResult, setAnalyzerResult] = useState<any>(null);
+
+  // ✅ Update active tab when URL params change
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && ["seo", "script", "analyzer", "trending"].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -172,22 +173,17 @@ useEffect(() => {
               </button>
             </div>
 
-            {loading && (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-red-500" />
-              </div>
-            )}
+            {loading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-red-500" /></div>}
 
             {seoResult && !seoResult.error && (
               <div className="space-y-3">
-                {/* Titles */}
                 <div className="bg-card border border-border rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold uppercase text-red-400">🎯 Titles (pick one)</span>
+                    <span className="text-xs font-bold uppercase text-red-400">🎯 Titles</span>
                   </div>
                   <div className="space-y-2">
                     {seoResult.titles?.map((title: string, i: number) => (
-                      <div key={i} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/30 hover:bg-accent transition-colors">
+                      <div key={i} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/30">
                         <span className="text-xs text-muted-foreground mt-0.5 w-4 shrink-0">{i + 1}.</span>
                         <p className="text-sm text-foreground flex-1">{title}</p>
                         <button onClick={() => copyText(title, `title-${i}`)}>
@@ -198,7 +194,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Description */}
                 <div className="bg-card border border-border rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold uppercase text-blue-400">📝 Description</span>
@@ -209,7 +204,6 @@ useEffect(() => {
                   <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{seoResult.description}</p>
                 </div>
 
-                {/* Tags */}
                 <div className="bg-card border border-border rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold uppercase text-green-400">🏷️ Tags</span>
@@ -219,9 +213,7 @@ useEffect(() => {
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {seoResult.tags?.map((tag: string, i: number) => (
-                      <span key={i} className="text-xs px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20">
-                        {tag}
-                      </span>
+                      <span key={i} className="text-xs px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20">{tag}</span>
                     ))}
                   </div>
                 </div>
@@ -246,7 +238,6 @@ useEffect(() => {
               className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
             />
 
-            {/* Duration */}
             <div>
               <p className="text-xs text-muted-foreground mb-2 font-medium">Video Duration</p>
               <div className="flex gap-2">
@@ -293,8 +284,7 @@ useEffect(() => {
                     )}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground hover:text-foreground"
                   >
-                    {copied === 'all' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    Copy All
+                    {copied === 'all' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} Copy All
                   </button>
                 </div>
 
@@ -318,7 +308,7 @@ useEffect(() => {
                 {scriptResult.sections?.map((section: any, i: number) => (
                   <div key={i} className="bg-card border border-border rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-bold uppercase text-muted-foreground">📌 Section {i + 1}: {section.heading}</p>
+                      <p className="text-xs font-bold uppercase text-muted-foreground">📌 {section.heading}</p>
                       <button onClick={() => copyText(section.content, `sec-${i}`)}>{copied === `sec-${i}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
                     </div>
                     <p className="text-sm text-foreground whitespace-pre-wrap">{section.content}</p>
@@ -345,14 +335,14 @@ useEffect(() => {
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <div>
               <h2 className="font-semibold text-foreground mb-1">Channel Analyzer</h2>
-              <p className="text-xs text-muted-foreground">Enter any YouTube channel name or URL to get content ideas</p>
+              <p className="text-xs text-muted-foreground">Enter any YouTube channel name to get content ideas</p>
             </div>
             <div className="flex gap-2">
               <input
                 value={channelUrl}
                 onChange={(e) => setChannelUrl(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAnalyzer()}
-                placeholder="Channel name or URL (e.g. @MrBeast or youtube.com/...)"
+                placeholder="Channel name (e.g. MrBeast, Ashish Chanchlani)"
                 className="flex-1 px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
               />
               <button
@@ -395,7 +385,7 @@ useEffect(() => {
                 )}
                 {analyzerResult.video_ideas && (
                   <div className="bg-card border border-border rounded-2xl p-4">
-                    <p className="text-xs font-bold uppercase text-green-400 mb-2">💡 Video Ideas for You</p>
+                    <p className="text-xs font-bold uppercase text-green-400 mb-2">💡 Video Ideas</p>
                     <div className="space-y-2">
                       {analyzerResult.video_ideas.map((idea: string, i: number) => (
                         <div key={i} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/30">
