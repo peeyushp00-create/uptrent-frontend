@@ -11,6 +11,15 @@ const MODES = [
   { id: "cta", label: "CTA Only", description: "Call to action" },
 ];
 
+// ✅ Duration options
+const DURATION_OPTIONS = [
+  { label: "15s", value: 15 },
+  { label: "30s", value: 30 },
+  { label: "45s", value: 45 },
+  { label: "60s", value: 60 },
+  { label: "90s", value: 90 },
+];
+
 export default function ScriptsPage() {
   const { user } = useAuth();
   const userNiche = user?.user_metadata?.niche || '';
@@ -24,6 +33,7 @@ export default function ScriptsPage() {
   const [error, setError] = useState('');
   const [topicInput, setTopicInput] = useState('');
   const [mode, setMode] = useState('full');
+  const [duration, setDuration] = useState(30); // ✅ default 30 seconds
   const [history, setHistory] = useState<string[]>([]);
 
   useEffect(() => {
@@ -44,7 +54,8 @@ export default function ScriptsPage() {
     setSelectedTopic(topic);
     saveToHistory(topic);
     try {
-      const result = await generateScript(topic, userNiche, userLanguage, userVoiceStyle);
+      // ✅ Pass duration to backend
+      const result = await generateScript(topic, userNiche, userLanguage, userVoiceStyle, duration);
       if (mode === 'hook') setScript({ hook: result.hook });
       else if (mode === 'body') setScript({ body: result.body });
       else if (mode === 'cta') setScript({ cta: result.cta });
@@ -107,6 +118,42 @@ export default function ScriptsPage() {
             <p className="text-xs opacity-70 mt-0.5">{m.description}</p>
           </button>
         ))}
+      </div>
+
+      {/* ✅ Duration selector */}
+      <div className="mb-6">
+        <p className="text-xs text-muted-foreground mb-2 font-medium">Script Duration</p>
+        <div className="flex gap-2 flex-wrap">
+          {DURATION_OPTIONS.map((d) => (
+            <button
+              key={d.value}
+              onClick={() => setDuration(d.value)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all flex items-center gap-1 ${
+                duration === d.value
+                  ? "text-white border-transparent"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+              style={duration === d.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+            >
+              <Clock className="w-3 h-3" />
+              {d.label}
+            </button>
+          ))}
+          {/* ✅ Custom duration input */}
+          <div className="flex items-center gap-1 border border-border rounded-xl px-3 py-2">
+            <Clock className="w-3 h-3 text-muted-foreground" />
+            <input
+              type="number"
+              min={10}
+              max={300}
+              value={duration}
+              onChange={(e) => setDuration(Number(e.target.value))}
+              className="w-12 text-sm bg-transparent text-foreground outline-none"
+              placeholder="sec"
+            />
+            <span className="text-xs text-muted-foreground">sec</span>
+          </div>
+        </div>
       </div>
 
       {/* Input */}
