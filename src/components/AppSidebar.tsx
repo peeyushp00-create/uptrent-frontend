@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Newspaper, FileText,
   PanelLeftClose, PanelLeft, LogOut, Settings,
   Sun, Moon, ChevronUp, Crown, Youtube, Instagram,
-  Search, Sparkles, BarChart2,
+  Search, Sparkles, BarChart2, Tag,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -18,7 +18,10 @@ const instagramNav = [
 
 const youtubeNav = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
-  { icon: Youtube, label: "YouTube Tools", path: "/youtube" },
+  { icon: Tag, label: "SEO", path: "/youtube?tab=seo" },
+  { icon: FileText, label: "Script", path: "/youtube?tab=script" },
+  { icon: Search, label: "Analyzer", path: "/youtube?tab=analyzer" },
+  { icon: TrendingUp, label: "Trending", path: "/youtube?tab=trending" },
 ];
 
 export default function AppSidebar() {
