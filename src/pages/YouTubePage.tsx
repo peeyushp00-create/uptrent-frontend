@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -31,8 +31,16 @@ export default function YouTubePage() {
   const { user } = useAuth();
   const location = useLocation();
   const initialQuery = (location.state as any)?.query || "";
-const [searchParams] = useState(() => new URLSearchParams(window.location.search));
-const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "seo");
+const [activeTab, setActiveTab] = useState(() => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("tab") || "seo";
+});
+
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
+  if (tab) setActiveTab(tab);
+}, [window.location.search]);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
