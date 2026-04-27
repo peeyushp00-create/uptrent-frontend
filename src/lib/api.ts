@@ -16,11 +16,11 @@ export const getNews = (topicId?: string) => {
   return apiFetch(url);
 };
 
-export const generateScript = (topicId: string, niche?: string, language?: string, voiceStyle?: string) =>
+export const generateScript = (topicId: string, niche?: string, language?: string, voiceStyle?: string, duration?: number) =>
   apiFetch("/api/scripts/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ topicId, niche, language, voiceStyle }),
+    body: JSON.stringify({ topicId, niche, language, voiceStyle, duration }),
   });
 
 export const generateHooks = (topic: string, niche?: string, language?: string) =>

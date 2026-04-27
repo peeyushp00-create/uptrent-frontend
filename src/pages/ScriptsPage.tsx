@@ -11,6 +11,13 @@ const MODES = [
   { id: "cta", label: "CTA Only", description: "Call to action" },
 ];
 
+// ✅ Duration toggles
+const DURATION_OPTIONS = [
+  { label: "30s", value: 30, description: "Quick Reel" },
+  { label: "60s", value: 60, description: "Standard" },
+  { label: "90s", value: 90, description: "Detailed" },
+];
+
 export default function ScriptsPage() {
   const { user } = useAuth();
   const userNiche = user?.user_metadata?.niche || '';
@@ -24,6 +31,7 @@ export default function ScriptsPage() {
   const [error, setError] = useState('');
   const [topicInput, setTopicInput] = useState('');
   const [mode, setMode] = useState('full');
+  const [duration, setDuration] = useState(60); // ✅ default 60s
   const [history, setHistory] = useState<string[]>([]);
 
   useEffect(() => {
@@ -44,7 +52,8 @@ export default function ScriptsPage() {
     setSelectedTopic(topic);
     saveToHistory(topic);
     try {
-      const result = await generateScript(topic, userNiche, userLanguage, userVoiceStyle);
+      // ✅ Pass duration to backend
+      const result = await generateScript(topic, userNiche, userLanguage, userVoiceStyle, duration);
       if (mode === 'hook') setScript({ hook: result.hook });
       else if (mode === 'body') setScript({ body: result.body });
       else if (mode === 'cta') setScript({ cta: result.cta });
@@ -107,6 +116,30 @@ export default function ScriptsPage() {
             <p className="text-xs opacity-70 mt-0.5">{m.description}</p>
           </button>
         ))}
+      </div>
+
+      {/* ✅ Duration toggle */}
+      <div className="mb-6">
+        <p className="text-xs text-muted-foreground mb-2 font-medium flex items-center gap-1">
+          <Clock className="w-3 h-3" /> Script Duration
+        </p>
+        <div className="flex gap-2">
+          {DURATION_OPTIONS.map((d) => (
+            <button
+              key={d.value}
+              onClick={() => setDuration(d.value)}
+              className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                duration === d.value
+                  ? "text-white border-transparent"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+              style={duration === d.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+            >
+              <p className="font-semibold">{d.label}</p>
+              <p className="text-xs opacity-70">{d.description}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Input */}
