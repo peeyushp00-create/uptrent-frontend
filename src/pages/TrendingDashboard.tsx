@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, ArrowUpRight, ArrowDownRight, Minus,
   Sparkles, Loader2, Flame, BarChart2, Search, X,
-  Copy, Check, ChevronRight
+  Copy, Check
 } from "lucide-react";
 import { getTopics, generateScript } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,19 +26,44 @@ interface ScriptResult {
   duration_seconds?: number;
 }
 
+// ✅ Full micro niche keyword map from PDF
 const nicheKeywords: Record<string, string[]> = {
-  'Finance': ['finance', 'stock', 'invest', 'money', 'crypto', 'mutual', 'trading', 'wealth', 'income', 'passive'],
-  'Fitness': ['fitness', 'gym', 'workout', 'yoga', 'weight', 'nutrition', 'diet', 'exercise', 'health'],
-  'Tech': ['tech', 'ai', 'coding', 'programming', 'gadget', 'software', 'digital', 'tools'],
-  'Business': ['business', 'startup', 'entrepreneur', 'marketing', 'ecommerce', 'brand'],
-  'Motivation': ['motivation', 'mindset', 'success', 'self', 'improvement', 'habits', 'discipline'],
-  'Food': ['food', 'cooking', 'recipe', 'street', 'nutrition', 'diet'],
-  'Travel': ['travel', 'adventure', 'india', 'explore', 'wanderlust'],
-  'Education': ['education', 'study', 'learning', 'career', 'tips'],
-  'Fashion': ['fashion', 'style', 'skincare', 'beauty', 'ootd'],
-  'Gaming': ['gaming', 'pubg', 'freefire', 'game'],
-  'Cricket': ['cricket', 'ipl', 'sports'],
-  'Bollywood': ['bollywood', 'movies', 'entertainment', 'comedy'],
+  'Beauty & Makeup': ['skincare', 'makeup', 'beauty', 'drugstore', 'luxury beauty', 'glass skin', 'kbeauty', 'acne', 'antiaging', 'nail', 'eyebrow', 'waxing', 'vegan beauty', 'grwm', 'minimalist beauty', 'teen beauty'],
+  'Fashion & Style': ['fashion', 'ootd', 'style', 'outfit', 'street style', 'thrift', 'luxury fashion', 'sustainable fashion', 'plussize', 'modest fashion', 'hijab', 'mens fashion', 'capsule wardrobe', 'budget fashion', 'vintage', 'ethnic wear', 'saree', 'athleisure', 'festival fashion'],
+  'Fitness': ['fitness', 'gym', 'workout', 'weight loss', 'muscle', 'bodybuilding', 'yoga', 'pilates', 'calisthenics', 'running', 'marathon', 'hiit', 'cycling', 'crossfit', 'mobility', 'stretching', 'zumba', 'transformation', 'prenatal fitness', 'senior fitness'],
+  'Food': ['food', 'recipe', 'cooking', 'meal prep', 'baking', 'dessert', 'healthy eating', 'vegan', 'keto', 'street food', 'restaurant', 'indian cuisine', 'comfort food', 'snack', 'smoothie', 'intermittent fasting', 'asmr cooking', 'food photography', 'budget cooking'],
+  'Travel': ['travel', 'budget travel', 'luxury travel', 'solo travel', 'road trip', 'backpacking', 'hidden gems', 'domestic travel', 'international travel', 'travel hacks', 'hotel', 'resort', 'adventure travel', 'pilgrimage', 'beach', 'mountain', 'trekking', 'city guide', 'visa'],
+  'Finance': ['finance', 'stock market', 'investing', 'mutual funds', 'sip', 'budgeting', 'saving', 'credit card', 'debt', 'fire', 'side hustle', 'passive income', 'crypto', 'web3', 'real estate investing', 'tax saving', 'insurance', 'financial literacy', 'nri finance', 'income tax', 'sensex', 'nifty', 'nse', 'bse', 'wealth'],
+  'Business': ['business', 'startup', 'entrepreneur', 'freelancing', 'solopreneur', 'ecommerce', 'dropshipping', 'amazon', 'digital marketing', 'branding', 'linkedin', 'productivity', 'leadership', 'networking', 'bootstrapping', 'founder', 'women entrepreneur', 'b2b'],
+  'Mental Health': ['mental health', 'anxiety', 'stress', 'depression', 'therapy', 'mindfulness', 'meditation', 'journalling', 'selfcare', 'burnout', 'sleep hygiene', 'emotional intelligence', 'boundaries', 'healing', 'adhd', 'breathwork', 'digital detox', 'manifestation', 'affirmations'],
+  'Education': ['education', 'study', 'learning', 'upsc', 'jee', 'neet', 'cat', 'mba', 'exam', 'college', 'school', 'memory', 'book summary', 'current affairs', 'general knowledge', 'economics', 'law', 'scholarship', 'english speaking', 'language learning'],
+  'Tech': ['tech', 'ai', 'chatgpt', 'artificial intelligence', 'coding', 'programming', 'gadget', 'smartphone', 'software', 'cybersecurity', 'app', 'laptop', 'smart home', 'wearable', 'electric vehicle', 'ev', 'space', 'no code', 'digital privacy'],
+  'Entertainment': ['bollywood', 'movie', 'film', 'web series', 'netflix', 'ott', 'celebrity', 'memes', 'comedy', 'music', 'anime', 'kdrama', 'kpop', 'cricket commentary', 'ipl', 'sports news', 'award show'],
+  'Comedy': ['comedy', 'relatable', 'pov', 'sketch', 'parody', 'humour', 'funny', 'sarcasm', 'roast', 'indian parent', 'office humour', 'relationship comedy', 'dark humour', 'trending audio'],
+  'Photography': ['photography', 'dslr', 'mirrorless', 'portrait', 'landscape', 'street photography', 'food photography', 'product photography', 'lightroom', 'vsco', 'reels editing', 'colour grading', 'drone', 'cinematic', 'composition'],
+  'Music': ['music', 'original music', 'cover song', 'guitar', 'piano', 'tabla', 'music production', 'beat making', 'classical music', 'indie music', 'singing', 'dj', 'mixing', 'bollywood music', 'folk music', 'lyrics'],
+  'Art': ['art', 'digital art', 'illustration', 'sketching', 'watercolour', 'mandala', 'calligraphy', 'pottery', 'diy crafts', 'origami', 'canvas', 'acrylic painting', 'procreate', 'graffiti', 'jewellery making', 'resin', 'rangoli'],
+  'Home Decor': ['home decor', 'interior design', 'small apartment', 'diy home', 'kitchen organisation', 'wardrobe', 'minimalist home', 'boho decor', 'indian home', 'room makeover', 'vastu', 'indoor gardening', 'cleaning', 'home office', 'festive decoration'],
+  'Parenting': ['parenting', 'baby', 'toddler', 'parenting hacks', 'school readiness', 'kids education', 'single parenting', 'fatherhood', 'mom life', 'pregnancy', 'postpartum', 'teenagers', 'child psychology', 'joint family'],
+  'Relationships': ['relationship', 'dating', 'long distance', 'marriage', 'relationship advice', 'toxic relationship', 'selflove', 'breakup', 'friendship', 'love languages', 'arranged marriage', 'red flags', 'divorce', 'lgbtq'],
+  'Sustainability': ['sustainability', 'zero waste', 'eco friendly', 'climate change', 'veganism', 'plastic free', 'sustainable travel', 'urban gardening', 'upcycling', 'green energy', 'solar', 'composting', 'wildlife'],
+  'Spirituality': ['spirituality', 'hinduism', 'islam', 'sikhism', 'christianity', 'buddhism', 'astrology', 'zodiac', 'tarot', 'manifestation', 'healing', 'meditation', 'temple', 'pilgrimage', 'mythology', 'reiki', 'crystal healing', 'numerology'],
+  'Self Improvement': ['self improvement', 'morning routine', 'night routine', 'habit', 'discipline', 'consistency', 'reading', 'public speaking', 'confidence', 'goal setting', 'stoicism', 'minimalist', 'journalling', 'gratitude', '5am club', 'overcoming fear'],
+  'Pets': ['pets', 'dog', 'cat', 'pet care', 'dog training', 'exotic pets', 'bird', 'aquarium', 'fish', 'pet nutrition', 'rescue', 'adoption', 'veterinary', 'pet photography', 'animal', 'stray animal'],
+  'Sports': ['cricket', 'football', 'soccer', 'basketball', 'kabaddi', 'wrestling', 'athletics', 'badminton', 'tennis', 'chess', 'esports', 'bgmi', 'free fire', 'fantasy sports', 'dream11', 'sports motivation', 'athlete'],
+  'Gaming': ['gaming', 'mobile gaming', 'bgmi', 'free fire', 'esports', 'game review', 'gaming setup', 'pc gaming', 'console', 'pubg', 'gaming tips'],
+  'Career': ['career', 'resume', 'interview', 'linkedin', 'salary negotiation', 'internship', 'work life balance', 'remote work', 'switching careers', 'freshers', 'government job', 'freelance', 'skill development', 'certification'],
+  'Real Estate': ['real estate', 'property', 'home loan', 'rera', 'property investment', 'rental', 'affordable housing', 'luxury real estate', 'nri property', 'smart city', 'vastu', 'plot', 'farmhouse'],
+  'Automobiles': ['car', 'bike', 'electric vehicle', 'ev', 'car modification', 'road trip', 'driving tips', 'car buying', 'budget cars', 'luxury car', 'off road', 'auto news', 'car care', 'scooter', 'two wheeler', 'racing', 'motorsport'],
+  'Lifestyle': ['lifestyle', 'day in my life', 'diml', 'morning routine', 'minimalist living', 'budget living', 'city life', 'village life', 'hostel life', 'college life', 'slow living', 'gratitude', 'aesthetic', 'expat life', 'nri life'],
+  'Writing': ['writing', 'poetry', 'shayari', 'short stories', 'micro fiction', 'content writing', 'copywriting', 'blogging', 'newsletter', 'storytelling', 'spoken word', 'author life'],
+  'Motivation': ['motivation', 'success', 'mindset', 'discipline', 'consistency', 'habit', 'morning routine', 'goal setting', 'stoicism', 'personal growth', 'confidence', 'hustle'],
+  'Cricket': ['cricket', 'ipl', 'test match', 'odi', 't20', 'bcci', 'kohli', 'rohit', 'bumrah', 'india cricket', 'cricket commentary'],
+  'Bollywood': ['bollywood', 'movie', 'film', 'actor', 'actress', 'netflix', 'ott', 'celebrity', 'box office', 'trailer', 'hindi film', 'releasing'],
+  'Skincare': ['skincare', 'skin care', 'acne', 'glass skin', 'kbeauty', 'antiaging', 'natural beauty', 'cruelty free', 'moisturizer', 'sunscreen', 'serum'],
+  'Yoga': ['yoga', 'meditation', 'wellness', 'mindfulness', 'pranayama', 'flexibility', 'asana', 'breathwork'],
+  'Crypto': ['crypto', 'bitcoin', 'ethereum', 'web3', 'blockchain', 'defi', 'nft', 'cryptocurrency'],
+  'General': ['trending', 'viral', 'india', 'news', 'latest', 'today', 'popular'],
 };
 
 export default function TrendingDashboard() {
@@ -67,7 +92,21 @@ export default function TrendingDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const keywords = nicheKeywords[userNiche] || [userNiche.toLowerCase()];
+  // ✅ Match user niche to keywords — check exact match and partial match
+  const getKeywordsForNiche = (niche: string): string[] => {
+    // Direct match
+    if (nicheKeywords[niche]) return nicheKeywords[niche];
+    // Partial match
+    for (const [key, keywords] of Object.entries(nicheKeywords)) {
+      if (key.toLowerCase().includes(niche.toLowerCase()) ||
+          niche.toLowerCase().includes(key.toLowerCase())) {
+        return keywords;
+      }
+    }
+    return [niche.toLowerCase()];
+  };
+
+  const keywords = getKeywordsForNiche(userNiche);
 
   const forYouTopics = topics.filter(t =>
     keywords.some(keyword =>
@@ -133,7 +172,7 @@ export default function TrendingDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top header */}
+      {/* Sticky header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -250,7 +289,6 @@ export default function TrendingDashboard() {
                         </span>
                       )}
                     </div>
-                    {/* Hashtags */}
                     <div className="flex items-center gap-1 mt-1.5 flex-wrap">
                       {topic.hashtags?.slice(0, 2).map((tag) => (
                         <span key={tag} className="text-xs px-2 py-0.5 rounded-lg bg-accent text-muted-foreground">
@@ -276,11 +314,10 @@ export default function TrendingDashboard() {
         )}
       </div>
 
-      {/* ✅ Full screen bottom sheet script panel — like Claude/ChatGPT */}
+      {/* Bottom sheet script panel */}
       <AnimatePresence>
         {scriptOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -288,8 +325,6 @@ export default function TrendingDashboard() {
               onClick={() => setScriptOpen(false)}
               className="fixed inset-0 bg-black/60 z-40"
             />
-
-            {/* Bottom sheet */}
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
@@ -297,13 +332,11 @@ export default function TrendingDashboard() {
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl border-t border-border max-h-[85vh] overflow-y-auto"
             >
-              {/* Handle */}
               <div className="flex justify-center pt-3 pb-2">
                 <div className="w-10 h-1 rounded-full bg-border" />
               </div>
 
               <div className="px-4 pb-8 space-y-4">
-                {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="font-bold text-foreground">Script</h2>
@@ -319,16 +352,12 @@ export default function TrendingDashboard() {
                         Copy All
                       </button>
                     )}
-                    <button
-                      onClick={() => setScriptOpen(false)}
-                      className="p-2 rounded-xl hover:bg-accent transition-colors"
-                    >
+                    <button onClick={() => setScriptOpen(false)} className="p-2 rounded-xl hover:bg-accent transition-colors">
                       <X className="w-5 h-5 text-muted-foreground" />
                     </button>
                   </div>
                 </div>
 
-                {/* Loading */}
                 {generating && (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
@@ -336,40 +365,33 @@ export default function TrendingDashboard() {
                   </div>
                 )}
 
-                {/* Script */}
                 {!generating && script && (
                   <div className="space-y-3">
-                    {/* Hook */}
                     <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-blue-400">🎣 Hook</span>
                         <button onClick={() => copyText(script.hook, "Hook")} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                          {copied === 'Hook' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-                          Copy
+                          {copied === 'Hook' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} Copy
                         </button>
                       </div>
                       <p className="text-sm text-foreground leading-relaxed">{script.hook}</p>
                     </div>
 
-                    {/* Body */}
                     <div className="rounded-2xl border border-border bg-secondary/20 p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">📝 Body</span>
                         <button onClick={() => copyText(script.body, "Body")} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                          {copied === 'Body' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-                          Copy
+                          {copied === 'Body' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} Copy
                         </button>
                       </div>
                       <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{script.body}</p>
                     </div>
 
-                    {/* CTA */}
                     <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-green-400">📣 CTA</span>
                         <button onClick={() => copyText(script.cta, "CTA")} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                          {copied === 'CTA' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-                          Copy
+                          {copied === 'CTA' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} Copy
                         </button>
                       </div>
                       <p className="text-sm text-foreground leading-relaxed">{script.cta}</p>
@@ -379,7 +401,6 @@ export default function TrendingDashboard() {
                       <p className="text-xs text-muted-foreground text-center">~{script.duration_seconds} seconds</p>
                     )}
 
-                    {/* Regenerate */}
                     <button
                       onClick={() => selectedTopic && handleGenerate(selectedTopic)}
                       className="w-full py-3 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2"
