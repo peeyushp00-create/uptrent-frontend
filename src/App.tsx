@@ -15,7 +15,9 @@ import SignupPage from "./pages/SignupPage";
 import TrendingDashboard from "./pages/TrendingDashboard";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
-
+import YouTubePage from "./pages/YouTubePage";
+// Inside the protected routes:
+<Route path="/youtube" element={<YouTubePage />} />
 const queryClient = new QueryClient();
 
 const App = () => (

@@ -1,23 +1,46 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, Instagram, Youtube } from "lucide-react";
 
-const chips = [
+const instagramChips = [
   "Fitness", "Motivation", "Stock Market", "Crypto",
   "Travel", "Food", "Tech", "Business",
   "Fashion", "Gaming", "Comedy", "Cricket",
   "Education", "Yoga", "Entrepreneur", "Bollywood",
 ];
 
+const youtubeChips = [
+  "Tech Reviews", "Finance", "Motivation", "Gaming",
+  "Travel Vlog", "Cooking", "Education", "Fitness",
+  "Comedy", "Cricket", "Business", "Music",
+  "Self Improvement", "Crypto", "Cars", "Movies",
+];
+
 export default function Index() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [platform, setPlatform] = useState<"instagram" | "youtube">("instagram");
 
   const handleSearch = () => {
     if (!search.trim()) return;
-    navigate("/trending", { state: { query: search } });
+    if (platform === "instagram") {
+      navigate("/trending", { state: { query: search } });
+    } else {
+      navigate("/youtube", { state: { query: search } });
+    }
   };
+
+  const handleChip = (chip: string) => {
+    setSearch(chip);
+    if (platform === "instagram") {
+      navigate("/trending", { state: { query: chip } });
+    } else {
+      navigate("/youtube", { state: { query: chip } });
+    }
+  };
+
+  const chips = platform === "instagram" ? instagramChips : youtubeChips;
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 min-h-screen gap-8">
@@ -42,8 +65,32 @@ export default function Index() {
             Ideas
           </h1>
           <p className="text-muted-foreground text-base">
-            Find scroll-stopping content ideas for Instagram 
+            Find scroll-stopping content ideas for {platform === "instagram" ? "Instagram Reels" : "YouTube Videos"}
           </p>
+        </div>
+
+        {/* ✅ Platform toggle */}
+        <div className="flex items-center gap-2 p-1 bg-card border border-border rounded-2xl">
+          <button
+            onClick={() => setPlatform("instagram")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              platform === "instagram" ? "text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+            style={platform === "instagram" ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+          >
+            <Instagram className="w-4 h-4" />
+            Instagram
+          </button>
+          <button
+            onClick={() => setPlatform("youtube")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              platform === "youtube" ? "text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+            style={platform === "youtube" ? { background: "linear-gradient(135deg, #FF0000, #CC0000)" } : {}}
+          >
+            <Youtube className="w-4 h-4" />
+            YouTube
+          </button>
         </div>
 
         {/* Search */}
@@ -55,14 +102,20 @@ export default function Index() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Search content ideas (e.g. Fitness, Cricket, Finance)..."
+              placeholder={platform === "instagram"
+                ? "Search Instagram content ideas..."
+                : "Search YouTube video ideas..."}
               className="w-full pl-11 pr-5 py-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
             />
           </div>
           <button
             onClick={handleSearch}
             className="px-8 py-4 rounded-xl text-white font-medium text-sm"
-            style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+            style={{
+              background: platform === "instagram"
+                ? "linear-gradient(135deg, #D4537E, #D85A30)"
+                : "linear-gradient(135deg, #FF0000, #CC0000)"
+            }}
           >
             Search
           </button>
@@ -75,10 +128,7 @@ export default function Index() {
             {chips.map((chip) => (
               <button
                 key={chip}
-                onClick={() => {
-                  setSearch(chip);
-                  navigate("/trending", { state: { query: chip } });
-                }}
+                onClick={() => handleChip(chip)}
                 className="px-4 py-2 rounded-full border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 {chip}
