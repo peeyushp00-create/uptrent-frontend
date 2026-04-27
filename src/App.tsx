@@ -16,8 +16,11 @@ import TrendingDashboard from "./pages/TrendingDashboard";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import YouTubePage from "./pages/YouTubePage";
-// Inside the protected routes:
-<Route path="/youtube" element={<YouTubePage />} />
+import YouTubeSEO from "./pages/YouTubeSEO";
+import YouTubeScript from "./pages/YouTubeScript";
+import YouTubeAnalyzer from "./pages/YouTubeAnalyzer";
+import YouTubeTrending from "./pages/YouTubeTrending";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -46,7 +49,14 @@ const App = () => (
               <Route path="/scripts" element={<ScriptsPage />} />
               <Route path="/trending" element={<TrendingDashboard />} />
               <Route path="/settings" element={<SettingsPage />} />
+              {/* ✅ YouTube routes */}
+              <Route path="/youtube" element={<YouTubePage />} />
+              <Route path="/youtube/seo" element={<YouTubeSEO />} />
+              <Route path="/youtube/script" element={<YouTubeScript />} />
+              <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
+              <Route path="/youtube/trending" element={<YouTubeTrending />} />
             </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
