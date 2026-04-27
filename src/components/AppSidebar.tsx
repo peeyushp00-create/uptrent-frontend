@@ -18,10 +18,10 @@ const instagramNav = [
 
 const youtubeNav = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
-  { icon: Tag, label: "SEO", path: "/youtube?tab=seo" },
-  { icon: FileText, label: "Script", path: "/youtube?tab=script" },
-  { icon: Search, label: "Analyzer", path: "/youtube?tab=analyzer" },
-  { icon: TrendingUp, label: "Trending", path: "/youtube?tab=trending" },
+  { icon: Tag, label: "SEO", path: "/youtube/seo" },
+  { icon: FileText, label: "Script", path: "/youtube/script" },
+  { icon: Search, label: "Analyzer", path: "/youtube/analyzer" },
+  { icon: TrendingUp, label: "Trending", path: "/youtube/trending" },
 ];
 
 export default function AppSidebar() {
