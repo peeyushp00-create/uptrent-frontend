@@ -19,6 +19,8 @@ import YouTubeSEO from "./pages/YouTubeSEO";
 import YouTubeScript from "./pages/YouTubeScript";
 import YouTubeAnalyzer from "./pages/YouTubeAnalyzer";
 import YouTubeTrending from "./pages/YouTubeTrending";
+import InstagramAnalyzer from "./pages/InstagramAnalyzer";
+
 
 const queryClient = new QueryClient();
 
@@ -34,7 +36,8 @@ const App = () => (
             <Route path="/landing" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-
+// inside protected routes:
+<Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
             {/* Protected routes — all with sidebar */}
             <Route
               element={

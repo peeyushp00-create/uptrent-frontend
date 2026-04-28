@@ -14,6 +14,7 @@ const instagramNav = [
   { icon: TrendingUp, label: "Trending", path: "/trending" },
   { icon: Newspaper, label: "News Feed", path: "/news" },
   { icon: FileText, label: "Scripts", path: "/scripts" },
+  { icon: Search, label: "Analyzer", path: "/instagram/analyzer" },
 ];
 
 const youtubeNav = [
