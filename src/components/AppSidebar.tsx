@@ -55,6 +55,14 @@ export default function AppSidebar() {
     }
   };
 
+const handleReset = () => {
+  ['yt_seo_topic','yt_seo_result','yt_script_topic','yt_script_result',
+   'yt_script_duration','yt_analyzer_channel','yt_analyzer_result',
+   'ig_analyzer_username','ig_analyzer_result','script_history'
+  ].forEach(k => localStorage.removeItem(k));
+  window.location.reload();
+};
+
   // ✅ Auto-detect platform from URL
   const isYoutubePath = location.pathname.startsWith("/youtube");
   const effectivePlatform = isYoutubePath ? "youtube" : platform;
