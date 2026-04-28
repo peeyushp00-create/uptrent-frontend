@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Newspaper, ExternalLink, Loader2, X, Search } from "lucide-react";
@@ -25,7 +25,9 @@ interface NewsArticle {
 
 const SUGGESTED = [
   "Fitness", "Motivation", "Crypto", "Travel", "Food",
-  "Tech", "Cricket", "Bollywood", "Gaming", "Finance"
+  "Tech", "Cricket", "Bollywood", "Gaming", "Finance",
+  "Business", "Education", "Fashion", "Yoga", "Skincare",
+  "Comedy", "Real Estate", "Jobs", "IPL", "AI"
 ];
 
 const DATE_FILTERS = [
@@ -35,8 +37,6 @@ const DATE_FILTERS = [
   { label: "All", value: "all" },
 ];
 
-// ✅ Maps each main niche to its related backend topic keys
-// When user searches "Finance", we show all these topics together
 const NICHE_TOPIC_MAP: Record<string, string[]> = {
   finance: ["Finance", "MutualFunds", "StockMarket", "Crypto", "PersonalFinance", "RealEstate"],
   "stock market": ["StockMarket", "Finance"],
@@ -95,27 +95,18 @@ const getTimeAgo = (dateStr: string) => {
   return date.toLocaleDateString();
 };
 
-const isToday = (dateStr: string) => {
-  const date = new Date(dateStr);
-  const now = new Date();
-  return date.toDateString() === now.toDateString();
-};
-
+const isToday = (dateStr: string) => new Date(dateStr).toDateString() === new Date().toDateString();
 const isYesterday = (dateStr: string) => {
-  const date = new Date(dateStr);
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  return date.toDateString() === yesterday.toDateString();
+  return new Date(dateStr).toDateString() === yesterday.toDateString();
 };
-
 const isLastWeek = (dateStr: string) => {
-  const date = new Date(dateStr);
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  return date >= weekAgo;
+  return new Date(dateStr) >= weekAgo;
 };
 
-// ✅ Get all related topic keys for a search query
 const getRelatedTopics = (q: string): string[] => {
   const q_lower = q.toLowerCase().trim();
   for (const [niche, topics] of Object.entries(NICHE_TOPIC_MAP)) {
@@ -123,7 +114,6 @@ const getRelatedTopics = (q: string): string[] => {
       return topics;
     }
   }
-  // No map found — return the query itself as a topic (capitalize first letter)
   return [q.trim()];
 };
 
@@ -140,6 +130,12 @@ export default function NewsPage() {
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [dateFilter, setDateFilter] = useState("all");
+
+  // ✅ Autofill state
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -164,22 +160,41 @@ export default function NewsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // ✅ Filter dropdown suggestions as user types
+  useEffect(() => {
+    if (searchInput.trim().length > 0) {
+      const filtered = SUGGESTED.filter(s =>
+        s.toLowerCase().includes(searchInput.toLowerCase()) &&
+        s.toLowerCase() !== searchInput.toLowerCase()
+      ).slice(0, 6);
+      setDropdownSuggestions(filtered);
+      setShowDropdown(filtered.length > 0);
+    } else {
+      setShowDropdown(false);
+      setDropdownSuggestions([]);
+    }
+  }, [searchInput]);
+
+  // ✅ Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+          inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   const filterByQuery = (list: NewsArticle[], q: string) => {
     if (!q.trim()) return list;
-
-    // ✅ Get all related topic keys (e.g. Finance → ["Finance","MutualFunds","StockMarket","Crypto","PersonalFinance","RealEstate"])
     const relatedTopics = getRelatedTopics(q);
-
-    // ✅ Filter articles whose topic matches any of the related topics
     const topicMatches = list.filter(item => {
       const topic = (item.topicName || item.topic || item.tag || '').trim();
       return relatedTopics.some(t => t.toLowerCase() === topic.toLowerCase());
     });
-
-    // ✅ If we found topic matches, return them
     if (topicMatches.length > 0) return topicMatches;
-
-    // ✅ Fallback: text search in headline/summary
     const q_lower = q.toLowerCase().trim();
     return list.filter(item => {
       const text = (
@@ -219,6 +234,7 @@ export default function NewsPage() {
   const handleSearch = (q: string) => {
     setQuery(q);
     setSearchInput(q);
+    setShowDropdown(false);
     setFilteredArticles(applyAllFilters(articles, q, dateFilter));
   };
 
@@ -236,24 +252,54 @@ export default function NewsPage() {
         <p className="text-muted-foreground mt-1">Latest news for content creators</p>
       </div>
 
-      {/* Search bar */}
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch(searchInput)}
-          placeholder="Search news (e.g. Finance, Fitness, Cricket)..."
-          className="flex-1 px-5 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
-        />
-        <button
-          onClick={() => handleSearch(searchInput)}
-          className="px-6 py-3 rounded-xl text-white font-medium text-sm flex items-center gap-2"
-          style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
-        >
-          <Search className="w-4 h-4" />
-          Search
-        </button>
+      {/* ✅ Search bar with autofill */}
+      <div className="relative mb-4">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch(searchInput);
+                if (e.key === "Escape") setShowDropdown(false);
+              }}
+              onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
+              placeholder="Search news (e.g. Finance, Fitness, Cricket)..."
+              className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
+            />
+          </div>
+          <button
+            onClick={() => handleSearch(searchInput)}
+            className="px-6 py-3 rounded-xl text-white font-medium text-sm flex items-center gap-2"
+            style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+          >
+            <Search className="w-4 h-4" />
+            Search
+          </button>
+        </div>
+
+        {/* ✅ Dropdown suggestions */}
+        {showDropdown && dropdownSuggestions.length > 0 && (
+          <div
+            ref={dropdownRef}
+            className="absolute top-full left-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+            style={{ width: 'calc(100% - 100px)' }}
+          >
+            {dropdownSuggestions.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => handleSearch(s)}
+                className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
+              >
+                <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Date filter buttons */}
@@ -274,7 +320,7 @@ export default function NewsPage() {
         ))}
       </div>
 
-      {/* Suggested chips */}
+      {/* ✅ Suggested chips — only when no query */}
       {!query && (
         <div className="flex flex-wrap gap-2 mb-6">
           <p className="w-full text-xs text-muted-foreground mb-1">Try searching:</p>
@@ -335,9 +381,7 @@ export default function NewsPage() {
                       src={thumbnail}
                       alt={headline}
                       className="w-24 h-20 rounded-lg object-cover shrink-0"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -365,9 +409,7 @@ export default function NewsPage() {
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                       {source && <span className="text-xs text-muted-foreground">{source}</span>}
                       {source && timeAgo && <span className="text-xs text-muted-foreground">·</span>}
-                      {timeAgo && (
-                        <span className="text-xs text-pink-500 font-medium">{timeAgo}</span>
-                      )}
+                      {timeAgo && <span className="text-xs text-pink-500 font-medium">{timeAgo}</span>}
                       {topic && (
                         <Badge
                           variant="secondary"
@@ -407,10 +449,7 @@ export default function NewsPage() {
                 <h2 className="font-semibold text-foreground pr-4">
                   {selectedArticle.title || selectedArticle.headline}
                 </h2>
-                <button
-                  onClick={() => setSelectedArticle(null)}
-                  className="text-muted-foreground hover:text-foreground flex-shrink-0"
-                >
+                <button onClick={() => setSelectedArticle(null)} className="text-muted-foreground hover:text-foreground flex-shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -418,17 +457,13 @@ export default function NewsPage() {
                 src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '')}
                 alt={selectedArticle.title || selectedArticle.headline}
                 className="w-full h-40 object-cover rounded-lg mb-4"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400';
-                }}
+                onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400'; }}
               />
               <p className="text-muted-foreground text-sm leading-relaxed mb-4">
                 {selectedArticle.summary || "No summary available."}
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  {selectedArticle.sourceName || selectedArticle.source}
-                </span>
+                <span className="text-xs text-muted-foreground">{selectedArticle.sourceName || selectedArticle.source}</span>
                 {selectedArticle.url && (
                   <button
                     onClick={() => window.open(selectedArticle.url, '_blank')}

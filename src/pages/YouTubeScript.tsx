@@ -1,9 +1,20 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, Sparkles, Copy, Check, Loader2 } from "lucide-react";
+import { FileText, Sparkles, Copy, Check, Loader2, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+const SCRIPT_SUGGESTIONS = [
+  "5 Ways to Save Money India", "How to start investing India",
+  "AI tools for content creators", "Weight loss tips for beginners",
+  "How to learn coding in 2026", "Budget travel India tips",
+  "Mental health tips for students", "IPL 2026 analysis",
+  "How to grow Instagram in India", "Best business ideas India",
+  "Python tutorial for beginners", "Stock market basics Hindi",
+  "Skincare routine for men India", "How to speak English fluently",
+  "Home workout for beginners", "Crypto investing India guide",
+];
 
 export default function YouTubeScript() {
   const { user } = useAuth();
@@ -13,21 +24,55 @@ export default function YouTubeScript() {
   const [result, setResult] = useState<any>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
+  // ✅ Autofill state
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (topic.trim().length > 0) {
+      const filtered = SCRIPT_SUGGESTIONS.filter(s =>
+        s.toLowerCase().includes(topic.toLowerCase()) &&
+        s.toLowerCase() !== topic.toLowerCase()
+      ).slice(0, 5);
+      setDropdownSuggestions(filtered);
+      setShowDropdown(filtered.length > 0);
+    } else {
+      setShowDropdown(false);
+      setDropdownSuggestions([]);
+    }
+  }, [topic]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+          inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopied(key);
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleGenerate = async () => {
-    if (!topic.trim()) return;
+  const handleGenerate = async (t?: string) => {
+    const target = t || topic;
+    if (!target.trim()) return;
+    setTopic(target);
+    setShowDropdown(false);
     setLoading(true);
     setResult(null);
     try {
       const res = await fetch(`${BASE}/api/youtube/script`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, duration, niche: user?.user_metadata?.niche, language: user?.user_metadata?.language }),
+        body: JSON.stringify({ topic: target, duration, niche: user?.user_metadata?.niche, language: user?.user_metadata?.language }),
       });
       const data = await res.json();
       setResult(data);
@@ -53,12 +98,55 @@ export default function YouTubeScript() {
           <p className="text-xs text-muted-foreground">Generate full video scripts with intro, sections and outro</p>
         </div>
 
-        <input
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          placeholder="Enter video topic (e.g. 5 Ways to Save Money)"
-          className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
-        />
+        {/* ✅ Input with autofill */}
+        <div className="relative">
+          <input
+            ref={inputRef}
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setShowDropdown(false);
+            }}
+            onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
+            placeholder="Enter video topic (e.g. 5 Ways to Save Money)"
+            className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
+          />
+          {showDropdown && dropdownSuggestions.length > 0 && (
+            <div
+              ref={dropdownRef}
+              className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+            >
+              {dropdownSuggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleGenerate(s)}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
+                >
+                  <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ✅ Popular chips */}
+        {!topic && !result && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Popular topics:</p>
+            <div className="flex flex-wrap gap-2">
+              {SCRIPT_SUGGESTIONS.slice(0, 8).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setTopic(s)}
+                  className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <p className="text-xs text-muted-foreground mb-2 font-medium">Video Duration</p>
@@ -79,7 +167,7 @@ export default function YouTubeScript() {
         </div>
 
         <button
-          onClick={handleGenerate}
+          onClick={() => handleGenerate()}
           disabled={loading}
           className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
           style={{ background: "linear-gradient(135deg, #FF0000, #CC0000)" }}
@@ -109,7 +197,6 @@ export default function YouTubeScript() {
                 {copied === 'all' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} Copy All
               </button>
             </div>
-
             {result.title && (
               <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4">
                 <p className="text-xs font-bold uppercase text-red-400 mb-1">🎯 Suggested Title</p>

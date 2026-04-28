@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { FileText, Sparkles, Copy, Check, Clock, RefreshCw, Mic } from "lucide-react";
+import { FileText, Sparkles, Copy, Check, Clock, RefreshCw, Mic, Search } from "lucide-react";
 import { generateScript } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -11,11 +11,17 @@ const MODES = [
   { id: "cta", label: "CTA Only", description: "Call to action" },
 ];
 
-// ✅ Duration toggles
 const DURATION_OPTIONS = [
   { label: "30s", value: 30, description: "Quick Reel" },
   { label: "60s", value: 60, description: "Standard" },
   { label: "90s", value: 90, description: "Detailed" },
+];
+
+const SUGGESTIONS = [
+  "Fitness", "Finance", "Cricket", "Bollywood", "Tech", "Food",
+  "Travel", "Gaming", "Motivation", "Skincare", "Yoga", "Crypto",
+  "Business", "Education", "Fashion", "Comedy", "IPL", "AI",
+  "Real Estate", "Jobs", "Weight Loss", "Investing", "Startup",
 ];
 
 export default function ScriptsPage() {
@@ -31,12 +37,45 @@ export default function ScriptsPage() {
   const [error, setError] = useState('');
   const [topicInput, setTopicInput] = useState('');
   const [mode, setMode] = useState('full');
-  const [duration, setDuration] = useState(60); // ✅ default 60s
+  const [duration, setDuration] = useState(60);
   const [history, setHistory] = useState<string[]>([]);
+
+  // ✅ Autofill state
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('script_history');
     if (saved) setHistory(JSON.parse(saved));
+  }, []);
+
+  // ✅ Filter dropdown as user types
+  useEffect(() => {
+    if (topicInput.trim().length > 0) {
+      const filtered = SUGGESTIONS.filter(s =>
+        s.toLowerCase().includes(topicInput.toLowerCase()) &&
+        s.toLowerCase() !== topicInput.toLowerCase()
+      ).slice(0, 6);
+      setDropdownSuggestions(filtered);
+      setShowDropdown(filtered.length > 0);
+    } else {
+      setShowDropdown(false);
+      setDropdownSuggestions([]);
+    }
+  }, [topicInput]);
+
+  // ✅ Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+          inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   const saveToHistory = (topic: string) => {
@@ -50,9 +89,10 @@ export default function ScriptsPage() {
     setGenerating(true);
     setError('');
     setSelectedTopic(topic);
+    setTopicInput(topic);
+    setShowDropdown(false);
     saveToHistory(topic);
     try {
-      // ✅ Pass duration to backend
       const result = await generateScript(topic, userNiche, userLanguage, userVoiceStyle, duration);
       if (mode === 'hook') setScript({ hook: result.hook });
       else if (mode === 'body') setScript({ body: result.body });
@@ -88,9 +128,7 @@ export default function ScriptsPage() {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <FileText className="w-6 h-6" /> Script Generator
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Generate unique ready-to-film scripts from any topic
-        </p>
+        <p className="text-muted-foreground mt-1">Generate unique ready-to-film scripts from any topic</p>
         {userVoiceStyle && (
           <div className="mt-2 flex items-center gap-2 text-xs text-green-400">
             <Mic className="w-3 h-3" />
@@ -106,9 +144,7 @@ export default function ScriptsPage() {
             key={m.id}
             onClick={() => { setMode(m.id); setScript(null); }}
             className={`p-3 rounded-xl border text-left transition-all ${
-              mode === m.id
-                ? "border-transparent text-white"
-                : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+              mode === m.id ? "border-transparent text-white" : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
             }`}
             style={mode === m.id ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
           >
@@ -118,7 +154,7 @@ export default function ScriptsPage() {
         ))}
       </div>
 
-      {/* ✅ Duration toggle */}
+      {/* Duration toggle */}
       <div className="mb-6">
         <p className="text-xs text-muted-foreground mb-2 font-medium flex items-center gap-1">
           <Clock className="w-3 h-3" /> Script Duration
@@ -129,9 +165,7 @@ export default function ScriptsPage() {
               key={d.value}
               onClick={() => setDuration(d.value)}
               className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                duration === d.value
-                  ? "text-white border-transparent"
-                  : "border-border text-muted-foreground hover:text-foreground"
+                duration === d.value ? "text-white border-transparent" : "border-border text-muted-foreground hover:text-foreground"
               }`}
               style={duration === d.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
             >
@@ -142,26 +176,71 @@ export default function ScriptsPage() {
         </div>
       </div>
 
-      {/* Input */}
-      <div className="flex gap-3 mb-6">
-        <input
-          type="text"
-          value={topicInput}
-          onChange={(e) => setTopicInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleGenerate(topicInput)}
-          placeholder="Enter any topic (e.g. Fitness, Cricket, Finance)"
-          className="flex-1 p-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
-        />
-        <button
-          onClick={() => handleGenerate(topicInput)}
-          disabled={generating}
-          className="px-6 py-3 rounded-xl text-white flex items-center gap-2 disabled:opacity-60"
-          style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
-        >
-          <Sparkles className="w-4 h-4" />
-          {generating ? 'Generating...' : 'Generate'}
-        </button>
+      {/* ✅ Input with autofill */}
+      <div className="relative mb-6">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <input
+              ref={inputRef}
+              type="text"
+              value={topicInput}
+              onChange={(e) => setTopicInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleGenerate(topicInput);
+                if (e.key === "Escape") setShowDropdown(false);
+              }}
+              onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
+              placeholder="Enter any topic (e.g. Fitness, Cricket, Finance)"
+              className="w-full p-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
+            />
+          </div>
+          <button
+            onClick={() => handleGenerate(topicInput)}
+            disabled={generating}
+            className="px-6 py-3 rounded-xl text-white flex items-center gap-2 disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+          >
+            <Sparkles className="w-4 h-4" />
+            {generating ? 'Generating...' : 'Generate'}
+          </button>
+        </div>
+
+        {/* ✅ Dropdown */}
+        {showDropdown && dropdownSuggestions.length > 0 && (
+          <div
+            ref={dropdownRef}
+            className="absolute top-full left-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+            style={{ width: 'calc(100% - 100px)' }}
+          >
+            {dropdownSuggestions.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => handleGenerate(s)}
+                className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
+              >
+                <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* ✅ Popular chips — shown when input is empty */}
+      {!topicInput && !script && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          <p className="w-full text-xs text-muted-foreground mb-1">Popular topics:</p>
+          {SUGGESTIONS.slice(0, 12).map((s) => (
+            <button
+              key={s}
+              onClick={() => handleGenerate(s)}
+              className="px-4 py-2 rounded-full border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && <p className="text-red-400 mb-4 text-sm">{error}</p>}
 
@@ -177,17 +256,13 @@ export default function ScriptsPage() {
               {MODES.find(m => m.id === mode)?.label} for "{selectedTopic}"
             </h2>
             {mode === 'full' && (
-              <button
-                onClick={copyAll}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
+              <button onClick={copyAll} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                 {copied === 'all' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 {copied === 'all' ? 'Copied!' : 'Copy All'}
               </button>
             )}
           </div>
 
-          {/* Hook */}
           {script.hook && (
             <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -200,7 +275,6 @@ export default function ScriptsPage() {
             </div>
           )}
 
-          {/* Body */}
           {script.body && (
             <div className="rounded-lg border border-border bg-secondary/30 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -213,7 +287,6 @@ export default function ScriptsPage() {
             </div>
           )}
 
-          {/* CTA */}
           {script.cta && (
             <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -244,7 +317,7 @@ export default function ScriptsPage() {
         </motion.div>
       )}
 
-      {/* Search History */}
+      {/* Recent Searches */}
       {history.length > 0 && (
         <div className="mt-8 space-y-3">
           <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
@@ -254,10 +327,7 @@ export default function ScriptsPage() {
             {history.map((item, i) => (
               <button
                 key={i}
-                onClick={() => {
-                  setTopicInput(item);
-                  handleGenerate(item);
-                }}
+                onClick={() => handleGenerate(item)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 <Clock className="w-3 h-3" />
