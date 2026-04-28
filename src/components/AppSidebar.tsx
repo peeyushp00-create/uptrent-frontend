@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Newspaper, FileText,
   PanelLeftClose, PanelLeft, LogOut, Settings,
   Sun, Moon, ChevronUp, Crown, Youtube, Instagram,
-  Search, Sparkles, BarChart2, Tag,
+  Search, Tag,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -27,14 +27,12 @@ const youtubeNav = [
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-const [platform, setPlatform] = useState<"instagram" | "youtube">(
-  () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
-);
 
-const switchPlatform = (p: "instagram" | "youtube") => {
-  setPlatform(p);
-  localStorage.setItem("platform", p);
-};
+  // ✅ Read platform from localStorage
+  const [platform, setPlatform] = useState<"instagram" | "youtube">(
+    () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
+  );
+
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -45,11 +43,25 @@ const switchPlatform = (p: "instagram" | "youtube") => {
     navigate("/login");
   };
 
+  // ✅ Save platform to localStorage
+  const switchPlatform = (p: "instagram" | "youtube") => {
+    setPlatform(p);
+    localStorage.setItem("platform", p);
+    if (p === "youtube") {
+      navigate("/youtube/seo");
+    } else {
+      navigate("/");
+    }
+  };
+
+  // ✅ Auto-detect platform from URL
+  const isYoutubePath = location.pathname.startsWith("/youtube");
+  const effectivePlatform = isYoutubePath ? "youtube" : platform;
+  const navItems = effectivePlatform === "youtube" ? youtubeNav : instagramNav;
+
   const avatarInitials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : user?.email?.[0].toUpperCase() || 'U';
-
-  const navItems = platform === "instagram" ? instagramNav : youtubeNav;
 
   return (
     <aside
@@ -75,26 +87,26 @@ const switchPlatform = (p: "instagram" | "youtube") => {
         </button>
       </div>
 
-      {/* ✅ Platform toggle */}
+      {/* Platform toggle */}
       {!collapsed && (
         <div className="px-3 pt-3 pb-1">
           <div className="flex items-center gap-1 p-1 bg-background rounded-xl border border-border">
             <button
-             onClick={() => { switchPlatform("instagram"); navigate("/"); }}
+              onClick={() => switchPlatform("instagram")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                platform === "instagram" ? "text-white" : "text-muted-foreground hover:text-foreground"
+                effectivePlatform === "instagram" ? "text-white" : "text-muted-foreground hover:text-foreground"
               }`}
-              style={platform === "instagram" ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+              style={effectivePlatform === "instagram" ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
             >
               <Instagram className="w-3.5 h-3.5" />
               Instagram
             </button>
             <button
-              onClick={() => { setPlatform("youtube"); navigate("/"); }}
+              onClick={() => switchPlatform("youtube")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                platform === "youtube" ? "text-white" : "text-muted-foreground hover:text-foreground"
+                effectivePlatform === "youtube" ? "text-white" : "text-muted-foreground hover:text-foreground"
               }`}
-              style={platform === "youtube" ? { background: "linear-gradient(135deg, #FF0000, #CC0000)" } : {}}
+              style={effectivePlatform === "youtube" ? { background: "linear-gradient(135deg, #FF0000, #CC0000)" } : {}}
             >
               <Youtube className="w-3.5 h-3.5" />
               YouTube
@@ -106,9 +118,8 @@ const switchPlatform = (p: "instagram" | "youtube") => {
       {/* Nav items */}
       <nav className="flex-1 py-3 px-2 space-y-1">
         {navItems.map((item) => {
-          const active = location.pathname + location.search === item.path ||
-  (item.path.includes('/youtube') && location.pathname === '/youtube' &&
-   location.search.includes(item.path.split('?tab=')[1]));
+          // ✅ Simple exact path match
+          const active = location.pathname === item.path;
           return (
             <button
               key={item.path}
