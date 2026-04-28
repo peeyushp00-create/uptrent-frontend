@@ -149,11 +149,15 @@ export default function YouTubeSEO() {
               </div>
 
               {/* Score legend */}
-              <div className="flex items-center gap-3 mb-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block"/> 80+ High</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block"/> 60+ Medium</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block"/> Below 60 Low</span>
-              </div>
+              <div className="bg-secondary/30 rounded-xl p-3 mb-3 space-y-1.5">
+  <p className="text-xs font-medium text-foreground">How scores work:</p>
+  <p className="text-xs text-muted-foreground">Each tag is scored 1-100 based on estimated search volume and relevance to your topic. Higher score = more people search for that tag on YouTube.</p>
+  <div className="flex items-center gap-3 mt-2 text-xs">
+    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> <span className="text-green-400">80+ High volume</span></span>
+    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> <span className="text-yellow-400">60+ Medium</span></span>
+    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> <span className="text-red-400">Below 60 Low</span></span>
+  </div>
+</div>
 
               <div className="flex flex-wrap gap-2">
                 {result.tags?.map((tag: any, i: number) => {
