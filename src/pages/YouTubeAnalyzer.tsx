@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Copy, Check, Loader2, ChevronRight, Youtube } from "lucide-react";
+import { Search, Copy, Check, Loader2, ChevronRight, Youtube, X } from "lucide-react";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -48,6 +48,12 @@ export default function YouTubeAnalyzer() {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
 
+  const handleClear = () => {
+    setChannelUrl(''); setResult(null);
+    localStorage.removeItem('yt_analyzer_result');
+    localStorage.removeItem('yt_analyzer_channel');
+  };
+
   const handleAnalyze = async (channel?: string) => {
     const target = channel || channelUrl;
     if (!target.trim()) return;
@@ -85,8 +91,13 @@ export default function YouTubeAnalyzer() {
                 onKeyDown={(e) => { if (e.key === "Enter") handleAnalyze(); if (e.key === "Escape") setShowDropdown(false); }}
                 onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
                 placeholder="Channel name (e.g. MrBeast, Ashish Chanchlani)"
-                className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
+                className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
               />
+              {channelUrl && (
+                <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <button onClick={() => handleAnalyze()} disabled={loading}
               className="px-4 py-3 rounded-xl text-white text-sm font-medium disabled:opacity-60"

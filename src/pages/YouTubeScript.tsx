@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, Sparkles, Copy, Check, Loader2, Search } from "lucide-react";
+import { FileText, Sparkles, Copy, Check, Loader2, Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -57,6 +57,12 @@ export default function YouTubeScript() {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
 
+  const handleClear = () => {
+    setTopic(''); setResult(null);
+    localStorage.removeItem('yt_script_result');
+    localStorage.removeItem('yt_script_topic');
+  };
+
   const handleGenerate = async (t?: string) => {
     const target = t || topic;
     if (!target.trim()) return;
@@ -92,8 +98,13 @@ export default function YouTubeScript() {
             onKeyDown={(e) => { if (e.key === "Escape") setShowDropdown(false); }}
             onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
             placeholder="Enter video topic (e.g. 5 Ways to Save Money)"
-            className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
+            className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
           />
+          {topic && (
+            <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10">
+              <X className="w-4 h-4" />
+            </button>
+          )}
           {showDropdown && dropdownSuggestions.length > 0 && (
             <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
               {dropdownSuggestions.map((s, i) => (

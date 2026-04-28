@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Instagram, Search, Copy, Check, Loader2, ChevronRight, Hash, Lightbulb, BarChart2, Sparkles } from "lucide-react";
+import { Instagram, Search, Copy, Check, Loader2, ChevronRight, Hash, Lightbulb, BarChart2, Sparkles, X } from "lucide-react";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -49,6 +49,12 @@ export default function InstagramAnalyzer() {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
 
+  const handleClear = () => {
+    setUsername(''); setResult(null);
+    localStorage.removeItem('ig_analyzer_username');
+    localStorage.removeItem('ig_analyzer_result');
+  };
+
   const handleAnalyze = async (uname?: string) => {
     const target = (uname || username).replace('@', '').trim();
     if (!target) return;
@@ -87,8 +93,13 @@ export default function InstagramAnalyzer() {
                 onKeyDown={(e) => { if (e.key === "Enter") handleAnalyze(); if (e.key === "Escape") setShowDropdown(false); }}
                 onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
                 placeholder="username (e.g. beerbiceps, techburner)"
-                className="w-full pl-8 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 text-sm"
+                className="w-full pl-8 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 text-sm"
               />
+              {username && (
+                <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <button onClick={() => handleAnalyze()} disabled={loading}
               className="px-4 py-3 rounded-xl text-white text-sm font-medium disabled:opacity-60"
