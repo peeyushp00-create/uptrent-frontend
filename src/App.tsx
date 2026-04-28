@@ -21,7 +21,6 @@ import YouTubeAnalyzer from "./pages/YouTubeAnalyzer";
 import YouTubeTrending from "./pages/YouTubeTrending";
 import InstagramAnalyzer from "./pages/InstagramAnalyzer";
 
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -36,8 +35,7 @@ const App = () => (
             <Route path="/landing" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-// inside protected routes:
-<Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
+
             {/* Protected routes — all with sidebar */}
             <Route
               element={
@@ -51,7 +49,9 @@ const App = () => (
               <Route path="/scripts" element={<ScriptsPage />} />
               <Route path="/trending" element={<TrendingDashboard />} />
               <Route path="/settings" element={<SettingsPage />} />
-              {/* ✅ YouTube pages — with sidebar, no top dashboard */}
+              {/* Instagram routes */}
+              <Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
+              {/* YouTube routes */}
               <Route path="/youtube/seo" element={<YouTubeSEO />} />
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
