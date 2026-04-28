@@ -20,7 +20,14 @@ const youtubeChips = [
 export default function Index() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [platform, setPlatform] = useState<"instagram" | "youtube">("instagram");
+ const [platform, setPlatform] = useState<"instagram" | "youtube">(
+  () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
+);
+
+const switchPlatform = (p: "instagram" | "youtube") => {
+  setPlatform(p);
+  localStorage.setItem("platform", p);
+};
 
   const handleSearch = () => {
     if (!search.trim()) return;

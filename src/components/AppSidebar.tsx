@@ -27,7 +27,14 @@ const youtubeNav = [
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [platform, setPlatform] = useState<"instagram" | "youtube">("instagram");
+const [platform, setPlatform] = useState<"instagram" | "youtube">(
+  () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
+);
+
+const switchPlatform = (p: "instagram" | "youtube") => {
+  setPlatform(p);
+  localStorage.setItem("platform", p);
+};
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -73,7 +80,7 @@ export default function AppSidebar() {
         <div className="px-3 pt-3 pb-1">
           <div className="flex items-center gap-1 p-1 bg-background rounded-xl border border-border">
             <button
-              onClick={() => { setPlatform("instagram"); navigate("/"); }}
+             onClick={() => { switchPlatform("instagram"); navigate("/"); }}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 platform === "instagram" ? "text-white" : "text-muted-foreground hover:text-foreground"
               }`}
