@@ -25,17 +25,16 @@ const youtubeNav = [
   { icon: TrendingUp, label: "Trending", path: "/youtube/trending" },
 ];
 
-// Logo-extracted colors
 const C = {
-  bg: "#161A10",
-  sidebar: "#1E2118",
-  card: "#252920",
-  border: "#353A28",
+  bg: "#111111",
+  sidebar: "#171717",
+  card: "#1C1C1C",
+  border: "#2E2E2E",
   gold: "#E8B84B",
   goldDark: "#C17D20",
-  text: "#F0E8D0",
-  muted: "#7A7A60",
-  subtle: "#2A2E20",
+  text: "#EDE0C8",
+  muted: "#6B6B6B",
+  subtle: "#242424",
 };
 
 export default function AppSidebar() {
@@ -103,7 +102,7 @@ export default function AppSidebar() {
               onClick={() => switchPlatform("instagram")}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={effectivePlatform === "instagram"
-                ? { background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#1E1A0E" }
+                ? { background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#111" }
                 : { color: C.muted }}
             >
               <Instagram className="w-3.5 h-3.5" />
@@ -113,7 +112,7 @@ export default function AppSidebar() {
               onClick={() => switchPlatform("youtube")}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={effectivePlatform === "youtube"
-                ? { background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#1E1A0E" }
+                ? { background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#111" }
                 : { color: C.muted }}
             >
               <Youtube className="w-3.5 h-3.5" />
@@ -148,17 +147,15 @@ export default function AppSidebar() {
       {/* Profile popup */}
       {showProfileMenu && (
         <div className="absolute bottom-16 left-2 right-2 rounded-2xl z-50 overflow-hidden"
-          style={{ background: C.card, border: `1px solid ${C.border}`, boxShadow: "0 16px 48px rgba(0,0,0,0.5)" }}>
+          style={{ background: C.card, border: `1px solid ${C.border}`, boxShadow: "0 16px 48px rgba(0,0,0,0.6)" }}>
           <div className="p-3" style={{ borderBottom: `1px solid ${C.border}` }}>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#1E1A0E" }}>
+                style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#111" }}>
                 {avatarInitials}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: C.text }}>
-                  {user?.user_metadata?.full_name || 'Creator'}
-                </p>
+                <p className="text-sm font-medium truncate" style={{ color: C.text }}>{user?.user_metadata?.full_name || 'Creator'}</p>
                 <p className="text-xs truncate" style={{ color: C.muted }}>{user?.email}</p>
               </div>
             </div>
@@ -174,8 +171,7 @@ export default function AppSidebar() {
                 onMouseEnter={e => { e.currentTarget.style.background = C.subtle; e.currentTarget.style.color = C.text; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.muted; }}
               >
-                <item.icon className="w-4 h-4" />
-                {item.label}
+                <item.icon className="w-4 h-4" />{item.label}
               </button>
             ))}
             <div style={{ borderTop: `1px solid ${C.border}`, margin: "4px 0" }} />
@@ -185,8 +181,7 @@ export default function AppSidebar() {
               onMouseEnter={e => { e.currentTarget.style.background = `${C.gold}10`; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
-              <Crown className="w-4 h-4" />
-              Upgrade to Pro
+              <Crown className="w-4 h-4" />Upgrade to Pro
             </button>
             <button onClick={handleLogout}
               className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm transition-all"
@@ -194,8 +189,7 @@ export default function AppSidebar() {
               onMouseEnter={e => { e.currentTarget.style.background = "#ef444410"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
-              <LogOut className="w-4 h-4" />
-              Logout
+              <LogOut className="w-4 h-4" />Logout
             </button>
           </div>
         </div>
@@ -206,20 +200,17 @@ export default function AppSidebar() {
         <button
           onClick={() => setShowProfileMenu(!showProfileMenu)}
           className="flex items-center gap-3 w-full px-2 py-2 rounded-xl transition-all"
-          style={showProfileMenu ? { background: C.subtle } : {}}
           onMouseEnter={e => { e.currentTarget.style.background = C.subtle; }}
           onMouseLeave={e => { if (!showProfileMenu) e.currentTarget.style.background = "transparent"; }}
         >
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#1E1A0E" }}>
+            style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#111" }}>
             {avatarInitials}
           </div>
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-medium truncate" style={{ color: C.text }}>
-                  {user?.user_metadata?.full_name || 'Creator'}
-                </p>
+                <p className="text-xs font-medium truncate" style={{ color: C.text }}>{user?.user_metadata?.full_name || 'Creator'}</p>
                 <p className="text-xs truncate" style={{ color: C.muted }}>{user?.email}</p>
               </div>
               <ChevronUp className={`w-4 h-4 transition-transform ${showProfileMenu ? '' : 'rotate-180'}`} style={{ color: C.muted }} />

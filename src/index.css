@@ -6,78 +6,78 @@
 
 @layer base {
   :root {
-    /* ✅ Dark Premium — Logo-extracted olive-dark + gold palette */
-    --background: 90 15% 9%;         /* #161A10 */
-    --foreground: 45 40% 90%;        /* #F0E8D0 warm off-white */
+    /* ✅ Dark Premium — Pure black/charcoal + gold accent */
+    --background: 0 0% 7%;           /* #111111 */
+    --foreground: 40 20% 90%;        /* #EDE0C8 warm white */
 
-    --card: 90 12% 14%;              /* #252920 */
-    --card-foreground: 45 40% 90%;
+    --card: 0 0% 11%;                /* #1C1C1C */
+    --card-foreground: 40 20% 90%;
 
-    --popover: 90 12% 14%;
-    --popover-foreground: 45 40% 90%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 40 20% 90%;
 
     --primary: 42 78% 60%;           /* #E8B84B gold */
-    --primary-foreground: 90 20% 8%;
+    --primary-foreground: 0 0% 7%;
 
-    --secondary: 90 10% 17%;         /* #2A2E20 */
-    --secondary-foreground: 45 20% 65%;
+    --secondary: 0 0% 14%;           /* #242424 */
+    --secondary-foreground: 40 10% 65%;
 
-    --muted: 90 10% 19%;             /* #2E3222 */
-    --muted-foreground: 70 15% 48%;  /* #7A7A60 */
+    --muted: 0 0% 16%;               /* #292929 */
+    --muted-foreground: 0 0% 42%;    /* #6B6B6B */
 
-    --accent: 90 10% 20%;            /* #303428 */
-    --accent-foreground: 45 40% 90%;
+    --accent: 0 0% 18%;              /* #2E2E2E */
+    --accent-foreground: 40 20% 90%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 90 12% 20%;            /* #353A28 */
-    --input: 90 10% 17%;
+    --border: 0 0% 18%;              /* #2E2E2E */
+    --input: 0 0% 14%;
     --ring: 42 78% 60%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 90 15% 11%; /* #1E2118 */
-    --sidebar-foreground: 70 15% 48%;
+    --sidebar-background: 0 0% 9%;   /* #171717 */
+    --sidebar-foreground: 0 0% 42%;
     --sidebar-primary: 42 78% 60%;
-    --sidebar-primary-foreground: 90 20% 8%;
-    --sidebar-accent: 90 10% 17%;
-    --sidebar-accent-foreground: 45 40% 90%;
-    --sidebar-border: 90 12% 18%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 40 20% 90%;
+    --sidebar-border: 0 0% 16%;
     --sidebar-ring: 42 78% 60%;
 
     --font-heading: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
 
     --gradient-primary: linear-gradient(135deg, #E8B84B, #C17D20);
-    --gradient-card: linear-gradient(145deg, #252920, #1E2118);
+    --gradient-card: linear-gradient(145deg, #1C1C1C, #171717);
   }
 }
 
 .light {
-  --background: 60 20% 97%;
-  --foreground: 90 20% 8%;
+  --background: 0 0% 98%;
+  --foreground: 0 0% 8%;
   --card: 0 0% 100%;
-  --card-foreground: 90 20% 8%;
+  --card-foreground: 0 0% 8%;
   --primary: 38 80% 45%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 60 15% 92%;
-  --secondary-foreground: 90 15% 20%;
-  --muted: 60 15% 92%;
-  --muted-foreground: 60 10% 45%;
-  --accent: 60 15% 88%;
-  --accent-foreground: 90 20% 8%;
-  --border: 60 15% 84%;
-  --input: 60 15% 84%;
-  --sidebar-background: 60 15% 95%;
-  --sidebar-foreground: 90 15% 20%;
-  --sidebar-border: 60 15% 84%;
-  --sidebar-accent: 60 15% 88%;
-  --sidebar-accent-foreground: 90 20% 8%;
+  --secondary: 0 0% 94%;
+  --secondary-foreground: 0 0% 20%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 0% 90%;
+  --accent-foreground: 0 0% 8%;
+  --border: 0 0% 86%;
+  --input: 0 0% 86%;
+  --sidebar-background: 0 0% 96%;
+  --sidebar-foreground: 0 0% 20%;
+  --sidebar-border: 0 0% 86%;
+  --sidebar-accent: 0 0% 90%;
+  --sidebar-accent-foreground: 0 0% 8%;
   --card: 0 0% 100%;
   --popover: 0 0% 100%;
-  --popover-foreground: 90 20% 8%;
+  --popover-foreground: 0 0% 8%;
 }
 
 @layer base {
@@ -92,7 +92,7 @@
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #353A28; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #2E2E2E; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #E8B84B40; }
 
 /* Gold glow on focus */
@@ -117,5 +117,4 @@
 /* Card hover glow */
 .card-glow:hover {
   border-color: #E8B84B25;
-  box-shadow: 0 0 0 1px #E8B84B10;
 }
