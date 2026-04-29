@@ -210,7 +210,7 @@ export default function SettingsPage() {
           </h2>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold"
-              style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}>
+              style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}>
               {avatarInitials}
             </div>
             <div>
@@ -255,7 +255,7 @@ export default function SettingsPage() {
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                   niches.includes(n) ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                 }`}
-                style={niches.includes(n) ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+                style={niches.includes(n) ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
               >
                 {niches.includes(n) && '✓ '}{n}
               </button>
@@ -277,7 +277,7 @@ export default function SettingsPage() {
                 className={`flex-1 py-3 rounded-xl border text-sm font-medium transition-all ${
                   platform === p.value ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                 }`}
-                style={platform === p.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+                style={platform === p.value ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
               >
                 {p.label}
               </button>
@@ -299,7 +299,7 @@ export default function SettingsPage() {
                 className={`w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left ${
                   language === l.value ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                 }`}
-                style={language === l.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+                style={language === l.value ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
               >
                 {l.label}
               </button>
@@ -321,7 +321,7 @@ export default function SettingsPage() {
                 className={`w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left ${
                   style === s.value ? "border-pink-500 text-white" : "border-border text-muted-foreground hover:text-foreground"
                 }`}
-                style={style === s.value ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+                style={style === s.value ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
               >
                 {s.label}
               </button>
@@ -369,7 +369,7 @@ export default function SettingsPage() {
             className={`w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-all ${
               isRecording ? 'bg-red-500 animate-pulse' : ''
             }`}
-            style={!isRecording ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+            style={!isRecording ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
           >
             {isRecording ? (
               <><MicOff className="w-4 h-4" /> Stop Recording ({recordingTime}s)</>

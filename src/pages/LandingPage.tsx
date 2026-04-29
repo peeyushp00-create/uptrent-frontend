@@ -104,7 +104,7 @@ export default function LandingPage() {
           <button
             onClick={() => navigate("/signup")}
             className="px-4 py-2 rounded-xl text-white text-sm font-medium"
-            style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+            style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
           >
             Get Started Free
           </button>
@@ -140,7 +140,7 @@ export default function LandingPage() {
             <button
               onClick={() => navigate("/signup")}
               className="flex items-center gap-2 px-8 py-4 rounded-xl text-white font-medium text-base"
-              style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+              style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
             >
               Start for Free
               <ArrowRight className="w-4 h-4" />
@@ -296,7 +296,7 @@ export default function LandingPage() {
             {/* Pro plan */}
             <div className="bg-card border-2 border-pink-500 rounded-2xl p-8 relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-medium text-white"
-                style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}>
+                style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}>
                 Most Popular
               </div>
               <h3 className="font-bold text-xl mb-1">Pro</h3>
@@ -316,7 +316,7 @@ export default function LandingPage() {
               <button
                 onClick={() => navigate("/signup")}
                 className="w-full py-3 rounded-xl text-white font-medium"
-                style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+                style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
               >
                 Start Pro Trial
               </button>
@@ -333,7 +333,7 @@ export default function LandingPage() {
           <button
             onClick={() => navigate("/signup")}
             className="flex items-center gap-2 px-8 py-4 rounded-xl text-white font-medium text-base mx-auto"
-            style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+            style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
           >
             Start for Free Today
             <ArrowRight className="w-4 h-4" />

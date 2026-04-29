@@ -37,7 +37,7 @@ export default function BottomNav() {
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: '6px', padding: '6px', borderRadius: '10px', border: 'none', cursor: 'pointer',
             fontSize: '11px', fontWeight: 600,
-            background: platform === "instagram" ? "linear-gradient(135deg, #D4537E, #D85A30)" : 'transparent',
+            background: platform === "instagram" ? "linear-gradient(135deg, #E8B84B, #C17D20)" : 'transparent',
             color: platform === "instagram" ? 'white' : 'hsl(var(--muted-foreground))',
           }}
         >
@@ -50,7 +50,7 @@ export default function BottomNav() {
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: '6px', padding: '6px', borderRadius: '10px', border: 'none', cursor: 'pointer',
             fontSize: '11px', fontWeight: 600,
-            background: platform === "youtube" ? "linear-gradient(135deg, #FF0000, #CC0000)" : 'transparent',
+            background: platform === "youtube" ? "linear-gradient(135deg, #E8B84B, #C17D20)" : 'transparent',
             color: platform === "youtube" ? 'white' : 'hsl(var(--muted-foreground))',
           }}
         >
@@ -70,7 +70,7 @@ export default function BottomNav() {
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
                 padding: '6px 12px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                background: active ? (platform === 'youtube' ? 'linear-gradient(135deg, #FF0000, #CC0000)' : 'linear-gradient(135deg, #D4537E, #D85A30)') : 'transparent',
+                background: active ? (platform === 'youtube' ? 'linear-gradient(135deg, #E8B84B, #C17D20)' : 'linear-gradient(135deg, #E8B84B, #C17D20)') : 'transparent',
                 color: active ? 'white' : 'hsl(var(--muted-foreground))',
                 transition: 'all 0.2s', minWidth: '56px',
               }}

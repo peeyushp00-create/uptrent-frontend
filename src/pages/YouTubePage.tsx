@@ -150,7 +150,7 @@ export default function YouTubePage() {
               className={`flex flex-col items-center gap-1 p-2.5 rounded-2xl border text-center transition-all ${
                 activeTab === tab.id ? 'text-white border-transparent' : 'border-border text-muted-foreground hover:text-foreground'
               }`}
-              style={activeTab === tab.id ? { background: "linear-gradient(135deg, #FF0000, #CC0000)" } : {}}
+              style={activeTab === tab.id ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
             >
               <tab.icon className="w-4 h-4" />
               <span className="text-xs font-medium">{tab.label}</span>
@@ -177,7 +177,7 @@ export default function YouTubePage() {
                 onClick={handleSEO}
                 disabled={loading}
                 className="px-4 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2 disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #FF0000, #CC0000)" }}
+                style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
               >
                 <Sparkles className="w-4 h-4" />
                 {loading ? '...' : 'Generate'}
@@ -277,7 +277,7 @@ export default function YouTubePage() {
                     className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-all ${
                       scriptDuration === d ? 'text-white border-transparent' : 'border-border text-muted-foreground'
                     }`}
-                    style={scriptDuration === d ? { background: "linear-gradient(135deg, #FF0000, #CC0000)" } : {}}
+                    style={scriptDuration === d ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
                   >
                     {d} min
                   </button>
@@ -288,7 +288,7 @@ export default function YouTubePage() {
               onClick={handleScript}
               disabled={loading}
               className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #FF0000, #CC0000)" }}
+              style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
             >
               <Sparkles className="w-4 h-4" />
               {loading ? 'Generating Script...' : 'Generate Script'}
@@ -371,7 +371,7 @@ export default function YouTubePage() {
                 onClick={handleAnalyzer}
                 disabled={loading}
                 className="px-4 py-3 rounded-xl text-white text-sm font-medium disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #FF0000, #CC0000)" }}
+                style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               </button>
@@ -448,7 +448,7 @@ export default function YouTubePage() {
                   <button
                     onClick={() => { setScriptTopic(topic); setActiveTab("script"); }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-white text-xs font-medium shrink-0"
-                    style={{ background: "linear-gradient(135deg, #FF0000, #CC0000)" }}
+                    style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
                   >
                     <Sparkles className="w-3 h-3" />
                     Script

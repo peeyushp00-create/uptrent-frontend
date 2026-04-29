@@ -173,7 +173,7 @@ const renderReadLink = (url: string) => {
           <button
             onClick={() => handleSearch(searchInput)}
             className="px-6 py-3 rounded-xl text-white font-medium text-sm flex items-center gap-2"
-            style={{ background: "linear-gradient(135deg, #D4537E, #D85A30)" }}
+            style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
           >
             <Search className="w-4 h-4" />
             Search

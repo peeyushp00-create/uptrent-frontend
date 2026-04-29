@@ -83,7 +83,7 @@ const switchPlatform = (p: "instagram" | "youtube") => {
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
               platform === "instagram" ? "text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
-            style={platform === "instagram" ? { background: "linear-gradient(135deg, #D4537E, #D85A30)" } : {}}
+            style={platform === "instagram" ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
           >
             <Instagram className="w-4 h-4" />
             Instagram
@@ -93,7 +93,7 @@ const switchPlatform = (p: "instagram" | "youtube") => {
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
               platform === "youtube" ? "text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
-            style={platform === "youtube" ? { background: "linear-gradient(135deg, #FF0000, #CC0000)" } : {}}
+            style={platform === "youtube" ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
           >
             <Youtube className="w-4 h-4" />
             YouTube
@@ -120,8 +120,8 @@ const switchPlatform = (p: "instagram" | "youtube") => {
             className="px-8 py-4 rounded-xl text-white font-medium text-sm"
             style={{
               background: platform === "instagram"
-                ? "linear-gradient(135deg, #D4537E, #D85A30)"
-                : "linear-gradient(135deg, #FF0000, #CC0000)"
+                ? "linear-gradient(135deg, #E8B84B, #C17D20)"
+                : "linear-gradient(135deg, #E8B84B, #C17D20)"
             }}
           >
             Search

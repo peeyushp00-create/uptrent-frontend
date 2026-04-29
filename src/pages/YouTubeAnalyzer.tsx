@@ -101,7 +101,7 @@ export default function YouTubeAnalyzer() {
             </div>
             <button onClick={() => handleAnalyze()} disabled={loading}
               className="px-4 py-3 rounded-xl text-white text-sm font-medium disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #FF0000, #CC0000)" }}
+              style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             </button>
