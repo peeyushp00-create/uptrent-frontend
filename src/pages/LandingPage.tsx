@@ -4,285 +4,375 @@ import { useState, useEffect, useRef } from "react";
 import {
   TrendingUp, Sparkles, Newspaper, FileText,
   Check, Star, ArrowRight, Zap, Target,
-  Instagram, Youtube, Play, ChevronDown
+  Instagram, Youtube, ChevronDown, Play,
+  BarChart2, Users, Flame, Menu, X
 } from "lucide-react";
 
-const GOLD = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
-const GOLD_SOLID = "#3B82F6";
-const C = {
-  bg: "#111111", card: "#1C1C1C", border: "#2E2E2E",
-  text: "#EDE0C8", muted: "#6B6B6B", subtle: "#242424"
-};
-
-const features = [
-  { icon: TrendingUp, title: "Trending Topics", description: "Discover what's trending across 20+ niches in real time." },
-  { icon: Sparkles, title: "AI Script Generator", description: "Generate ready-to-film scripts with hooks, body and CTA in seconds." },
-  { icon: Newspaper, title: "Live News Feed", description: "Stay updated with the latest news to create timely content." },
-  { icon: FileText, title: "Content Ideas", description: "Get AI-powered content suggestions tailored to your niche." },
-  { icon: Target, title: "SEO Optimization", description: "Find the best titles, descriptions and tags for maximum reach." },
-  { icon: Zap, title: "Quick Hooks", description: "Generate viral hooks that stop the scroll in the first 3 seconds." },
-];
-
-const testimonials = [
-  { name: "Rahul Sharma", handle: "@rahulfinance", niche: "Finance Creator", text: "Uptrent helped me grow from 5K to 50K followers in 3 months. The trending topics feature is a game changer!", avatar: "RS", stars: 5 },
-  { name: "Priya Mehta", handle: "@priyafitness", niche: "Fitness Creator", text: "I used to spend hours writing scripts. Now Uptrent generates them in seconds and they perform way better!", avatar: "PM", stars: 5 },
-  { name: "Arjun Kapoor", handle: "@arjuntech", niche: "Tech Creator", text: "The AI chat feature is incredible. It's like having a personal content strategist available 24/7.", avatar: "AK", stars: 5 },
-];
-
-const freeFeatures = ["3 script generations per month", "Limited trending topics", "Basic news feed", "AI chat (5 messages/day)"];
-const proFeatures = ["Unlimited script generations", "Full trending data (20+ niches)", "Complete news feed", "Unlimited AI chat", "SEO optimization", "Content calendar", "Priority support"];
-
-const STATS = [
-  { value: "20+", label: "Niches Covered" },
-  { value: "10K+", label: "Scripts Generated" },
-  { value: "154", label: "Trending Topics" },
-  { value: "99%", label: "Creator Satisfaction" },
-];
-
-const HEADLINE_WORDS = ["Discover.", "Create.", "Go Viral."];
+const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
+const G = "#E8B84B";
+const C = { bg: "#0A0A0A", card: "#141414", card2: "#1A1A1A", border: "#222", text: "#F0EAD6", muted: "#5A5A5A", subtle: "#1E1E1E" };
 
 const NAV_LINKS = [
   { label: "Features", id: "features" },
+  { label: "How it Works", id: "howitworks" },
   { label: "Testimonials", id: "testimonials" },
   { label: "Pricing", id: "pricing" },
 ];
 
+const features = [
+  { icon: TrendingUp, title: "Trending Topics", desc: "Discover what India is watching — real-time trending data across 20+ niches before anyone else.", tag: "Live" },
+  { icon: Sparkles, title: "AI Script Generator", desc: "Generate ready-to-film Reel and YouTube scripts with hooks, body, and CTA in under 10 seconds.", tag: "AI" },
+  { icon: Newspaper, title: "Creator News Feed", desc: "Curated niche news delivered daily so you never run out of timely content ideas.", tag: "Daily" },
+  { icon: Target, title: "SEO Optimizer", desc: "Rank higher on YouTube with AI-generated titles, descriptions, and tags built for the algorithm.", tag: "YouTube" },
+  { icon: BarChart2, title: "Channel Analyzer", desc: "Deep-dive into any Instagram or YouTube channel — content pillars, ideas, and growth gaps.", tag: "Insights" },
+  { icon: Zap, title: "Viral Hook Engine", desc: "Stop the scroll with AI hooks engineered from millions of viral Indian creator posts.", tag: "Viral" },
+];
+
+const steps = [
+  { num: "01", title: "Pick Your Niche", desc: "Tell Uptrent your content niche — finance, fitness, comedy, tech or any of 20+ categories." },
+  { num: "02", title: "Discover Trends", desc: "See what's trending right now in your niche across Instagram Reels and YouTube Shorts." },
+  { num: "03", title: "Generate Content", desc: "One click to get a full script, viral hook, SEO tags or content ideas — ready to film." },
+  { num: "04", title: "Go Viral", desc: "Post with confidence knowing your content is built on real data and AI-powered strategy." },
+];
+
+const testimonials = [
+  { name: "Rahul Sharma", handle: "@rahulfinance", niche: "Finance · 280K", text: "Uptrent helped me go from 5K to 50K in 3 months. The trending topics feature is insane — I always post at the right time.", avatar: "RS", stars: 5 },
+  { name: "Priya Mehta", handle: "@priyafitness", niche: "Fitness · 120K", text: "Script generation alone saves me 4 hours a week. The hooks it writes are actually better than what I used to write myself.", avatar: "PM", stars: 5 },
+  { name: "Arjun Kapoor", handle: "@arjuntech", niche: "Tech · 95K", text: "The SEO optimizer took my YouTube views from 2K to 40K per video. I wish I had this 2 years ago.", avatar: "AK", stars: 5 },
+  { name: "Sneha Rao", handle: "@snehalifestyle", niche: "Lifestyle · 67K", text: "Finally a tool made for Indian creators. The Hinglish script option alone is worth the subscription.", avatar: "SR", stars: 5 },
+  { name: "Vikram Das", handle: "@vikramcricket", niche: "Cricket · 210K", text: "I post IPL content and Uptrent's live news feed means I'm always first. My engagement doubled.", avatar: "VD", stars: 5 },
+  { name: "Anjali Nair", handle: "@anjalifood", niche: "Food · 88K", text: "The channel analyzer showed me exactly what top food creators do differently. Changed my whole strategy.", avatar: "AN", stars: 5 },
+];
+
+const freeF = ["3 script generations/month", "Basic trending topics", "News feed (5 articles/day)", "AI chat (5 messages/day)"];
+const proF = ["Unlimited script generations", "Full trending data — 20+ niches", "Complete news feed", "Unlimited AI chat", "YouTube SEO optimizer", "Channel analyzer", "Instagram analyzer", "Priority support"];
+
+const WORDS = ["Discover.", "Create.", "Go Viral."];
+
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [wordIndex, setWordIndex] = useState(0);
+  const [wordIdx, setWordIdx] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [annual, setAnnual] = useState(false);
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: heroRef });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, -80]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, -60]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   useEffect(() => {
-    const i = setInterval(() => setWordIndex(w => (w + 1) % HEADLINE_WORDS.length), 2000);
+    const i = setInterval(() => setWordIdx(w => (w + 1) % WORDS.length), 2200);
     return () => clearInterval(i);
   }, []);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setMenuOpen(false);
   };
 
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: "100vh" }}>
+    <div style={{ background: C.bg, color: C.text, minHeight: "100vh", overflowX: "hidden" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
         .cg { font-family: 'Cormorant Garamond', serif !important; }
-        .gold-text { background: linear-gradient(135deg, #3B82F6, #1D4ED8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .hover-gold:hover { color: #3B82F6 !important; }
-        * { box-sizing: border-box; }
+        .dm { font-family: 'DM Sans', sans-serif !important; }
+        .gold-text { background: linear-gradient(135deg,#E8B84B,#C17D20); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .grain { position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.025; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:200px; }
+        * { box-sizing:border-box; }
+        ::-webkit-scrollbar { width:4px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
+        .nav-link { position:relative; }
+        .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:1px; background:#E8B84B; transition:.3s; }
+        .nav-link:hover::after { width:100%; }
+        .nav-link:hover { color:#E8B84B !important; }
+        .feature-card:hover { border-color:#E8B84B25 !important; transform:translateY(-4px); }
+        .feature-card { transition: all .25s ease; }
+        .testi-card:hover { border-color:#E8B84B20 !important; }
       `}</style>
 
+      {/* Grain overlay */}
+      <div className="grain" />
+
       {/* ── NAVBAR ── */}
-      <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="flex items-center justify-between px-6 md:px-16 py-4 sticky top-0 z-50"
-        style={{ background: `${C.bg}ee`, borderBottom: `1px solid ${C.border}`, backdropFilter: "blur(12px)" }}
-      >
-        <div className="flex items-center gap-2">
-          <motion.img whileHover={{ rotate: 10 }} src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-lg" />
-          <span className="font-bold text-lg cg" style={{ color: C.text }}>Uptrent</span>
+      <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }}
+        className="flex items-center justify-between px-6 md:px-16 py-5 fixed top-0 left-0 right-0 z-50"
+        style={{ background: `${C.bg}cc`, borderBottom: `1px solid ${C.border}20`, backdropFilter: "blur(20px)" }}>
+        <div className="flex items-center gap-3">
+          <motion.img whileHover={{ rotate: 8, scale: 1.05 }} src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-xl" />
+          <span className="cg font-bold text-xl" style={{ color: C.text, letterSpacing: ".01em" }}>Uptrent</span>
         </div>
 
-        {/* ✅ Nav links with scroll-to */}
-        <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: C.muted }}>
-          {NAV_LINKS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => scrollTo(item.id)}
-              className="hover-gold cursor-pointer transition-colors bg-transparent border-none outline-none"
-              style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}
-            >
-              {item.label}
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-8">
+          {NAV_LINKS.map(l => (
+            <button key={l.id} onClick={() => scrollTo(l.id)}
+              className="nav-link dm text-sm bg-transparent border-none cursor-pointer transition-colors"
+              style={{ color: C.muted }}>
+              {l.label}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/login")} className="px-4 py-2 text-sm transition-colors hover-gold" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-            Login
-          </button>
-          <motion.button
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+        <div className="hidden md:flex items-center gap-3">
+          <button onClick={() => navigate("/login")} className="dm text-sm transition-colors nav-link" style={{ color: C.muted }}>Login</button>
+          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 24px #E8B84B30" }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
-            className="px-5 py-2 rounded-xl text-sm font-semibold"
-            style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
-          >
-            Get Started Free
+            className="dm px-5 py-2.5 rounded-xl text-sm font-semibold"
+            style={{ background: GOLD, color: "#0A0A0A" }}>
+            Start Free
           </motion.button>
         </div>
+
+        {/* Mobile menu button */}
+        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden" style={{ color: C.muted }}>
+          {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
       </motion.nav>
 
-      {/* ── HERO ── */}
-      <section ref={heroRef} className="relative flex flex-col items-center text-center px-6 py-24 md:py-36 gap-10 overflow-hidden">
-        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }} transition={{ duration: 10, repeat: Infinity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #3B82F6, transparent 65%)", filter: "blur(60px)" }}
-        />
-        <motion.div animate={{ scale: [1.1, 1, 1.1], opacity: [0.03, 0.06, 0.03] }} transition={{ duration: 14, repeat: Infinity, delay: 3 }}
-          className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, #1D4ED8, transparent 70%)", filter: "blur(80px)" }}
-        />
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="fixed top-16 left-0 right-0 z-40 p-4 flex flex-col gap-2"
+            style={{ background: C.card, border: `1px solid ${C.border}`, margin: "0 16px", borderRadius: "16px" }}>
+            {NAV_LINKS.map(l => (
+              <button key={l.id} onClick={() => scrollTo(l.id)} className="dm text-sm py-2.5 text-left transition-colors" style={{ color: C.muted }}>{l.label}</button>
+            ))}
+            <div className="border-t my-1" style={{ borderColor: C.border }} />
+            <button onClick={() => navigate("/signup")} className="dm py-3 rounded-xl text-sm font-semibold text-center" style={{ background: GOLD, color: "#0A0A0A" }}>Start Free</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="flex flex-col items-center gap-8 max-w-4xl relative z-10">
+      {/* ── HERO ── */}
+      <section ref={heroRef} className="relative flex flex-col items-center text-center px-6 pt-36 pb-20 overflow-hidden" style={{ minHeight: "100vh" }}>
+        {/* BG glow */}
+        <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }} transition={{ duration: 10, repeat: Infinity }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] pointer-events-none rounded-full"
+          style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(80px)" }} />
+        <motion.div animate={{ scale: [1.1, 1, 1.1], opacity: [0.03, 0.07, 0.03] }} transition={{ duration: 14, repeat: Infinity, delay: 4 }}
+          className="absolute bottom-0 right-0 w-[500px] h-[500px] pointer-events-none rounded-full"
+          style={{ background: "radial-gradient(circle, #C17D20, transparent 70%)", filter: "blur(100px)" }} />
+
+        {/* Decorative grid lines */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `linear-gradient(${C.border}40 1px, transparent 1px), linear-gradient(90deg, ${C.border}40 1px, transparent 1px)`,
+          backgroundSize: "80px 80px", maskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent)"
+        }} />
+
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="flex flex-col items-center gap-7 max-w-4xl relative z-10">
+
           {/* Badge */}
-          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}
-            className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium uppercase"
-            style={{ background: "#3B82F612", border: "1px solid #3B82F630", color: GOLD_SOLID, letterSpacing: "0.14em" }}
-          >
-            <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }}
-              className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD_SOLID }} />
+          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="flex items-center gap-2 px-5 py-2 rounded-full dm text-xs font-medium"
+            style={{ background: "#E8B84B0D", border: "1px solid #E8B84B25", color: G, letterSpacing: ".12em" }}>
+            <motion.span animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: G }} />
             <Sparkles className="w-3 h-3" />
-            AI-Powered · Built for Indian Creators
+            BUILT FOR INDIA'S CREATORS
           </motion.div>
 
           {/* Headline */}
-          <div className="flex flex-col items-center gap-2">
-            <motion.p initial={{ opacity: 0, letterSpacing: "0.5em" }} animate={{ opacity: 1, letterSpacing: "0.2em" }}
-              transition={{ delay: 0.3, duration: 1 }}
-              className="text-xs uppercase tracking-widest" style={{ color: "#3A3A3A", fontFamily: "Inter, sans-serif" }}>
-              The Creator's AI Toolkit
+          <div>
+            <motion.p initial={{ opacity: 0, letterSpacing: "0.6em" }} animate={{ opacity: 1, letterSpacing: "0.22em" }} transition={{ delay: 0.3, duration: 1 }}
+              className="dm text-xs uppercase mb-3" style={{ color: "#383838", letterSpacing: "0.22em" }}>
+              The AI Creator Toolkit
             </motion.p>
-            <div className="cg text-6xl md:text-8xl font-bold" style={{ minHeight: "1.3em" }}>
+            <div className="cg font-bold leading-none" style={{ fontSize: "clamp(56px, 9vw, 110px)", minHeight: "1.25em" }}>
               <AnimatePresence mode="wait">
-                <motion.span key={wordIndex}
-                  initial={{ opacity: 0, y: 24, letterSpacing: "0.35em", filter: "blur(10px)" }}
+                <motion.span key={wordIdx}
+                  initial={{ opacity: 0, y: 30, letterSpacing: "0.4em", filter: "blur(12px)" }}
                   animate={{ opacity: 1, y: 0, letterSpacing: "0.01em", filter: "blur(0)" }}
-                  exit={{ opacity: 0, y: -18, letterSpacing: "0.18em", filter: "blur(5px)" }}
-                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className={wordIndex === 1 ? "gold-text italic" : wordIndex === 2 ? "italic" : ""}
-                  style={{ display: "inline-block", color: wordIndex === 0 ? C.text : wordIndex === 2 ? "#1D4ED8" : undefined }}
-                >
-                  {HEADLINE_WORDS[wordIndex]}
+                  exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
+                  transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+                  className={wordIdx === 1 ? "gold-text italic" : wordIdx === 2 ? "italic" : ""}
+                  style={{ display: "inline-block", color: wordIdx === 0 ? C.text : wordIdx === 2 ? "#C17D20" : undefined }}>
+                  {WORDS[wordIdx]}
                 </motion.span>
               </AnimatePresence>
             </div>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }}
-              className="text-base md:text-lg max-w-xl mt-2" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-              Discover trending topics, generate AI scripts, find viral hashtags and grow your audience — all in one platform.
-            </motion.p>
           </div>
 
-          {/* CTA */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
+            className="dm text-base md:text-lg max-w-lg leading-relaxed" style={{ color: C.muted }}>
+            Trending topics, AI scripts, SEO tools and news — everything an Indian Instagram and YouTube creator needs in one place.
+          </motion.p>
+
+          {/* CTAs */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
             className="flex items-center gap-4 flex-wrap justify-center">
-            <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 30px #3B82F630" }} whileTap={{ scale: 0.97 }}
+            <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #E8B84B35" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/signup")}
-              className="flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-base"
-              style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
+              className="flex items-center gap-2 px-8 py-4 rounded-2xl dm font-semibold text-base"
+              style={{ background: GOLD, color: "#0A0A0A" }}>
               Start for Free <ArrowRight className="w-4 h-4" />
             </motion.button>
-            <motion.button whileHover={{ scale: 1.02, borderColor: "#3B82F650" }} whileTap={{ scale: 0.97 }}
+            <motion.button whileHover={{ scale: 1.02, borderColor: "#E8B84B40" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/login")}
-              className="flex items-center gap-2 px-8 py-4 rounded-2xl font-medium text-base transition-all"
-              style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text, fontFamily: "Inter, sans-serif" }}>
-              <Play className="w-4 h-4" style={{ color: GOLD_SOLID }} /> Watch Demo
+              className="flex items-center gap-2 px-8 py-4 rounded-2xl dm font-medium text-base transition-all"
+              style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text }}>
+              <Play className="w-4 h-4" style={{ color: G }} /> See Demo
             </motion.button>
           </motion.div>
 
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.85 }}
-            className="text-xs" style={{ color: "#3A3A3A", fontFamily: "Inter, sans-serif" }}>
-            No credit card required · Free plan available · 10,000+ creators
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
+            className="dm text-xs" style={{ color: "#303030" }}>
+            No credit card · Free forever plan · 10,000+ creators
           </motion.p>
 
-          {/* Platform badges */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.5 }}
-            className="flex items-center gap-4">
-            {[{ icon: Instagram, label: "Instagram" }, { icon: Youtube, label: "YouTube" }].map((p, i) => (
-              <motion.div key={i} whileHover={{ scale: 1.06, borderColor: "#3B82F650" }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all"
-                style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted, fontFamily: "Inter, sans-serif" }}>
-                <p.icon className="w-4 h-4" style={{ color: GOLD_SOLID }} /> {p.label}
-              </motion.div>
+          {/* Platform pills */}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}
+            className="flex items-center gap-3">
+            {[{ icon: Instagram, label: "Instagram Reels" }, { icon: Youtube, label: "YouTube Shorts" }].map((p, i) => (
+              <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl dm text-xs"
+                style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted }}>
+                <p.icon className="w-3.5 h-3.5" style={{ color: G }} /> {p.label}
+              </div>
             ))}
           </motion.div>
         </motion.div>
 
-        {/* Mockup */}
-        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-4xl relative z-10 mt-4">
-          <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-            <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${C.border}`, background: "#171717" }}>
-              <div className="w-3 h-3 rounded-full" style={{ background: "#FF5F56" }} />
-              <div className="w-3 h-3 rounded-full" style={{ background: "#FFBD2E" }} />
-              <div className="w-3 h-3 rounded-full" style={{ background: "#27C93F" }} />
-              <div className="flex-1 mx-4 px-3 py-1 rounded-lg text-xs text-center" style={{ background: C.bg, color: C.muted, fontFamily: "Inter, sans-serif" }}>uptrent.app</div>
+        {/* Hero mockup */}
+        <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-5xl mt-16 relative z-10">
+          {/* Glow under mockup */}
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 rounded-full pointer-events-none"
+            style={{ background: "#E8B84B", filter: "blur(40px)", opacity: 0.08 }} />
+          <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}`, boxShadow: "0 40px 80px rgba(0,0,0,0.5)" }}>
+            {/* Browser bar */}
+            <div className="flex items-center gap-2 px-5 py-3.5" style={{ background: "#0E0E0E", borderBottom: `1px solid ${C.border}` }}>
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full" style={{ background: "#FF5F56" }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: "#FFBD2E" }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: "#27C93F" }} />
+              </div>
+              <div className="flex-1 mx-6 px-4 py-1.5 rounded-lg dm text-xs text-center" style={{ background: C.bg, color: "#383838" }}>
+                app.uptrent.com/trending
+              </div>
+              <div className="flex items-center gap-2 dm text-xs" style={{ color: "#383838" }}>
+                <Sparkles className="w-3 h-3" style={{ color: G }} /> AI Active
+              </div>
             </div>
+            {/* Mockup content */}
             <div className="p-6 grid grid-cols-3 gap-4">
               {[
-                { topic: "Fitness & Gym", posts: "2.4K posts", trend: "🔥 Hot", score: 95 },
-                { topic: "Stock Market", posts: "1.8K posts", trend: "📈 Rising", score: 82 },
-                { topic: "Cricket & IPL", posts: "3.1K posts", trend: "🔥 Hot", score: 98 },
+                { topic: "Fitness & Gym", posts: "2.4K posts", trend: "🔥 Hot", score: 95, tag: "Fitness" },
+                { topic: "Stock Market", posts: "1.8K posts", trend: "📈 Rising", score: 82, tag: "Finance" },
+                { topic: "Cricket & IPL", posts: "3.1K posts", trend: "🔥 Hot", score: 98, tag: "Cricket" },
               ].map((item, i) => (
-                <motion.div key={i}
-                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 + i * 0.15, duration: 0.5 }}
-                  whileHover={{ borderColor: "#3B82F640", scale: 1.02 }}
-                  className="rounded-xl p-4 transition-all"
-                  style={{ background: C.bg, border: `1px solid ${C.border}` }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <TrendingUp className="w-4 h-4" style={{ color: GOLD_SOLID }} />
-                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#3B82F615", color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>{item.trend}</span>
+                <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.15 }}
+                  className="rounded-xl p-4" style={{ background: C.bg, border: `1px solid ${C.border}` }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="dm text-xs px-2 py-0.5 rounded-full" style={{ background: "#E8B84B12", color: G }}>#{item.tag}</span>
+                    <span className="dm text-xs" style={{ color: C.muted }}>{item.trend}</span>
                   </div>
-                  <p className="font-semibold text-sm mb-1" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{item.topic}</p>
-                  <p className="text-xs mb-3" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{item.posts}</p>
+                  <p className="dm font-semibold text-sm mb-1" style={{ color: C.text }}>{item.topic}</p>
+                  <p className="dm text-xs mb-3" style={{ color: C.muted }}>{item.posts}</p>
                   <div className="w-full h-1 rounded-full" style={{ background: C.border }}>
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${item.score}%` }} transition={{ delay: 1 + i * 0.2, duration: 0.8 }}
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${item.score}%` }} transition={{ delay: 1.2 + i * 0.2, duration: 1 }}
                       className="h-1 rounded-full" style={{ background: GOLD }} />
                   </div>
-                  <p className="text-xs mt-1 text-right" style={{ color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>{item.score}</p>
+                  <div className="flex justify-between mt-1.5">
+                    <span className="dm text-xs" style={{ color: C.muted }}>Trend Score</span>
+                    <span className="dm text-xs font-semibold" style={{ color: G }}>{item.score}</span>
+                  </div>
                 </motion.div>
               ))}
+            </div>
+            {/* Bottom bar */}
+            <div className="flex items-center justify-between px-6 py-3" style={{ borderTop: `1px solid ${C.border}`, background: "#0E0E0E" }}>
+              <div className="flex items-center gap-4">
+                {[{ icon: TrendingUp, label: "154 Topics" }, { icon: FileText, label: "Scripts" }, { icon: BarChart2, label: "Analytics" }].map((item, i) => (
+                  <div key={i} className="flex items-center gap-1.5 dm text-xs" style={{ color: C.muted }}>
+                    <item.icon className="w-3 h-3" style={{ color: G }} />{item.label}
+                  </div>
+                ))}
+              </div>
+              <div className="dm text-xs px-3 py-1 rounded-full" style={{ background: "#E8B84B12", color: G }}>● Live</div>
             </div>
           </div>
         </motion.div>
 
-        {/* Scroll indicator */}
-        <motion.button animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }}
+        {/* Scroll cue */}
+        <motion.button animate={{ y: [0, 8, 0] }} transition={{ duration: 2.5, repeat: Infinity }}
           onClick={() => scrollTo("features")}
-          className="flex flex-col items-center gap-1 mt-4 bg-transparent border-none cursor-pointer" style={{ color: C.muted }}>
-          <span className="text-xs" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.12em" }}>SCROLL</span>
+          className="flex flex-col items-center gap-1.5 mt-16 relative z-10 bg-transparent border-none cursor-pointer" style={{ color: C.muted }}>
+          <span className="dm text-xs" style={{ letterSpacing: ".14em" }}>EXPLORE</span>
           <ChevronDown className="w-4 h-4" />
         </motion.button>
       </section>
 
-      {/* ── STATS ── */}
-      <section style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, background: C.card }}>
-        <div className="max-w-5xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {STATS.map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-              <p className="text-4xl font-bold cg gold-text">{s.value}</p>
-              <p className="text-sm mt-1" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{s.label}</p>
+      {/* ── STATS BAR ── */}
+      <section style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+        <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {[
+            { val: "20+", label: "Niches Covered" },
+            { val: "10K+", label: "Scripts Generated" },
+            { val: "154", label: "Trending Daily" },
+            { val: "99%", label: "Creator Satisfaction" },
+          ].map((s, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.09 }}>
+              <p className="cg font-bold gold-text" style={{ fontSize: 42 }}>{s.val}</p>
+              <p className="dm text-xs mt-1" style={{ color: C.muted, letterSpacing: ".06em" }}>{s.label}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className="px-6 md:px-16 py-24">
-        <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Features</p>
-            <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Everything to Go Viral</h2>
-            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>Powerful AI tools built specifically for Indian content creators</p>
+      <section id="features" className="px-6 md:px-16 py-28">
+        <div className="max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="mb-16">
+            <p className="dm text-xs uppercase mb-3" style={{ color: G, letterSpacing: ".2em" }}>Features</p>
+            <div className="flex items-end justify-between flex-wrap gap-4">
+              <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text, lineHeight: 1.1 }}>
+                Everything You Need<br /><span className="italic gold-text">to Go Viral</span>
+              </h2>
+              <p className="dm text-sm max-w-xs" style={{ color: C.muted, lineHeight: 1.7 }}>
+                AI tools built specifically for Indian content creators on Instagram and YouTube.
+              </p>
+            </div>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.map((f, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                whileHover={{ borderColor: "#3B82F640", y: -4 }}
-                className="rounded-2xl p-6 transition-all cursor-default"
+              <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+                className="feature-card rounded-2xl p-6 cursor-default"
                 style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                <motion.div whileHover={{ scale: 1.1, rotate: 5 }}
-                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: "#3B82F615", border: "1px solid #3B82F625" }}>
-                  <f.icon className="w-5 h-5" style={{ color: GOLD_SOLID }} />
-                </motion.div>
-                <h3 className="font-semibold mb-2" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{f.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{f.description}</p>
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#E8B84B0D", border: "1px solid #E8B84B20" }}>
+                    <f.icon className="w-5 h-5" style={{ color: G }} />
+                  </div>
+                  <span className="dm text-xs px-2.5 py-1 rounded-full" style={{ background: "#E8B84B0D", color: G, border: "1px solid #E8B84B20" }}>{f.tag}</span>
+                </div>
+                <h3 className="dm font-semibold text-base mb-2" style={{ color: C.text }}>{f.title}</h3>
+                <p className="dm text-sm leading-relaxed" style={{ color: C.muted }}>{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section id="howitworks" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-28">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-16">
+            <p className="dm text-xs uppercase mb-3" style={{ color: G, letterSpacing: ".2em" }}>Process</p>
+            <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text }}>
+              From Zero to <span className="italic gold-text">Viral</span><br />in 4 Steps
+            </h2>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {steps.map((s, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+                className="relative">
+                {i < steps.length - 1 && (
+                  <div className="hidden lg:block absolute top-8 left-full w-full h-px -translate-y-1/2 z-0" style={{ background: `linear-gradient(90deg, ${C.border}, transparent)` }} />
+                )}
+                <div className="relative z-10">
+                  <div className="cg font-bold text-4xl mb-4 gold-text">{s.num}</div>
+                  <h3 className="dm font-semibold text-base mb-2" style={{ color: C.text }}>{s.title}</h3>
+                  <p className="dm text-sm leading-relaxed" style={{ color: C.muted }}>{s.desc}</p>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -290,32 +380,37 @@ export default function LandingPage() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section id="testimonials" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-24">
-        <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Testimonials</p>
-            <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Loved by Creators</h2>
-            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>See what creators across India are saying</p>
+      <section id="testimonials" className="px-6 md:px-16 py-28">
+        <div className="max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="mb-16">
+            <p className="dm text-xs uppercase mb-3" style={{ color: G, letterSpacing: ".2em" }}>Testimonials</p>
+            <div className="flex items-end justify-between flex-wrap gap-4">
+              <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text, lineHeight: 1.1 }}>
+                Loved by <span className="italic gold-text">Creators</span><br />Across India
+              </h2>
+              <div className="flex items-center gap-2 dm text-sm" style={{ color: C.muted }}>
+                <Users className="w-4 h-4" style={{ color: G }} />
+                10,000+ active creators
+              </div>
+            </div>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {testimonials.map((t, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                whileHover={{ borderColor: "#3B82F630", y: -4 }}
-                className="rounded-2xl p-6 transition-all"
-                style={{ background: C.bg, border: `1px solid ${C.border}` }}>
-                <div className="flex items-center gap-1 mb-4">
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+                className="testi-card rounded-2xl p-6 transition-all"
+                style={{ background: C.card, border: `1px solid ${C.border}` }}>
+                <div className="flex gap-0.5 mb-4">
                   {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                    <Star key={j} className="w-3.5 h-3.5" style={{ fill: G, color: G }} />
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>"{t.text}"</p>
+                <p className="dm text-sm leading-relaxed mb-5" style={{ color: C.muted }}>"{t.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                    style={{ background: GOLD, color: "#111" }}>{t.avatar}</div>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center dm text-xs font-bold"
+                    style={{ background: GOLD, color: "#0A0A0A" }}>{t.avatar}</div>
                   <div>
-                    <p className="font-semibold text-sm" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{t.name}</p>
-                    <p className="text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{t.niche}</p>
+                    <p className="dm font-semibold text-sm" style={{ color: C.text }}>{t.name}</p>
+                    <p className="dm text-xs" style={{ color: C.muted }}>{t.niche}</p>
                   </div>
                 </div>
               </motion.div>
@@ -325,63 +420,80 @@ export default function LandingPage() {
       </section>
 
       {/* ── PRICING ── */}
-      <section id="pricing" className="px-6 md:px-16 py-24">
+      <section id="pricing" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-28">
         <div className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Pricing</p>
-            <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Simple Pricing</h2>
-            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>Start free, upgrade when you're ready</p>
+            <p className="dm text-xs uppercase mb-3" style={{ color: G, letterSpacing: ".2em" }}>Pricing</p>
+            <h2 className="cg font-bold mb-4" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text }}>
+              Simple, <span className="italic gold-text">Honest</span> Pricing
+            </h2>
+            <p className="dm text-sm" style={{ color: C.muted }}>Start free. Upgrade only when you're ready.</p>
+            {/* Annual toggle */}
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <span className="dm text-sm" style={{ color: annual ? C.muted : C.text }}>Monthly</span>
+              <button onClick={() => setAnnual(!annual)}
+                className="w-12 h-6 rounded-full transition-all relative"
+                style={{ background: annual ? GOLD : C.border }}>
+                <motion.div animate={{ x: annual ? 24 : 2 }} className="absolute top-1 w-4 h-4 rounded-full bg-white" />
+              </button>
+              <span className="dm text-sm" style={{ color: annual ? C.text : C.muted }}>
+                Annual <span className="dm text-xs px-2 py-0.5 rounded-full ml-1" style={{ background: "#E8B84B15", color: G }}>Save 30%</span>
+              </span>
+            </div>
           </motion.div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
-              className="rounded-2xl p-8" style={{ background: C.card, border: `1px solid ${C.border}` }}>
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
+              className="rounded-2xl p-8" style={{ background: C.bg, border: `1px solid ${C.border}` }}>
               <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Free</h3>
-              <p className="text-sm mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>Perfect to get started</p>
-              <div className="mb-6">
-                <span className="cg text-5xl font-bold" style={{ color: C.text }}>₹0</span>
-                <span className="text-sm ml-1" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>/month</span>
+              <p className="dm text-sm mb-6" style={{ color: C.muted }}>Perfect to get started</p>
+              <div className="mb-6 flex items-end gap-1">
+                <span className="cg font-bold" style={{ fontSize: 52, color: C.text, lineHeight: 1 }}>₹0</span>
+                <span className="dm text-sm mb-2" style={{ color: C.muted }}>/month</span>
               </div>
               <ul className="space-y-3 mb-8">
-                {freeFeatures.map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: GOLD_SOLID }} />{f}
+                {freeF.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2.5 dm text-sm" style={{ color: C.muted }}>
+                    <Check className="w-4 h-4 shrink-0" style={{ color: G }} />{f}
                   </li>
                 ))}
               </ul>
-              <motion.button whileHover={{ borderColor: "#3B82F650", color: GOLD_SOLID }} whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ borderColor: "#E8B84B50" }} whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/signup")}
-                className="w-full py-3 rounded-xl font-medium text-sm transition-all"
-                style={{ border: `1px solid ${C.border}`, color: C.text, fontFamily: "Inter, sans-serif" }}>
+                className="w-full py-3.5 rounded-xl dm font-medium text-sm transition-all"
+                style={{ border: `1px solid ${C.border}`, color: C.text }}>
                 Get Started Free
               </motion.button>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
-              whileHover={{ boxShadow: "0 0 40px #3B82F615" }}
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
+              whileHover={{ boxShadow: "0 0 60px #E8B84B12" }}
               className="rounded-2xl p-8 relative transition-all"
-              style={{ background: C.card, border: `1px solid #3B82F650` }}>
-              <motion.div animate={{ opacity: [0.8, 1, 0.8] }} transition={{ duration: 2, repeat: Infinity }}
-                className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
+              style={{ background: C.bg, border: `1px solid #E8B84B40` }}>
+              <motion.div animate={{ opacity: [0.85, 1, 0.85] }} transition={{ duration: 2, repeat: Infinity }}
+                className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full dm text-xs font-semibold"
+                style={{ background: GOLD, color: "#0A0A0A" }}>
                 ✦ Most Popular
               </motion.div>
               <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Pro</h3>
-              <p className="text-sm mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>For serious creators</p>
-              <div className="mb-6">
-                <span className="cg text-5xl font-bold gold-text">₹799</span>
-                <span className="text-sm ml-1" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>/month</span>
+              <p className="dm text-sm mb-6" style={{ color: C.muted }}>For serious creators</p>
+              <div className="mb-6 flex items-end gap-1">
+                <span className="cg font-bold gold-text" style={{ fontSize: 52, lineHeight: 1 }}>
+                  {annual ? "₹559" : "₹799"}
+                </span>
+                <span className="dm text-sm mb-2" style={{ color: C.muted }}>/month</span>
               </div>
               <ul className="space-y-3 mb-8">
-                {proFeatures.map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: GOLD_SOLID }} />{f}
+                {proF.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2.5 dm text-sm" style={{ color: C.muted }}>
+                    <Check className="w-4 h-4 shrink-0" style={{ color: G }} />{f}
                   </li>
                 ))}
               </ul>
-              <motion.button whileHover={{ scale: 1.02, boxShadow: "0 0 24px #3B82F630" }} whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ scale: 1.02, boxShadow: "0 0 30px #E8B84B25" }} whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/signup")}
-                className="w-full py-3 rounded-xl font-semibold text-sm"
-                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
+                className="w-full py-3.5 rounded-xl dm font-semibold text-sm"
+                style={{ background: GOLD, color: "#0A0A0A" }}>
                 Start Pro Trial
               </motion.button>
             </motion.div>
@@ -390,39 +502,41 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section style={{ background: C.card, borderTop: `1px solid ${C.border}` }} className="px-6 md:px-16 py-24 relative overflow-hidden">
-        <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.07, 0.03] }} transition={{ duration: 8, repeat: Infinity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #3B82F6, transparent 65%)", filter: "blur(60px)" }}
-        />
+      <section className="px-6 md:px-16 py-32 relative overflow-hidden">
+        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }} transition={{ duration: 9, repeat: Infinity }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] pointer-events-none rounded-full"
+          style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(80px)" }} />
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto text-center relative z-10">
-          <p className="text-xs uppercase tracking-widest mb-4" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Get Started</p>
-          <h2 className="cg text-4xl md:text-6xl font-bold mb-4" style={{ color: C.text }}>Ready to Go Viral?</h2>
-          <p className="text-base mb-8" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-            Join 10,000+ creators using Uptrent to grow faster on Instagram and YouTube
+          <p className="dm text-xs uppercase mb-4" style={{ color: G, letterSpacing: ".2em" }}>Get Started</p>
+          <h2 className="cg font-bold mb-5" style={{ fontSize: "clamp(44px,7vw,88px)", color: C.text, lineHeight: 1.05 }}>
+            Ready to<br /><span className="italic gold-text">Go Viral?</span>
+          </h2>
+          <p className="dm text-base mb-10 max-w-md mx-auto" style={{ color: C.muted, lineHeight: 1.7 }}>
+            Join 10,000+ Indian creators using Uptrent to grow faster on Instagram and YouTube.
           </p>
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #3B82F630" }} whileTap={{ scale: 0.97 }}
+          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 50px #E8B84B35" }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
-            className="flex items-center gap-2 px-10 py-4 rounded-2xl font-semibold text-base mx-auto"
-            style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
+            className="flex items-center gap-2 px-12 py-5 rounded-2xl dm font-semibold text-base mx-auto"
+            style={{ background: GOLD, color: "#0A0A0A" }}>
             Start for Free Today <ArrowRight className="w-4 h-4" />
           </motion.button>
-          <p className="text-xs mt-4" style={{ color: "#3A3A3A", fontFamily: "Inter, sans-serif" }}>No credit card · Free forever plan · Cancel anytime</p>
+          <p className="dm text-xs mt-4" style={{ color: "#2A2A2A" }}>No credit card · Free forever plan · Cancel anytime</p>
         </motion.div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="px-6 md:px-16 py-8" style={{ borderTop: `1px solid ${C.border}` }}>
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Uptrent" className="w-6 h-6 rounded" />
-            <span className="font-bold text-sm cg" style={{ color: C.text }}>Uptrent</span>
+      <footer className="px-6 md:px-16 py-10" style={{ borderTop: `1px solid ${C.border}` }}>
+        <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-6">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Uptrent" className="w-7 h-7 rounded-lg" />
+            <span className="cg font-bold text-lg" style={{ color: C.text }}>Uptrent</span>
           </div>
-          <p className="text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>© 2026 Uptrent Media. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-            <span className="hover-gold cursor-pointer transition-colors">Privacy Policy</span>
-            <span className="hover-gold cursor-pointer transition-colors">Terms of Service</span>
+          <div className="flex items-center gap-6 dm text-xs" style={{ color: C.muted }}>
+            <span className="nav-link cursor-pointer">Privacy Policy</span>
+            <span className="nav-link cursor-pointer">Terms of Service</span>
+            <span className="nav-link cursor-pointer">Contact</span>
           </div>
+          <p className="dm text-xs" style={{ color: "#2A2A2A" }}>© 2026 Uptrent Media. All rights reserved.</p>
         </div>
       </footer>
     </div>
