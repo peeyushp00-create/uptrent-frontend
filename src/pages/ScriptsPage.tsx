@@ -125,7 +125,7 @@ export default function ScriptsPage() {
           {MODES.map((m) => (
             <button key={m.id} onClick={() => { setMode(m.id); setScript(null); }}
               className={`p-3 rounded-2xl border text-left transition-all ${mode === m.id ? "border-transparent text-white" : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"}`}
-              style={mode === m.id ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
+              style={mode === m.id ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : {}}
             >
               <p className="text-xs font-semibold">{m.label}</p>
               <p className="text-xs opacity-70 mt-0.5">{m.description}</p>
@@ -142,7 +142,7 @@ export default function ScriptsPage() {
             {DURATION_OPTIONS.map((d) => (
               <button key={d.value} onClick={() => setDuration(d.value)}
                 className={`flex-1 py-2.5 rounded-2xl border text-sm font-medium transition-all ${duration === d.value ? "text-white border-transparent" : "border-border text-muted-foreground hover:text-foreground"}`}
-                style={duration === d.value ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
+                style={duration === d.value ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : {}}
               >
                 <p className="font-semibold">{d.label}</p>
                 <p className="text-xs opacity-70">{d.description}</p>
@@ -170,7 +170,7 @@ export default function ScriptsPage() {
             </div>
             <button onClick={() => handleGenerate(topicInput)} disabled={generating}
               className="px-5 py-3 rounded-2xl text-white flex items-center gap-2 disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
+              style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" }}
             >
               <Sparkles className="w-4 h-4" />
               {generating ? 'Generating...' : 'Generate'}

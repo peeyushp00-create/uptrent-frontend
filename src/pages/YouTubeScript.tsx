@@ -131,14 +131,14 @@ export default function YouTubeScript() {
             {[3, 5, 8, 10].map((d) => (
               <button key={d} onClick={() => setDuration(d)}
                 className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${duration === d ? 'text-white border-transparent' : 'border-border text-muted-foreground'}`}
-                style={duration === d ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
+                style={duration === d ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : {}}
               >{d} min</button>
             ))}
           </div>
         </div>
         <button onClick={() => handleGenerate()} disabled={loading}
           className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
-          style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
+          style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" }}
         >
           <Sparkles className="w-4 h-4" />
           {loading ? `Generating ${duration}-min script...` : 'Generate Script'}

@@ -7,8 +7,8 @@ import {
   Instagram, Youtube, Play, ChevronDown
 } from "lucide-react";
 
-const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
-const GOLD_SOLID = "#E8B84B";
+const GOLD = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
+const GOLD_SOLID = "#3B82F6";
 const C = {
   bg: "#111111", card: "#1C1C1C", border: "#2E2E2E",
   text: "#EDE0C8", muted: "#6B6B6B", subtle: "#242424"
@@ -69,8 +69,8 @@ export default function LandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,700&display=swap');
         .cg { font-family: 'Cormorant Garamond', serif !important; }
-        .gold-text { background: linear-gradient(135deg, #E8B84B, #C17D20); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .hover-gold:hover { color: #E8B84B !important; }
+        .gold-text { background: linear-gradient(135deg, #3B82F6, #1D4ED8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hover-gold:hover { color: #3B82F6 !important; }
         * { box-sizing: border-box; }
       `}</style>
 
@@ -120,18 +120,18 @@ export default function LandingPage() {
       <section ref={heroRef} className="relative flex flex-col items-center text-center px-6 py-24 md:py-36 gap-10 overflow-hidden">
         <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }} transition={{ duration: 10, repeat: Infinity }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(60px)" }}
+          style={{ background: "radial-gradient(ellipse, #3B82F6, transparent 65%)", filter: "blur(60px)" }}
         />
         <motion.div animate={{ scale: [1.1, 1, 1.1], opacity: [0.03, 0.06, 0.03] }} transition={{ duration: 14, repeat: Infinity, delay: 3 }}
           className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, #C17D20, transparent 70%)", filter: "blur(80px)" }}
+          style={{ background: "radial-gradient(circle, #1D4ED8, transparent 70%)", filter: "blur(80px)" }}
         />
 
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="flex flex-col items-center gap-8 max-w-4xl relative z-10">
           {/* Badge */}
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}
             className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium uppercase"
-            style={{ background: "#E8B84B12", border: "1px solid #E8B84B30", color: GOLD_SOLID, letterSpacing: "0.14em" }}
+            style={{ background: "#3B82F612", border: "1px solid #3B82F630", color: GOLD_SOLID, letterSpacing: "0.14em" }}
           >
             <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }}
               className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD_SOLID }} />
@@ -154,7 +154,7 @@ export default function LandingPage() {
                   exit={{ opacity: 0, y: -18, letterSpacing: "0.18em", filter: "blur(5px)" }}
                   transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                   className={wordIndex === 1 ? "gold-text italic" : wordIndex === 2 ? "italic" : ""}
-                  style={{ display: "inline-block", color: wordIndex === 0 ? C.text : wordIndex === 2 ? "#C17D20" : undefined }}
+                  style={{ display: "inline-block", color: wordIndex === 0 ? C.text : wordIndex === 2 ? "#1D4ED8" : undefined }}
                 >
                   {HEADLINE_WORDS[wordIndex]}
                 </motion.span>
@@ -169,13 +169,13 @@ export default function LandingPage() {
           {/* CTA */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
             className="flex items-center gap-4 flex-wrap justify-center">
-            <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 30px #E8B84B30" }} whileTap={{ scale: 0.97 }}
+            <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 30px #3B82F630" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/signup")}
               className="flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-base"
               style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
               Start for Free <ArrowRight className="w-4 h-4" />
             </motion.button>
-            <motion.button whileHover={{ scale: 1.02, borderColor: "#E8B84B50" }} whileTap={{ scale: 0.97 }}
+            <motion.button whileHover={{ scale: 1.02, borderColor: "#3B82F650" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/login")}
               className="flex items-center gap-2 px-8 py-4 rounded-2xl font-medium text-base transition-all"
               style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text, fontFamily: "Inter, sans-serif" }}>
@@ -192,7 +192,7 @@ export default function LandingPage() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.5 }}
             className="flex items-center gap-4">
             {[{ icon: Instagram, label: "Instagram" }, { icon: Youtube, label: "YouTube" }].map((p, i) => (
-              <motion.div key={i} whileHover={{ scale: 1.06, borderColor: "#E8B84B50" }}
+              <motion.div key={i} whileHover={{ scale: 1.06, borderColor: "#3B82F650" }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all"
                 style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted, fontFamily: "Inter, sans-serif" }}>
                 <p.icon className="w-4 h-4" style={{ color: GOLD_SOLID }} /> {p.label}
@@ -220,12 +220,12 @@ export default function LandingPage() {
                 <motion.div key={i}
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 + i * 0.15, duration: 0.5 }}
-                  whileHover={{ borderColor: "#E8B84B40", scale: 1.02 }}
+                  whileHover={{ borderColor: "#3B82F640", scale: 1.02 }}
                   className="rounded-xl p-4 transition-all"
                   style={{ background: C.bg, border: `1px solid ${C.border}` }}>
                   <div className="flex items-center justify-between mb-2">
                     <TrendingUp className="w-4 h-4" style={{ color: GOLD_SOLID }} />
-                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#E8B84B15", color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>{item.trend}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#3B82F615", color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>{item.trend}</span>
                   </div>
                   <p className="font-semibold text-sm mb-1" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{item.topic}</p>
                   <p className="text-xs mb-3" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{item.posts}</p>
@@ -273,12 +273,12 @@ export default function LandingPage() {
             {features.map((f, i) => (
               <motion.div key={i}
                 initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                whileHover={{ borderColor: "#E8B84B40", y: -4 }}
+                whileHover={{ borderColor: "#3B82F640", y: -4 }}
                 className="rounded-2xl p-6 transition-all cursor-default"
                 style={{ background: C.card, border: `1px solid ${C.border}` }}>
                 <motion.div whileHover={{ scale: 1.1, rotate: 5 }}
                   className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: "#E8B84B15", border: "1px solid #E8B84B25" }}>
+                  style={{ background: "#3B82F615", border: "1px solid #3B82F625" }}>
                   <f.icon className="w-5 h-5" style={{ color: GOLD_SOLID }} />
                 </motion.div>
                 <h3 className="font-semibold mb-2" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{f.title}</h3>
@@ -301,7 +301,7 @@ export default function LandingPage() {
             {testimonials.map((t, i) => (
               <motion.div key={i}
                 initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                whileHover={{ borderColor: "#E8B84B30", y: -4 }}
+                whileHover={{ borderColor: "#3B82F630", y: -4 }}
                 className="rounded-2xl p-6 transition-all"
                 style={{ background: C.bg, border: `1px solid ${C.border}` }}>
                 <div className="flex items-center gap-1 mb-4">
@@ -348,7 +348,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <motion.button whileHover={{ borderColor: "#E8B84B50", color: GOLD_SOLID }} whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ borderColor: "#3B82F650", color: GOLD_SOLID }} whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/signup")}
                 className="w-full py-3 rounded-xl font-medium text-sm transition-all"
                 style={{ border: `1px solid ${C.border}`, color: C.text, fontFamily: "Inter, sans-serif" }}>
@@ -357,9 +357,9 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
-              whileHover={{ boxShadow: "0 0 40px #E8B84B15" }}
+              whileHover={{ boxShadow: "0 0 40px #3B82F615" }}
               className="rounded-2xl p-8 relative transition-all"
-              style={{ background: C.card, border: `1px solid #E8B84B50` }}>
+              style={{ background: C.card, border: `1px solid #3B82F650` }}>
               <motion.div animate={{ opacity: [0.8, 1, 0.8] }} transition={{ duration: 2, repeat: Infinity }}
                 className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full text-xs font-semibold"
                 style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
@@ -378,7 +378,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <motion.button whileHover={{ scale: 1.02, boxShadow: "0 0 24px #E8B84B30" }} whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ scale: 1.02, boxShadow: "0 0 24px #3B82F630" }} whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/signup")}
                 className="w-full py-3 rounded-xl font-semibold text-sm"
                 style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
@@ -393,7 +393,7 @@ export default function LandingPage() {
       <section style={{ background: C.card, borderTop: `1px solid ${C.border}` }} className="px-6 md:px-16 py-24 relative overflow-hidden">
         <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.07, 0.03] }} transition={{ duration: 8, repeat: Infinity }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(60px)" }}
+          style={{ background: "radial-gradient(ellipse, #3B82F6, transparent 65%)", filter: "blur(60px)" }}
         />
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto text-center relative z-10">
           <p className="text-xs uppercase tracking-widest mb-4" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Get Started</p>
@@ -401,7 +401,7 @@ export default function LandingPage() {
           <p className="text-base mb-8" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
             Join 10,000+ creators using Uptrent to grow faster on Instagram and YouTube
           </p>
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #E8B84B30" }} whileTap={{ scale: 0.97 }}
+          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #3B82F630" }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
             className="flex items-center gap-2 px-10 py-4 rounded-2xl font-semibold text-base mx-auto"
             style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>

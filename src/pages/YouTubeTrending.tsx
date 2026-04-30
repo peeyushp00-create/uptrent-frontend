@@ -60,7 +60,7 @@ export default function YouTubeTrending() {
               <button
                 onClick={() => navigate('/youtube/script', { state: { topic } })}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-white text-xs font-medium shrink-0"
-                style={{ background: "linear-gradient(135deg, #E8B84B, #C17D20)" }}
+                style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" }}
               >
                 <Sparkles className="w-3 h-3" />
                 Script

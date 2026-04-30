@@ -254,7 +254,7 @@ export default function NewsPage() {
           {DATE_FILTERS.map((f) => (
             <button key={f.value} onClick={() => handleDateFilter(f.value)}
               className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${dateFilter === f.value ? "text-white border-transparent" : "border-border text-muted-foreground hover:text-foreground"}`}
-              style={dateFilter === f.value ? { background: "linear-gradient(135deg, #E8B84B, #C17D20)" } : {}}
+              style={dateFilter === f.value ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : {}}
             >{f.label}</button>
           ))}
         </div>

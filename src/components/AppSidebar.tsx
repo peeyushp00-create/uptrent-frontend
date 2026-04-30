@@ -25,8 +25,8 @@ const youtubeNav = [
   { icon: TrendingUp, label: "Trending", path: "/youtube/trending" },
 ];
 
-const GOLD = "#E8B84B";
-const GOLD_GRADIENT = "linear-gradient(135deg, #E8B84B, #C17D20)";
+const BLUE = "#3B82F6";
+const BLUE_GRADIENT = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
 
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -60,25 +60,17 @@ export default function AppSidebar() {
     : user?.email?.[0].toUpperCase() || 'U';
 
   return (
-    <aside
-      className={`flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 relative ${
-        collapsed ? "w-16" : "w-60"
-      }`}
-    >
+    <aside className={`flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 relative ${collapsed ? "w-16" : "w-60"}`}>
+
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border">
         <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
           <img src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-lg object-cover" />
         </div>
         {!collapsed && (
-          <span className="font-heading font-bold text-lg tracking-tight text-foreground">
-            Uptrent
-          </span>
+          <span className="font-heading font-bold text-lg tracking-tight text-foreground">Uptrent</span>
         )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
-        >
+        <button onClick={() => setCollapsed(!collapsed)} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
           {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
       </div>
@@ -91,7 +83,7 @@ export default function AppSidebar() {
               onClick={() => switchPlatform("instagram")}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={effectivePlatform === "instagram"
-                ? { background: GOLD_GRADIENT, color: "#111" }
+                ? { background: BLUE_GRADIENT, color: "#fff" }
                 : { color: "hsl(var(--muted-foreground))" }}
             >
               <Instagram className="w-3.5 h-3.5" />
@@ -101,7 +93,7 @@ export default function AppSidebar() {
               onClick={() => switchPlatform("youtube")}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={effectivePlatform === "youtube"
-                ? { background: GOLD_GRADIENT, color: "#111" }
+                ? { background: BLUE_GRADIENT, color: "#fff" }
                 : { color: "hsl(var(--muted-foreground))" }}
             >
               <Youtube className="w-3.5 h-3.5" />
@@ -120,21 +112,14 @@ export default function AppSidebar() {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                active
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
+                active ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
               }`}
               style={active
-                ? { background: `${GOLD}18`, borderLeft: `2px solid ${GOLD}` }
+                ? { background: `${BLUE}18`, borderLeft: `2px solid ${BLUE}` }
                 : { borderLeft: "2px solid transparent" }}
             >
-              <item.icon
-                className="w-4 h-4 flex-shrink-0"
-                style={active ? { color: GOLD } : {}}
-              />
-              {!collapsed && (
-                <span style={active ? { color: GOLD } : {}}>{item.label}</span>
-              )}
+              <item.icon className="w-4 h-4 flex-shrink-0" style={active ? { color: BLUE } : {}} />
+              {!collapsed && <span style={active ? { color: BLUE } : {}}>{item.label}</span>}
             </button>
           );
         })}
@@ -145,49 +130,36 @@ export default function AppSidebar() {
         <div className="absolute bottom-16 left-2 right-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
           <div className="p-3 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ background: GOLD_GRADIENT, color: "#111" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
+                style={{ background: BLUE_GRADIENT }}>
                 {avatarInitials}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {user?.user_metadata?.full_name || 'Creator'}
-                </p>
+                <p className="text-sm font-medium text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
             </div>
           </div>
           <div className="p-1">
-            <button
-              onClick={() => { navigate('/settings'); setShowProfileMenu(false); }}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent transition-colors"
-            >
-              <Settings className="w-4 h-4 text-muted-foreground" />
-              Settings
+            <button onClick={() => { navigate('/settings'); setShowProfileMenu(false); }}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent transition-colors">
+              <Settings className="w-4 h-4 text-muted-foreground" />Settings
             </button>
-            <button
-              onClick={() => { toggleTheme(); setShowProfileMenu(false); }}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent transition-colors"
-            >
+            <button onClick={() => { toggleTheme(); setShowProfileMenu(false); }}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent transition-colors">
               {theme === "dark"
-                ? <><Sun className="w-4 h-4 text-muted-foreground" /> Light Mode</>
-                : <><Moon className="w-4 h-4 text-muted-foreground" /> Dark Mode</>}
+                ? <><Sun className="w-4 h-4 text-muted-foreground" />Light Mode</>
+                : <><Moon className="w-4 h-4 text-muted-foreground" />Dark Mode</>}
             </button>
             <div className="border-t border-border my-1" />
-            <button
-              onClick={() => { navigate('/settings'); setShowProfileMenu(false); }}
+            <button onClick={() => { navigate('/settings'); setShowProfileMenu(false); }}
               className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors"
-              style={{ color: GOLD }}
-            >
-              <Crown className="w-4 h-4" />
-              Upgrade to Pro
+              style={{ color: BLUE }}>
+              <Crown className="w-4 h-4" />Upgrade to Pro
             </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
+            <button onClick={handleLogout}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors">
+              <LogOut className="w-4 h-4" />Logout
             </button>
           </div>
         </div>
@@ -195,22 +167,16 @@ export default function AppSidebar() {
 
       {/* Bottom profile */}
       <div className="p-2 border-t border-sidebar-border">
-        <button
-          onClick={() => setShowProfileMenu(!showProfileMenu)}
-          className={`flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-sidebar-accent/50 transition-colors ${
-            showProfileMenu ? 'bg-sidebar-accent' : ''
-          }`}
-        >
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: GOLD_GRADIENT, color: "#111" }}>
+        <button onClick={() => setShowProfileMenu(!showProfileMenu)}
+          className={`flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-sidebar-accent/50 transition-colors ${showProfileMenu ? 'bg-sidebar-accent' : ''}`}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
+            style={{ background: BLUE_GRADIENT }}>
             {avatarInitials}
           </div>
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-medium text-foreground truncate">
-                  {user?.user_metadata?.full_name || 'Creator'}
-                </p>
+                <p className="text-xs font-medium text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
               <ChevronUp className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileMenu ? '' : 'rotate-180'}`} />

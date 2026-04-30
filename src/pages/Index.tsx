@@ -17,13 +17,13 @@ const youtubeChips = [
   "Self Improvement", "Crypto", "Cars", "Movies",
 ];
 
-const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
-const GOLD_SOLID = "#E8B84B";
+const GOLD = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
+const GOLD_SOLID = "#3B82F6";
 
 const STEPS = [
   { word: "Discover.", color: "#EDE0C8", subtitle: "Find what's trending in your niche right now" },
-  { word: "Create.", color: "#E8B84B", subtitle: "Generate scripts, hooks and SEO in seconds" },
-  { word: "Go Viral.", color: "#C17D20", subtitle: "Reach millions with AI-powered content strategy" },
+  { word: "Create.", color: "#3B82F6", subtitle: "Generate scripts, hooks and SEO in seconds" },
+  { word: "Go Viral.", color: "#1D4ED8", subtitle: "Reach millions with AI-powered content strategy" },
 ];
 
 export default function Index() {
@@ -65,18 +65,18 @@ export default function Index() {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&display=swap');
         .cormorant { font-family: 'Cormorant Garamond', serif !important; }
         .gold-text {
-          background: linear-gradient(135deg, #E8B84B, #C17D20);
+          background: linear-gradient(135deg, #3B82F6, #1D4ED8);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
         .chip-item:hover {
-          border-color: #E8B84B50 !important;
-          color: #E8B84B !important;
+          border-color: #3B82F650 !important;
+          color: #3B82F6 !important;
         }
         .search-input:focus {
-          border-color: #E8B84B50 !important;
-          box-shadow: 0 0 0 3px #E8B84B08 !important;
+          border-color: #3B82F650 !important;
+          box-shadow: 0 0 0 3px #3B82F608 !important;
         }
       `}</style>
 
@@ -88,7 +88,7 @@ export default function Index() {
             animate={{ opacity: [0.03, 0.07, 0.03] }}
             transition={{ duration: 8, repeat: Infinity }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full"
-            style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(60px)" }}
+            style={{ background: "radial-gradient(ellipse, #3B82F6, transparent 65%)", filter: "blur(60px)" }}
           />
         </div>
 
@@ -105,7 +105,7 @@ export default function Index() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15, duration: 0.5 }}
             className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium uppercase tracking-widest"
-            style={{ background: "#E8B84B10", border: "1px solid #E8B84B25", color: GOLD_SOLID, letterSpacing: "0.14em" }}
+            style={{ background: "#3B82F610", border: "1px solid #3B82F625", color: GOLD_SOLID, letterSpacing: "0.14em" }}
           >
             <motion.div
               animate={{ opacity: [1, 0.2, 1] }}
@@ -201,7 +201,7 @@ export default function Index() {
             animate={{ scaleX: 1 }}
             transition={{ delay: 0.55, duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="w-full h-px"
-            style={{ background: "linear-gradient(90deg, transparent, #E8B84B25, transparent)", transformOrigin: "center" }}
+            style={{ background: "linear-gradient(90deg, transparent, #3B82F625, transparent)", transformOrigin: "center" }}
           />
 
           {/* Platform toggle */}
