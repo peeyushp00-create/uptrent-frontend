@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useRef } from "react";
 import {
   TrendingUp, Sparkles, Newspaper, FileText,
-  Check, Star, ArrowRight, Zap, Target, Users,
+  Check, Star, ArrowRight, Zap, Target,
   Instagram, Youtube, Play, ChevronDown
 } from "lucide-react";
 
@@ -41,31 +41,15 @@ const STATS = [
 
 const HEADLINE_WORDS = ["Discover.", "Create.", "Go Viral."];
 
-function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        let start = 0;
-        const step = target / 40;
-        const timer = setInterval(() => {
-          start += step;
-          if (start >= target) { setCount(target); clearInterval(timer); }
-          else setCount(Math.floor(start));
-        }, 30);
-      }
-    });
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [target]);
-  return <span ref={ref}>{count}{suffix}</span>;
-}
+const NAV_LINKS = [
+  { label: "Features", id: "features" },
+  { label: "Testimonials", id: "testimonials" },
+  { label: "Pricing", id: "pricing" },
+];
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [wordIndex, setWordIndex] = useState(0);
-  const [activeFeature, setActiveFeature] = useState(0);
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: heroRef });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, -80]);
@@ -76,18 +60,17 @@ export default function LandingPage() {
     return () => clearInterval(i);
   }, []);
 
-  useEffect(() => {
-    const i = setInterval(() => setActiveFeature(f => (f + 1) % features.length), 3000);
-    return () => clearInterval(i);
-  }, []);
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div style={{ background: C.bg, color: C.text, minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,700&display=swap');
         .cg { font-family: 'Cormorant Garamond', serif !important; }
-        .gold-text { background: linear-gradient(135deg,#E8B84B,#C17D20); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-        .hover-gold:hover { border-color: #E8B84B40 !important; color: #E8B84B !important; }
+        .gold-text { background: linear-gradient(135deg, #E8B84B, #C17D20); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hover-gold:hover { color: #E8B84B !important; }
         * { box-sizing: border-box; }
       `}</style>
 
@@ -103,18 +86,30 @@ export default function LandingPage() {
           <motion.img whileHover={{ rotate: 10 }} src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-lg" />
           <span className="font-bold text-lg cg" style={{ color: C.text }}>Uptrent</span>
         </div>
-        <div className="hidden md:flex items-center gap-6 text-sm" style={{ color: C.muted }}>
-          {["Features", "Pricing", "Testimonials"].map(item => (
-            <span key={item} className="hover-gold cursor-pointer transition-colors">{item}</span>
+
+        {/* ✅ Nav links with scroll-to */}
+        <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: C.muted }}>
+          {NAV_LINKS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => scrollTo(item.id)}
+              className="hover-gold cursor-pointer transition-colors bg-transparent border-none outline-none"
+              style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}
+            >
+              {item.label}
+            </button>
           ))}
         </div>
+
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/login")} className="px-4 py-2 text-sm transition-colors" style={{ color: C.muted }}>Login</button>
+          <button onClick={() => navigate("/login")} className="px-4 py-2 text-sm transition-colors hover-gold" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+            Login
+          </button>
           <motion.button
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
             className="px-5 py-2 rounded-xl text-sm font-semibold"
-            style={{ background: GOLD, color: "#111" }}
+            style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
           >
             Get Started Free
           </motion.button>
@@ -123,7 +118,6 @@ export default function LandingPage() {
 
       {/* ── HERO ── */}
       <section ref={heroRef} className="relative flex flex-col items-center text-center px-6 py-24 md:py-36 gap-10 overflow-hidden">
-        {/* Animated bg orbs */}
         <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }} transition={{ duration: 10, repeat: Infinity }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full pointer-events-none"
           style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(60px)" }}
@@ -134,20 +128,21 @@ export default function LandingPage() {
         />
 
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="flex flex-col items-center gap-8 max-w-4xl relative z-10">
-
           {/* Badge */}
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}
             className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium uppercase"
             style={{ background: "#E8B84B12", border: "1px solid #E8B84B30", color: GOLD_SOLID, letterSpacing: "0.14em" }}
           >
-            <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD_SOLID }} />
+            <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }}
+              className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD_SOLID }} />
             <Sparkles className="w-3 h-3" />
             AI-Powered · Built for Indian Creators
           </motion.div>
 
           {/* Headline */}
           <div className="flex flex-col items-center gap-2">
-            <motion.p initial={{ opacity: 0, letterSpacing: "0.5em" }} animate={{ opacity: 1, letterSpacing: "0.2em" }} transition={{ delay: 0.3, duration: 1 }}
+            <motion.p initial={{ opacity: 0, letterSpacing: "0.5em" }} animate={{ opacity: 1, letterSpacing: "0.2em" }}
+              transition={{ delay: 0.3, duration: 1 }}
               className="text-xs uppercase tracking-widest" style={{ color: "#3A3A3A", fontFamily: "Inter, sans-serif" }}>
               The Creator's AI Toolkit
             </motion.p>
@@ -171,19 +166,19 @@ export default function LandingPage() {
             </motion.p>
           </div>
 
-          {/* CTA buttons */}
+          {/* CTA */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
             className="flex items-center gap-4 flex-wrap justify-center">
             <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 30px #E8B84B30" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/signup")}
               className="flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-base"
-              style={{ background: GOLD, color: "#111" }}>
+              style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
               Start for Free <ArrowRight className="w-4 h-4" />
             </motion.button>
             <motion.button whileHover={{ scale: 1.02, borderColor: "#E8B84B50" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/login")}
               className="flex items-center gap-2 px-8 py-4 rounded-2xl font-medium text-base transition-all"
-              style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text }}>
+              style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text, fontFamily: "Inter, sans-serif" }}>
               <Play className="w-4 h-4" style={{ color: GOLD_SOLID }} /> Watch Demo
             </motion.button>
           </motion.div>
@@ -193,29 +188,28 @@ export default function LandingPage() {
             No credit card required · Free plan available · 10,000+ creators
           </motion.p>
 
-          {/* Animated platform badges */}
+          {/* Platform badges */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.5 }}
             className="flex items-center gap-4">
             {[{ icon: Instagram, label: "Instagram" }, { icon: Youtube, label: "YouTube" }].map((p, i) => (
               <motion.div key={i} whileHover={{ scale: 1.06, borderColor: "#E8B84B50" }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all"
-                style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted }}>
+                style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted, fontFamily: "Inter, sans-serif" }}>
                 <p.icon className="w-4 h-4" style={{ color: GOLD_SOLID }} /> {p.label}
               </motion.div>
             ))}
           </motion.div>
         </motion.div>
 
-        {/* Hero UI mockup */}
+        {/* Mockup */}
         <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-4xl relative z-10 mt-4">
           <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-            {/* Mockup header */}
             <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${C.border}`, background: "#171717" }}>
               <div className="w-3 h-3 rounded-full" style={{ background: "#FF5F56" }} />
               <div className="w-3 h-3 rounded-full" style={{ background: "#FFBD2E" }} />
               <div className="w-3 h-3 rounded-full" style={{ background: "#27C93F" }} />
-              <div className="flex-1 mx-4 px-3 py-1 rounded-lg text-xs text-center" style={{ background: C.bg, color: C.muted }}>uptrent.app</div>
+              <div className="flex-1 mx-4 px-3 py-1 rounded-lg text-xs text-center" style={{ background: C.bg, color: C.muted, fontFamily: "Inter, sans-serif" }}>uptrent.app</div>
             </div>
             <div className="p-6 grid grid-cols-3 gap-4">
               {[
@@ -231,15 +225,15 @@ export default function LandingPage() {
                   style={{ background: C.bg, border: `1px solid ${C.border}` }}>
                   <div className="flex items-center justify-between mb-2">
                     <TrendingUp className="w-4 h-4" style={{ color: GOLD_SOLID }} />
-                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#E8B84B15", color: GOLD_SOLID }}>{item.trend}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#E8B84B15", color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>{item.trend}</span>
                   </div>
-                  <p className="font-semibold text-sm mb-1" style={{ color: C.text }}>{item.topic}</p>
-                  <p className="text-xs mb-3" style={{ color: C.muted }}>{item.posts}</p>
+                  <p className="font-semibold text-sm mb-1" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{item.topic}</p>
+                  <p className="text-xs mb-3" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{item.posts}</p>
                   <div className="w-full h-1 rounded-full" style={{ background: C.border }}>
                     <motion.div initial={{ width: 0 }} animate={{ width: `${item.score}%` }} transition={{ delay: 1 + i * 0.2, duration: 0.8 }}
                       className="h-1 rounded-full" style={{ background: GOLD }} />
                   </div>
-                  <p className="text-xs mt-1 text-right" style={{ color: GOLD_SOLID }}>{item.score}</p>
+                  <p className="text-xs mt-1 text-right" style={{ color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>{item.score}</p>
                 </motion.div>
               ))}
             </div>
@@ -247,11 +241,12 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Scroll indicator */}
-        <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }}
-          className="flex flex-col items-center gap-1 mt-4" style={{ color: C.muted }}>
+        <motion.button animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }}
+          onClick={() => scrollTo("features")}
+          className="flex flex-col items-center gap-1 mt-4 bg-transparent border-none cursor-pointer" style={{ color: C.muted }}>
           <span className="text-xs" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.12em" }}>SCROLL</span>
           <ChevronDown className="w-4 h-4" />
-        </motion.div>
+        </motion.button>
       </section>
 
       {/* ── STATS ── */}
@@ -267,7 +262,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section className="px-6 md:px-16 py-24">
+      <section id="features" className="px-6 md:px-16 py-24">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
             <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Features</p>
@@ -281,7 +276,8 @@ export default function LandingPage() {
                 whileHover={{ borderColor: "#E8B84B40", y: -4 }}
                 className="rounded-2xl p-6 transition-all cursor-default"
                 style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                <motion.div whileHover={{ scale: 1.1, rotate: 5 }} className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                <motion.div whileHover={{ scale: 1.1, rotate: 5 }}
+                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
                   style={{ background: "#E8B84B15", border: "1px solid #E8B84B25" }}>
                   <f.icon className="w-5 h-5" style={{ color: GOLD_SOLID }} />
                 </motion.div>
@@ -294,7 +290,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-24">
+      <section id="testimonials" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-24">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
             <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Testimonials</p>
@@ -329,7 +325,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── PRICING ── */}
-      <section className="px-6 md:px-16 py-24">
+      <section id="pricing" className="px-6 md:px-16 py-24">
         <div className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
             <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Pricing</p>
@@ -343,7 +339,7 @@ export default function LandingPage() {
               <p className="text-sm mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>Perfect to get started</p>
               <div className="mb-6">
                 <span className="cg text-5xl font-bold" style={{ color: C.text }}>₹0</span>
-                <span className="text-sm ml-1" style={{ color: C.muted }}>/month</span>
+                <span className="text-sm ml-1" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>/month</span>
               </div>
               <ul className="space-y-3 mb-8">
                 {freeFeatures.map((f, i) => (
@@ -366,14 +362,14 @@ export default function LandingPage() {
               style={{ background: C.card, border: `1px solid #E8B84B50` }}>
               <motion.div animate={{ opacity: [0.8, 1, 0.8] }} transition={{ duration: 2, repeat: Infinity }}
                 className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: GOLD, color: "#111" }}>
+                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
                 ✦ Most Popular
               </motion.div>
               <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Pro</h3>
               <p className="text-sm mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>For serious creators</p>
               <div className="mb-6">
                 <span className="cg text-5xl font-bold gold-text">₹799</span>
-                <span className="text-sm ml-1" style={{ color: C.muted }}>/month</span>
+                <span className="text-sm ml-1" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>/month</span>
               </div>
               <ul className="space-y-3 mb-8">
                 {proFeatures.map((f, i) => (
@@ -408,7 +404,7 @@ export default function LandingPage() {
           <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #E8B84B30" }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
             className="flex items-center gap-2 px-10 py-4 rounded-2xl font-semibold text-base mx-auto"
-            style={{ background: GOLD, color: "#111" }}>
+            style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
             Start for Free Today <ArrowRight className="w-4 h-4" />
           </motion.button>
           <p className="text-xs mt-4" style={{ color: "#3A3A3A", fontFamily: "Inter, sans-serif" }}>No credit card · Free forever plan · Cancel anytime</p>
