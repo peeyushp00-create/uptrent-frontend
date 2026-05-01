@@ -2,10 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Instagram, Youtube, Sparkles, X, Heart, Eye,
-  MessageCircle, Share2, Bookmark, ArrowRight, Flame,
-  Megaphone, Clock, Music2, AlertCircle, BarChart2,
-  TrendingUp, ThumbsUp, Play, Target, MousePointerClick, Loader2
+  Search, Instagram, Youtube, Sparkles, X,
+  Heart, Eye, Flame, Megaphone, TrendingUp, Loader2, Play
 } from "lucide-react";
 
 const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
@@ -18,7 +16,7 @@ const instagramChips = ["Fitness","Motivation","Stock Market","Crypto","Travel",
 const youtubeChips = ["Tech Reviews","Finance","Motivation","Gaming","Travel Vlog","Cooking","Education","Fitness","Comedy","Cricket","Business","Music","Self Improvement","Crypto","Cars","Movies"];
 const WORDS = ["Discover.", "Create.", "Go Viral."];
 
-function generateItems(niche: string, platform: string) {
+function generateItems(niche: string, platform: string, seed = "") {
   const n = niche.toLowerCase().replace(/\s/g, "");
   const isYT = platform === "youtube";
 
@@ -51,39 +49,27 @@ function generateItems(niche: string, platform: string) {
   const shares = ["145K","98K","67K","310K","220K","165K","195K","112K","98K","42K","31K","28K"];
   const viralities = [97,92,85,98,99,94,93,89,83,88,79,76];
   const boosted = [false,true,false,false,false,false,false,true,false,false,true,false];
-
-  // Instagram explore grid pattern — 3 col layout
-  // Row 1: small, small, tall(rowspan2)
-  // Row 2: small, small, (continues tall)
-  // Row 3: tall(rowspan2), small, small
-  // Row 4: (continues tall), small, small
-  const spanPatterns = [1,1,2, 1,1,1, 2,1,1, 1,1,1];
+  const rowSpans = [1,1,2,1,1,1,2,1,1,1,1,2];
 
   return Array.from({ length: 12 }, (_, i) => ({
-    id: `${platform}-${n}-${i}`,
+    id: `${platform}-${n}-${seed}-${i}`,
     user: creators[i] || `creator${i}`,
     name: names[i] || `Creator ${i}`,
     avatar: (names[i] || "C")[0],
-    views: views[i],
-    likes: likes[i],
-    comments: comments[i],
-    shares: shares[i],
+    views: views[i], likes: likes[i], comments: comments[i], shares: shares[i],
     caption: captions[i],
-    hashtags: [`#${n}`, `#${isYT?"shorts":"reels"}`, "#india", "#viral"],
+    hashtags: [`#${n}`, `#${isYT ? "shorts" : "reels"}`, "#india", "#viral"],
     boosted: boosted[i],
     virality: viralities[i],
-    rowSpan: spanPatterns[i],
+    rowSpan: rowSpans[i],
     isVideo: i % 4 !== 1,
-    thumbnail: `https://picsum.photos/seed/${n}${platform}${i+1}/400/${spanPatterns[i]===2?800:400}`,
-    niche,
-    platform,
-    // IG
+    thumbnail: `https://picsum.photos/seed/${n}${platform}${seed}${i + 1}/400/${rowSpans[i] === 2 ? 800 : 400}`,
+    niche, platform,
     watchTime: ["92%","85%","88%","94%","89%","81%","97%","78%","86%","83%","79%","76%"][i],
     saveRate: ["18%","22%","31%","42%","38%","29%","15%","12%","26%","19%","24%","17%"][i],
-    hook: ["Dramatic transformation in first 3 seconds","Controversial opener — 'You're doing it wrong'","Before/after split screen in first second","Income screenshot shown immediately","Secret reveal with suspense build-up","List format saves prompt in first line","Celebrity name drives instant curiosity","POV format = instant relatability","Challenge + promised result at end","Bold claim with big number","Story-based emotional hook","Tutorial reveal with FOMO trigger"][i],
+    hook: ["Dramatic transformation in first 3 seconds","Controversial 'You're doing it wrong' opener","Before/after split screen in first second","Income screenshot shown immediately","Secret reveal with suspense build-up","List format saves prompt in first line","Celebrity name drives instant curiosity","POV format = instant relatability","Challenge + promised result at end","Bold claim with big number","Story-based emotional hook","Tutorial reveal with FOMO trigger"][i],
     audio: ["Heeriye Remix","Original Audio","Kesariya Beat","Lo-fi Study","Suspense Audio","Original VO","IPL Anthem","Comedy Beat","Emotional Piano","Trending 2024","Viral Sound","Motivational Beat"][i],
     reason: ["Transformation + trending audio + 7AM post time","Boosted + mistake hook drives saves and comments","Challenge format with high save rate triggers algorithm","Income proof + massive save rate = explore page push","Boosted + secret reveal + high shares = amplification","List format = high saves = consistent algorithm reach","Celebrity name + trending moment + seasonal timing","Relatable POV format = high shares among friends","Boosted + authenticity + promised payoff = high completion","Viral moment + trending topic + perfect timing","Personal story + emotional connection + shareable","Tutorial + FOMO + high rewatch value = algorithm loves"][i],
-    // YT
     ctr: ["14.2%","11.8%","9.4%","18.2%","16.5%","13.7%","15.4%","12.1%","10.8%","11.2%","9.8%","8.6%"][i],
     avgView: ["68%","61%","74%","91%","82%","79%","88%","71%","76%","72%","65%","69%"][i],
     retention: ["High drop at 0:08 then steady","Strong first 15 seconds","Very high — rewatch heavy","Near perfect retention","Almost no drop-off","People rewatch for steps","Rewatch for trick details","Drops at 45s but strong open","Consistent throughout","Front-loaded strong open","Mid-video dip but recovers","Strong throughout"][i],
@@ -104,7 +90,7 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searched, setSearched] = useState("");
-  const [insightItem, setInsightItem] = useState<any>(null);
+  const [batchSeed, setBatchSeed] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => setWordIndex(i => (i + 1) % WORDS.length), 2400);
@@ -113,26 +99,28 @@ export default function Index() {
 
   const switchPlatform = (p: "instagram" | "youtube") => {
     setPlatform(p); localStorage.setItem("platform", p);
-    setAllItems([]); setSearched(""); setSearch(""); setVisibleCount(PAGE_SIZE);
+    setAllItems([]); setSearched(""); setSearch(""); setVisibleCount(PAGE_SIZE); setBatchSeed(0);
   };
 
   const handleSearch = async (q?: string) => {
     const query = q || search;
     if (!query.trim()) return;
     setSearch(query); setLoading(true); setSearched(query);
-    setAllItems([]); setVisibleCount(PAGE_SIZE);
+    setAllItems([]); setVisibleCount(PAGE_SIZE); setBatchSeed(0);
     await new Promise(r => setTimeout(r, 1200));
-    setAllItems(generateItems(query, platform));
+    setAllItems(generateItems(query, platform, "0"));
     setLoading(false);
   };
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
-    await new Promise(r => setTimeout(r, 800));
-    // Generate more items with different seeds
-    const more = generateItems(searched + "-more", platform).map((item, i) => ({
-      ...item, id: `${item.id}-more-${i}`,
-      thumbnail: `https://picsum.photos/seed/${searched.replace(/\s/g,'').toLowerCase()}more${i}/400/${item.rowSpan===2?800:400}`,
+    await new Promise(r => setTimeout(r, 900));
+    const newSeed = batchSeed + 1;
+    setBatchSeed(newSeed);
+    const more = generateItems(searched, platform, String(newSeed)).map((item, i) => ({
+      ...item,
+      id: `${item.id}-batch${newSeed}`,
+      thumbnail: `https://picsum.photos/seed/${searched.replace(/\s/g,"").toLowerCase()}b${newSeed}i${i}/400/${item.rowSpan === 2 ? 800 : 400}`,
     }));
     setAllItems(prev => [...prev, ...more]);
     setVisibleCount(c => c + PAGE_SIZE);
@@ -140,7 +128,6 @@ export default function Index() {
   };
 
   const visibleItems = allItems.slice(0, visibleCount);
-  const hasMore = true; // always can load more (will fetch from API later)
   const chips = platform === "instagram" ? instagramChips : youtubeChips;
   const accentColor = platform === "instagram" ? G : B;
   const accentGrad = platform === "instagram" ? GOLD : BLUE_G;
@@ -156,17 +143,16 @@ export default function Index() {
         .explore-grid{
           display:grid;
           grid-template-columns:repeat(3,1fr);
-          grid-auto-rows:120px;
+          grid-auto-rows:140px;
           gap:2px;
         }
         .explore-item{position:relative;overflow:hidden;cursor:pointer;background:#1a1a1a}
         .explore-item img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
-        .explore-item:hover img{transform:scale(1.05)}
-        .explore-item .overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 30%,transparent 60%);opacity:0;transition:opacity .2s}
-        .explore-item:hover .overlay{opacity:1}
+        .explore-item:hover img{transform:scale(1.06)}
+        .explore-item .hover-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.45);opacity:0;transition:opacity .2s;display:flex;align-items:center;justify-content:center}
+        .explore-item:hover .hover-overlay{opacity:1}
+        .explore-item .stats{position:absolute;bottom:0;left:0;right:0;padding:8px 10px;display:flex;gap:10px;align-items:center}
         .row-span-2{grid-row:span 2}
-        .explore-item .stats{position:absolute;bottom:0;left:0;right:0;padding:8px;opacity:0;transition:opacity .2s;display:flex;gap:8px;align-items:center}
-        .explore-item:hover .stats{opacity:1}
       `}</style>
 
       <div className="flex-1 flex flex-col min-h-screen bg-background">
@@ -180,7 +166,7 @@ export default function Index() {
           <motion.div initial={{ opacity:0,y:16 }} animate={{ opacity:1,y:0 }} transition={{ duration:0.6 }}
             className="flex flex-col items-center gap-4 w-full max-w-xl relative z-10">
 
-            {/* Headline */}
+            {/* Animated headline */}
             <div className="cg text-4xl md:text-6xl font-bold text-center leading-tight" style={{ minHeight:"1.2em" }}>
               <AnimatePresence mode="wait">
                 <motion.span key={wordIndex}
@@ -195,6 +181,10 @@ export default function Index() {
               </AnimatePresence>
             </div>
 
+            <p className="text-xs text-center text-muted-foreground max-w-sm" style={{ fontFamily:"Inter,sans-serif" }}>
+              Search any niche to see top {platform === "instagram" ? "reels" : "shorts"} — tap any to see full insights
+            </p>
+
             {/* Platform toggle */}
             <div className="flex items-center gap-1 p-1 rounded-2xl bg-card border border-border">
               {(["instagram","youtube"] as const).map(p=>(
@@ -207,7 +197,7 @@ export default function Index() {
               ))}
             </div>
 
-            {/* Search bar */}
+            {/* Search */}
             <div className="flex gap-2 w-full">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
@@ -221,8 +211,8 @@ export default function Index() {
               </div>
               <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                 onClick={()=>handleSearch()}
-                className="px-5 py-3 rounded-2xl text-sm font-semibold"
-                style={{ background:accentGrad,color:platform==="instagram"?"#111":"#fff",fontFamily:"Inter,sans-serif" }}>
+                className="px-5 py-3 rounded-2xl font-semibold flex items-center justify-center"
+                style={{ background:accentGrad,color:platform==="instagram"?"#111":"#fff" }}>
                 <Search className="w-4 h-4"/>
               </motion.button>
             </div>
@@ -263,9 +253,9 @@ export default function Index() {
             {/* Top bar */}
             <div className="flex items-center justify-between px-3 pb-2">
               <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
-                <span style={{ color:accentColor, fontWeight:600 }}>#{searched}</span> · {visibleItems.length} results
+                <span style={{ color:accentColor,fontWeight:600 }}>#{searched}</span> · {visibleItems.length} results
               </p>
-              <button onClick={()=>{setSearched("");setAllItems([]);setSearch("");setVisibleCount(PAGE_SIZE);}}
+              <button onClick={()=>{setSearched("");setAllItems([]);setSearch("");setVisibleCount(PAGE_SIZE);setBatchSeed(0);}}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 style={{ fontFamily:"Inter,sans-serif" }}>
                 <X className="w-3.5 h-3.5"/> Clear
@@ -273,17 +263,17 @@ export default function Index() {
             </div>
 
             {/* ✅ Instagram Explore-style grid */}
-            <div className="explore-grid px-0">
+            <div className="explore-grid">
               {visibleItems.map((item, i) => (
                 <motion.div key={item.id}
                   initial={{ opacity:0 }} animate={{ opacity:1 }}
-                  transition={{ delay:(i%PAGE_SIZE)*0.04 }}
+                  transition={{ delay:(i % PAGE_SIZE)*0.03 }}
                   className={`explore-item ${item.rowSpan===2?"row-span-2":""}`}
-                  onClick={()=>setInsightItem(item)}>
+                  onClick={()=>navigate("/insight",{ state:{ item } })}>
 
                   <img src={item.thumbnail} alt={item.caption} loading="lazy"/>
 
-                  {/* Video play icon */}
+                  {/* Video icon */}
                   {item.isVideo && (
                     <div className="absolute top-2 right-2 z-10">
                       {platform==="instagram"
@@ -294,42 +284,39 @@ export default function Index() {
 
                   {/* Virality badge */}
                   <div className="absolute top-2 left-2 z-10 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full"
-                    style={{ background:item.virality>=90?accentColor:item.virality>=80?"#22c55e":"rgba(0,0,0,0.6)",
-                      color:item.virality>=90&&platform==="instagram"?"#000":"#fff",fontSize:10,fontFamily:"Inter,sans-serif" }}>
+                    style={{
+                      background:item.virality>=90?accentColor:item.virality>=80?"#22c55e":"rgba(0,0,0,0.55)",
+                      color:item.virality>=90&&platform==="instagram"?"#000":"#fff",
+                      fontSize:10,fontFamily:"Inter,sans-serif"
+                    }}>
                     <Flame className="w-2.5 h-2.5"/>{item.virality}
                   </div>
 
-                  {/* Hover overlay */}
-                  <div className="overlay"/>
+                  {/* Boosted */}
+                  {item.boosted && (
+                    <div className="absolute bottom-2 left-2 z-10 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full"
+                      style={{ background:B,color:"#fff",fontSize:9,fontFamily:"Inter,sans-serif" }}>
+                      <Megaphone className="w-2.5 h-2.5"/> Boosted
+                    </div>
+                  )}
 
-                  {/* Hover stats */}
-                  <div className="stats">
-                    <span className="flex items-center gap-0.5 text-white" style={{ fontSize:11,fontFamily:"Inter,sans-serif" }}>
-                      <Heart className="w-3 h-3"/> {item.likes}
-                    </span>
-                    <span className="flex items-center gap-0.5 text-white" style={{ fontSize:11,fontFamily:"Inter,sans-serif" }}>
-                      <Eye className="w-3 h-3"/> {item.views}
-                    </span>
+                  {/* Hover overlay with stats */}
+                  <div className="hover-overlay">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1 text-white font-semibold text-sm" style={{ fontFamily:"Inter,sans-serif" }}>
+                        <Heart className="w-4 h-4" fill="white"/> {item.likes}
+                      </div>
+                      <div className="flex items-center gap-1 text-white font-semibold text-sm" style={{ fontFamily:"Inter,sans-serif" }}>
+                        <Eye className="w-4 h-4"/> {item.views}
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Insights button on hover */}
-                  <motion.div className="absolute bottom-8 right-2 z-10 opacity-0"
-                    whileHover={{ opacity:1 }}
-                    style={{ opacity:0 }}>
-                  </motion.div>
                 </motion.div>
               ))}
             </div>
 
-            {/* Insights CTA below grid */}
-            <div className="flex justify-center mt-4 px-4">
-              <p className="text-xs text-muted-foreground text-center" style={{ fontFamily:"Inter,sans-serif" }}>
-                👆 Tap any {platform==="instagram"?"reel":"short"} to see full <span style={{ color:accentColor }}>Insights</span>
-              </p>
-            </div>
-
             {/* Load More */}
-            <div className="flex justify-center mt-4">
+            <div className="flex flex-col items-center mt-6 gap-2">
               <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                 onClick={handleLoadMore} disabled={loadingMore}
                 className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold transition-all disabled:opacity-60"
@@ -338,182 +325,13 @@ export default function Index() {
                   ?<><Loader2 className="w-4 h-4 animate-spin"/>Loading more...</>
                   :<><TrendingUp className="w-4 h-4"/>Load More {platform==="instagram"?"Reels":"Shorts"}</>}
               </motion.button>
+              <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
+                Tap any card to see full insights →
+              </p>
             </div>
           </motion.div>
         )}
       </div>
-
-      {/* ── INSIGHTS POPUP (full detail when tapped) ── */}
-      <AnimatePresence>
-        {insightItem && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
-            style={{ background:"rgba(0,0,0,0.80)",backdropFilter:"blur(10px)" }}
-            onClick={()=>setInsightItem(null)}>
-            <motion.div initial={{ y:50,scale:0.96 }} animate={{ y:0,scale:1 }} exit={{ y:50,scale:0.96 }}
-              onClick={e=>e.stopPropagation()}
-              className="bg-card border border-border rounded-3xl w-full max-w-md overflow-hidden"
-              style={{ maxHeight:"90vh",overflowY:"auto" }}>
-
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background:`${accentColor}15` }}>
-                    {platform==="instagram"?<Instagram className="w-4 h-4" style={{ color:accentColor }}/>:<Youtube className="w-4 h-4" style={{ color:accentColor }}/>}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
-                      {platform==="instagram"?"Reel":"Short"} Insights
-                    </p>
-                    <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>@{insightItem.user}</p>
-                  </div>
-                </div>
-                <button onClick={()=>setInsightItem(null)} className="text-muted-foreground hover:text-foreground">
-                  <X className="w-5 h-5"/>
-                </button>
-              </div>
-
-              {/* Thumbnail preview */}
-              <div className="relative h-48 overflow-hidden">
-                <img src={insightItem.thumbnail} alt={insightItem.caption} className="w-full h-full object-cover"/>
-                <div className="absolute inset-0" style={{ background:"linear-gradient(to top,rgba(0,0,0,0.8) 30%,transparent)" }}/>
-                <div className="absolute bottom-3 left-4 right-4">
-                  <p className="text-white text-sm font-medium line-clamp-2" style={{ fontFamily:"Inter,sans-serif" }}>{insightItem.caption}</p>
-                  <p className="text-white/60 text-xs mt-1" style={{ fontFamily:"Inter,sans-serif" }}>by {insightItem.name}</p>
-                </div>
-                {insightItem.isVideo && (
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center"
-                    style={{ background:"rgba(255,255,255,0.15)",backdropFilter:"blur(4px)" }}>
-                    <Play className="w-5 h-5 text-white ml-0.5" fill="white"/>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 space-y-3">
-                {/* Virality */}
-                <div className="rounded-2xl p-4" style={{ background:`${accentColor}0D`,border:`1px solid ${accentColor}25` }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color:accentColor,fontFamily:"Inter,sans-serif" }}>Virality Score</p>
-                    <span className="text-2xl font-bold" style={{ color:accentColor,fontFamily:"'Cormorant Garamond',serif" }}>{insightItem.virality}/100</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-border">
-                    <motion.div initial={{ width:0 }} animate={{ width:`${insightItem.virality}%` }} transition={{ duration:1,ease:"easeOut" }}
-                      className="h-2 rounded-full" style={{ background:accentGrad }}/>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5" style={{ fontFamily:"Inter,sans-serif" }}>
-                    {insightItem.virality>=90?"🔥 Top 5% — extremely viral":insightItem.virality>=80?"📈 Top 15% — high potential":"✅ Above average"}
-                  </p>
-                </div>
-
-                {/* Boost status */}
-                <div className="rounded-2xl p-3 border border-border">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily:"Inter,sans-serif" }}>Boost Status</p>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ background:insightItem.boosted?"#3B82F615":"#22c55e15" }}>
-                      {insightItem.boosted?<Megaphone className="w-4 h-4 text-blue-400"/>:<Sparkles className="w-4 h-4 text-green-400"/>}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
-                        {insightItem.boosted?"Paid Promotion":"100% Organic"}
-                      </p>
-                      <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
-                        {insightItem.boosted?"Paid ads used to amplify reach":"Algorithm pushed this naturally"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats grid */}
-                <div className="grid grid-cols-3 gap-2">
-                  {(platform==="instagram"?[
-                    { icon:Eye, label:"Views", val:insightItem.views, color:accentColor },
-                    { icon:Heart, label:"Likes", val:insightItem.likes, color:"#ef4444" },
-                    { icon:Share2, label:"Shares", val:insightItem.shares, color:G },
-                    { icon:MessageCircle, label:"Comments", val:insightItem.comments, color:"#8b5cf6" },
-                    { icon:Clock, label:"Watch Time", val:insightItem.watchTime, color:"#22c55e" },
-                    { icon:Bookmark, label:"Save Rate", val:insightItem.saveRate, color:"#f59e0b" },
-                  ]:[
-                    { icon:Eye, label:"Views", val:insightItem.views, color:B },
-                    { icon:ThumbsUp, label:"Likes", val:insightItem.likes, color:"#22c55e" },
-                    { icon:Share2, label:"Shares", val:insightItem.shares, color:accentColor },
-                    { icon:MessageCircle, label:"Comments", val:insightItem.comments, color:"#8b5cf6" },
-                    { icon:MousePointerClick, label:"CTR", val:insightItem.ctr, color:B },
-                    { icon:TrendingUp, label:"Avg View", val:insightItem.avgView, color:"#f59e0b" },
-                  ]).map((s,i)=>(
-                    <div key={i} className="flex flex-col items-center p-2.5 rounded-xl bg-background gap-1">
-                      <s.icon className="w-3.5 h-3.5" style={{ color:s.color }}/>
-                      <p className="text-xs font-bold text-foreground" style={{ fontFamily:"Inter,sans-serif" }}>{s.val}</p>
-                      <p className="text-xs text-muted-foreground" style={{ fontSize:10,fontFamily:"Inter,sans-serif" }}>{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* YouTube extras */}
-                {platform==="youtube" && (
-                  <>
-                    <div className="rounded-2xl p-3 border border-border">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5" style={{ fontFamily:"Inter,sans-serif" }}>Audience Retention</p>
-                      <div className="flex items-start gap-2"><BarChart2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color:B }}/><p className="text-sm text-foreground" style={{ fontFamily:"Inter,sans-serif" }}>{insightItem.retention}</p></div>
-                    </div>
-                    <div className="rounded-2xl p-3 border border-border">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5" style={{ fontFamily:"Inter,sans-serif" }}>Thumbnail Hook</p>
-                      <div className="flex items-start gap-2"><Target className="w-4 h-4 shrink-0 mt-0.5" style={{ color:B }}/><p className="text-sm text-foreground" style={{ fontFamily:"Inter,sans-serif" }}>{insightItem.thumbHook}</p></div>
-                    </div>
-                    <div className="rounded-2xl p-3 border border-border">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5" style={{ fontFamily:"Inter,sans-serif" }}>Top Comment</p>
-                      <p className="text-sm text-foreground italic" style={{ fontFamily:"Inter,sans-serif" }}>{insightItem.topComment}</p>
-                    </div>
-                  </>
-                )}
-
-                {/* Why viral */}
-                <div className="rounded-2xl p-3" style={{ background:"#22c55e0D",border:"1px solid #22c55e25" }}>
-                  <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color:"#22c55e",fontFamily:"Inter,sans-serif" }}>Why It Went Viral</p>
-                  <p className="text-sm text-foreground leading-relaxed" style={{ fontFamily:"Inter,sans-serif" }}>{insightItem.reason}</p>
-                </div>
-
-                {/* Hook */}
-                <div className="rounded-2xl p-3 border border-border">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5" style={{ fontFamily:"Inter,sans-serif" }}>Hook Analysis</p>
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color:accentColor }}/>
-                    <p className="text-sm text-foreground" style={{ fontFamily:"Inter,sans-serif" }}>{insightItem.hook}</p>
-                  </div>
-                </div>
-
-                {/* Audio + hashtags */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl p-3 border border-border">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5" style={{ fontFamily:"Inter,sans-serif" }}>Audio</p>
-                    <div className="flex items-center gap-1.5"><Music2 className="w-3.5 h-3.5 shrink-0" style={{ color:accentColor }}/><p className="text-xs text-foreground" style={{ fontFamily:"Inter,sans-serif" }}>{insightItem.audio}</p></div>
-                  </div>
-                  <div className="rounded-2xl p-3 border border-border">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5" style={{ fontFamily:"Inter,sans-serif" }}>Hashtags</p>
-                    <div className="flex flex-wrap gap-1">
-                      {insightItem.hashtags.slice(0,3).map((h:string,i:number)=>(
-                        <span key={i} className="text-xs px-1.5 py-0.5 rounded-md"
-                          style={{ background:`${accentColor}15`,color:accentColor,fontFamily:"Inter,sans-serif" }}>{h}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* CTA */}
-                <motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
-                  onClick={()=>{ setInsightItem(null); navigate(platform==="instagram"?"/scripts":"/youtube/script",{state:{topic:insightItem.niche}}); }}
-                  className="w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
-                  style={{ background:accentGrad,color:platform==="instagram"?"#111":"#fff",fontFamily:"Inter,sans-serif" }}>
-                  <Sparkles className="w-4 h-4"/>
-                  Generate {platform==="instagram"?"Reel":"YouTube"} Script for {insightItem.niche}
-                  <ArrowRight className="w-4 h-4"/>
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 }
