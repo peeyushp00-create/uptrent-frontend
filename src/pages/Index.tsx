@@ -4,105 +4,50 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Instagram, Youtube, Sparkles, X, Heart, Eye,
   MessageCircle, Share2, Bookmark, ArrowRight, Flame,
-  Megaphone, Clock, Hash, Music2, AlertCircle, BarChart2,
-  TrendingUp, ThumbsUp, Play, Target, Zap, MousePointerClick
+  Megaphone, Clock, Music2, AlertCircle, BarChart2,
+  TrendingUp, ThumbsUp, Play, Target, MousePointerClick, Loader2
 } from "lucide-react";
 
 const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
 const BLUE_G = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
 const G = "#E8B84B";
 const B = "#3B82F6";
+const PAGE_SIZE = 9;
 
-const instagramChips = [
-  "Fitness", "Motivation", "Stock Market", "Crypto",
-  "Travel", "Food", "Tech", "Business",
-  "Fashion", "Gaming", "Comedy", "Cricket",
-  "Education", "Yoga", "Entrepreneur", "Bollywood",
-];
-
-const youtubeChips = [
-  "Tech Reviews", "Finance", "Motivation", "Gaming",
-  "Travel Vlog", "Cooking", "Education", "Fitness",
-  "Comedy", "Cricket", "Business", "Music",
-  "Self Improvement", "Crypto", "Cars", "Movies",
-];
-
+const instagramChips = ["Fitness","Motivation","Stock Market","Crypto","Travel","Food","Tech","Business","Fashion","Gaming","Comedy","Cricket","Education","Yoga","Entrepreneur","Bollywood"];
+const youtubeChips = ["Tech Reviews","Finance","Motivation","Gaming","Travel Vlog","Cooking","Education","Fitness","Comedy","Cricket","Business","Music","Self Improvement","Crypto","Cars","Movies"];
 const WORDS = ["Discover.", "Create.", "Go Viral."];
 
-// ── Instagram Reel Generator ──
+// ── Reel templates — 9 per niche ──
 function generateReels(niche: string) {
-  const templates: Record<string, any[]> = {
-    fitness: [
-      { user: "beerbiceps", name: "Ranveer Allahbadia", views: "4.2M", likes: "320K", comments: "8.4K", shares: "42K", caption: `Top 5 morning habits for fitness gains 💪🔥`, hashtags: ["#fitness", "#morningroutine", "#gains"], boosted: false, virality: 96, watchTime: "92%", saveRate: "18%", hook: "First 3 seconds shows dramatic transformation", audio: "Trending — Heeriye (Remix)", reason: "Transformation thumbnail + trending audio + posted 7AM IST hits peak scroll time" },
-      { user: "priyafitness", name: "Priya Mehta", views: "2.8M", likes: "198K", comments: "5.1K", shares: "28K", caption: `This fitness mistake is costing you results ❌`, hashtags: ["#fitnessmistakes", "#workout", "#india"], boosted: true, virality: 88, watchTime: "85%", saveRate: "22%", hook: "Controversial opener — 'You're doing it wrong'", audio: "Original Audio", reason: "Boosted post + mistake-based hook drives saves and comments" },
-      { user: "techburner_fit", name: "Shlok Srivastava", views: "1.9M", likes: "145K", comments: "3.2K", shares: "19K", caption: `30 day fitness challenge results 🚀`, hashtags: ["#30daychallenge", "#transformation"], boosted: false, virality: 82, watchTime: "88%", saveRate: "31%", hook: "Before/after split screen in first second", audio: "Trending — Kesariya Beat", reason: "Challenge format + high save rate = algorithm keeps pushing" },
-    ],
-    finance: [
-      { user: "sharan_hegde", name: "Sharan Hegde", views: "6.1M", likes: "480K", comments: "12K", shares: "95K", caption: `How I made ₹1 Lakh from finance in 30 days 📈`, hashtags: ["#personalfinance", "#investing", "#india"], boosted: false, virality: 98, watchTime: "94%", saveRate: "42%", hook: "Exact income screenshot in first frame", audio: "Trending — Lo-fi Study", reason: "Income proof + massive save rate triggered explore page push" },
-      { user: "akshat_shrivastava", name: "Akshat Shrivastava", views: "3.4M", likes: "265K", comments: "9.8K", shares: "67K", caption: `Finance secrets banks don't want you to know 🤫`, hashtags: ["#finance", "#moneyhacks", "#stockmarket"], boosted: true, virality: 91, watchTime: "89%", saveRate: "38%", hook: "Secret reveal format drives curiosity gap", audio: "Suspense Trending Audio", reason: "Boosted + secret-reveal format + high shares amplified reach" },
-      { user: "rahul_finance", name: "Rahul Sharma", views: "2.1M", likes: "167K", comments: "4.5K", shares: "38K", caption: `Best finance apps in India 2024 💰`, hashtags: ["#financeapps", "#investing", "#money"], boosted: false, virality: 79, watchTime: "81%", saveRate: "29%", hook: "List format — people save for future reference", audio: "Original VO", reason: "List format = high saves = algorithm rewards with more reach" },
-    ],
-    cricket: [
-      { user: "cricketaddicter", name: "Cricket Addict", views: "8.9M", likes: "720K", comments: "24K", shares: "180K", caption: `Virat Kohli's secret training method 🏏`, hashtags: ["#cricket", "#virat", "#ipl"], boosted: false, virality: 99, watchTime: "97%", saveRate: "15%", hook: "Celebrity name in caption = instant curiosity click", audio: "Trending IPL Anthem", reason: "Kohli name + trending moment + IPL season timing = perfect storm" },
-      { user: "ipl_highlights", name: "IPL Highlights", views: "5.2M", likes: "410K", comments: "18K", shares: "120K", caption: `Top 10 sixes in cricket history 🔥`, hashtags: ["#ipl", "#cricket", "#sixers"], boosted: true, virality: 94, watchTime: "93%", saveRate: "11%", hook: "Countdown format keeps watching till the end", audio: "Stadium Crowd Roar", reason: "Boosted + countdown = high completion rate triggers algorithm" },
-      { user: "cricket_fanatic", name: "Cricket Fanatic", views: "3.1M", likes: "245K", comments: "8.9K", shares: "72K", caption: `This cricket shot nobody talks about 😱`, hashtags: ["#cricket", "#shots", "#viral"], boosted: false, virality: 86, watchTime: "91%", saveRate: "19%", hook: "Mystery format — 'nobody talks about' creates FOMO", audio: "Dramatic Music Trending", reason: "Surprise + mystery hook = maximum shares from fans" },
-    ],
-    default: [
-      { user: "uptrent_creator1", name: "Top Creator", views: "3.5M", likes: "280K", comments: "7.2K", shares: "55K", caption: `Everything about this niche you need to know 🔥`, hashtags: ["#viral", "#trending", "#india"], boosted: false, virality: 88, watchTime: "87%", saveRate: "24%", hook: "Bold statement opener grabs instant attention", audio: "Trending Audio India", reason: "Educational + save-worthy content always gets algorithm push" },
-      { user: "uptrent_creator2", name: "Viral Creator", views: "2.1M", likes: "165K", comments: "4.8K", shares: "32K", caption: `This changed everything for me ✨`, hashtags: ["#viral", "#creator", "#reels"], boosted: true, virality: 81, watchTime: "83%", saveRate: "19%", hook: "Personal story format builds emotional connection", audio: "Emotional Trending Track", reason: "Boosted + story format = strong emotional engagement" },
-      { user: "uptrent_creator3", name: "Content Pro", views: "1.7M", likes: "132K", comments: "3.1K", shares: "28K", caption: `Top 5 things nobody tells you about this 💡`, hashtags: ["#tips", "#knowledge", "#viral"], boosted: false, virality: 76, watchTime: "79%", saveRate: "33%", hook: "List format with 'nobody tells you' drives curiosity", audio: "Upbeat Trending Beat", reason: "High save rate from list format = consistent algorithm boost" },
-    ],
-  };
-
-  const n = niche.toLowerCase();
-  let base = templates.default;
-  if (n.includes("fitness") || n.includes("gym") || n.includes("workout") || n.includes("yoga")) base = templates.fitness;
-  else if (n.includes("finance") || n.includes("stock") || n.includes("crypto") || n.includes("money") || n.includes("invest")) base = templates.finance;
-  else if (n.includes("cricket") || n.includes("ipl")) base = templates.cricket;
-
-  return base.map((r, i) => ({
-    ...r, id: `reel-${i}`,
-    thumbnail: `https://picsum.photos/seed/${n.replace(/\s/g, '')}-reel-${i}/400/700`,
-    niche,
-  }));
+  const all = [
+    { user: "beerbiceps", name: "Ranveer Allahbadia", views: "4.2M", likes: "320K", comments: "8.4K", shares: "42K", caption: `Top 5 morning habits for ${niche} 💪🔥`, hashtags: ["#fitness","#morningroutine","#gains"], boosted: false, virality: 96, watchTime: "92%", saveRate: "18%", hook: "Dramatic transformation in first 3 seconds", audio: "Trending — Heeriye (Remix)", reason: "Transformation thumbnail + trending audio + posted at 7AM IST peak scroll time" },
+    { user: "priyafitness", name: "Priya Mehta", views: "2.8M", likes: "198K", comments: "5.1K", shares: "28K", caption: `This ${niche} mistake costs you results ❌`, hashtags: ["#mistake","#workout","#india"], boosted: true, virality: 88, watchTime: "85%", saveRate: "22%", hook: "'You're doing it wrong' controversial opener", audio: "Original Audio", reason: "Boosted + mistake-based hook drives saves and debate comments" },
+    { user: "techburner_fit", name: "Shlok Srivastava", views: "1.9M", likes: "145K", comments: "3.2K", shares: "19K", caption: `30 day ${niche} challenge results 🚀`, hashtags: ["#30daychallenge","#transformation"], boosted: false, virality: 82, watchTime: "88%", saveRate: "31%", hook: "Before/after split screen in first second", audio: "Trending — Kesariya Beat", reason: "Challenge format + high save rate = algorithm keeps pushing it" },
+    { user: "sharan_hegde", name: "Sharan Hegde", views: "6.1M", likes: "480K", comments: "12K", shares: "95K", caption: `How I grew my ${niche} audience to 1M 📈`, hashtags: ["#growth","#creator","#india"], boosted: false, virality: 98, watchTime: "94%", saveRate: "42%", hook: "Income/milestone screenshot in first frame", audio: "Trending — Lo-fi Study", reason: "Milestone proof + massive save rate triggered explore page push" },
+    { user: "akshat_shriv", name: "Akshat Shrivastava", views: "3.4M", likes: "265K", comments: "9.8K", shares: "67K", caption: `${niche} secrets nobody tells beginners 🤫`, hashtags: ["#secrets","#beginner","#tips"], boosted: true, virality: 91, watchTime: "89%", saveRate: "38%", hook: "Secret reveal format creates curiosity gap", audio: "Suspense Trending Audio", reason: "Boosted + secret-reveal + high shares = massive amplification" },
+    { user: "rahul_creator", name: "Rahul Sharma", views: "2.1M", likes: "167K", comments: "4.5K", shares: "38K", caption: `Best tools for ${niche} in 2024 💰`, hashtags: ["#tools","#tips","#india"], boosted: false, virality: 79, watchTime: "81%", saveRate: "29%", hook: "List format — people save for reference", audio: "Original VO", reason: "List format = high saves = algorithm rewards with consistent reach" },
+    { user: "cricketaddicter", name: "Cricket Addict", views: "8.9M", likes: "720K", comments: "24K", shares: "180K", caption: `Top 10 ${niche} moments of 2024 🔥`, hashtags: ["#top10","#viral","#trending"], boosted: false, virality: 99, watchTime: "97%", saveRate: "15%", hook: "Countdown format keeps viewers watching till end", audio: "Trending Anthem 2024", reason: "Top-10 countdown + trending moment timing = guaranteed viral" },
+    { user: "sneha_creates", name: "Sneha Rao", views: "1.5M", likes: "118K", comments: "2.8K", shares: "22K", caption: `POV: You finally understand ${niche} 😂`, hashtags: ["#pov","#relatable","#funny"], boosted: false, virality: 76, watchTime: "78%", saveRate: "12%", hook: "POV format = instant relatability from first frame", audio: "Trending Comedy Audio", reason: "Relatable format + comedy = high shares among friends" },
+    { user: "vikram_content", name: "Vikram Das", views: "2.7M", likes: "210K", comments: "5.9K", shares: "48K", caption: `I tried ${niche} for 7 days — honest review 😤`, hashtags: ["#honestreviews","#7days","#results"], boosted: true, virality: 84, watchTime: "86%", saveRate: "26%", hook: "Challenge + promise of honest result = viewers stay till end", audio: "Emotional Piano Trending", reason: "Boosted + authenticity angle + promised payoff = high completion" },
+  ];
+  return all.map((r, i) => ({ ...r, id: `reel-${i}`, thumbnail: `https://picsum.photos/seed/${niche.replace(/\s/g,'').toLowerCase()}-r${i}/400/700`, niche }));
 }
 
-// ── YouTube Shorts Generator ──
+// ── Shorts templates — 9 per niche ──
 function generateShorts(niche: string) {
-  const templates: Record<string, any[]> = {
-    tech: [
-      { user: "techburner", name: "Tech Burner", views: "12.4M", likes: "890K", comments: "18K", shares: "145K", caption: `iPhone 16 vs Android — honest truth nobody tells you 📱`, hashtags: ["#iphone", "#android", "#tech"], boosted: false, virality: 97, ctr: "14.2%", avgView: "68%", retention: "High drop at 0:08 then steady", hook: "Split screen comparison in first 2 seconds", thumbHook: "RED text 'WRONG' on thumbnail drives clicks", audio: "Trending Tech Beat", topComment: "'Finally someone said the truth!' — 42K likes", reason: "Comparison format + controversial opinion + trending topic timing" },
-      { user: "techguruji", name: "Technical Guruji", views: "8.7M", likes: "620K", comments: "24K", shares: "98K", caption: `This ₹999 gadget changed my life 🔥`, hashtags: ["#gadget", "#tech", "#india"], boosted: true, virality: 92, ctr: "11.8%", avgView: "61%", retention: "Strong first 15 seconds", hook: "Product reveal with price shock", thumbHook: "Price highlighted in yellow on thumbnail", audio: "Upbeat Background Music", topComment: "'Ordering this right now!' — 28K likes", reason: "Boosted + price shock + India-affordable product = massive saves" },
-      { user: "geekyshivam", name: "Geeky Shivam", views: "5.2M", likes: "410K", comments: "9.8K", shares: "67K", caption: `AI tool that replaced my entire team 🤖`, hashtags: ["#ai", "#productivity", "#tech"], boosted: false, virality: 85, ctr: "9.4%", avgView: "74%", retention: "Very high — people rewatch for tool names", hook: "Bold claim opener — 'replaced my entire team'", thumbHook: "Robot emoji + shocked face = click magnet", audio: "Futuristic Sound Effect", topComment: "'What tool is this?!' — 18K likes", reason: "AI curiosity + high rewatch + people share to save for later" },
-    ],
-    finance: [
-      { user: "sharan_hegde", name: "Sharan Hegde", views: "15.1M", likes: "1.1M", comments: "32K", shares: "220K", caption: `This one finance mistake costs Indians crores every year 💸`, hashtags: ["#finance", "#money", "#india"], boosted: false, virality: 99, ctr: "16.5%", avgView: "82%", retention: "Almost no drop-off — people fear missing info", hook: "Fear-based opener with exact number", thumbHook: "₹ symbol + crying emoji drives fear clicks", audio: "Urgent News-style Beat", topComment: "'I made this mistake last year!' — 89K likes", reason: "Fear + loss aversion + Indian money psychology = unstoppable viral" },
-      { user: "akshat_shriv", name: "Akshat Shrivastava", views: "9.3M", likes: "720K", comments: "19K", shares: "165K", caption: `How I turned ₹10K into ₹2.4L in 8 months 📈`, hashtags: ["#investing", "#stocks", "#wealthbuilding"], boosted: false, virality: 94, ctr: "13.7%", avgView: "79%", retention: "People rewatch for the exact steps", hook: "Personal income proof with exact numbers", thumbHook: "Graph going up + exact return percentage", audio: "Motivational Lo-fi", topComment: "'Which stocks?' — 55K likes", reason: "Income proof + exact numbers + aspirational = massive saves and shares" },
-      { user: "ca_rachit", name: "CA Rachit Parikh", views: "6.8M", likes: "540K", comments: "14K", shares: "112K", caption: `Tax saving secrets CAs don't tell their clients 🤫`, hashtags: ["#tax", "#finance", "#india"], boosted: true, virality: 89, ctr: "12.1%", avgView: "71%", retention: "Drops at 45s but strong start", hook: "Secret reveal — professional calling out own industry", thumbHook: "CA logo + 'SECRET' text = trust + curiosity", audio: "Whispering Sound Effect Trending", topComment: "'Sending this to my dad!' — 31K likes", reason: "Boosted + professional credibility + secret format = high shares" },
-    ],
-    gaming: [
-      { user: "mortalofficial", name: "Mortal", views: "18.9M", likes: "1.4M", comments: "45K", shares: "310K", caption: `I carried 4 noobs to Conqueror in BGMI 🎮🔥`, hashtags: ["#bgmi", "#gaming", "#india"], boosted: false, virality: 98, ctr: "18.2%", avgView: "91%", retention: "Almost perfect — gaming highlights hold attention", hook: "Challenge format with impossible goal", thumbHook: "Angry/determined face + game UI = gamer click", audio: "BGMI In-game + Hype Music", topComment: "'How is this even possible?!' — 92K likes", reason: "Clutch moments + challenge format + BGMI India craze = viral guaranteed" },
-      { user: "scout_yt", name: "Scout", views: "11.4M", likes: "870K", comments: "28K", shares: "195K", caption: `This BGMI trick nobody knows about 😱`, hashtags: ["#bgmitips", "#gaming", "#shorts"], boosted: false, virality: 93, ctr: "15.4%", avgView: "88%", retention: "Rewatch heavy — people try to copy the trick", hook: "Tutorial reveal with 'nobody knows'", thumbHook: "Game UI + surprised face thumbnail", audio: "Trending Gaming Beat", topComment: "'Bhai OP trick!' — 47K likes", reason: "Tutorial + FOMO + high rewatch value = algorithm loves it" },
-      { user: "dynamo_gaming", name: "Dynamo Gaming", views: "7.6M", likes: "590K", comments: "16K", shares: "98K", caption: `1 vs 4 clutch that broke the internet 🎯`, hashtags: ["#clutch", "#bgmi", "#gaming"], boosted: true, virality: 87, ctr: "13.1%", avgView: "85%", retention: "Strong throughout — clutch videos hold viewers", hook: "Dramatic clutch moment shown at start then cut", thumbHook: "1v4 text + intense game moment", audio: "Dramatic Movie Music", topComment: "'Legend!' — 38K likes", reason: "Boosted + underdog story format + pure skill showcase" },
-    ],
-    default: [
-      { user: "creator_one", name: "Top Creator", views: "5.8M", likes: "440K", comments: "11K", shares: "82K", caption: `Everything you need to know about this niche in 60 seconds ⚡`, hashtags: ["#shorts", "#trending", "#india"], boosted: false, virality: 86, ctr: "10.5%", avgView: "72%", retention: "Strong open, slight drop at midpoint", hook: "Speed run format — packs value fast", thumbHook: "Clock emoji + niche keyword = urgency", audio: "Fast Trending Beat", topComment: "'Saved this for later!' — 22K likes", reason: "Value-packed format + high save rate = algorithm push" },
-      { user: "creator_two", name: "Viral Shorts", views: "3.9M", likes: "298K", comments: "7.4K", shares: "56K", caption: `I tested this for 30 days — honest results 📊`, hashtags: ["#honest", "#review", "#viral"], boosted: true, virality: 79, ctr: "8.9%", avgView: "68%", retention: "Consistent — viewers want the result", hook: "Time challenge + promised reveal at end", thumbHook: "30 days calendar + result teaser", audio: "Documentary Style Music", topComment: "'This is so honest!' — 16K likes", reason: "Boosted + authenticity + promised payoff = high completion rate" },
-      { user: "creator_three", name: "Content King", views: "2.7M", likes: "210K", comments: "5.2K", shares: "38K", caption: `This changed 10 million lives — here's how 🌟`, hashtags: ["#motivation", "#viral", "#shorts"], boosted: false, virality: 74, ctr: "7.8%", avgView: "65%", retention: "Front-loaded — strong hook then gradual drop", hook: "Big number claim — '10 million lives'", thumbHook: "Inspirational background + bold white text", audio: "Emotional Piano Trending", topComment: "'Sharing this with everyone!' — 9K likes", reason: "Inspirational format + share-worthy message = organic spread" },
-    ],
-  };
-
-  const n = niche.toLowerCase();
-  let base = templates.default;
-  if (n.includes("tech") || n.includes("gadget") || n.includes("ai") || n.includes("phone")) base = templates.tech;
-  else if (n.includes("finance") || n.includes("money") || n.includes("invest") || n.includes("stock") || n.includes("crypto")) base = templates.finance;
-  else if (n.includes("gaming") || n.includes("game") || n.includes("bgmi") || n.includes("pubg")) base = templates.gaming;
-
-  return base.map((r, i) => ({
-    ...r, id: `short-${i}`,
-    thumbnail: `https://picsum.photos/seed/${n.replace(/\s/g, '')}-short-${i}/400/700`,
-    niche,
-  }));
+  const all = [
+    { user: "techburner", name: "Tech Burner", views: "12.4M", likes: "890K", comments: "18K", shares: "145K", caption: `${niche} truth nobody tells you 📱`, hashtags: ["#truth","#shorts","#viral"], boosted: false, virality: 97, ctr: "14.2%", avgView: "68%", retention: "High drop at 0:08 then steady till end", hook: "Split screen comparison in first 2 seconds", thumbHook: "RED 'WRONG' text on thumbnail drives fear clicks", audio: "Trending Tech Beat", topComment: "'Finally someone said the truth!' — 42K likes", reason: "Controversial opinion + comparison format + trending topic timing" },
+    { user: "techguruji", name: "Technical Guruji", views: "8.7M", likes: "620K", comments: "24K", shares: "98K", caption: `This ₹999 ${niche} gadget changed my life 🔥`, hashtags: ["#gadget","#shorts","#india"], boosted: true, virality: 92, ctr: "11.8%", avgView: "61%", retention: "Strong first 15 seconds then gradual drop", hook: "Product reveal with price shock in first second", thumbHook: "Price highlighted in yellow = curiosity + affordability", audio: "Upbeat Background Music", topComment: "'Ordering this right now!' — 28K likes", reason: "Boosted + price shock + India-affordable = massive saves and orders" },
+    { user: "geekyshivam", name: "Geeky Shivam", views: "5.2M", likes: "410K", comments: "9.8K", shares: "67K", caption: `AI tool for ${niche} that nobody is using 🤖`, hashtags: ["#ai","#productivity","#shorts"], boosted: false, virality: 85, ctr: "9.4%", avgView: "74%", retention: "Very high — people rewatch for tool names", hook: "Bold claim opener with specific number", thumbHook: "Robot emoji + shocked face = click magnet combo", audio: "Futuristic Sound Effect Trending", topComment: "'What tool is this?!' — 18K likes", reason: "AI curiosity + high rewatch rate + people share to friends" },
+    { user: "mortalofficial", name: "Mortal", views: "18.9M", likes: "1.4M", comments: "45K", shares: "310K", caption: `Impossible ${niche} challenge completed 🎮🔥`, hashtags: ["#challenge","#shorts","#viral"], boosted: false, virality: 98, ctr: "18.2%", avgView: "91%", retention: "Almost perfect retention — highlights hold attention", hook: "Impossible goal stated in first half second", thumbHook: "Intense face + impossible number = must click", audio: "Hype Music + Sound Effects", topComment: "'How is this even possible?!' — 92K likes", reason: "Clutch moments + challenge format + underdog story = viral guaranteed" },
+    { user: "sharan_shorts", name: "Sharan Hegde", views: "15.1M", likes: "1.1M", comments: "32K", shares: "220K", caption: `This ${niche} mistake costs crores every year 💸`, hashtags: ["#mistake","#money","#india"], boosted: false, virality: 99, ctr: "16.5%", avgView: "82%", retention: "Almost no drop-off — fear of missing info keeps watching", hook: "Fear-based opener with exact rupee amount", thumbHook: "₹ symbol + crying emoji drives loss aversion click", audio: "Urgent News-style Beat", topComment: "'I made this mistake last year!' — 89K likes", reason: "Fear + loss aversion + Indian money psychology = unstoppable viral" },
+    { user: "akshat_shorts", name: "Akshat Shrivastava", views: "9.3M", likes: "720K", comments: "19K", shares: "165K", caption: `How I turned ₹10K into ₹2L with ${niche} 📈`, hashtags: ["#investing","#returns","#shorts"], boosted: false, virality: 94, ctr: "13.7%", avgView: "79%", retention: "People rewatch for exact steps — high rewatch rate", hook: "Personal income proof with exact rupee numbers", thumbHook: "Graph going up + exact return % = aspirational click", audio: "Motivational Lo-fi Beat", topComment: "'Which stocks?' — 55K likes", reason: "Income proof + exact numbers + aspirational story = massive saves" },
+    { user: "scout_yt", name: "Scout", views: "11.4M", likes: "870K", comments: "28K", shares: "195K", caption: `Secret ${niche} trick nobody knows 😱`, hashtags: ["#secret","#tips","#shorts"], boosted: false, virality: 93, ctr: "15.4%", avgView: "88%", retention: "Rewatch heavy — people copy the trick multiple times", hook: "Tutorial reveal with 'nobody knows' FOMO hook", thumbHook: "Game/niche UI + surprised creator face", audio: "Trending Beat India 2024", topComment: "'Bhai OP trick!' — 47K likes", reason: "Tutorial + FOMO + high rewatch value = algorithm pushes it hard" },
+    { user: "ca_rachit", name: "CA Rachit", views: "6.8M", likes: "540K", comments: "14K", shares: "112K", caption: `${niche} hacks experts don't share 🤫`, hashtags: ["#hacks","#expert","#shorts"], boosted: true, virality: 89, ctr: "12.1%", avgView: "71%", retention: "Drops at 45s but strong open hook", hook: "Professional calling out own industry = credibility + drama", thumbHook: "Professional logo + 'SECRET' text = trust + curiosity combo", audio: "Whispering Sound Effect Trending", topComment: "'Sending this to my dad!' — 31K likes", reason: "Boosted + professional credibility + secret reveal = massive shares" },
+    { user: "dynamo_gaming", name: "Dynamo Gaming", views: "7.6M", likes: "590K", comments: "16K", shares: "98K", caption: `${niche} in 60 seconds — everything you need 🎯`, hashtags: ["#60seconds","#shorts","#fastlearning"], boosted: false, virality: 83, ctr: "10.8%", avgView: "76%", retention: "Consistent throughout — speed keeps people watching", hook: "Speed run format — packs maximum value in minimum time", thumbHook: "Stopwatch + topic keyword = urgency + value promise", audio: "Fast Upbeat Trending Music", topComment: "'Best 60 seconds of my day!' — 21K likes", reason: "Speed format + value density + shareable as 'send this to a friend'" },
+  ];
+  return all.map((r, i) => ({ ...r, id: `short-${i}`, thumbnail: `https://picsum.photos/seed/${niche.replace(/\s/g,'').toLowerCase()}-s${i}/400/700`, niche }));
 }
 
 export default function Index() {
@@ -112,8 +57,10 @@ export default function Index() {
     () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
   );
   const [wordIndex, setWordIndex] = useState(0);
-  const [items, setItems] = useState<any[]>([]);
+  const [allItems, setAllItems] = useState<any[]>([]);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searched, setSearched] = useState("");
   const [insightItem, setInsightItem] = useState<any>(null);
 
@@ -123,23 +70,29 @@ export default function Index() {
   }, []);
 
   const switchPlatform = (p: "instagram" | "youtube") => {
-    setPlatform(p);
-    localStorage.setItem("platform", p);
-    setItems([]); setSearched(""); setSearch("");
+    setPlatform(p); localStorage.setItem("platform", p);
+    setAllItems([]); setSearched(""); setSearch(""); setVisibleCount(PAGE_SIZE);
   };
 
   const handleSearch = async (q?: string) => {
     const query = q || search;
     if (!query.trim()) return;
-    setSearch(query);
-    setLoading(true);
-    setSearched(query);
-    setItems([]);
+    setSearch(query); setLoading(true); setSearched(query);
+    setAllItems([]); setVisibleCount(PAGE_SIZE);
     await new Promise(r => setTimeout(r, 1200));
-    setItems(platform === "instagram" ? generateReels(query) : generateShorts(query));
+    setAllItems(platform === "instagram" ? generateReels(query) : generateShorts(query));
     setLoading(false);
   };
 
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    await new Promise(r => setTimeout(r, 800));
+    setVisibleCount(c => c + PAGE_SIZE);
+    setLoadingMore(false);
+  };
+
+  const visibleItems = allItems.slice(0, visibleCount);
+  const hasMore = visibleCount < allItems.length;
   const chips = platform === "instagram" ? instagramChips : youtubeChips;
   const accentColor = platform === "instagram" ? G : B;
   const accentGrad = platform === "instagram" ? GOLD : BLUE_G;
@@ -153,8 +106,7 @@ export default function Index() {
         .blue-text{background:linear-gradient(135deg,#3B82F6,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         *{box-sizing:border-box}
         .item-card{transition:transform .2s,border-color .2s}
-        .item-card:hover{transform:translateY(-4px)}
-        .chip-btn:hover{color:var(--chip-accent)!important}
+        .item-card:hover{transform:translateY(-4px);border-color:#E8B84B30!important}
       `}</style>
 
       <div className="flex-1 flex flex-col min-h-screen bg-background">
@@ -196,7 +148,7 @@ export default function Index() {
             <p className="text-sm text-center text-muted-foreground max-w-md" style={{ fontFamily: "Inter,sans-serif" }}>
               {platform === "instagram"
                 ? "Search any niche to see top reels, viral insights, boost status and what made them blow up"
-                : "Search any niche to see top YouTube Shorts, hook analysis, CTR, retention and viral secrets"}
+                : "Search any niche to see top Shorts, hook analysis, CTR, retention and viral secrets"}
             </p>
 
             {/* Platform toggle */}
@@ -242,10 +194,10 @@ export default function Index() {
                 <div className="flex flex-wrap justify-center gap-2">
                   {chips.map(chip => (
                     <motion.button key={chip} onClick={() => handleSearch(chip)} whileTap={{ scale: 0.96 }}
-                      className="chip-btn px-3.5 py-1.5 rounded-full text-xs border border-border bg-card text-muted-foreground transition-all"
-                      style={{ fontFamily: "Inter,sans-serif", "--chip-accent": accentColor } as any}
-                      onMouseEnter={e => { (e.target as HTMLElement).style.borderColor = `${accentColor}50`; (e.target as HTMLElement).style.color = accentColor; }}
-                      onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = ""; (e.target as HTMLElement).style.color = ""; }}>
+                      className="px-3.5 py-1.5 rounded-full text-xs border border-border bg-card text-muted-foreground transition-all"
+                      style={{ fontFamily: "Inter,sans-serif" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}50`; (e.currentTarget as HTMLElement).style.color = accentColor; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}>
                       {chip}
                     </motion.button>
                   ))}
@@ -270,22 +222,21 @@ export default function Index() {
           </div>
         )}
 
-        {/* ── RESULTS GRID ── */}
-        {searched && !loading && items.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-24 max-w-5xl mx-auto w-full">
-            {/* Header */}
+        {/* ── RESULTS ── */}
+        {searched && !loading && visibleItems.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-12 max-w-5xl mx-auto w-full">
+
+            {/* Results header */}
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="font-semibold text-foreground text-sm" style={{ fontFamily: "Inter,sans-serif" }}>
-                  Top {platform === "instagram" ? "Reels" : "Shorts"} —{" "}
-                  <span style={{ color: accentColor }}>#{searched}</span>
+                  Top {platform === "instagram" ? "Reels" : "Shorts"} — <span style={{ color: accentColor }}>#{searched}</span>
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: "Inter,sans-serif" }}>
-                  {items.length} results · Click{" "}
-                  <span style={{ color: accentColor }}>Insights</span> to see why they went viral
+                  Showing {visibleItems.length} of {allItems.length} · Click <span style={{ color: accentColor }}>Insights</span> to see why they went viral
                 </p>
               </div>
-              <button onClick={() => { setSearched(""); setItems([]); setSearch(""); }}
+              <button onClick={() => { setSearched(""); setAllItems([]); setSearch(""); setVisibleCount(PAGE_SIZE); }}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 style={{ fontFamily: "Inter,sans-serif" }}>
                 <X className="w-3.5 h-3.5" /> Clear
@@ -294,17 +245,17 @@ export default function Index() {
 
             {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {items.map((item, i) => (
-                <motion.div key={item.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                  className="item-card bg-card border border-border rounded-2xl overflow-hidden"
-                  style={{ borderColor: "hsl(var(--border))" }}>
+              {visibleItems.map((item, i) => (
+                <motion.div key={item.id}
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: (i % PAGE_SIZE) * 0.07 }}
+                  className="item-card bg-card border border-border rounded-2xl overflow-hidden">
 
                   {/* Thumbnail */}
                   <div className="relative aspect-[9/14] overflow-hidden">
                     <img src={item.thumbnail} alt={item.caption} className="w-full h-full object-cover" />
                     <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.88) 40%, rgba(0,0,0,0.1) 70%)" }} />
 
-                    {/* YouTube play icon */}
                     {platform === "youtube" && (
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center"
                         style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" }}>
@@ -312,7 +263,6 @@ export default function Index() {
                       </div>
                     )}
 
-                    {/* Boosted badge */}
                     {item.boosted && (
                       <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
                         style={{ background: B, color: "#fff", fontFamily: "Inter,sans-serif" }}>
@@ -320,25 +270,18 @@ export default function Index() {
                       </div>
                     )}
 
-                    {/* Virality score */}
                     <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-                      style={{
-                        background: item.virality >= 90 ? accentColor : item.virality >= 80 ? "#22c55e" : "#888",
-                        color: item.virality >= 90 && platform === "instagram" ? "#000" : "#fff",
-                        fontFamily: "Inter,sans-serif"
-                      }}>
+                      style={{ background: item.virality >= 90 ? accentColor : item.virality >= 80 ? "#22c55e" : "#888", color: item.virality >= 90 && platform === "instagram" ? "#000" : "#fff", fontFamily: "Inter,sans-serif" }}>
                       <Flame className="w-3 h-3" /> {item.virality}
                     </div>
 
-                    {/* CTR badge for YouTube */}
                     {platform === "youtube" && item.ctr && (
-                      <div className="absolute bottom-16 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-                        style={{ background: "rgba(59,130,246,0.9)", color: "#fff", fontFamily: "Inter,sans-serif" }}>
-                        <MousePointerClick className="w-3 h-3" /> CTR {item.ctr}
+                      <div className="absolute bottom-16 left-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                        style={{ background: "rgba(59,130,246,0.85)", color: "#fff", fontFamily: "Inter,sans-serif" }}>
+                        <MousePointerClick className="w-3 h-3" /> {item.ctr}
                       </div>
                     )}
 
-                    {/* Bottom stats */}
                     <div className="absolute bottom-0 left-0 right-0 p-3">
                       <p className="text-white text-xs font-medium mb-2 line-clamp-2 leading-snug" style={{ fontFamily: "Inter,sans-serif" }}>
                         {item.caption}
@@ -379,6 +322,27 @@ export default function Index() {
                 </motion.div>
               ))}
             </div>
+
+            {/* ✅ LOAD MORE BUTTON */}
+            {hasMore && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-center mt-8">
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={handleLoadMore} disabled={loadingMore}
+                  className="flex items-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-semibold border transition-all disabled:opacity-60"
+                  style={{ border: `1px solid ${accentColor}40`, color: accentColor, fontFamily: "Inter,sans-serif", background: `${accentColor}08` }}>
+                  {loadingMore
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading more...</>
+                    : <><TrendingUp className="w-4 h-4" /> Load More {platform === "instagram" ? "Reels" : "Shorts"} ({allItems.length - visibleCount} remaining)</>}
+                </motion.button>
+              </motion.div>
+            )}
+
+            {/* All loaded message */}
+            {!hasMore && allItems.length > 0 && (
+              <p className="text-center text-xs text-muted-foreground mt-6" style={{ fontFamily: "Inter,sans-serif" }}>
+                ✅ All {allItems.length} {platform === "instagram" ? "reels" : "shorts"} loaded
+              </p>
+            )}
           </motion.div>
         )}
 
@@ -394,76 +358,58 @@ export default function Index() {
                 className="bg-card border border-border rounded-3xl w-full max-w-lg overflow-hidden"
                 style={{ maxHeight: "90vh", overflowY: "auto" }}>
 
-                {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card z-10">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                      style={{ background: `${accentColor}15` }}>
-                      {platform === "instagram"
-                        ? <Instagram className="w-4 h-4" style={{ color: accentColor }} />
-                        : <Youtube className="w-4 h-4" style={{ color: accentColor }} />}
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${accentColor}15` }}>
+                      {platform === "instagram" ? <Instagram className="w-4 h-4" style={{ color: accentColor }} /> : <Youtube className="w-4 h-4" style={{ color: accentColor }} />}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>
-                        {platform === "instagram" ? "Reel" : "Short"} Insights
-                      </p>
+                      <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{platform === "instagram" ? "Reel" : "Short"} Insights</p>
                       <p className="text-xs text-muted-foreground" style={{ fontFamily: "Inter,sans-serif" }}>@{insightItem.user}</p>
                     </div>
                   </div>
-                  <button onClick={() => setInsightItem(null)} className="text-muted-foreground hover:text-foreground transition-colors">
-                    <X className="w-5 h-5" />
-                  </button>
+                  <button onClick={() => setInsightItem(null)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="w-5 h-5" /></button>
                 </div>
 
                 <div className="p-5 space-y-4">
-
-                  {/* Virality score */}
+                  {/* Virality */}
                   <div className="rounded-2xl p-4" style={{ background: `${accentColor}0D`, border: `1px solid ${accentColor}25` }}>
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: accentColor, fontFamily: "Inter,sans-serif" }}>
-                        Virality Score
-                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: accentColor, fontFamily: "Inter,sans-serif" }}>Virality Score</p>
                       <span className="text-2xl font-bold cg" style={{ color: accentColor }}>{insightItem.virality}/100</span>
                     </div>
                     <div className="w-full h-2 rounded-full bg-border">
-                      <motion.div initial={{ width: 0 }} animate={{ width: `${insightItem.virality}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${insightItem.virality}%` }} transition={{ duration: 1, ease: "easeOut" }}
                         className="h-2 rounded-full" style={{ background: accentGrad }} />
                     </div>
                     <p className="text-xs text-muted-foreground mt-2" style={{ fontFamily: "Inter,sans-serif" }}>
-                      {insightItem.virality >= 90 ? "🔥 Top 5% — extremely viral" :
-                        insightItem.virality >= 80 ? "📈 Top 15% — high viral potential" : "✅ Above average performance"}
+                      {insightItem.virality >= 90 ? "🔥 Top 5% — extremely viral" : insightItem.virality >= 80 ? "📈 Top 15% — high viral potential" : "✅ Above average performance"}
                     </p>
                   </div>
 
-                  {/* Boost status */}
+                  {/* Boost */}
                   <div className="rounded-2xl p-4 border border-border">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3" style={{ fontFamily: "Inter,sans-serif" }}>Boost Status</p>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                        style={{ background: insightItem.boosted ? "#3B82F615" : "#22c55e15" }}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: insightItem.boosted ? "#3B82F615" : "#22c55e15" }}>
                         {insightItem.boosted ? <Megaphone className="w-5 h-5 text-blue-400" /> : <Sparkles className="w-5 h-5 text-green-400" />}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>
-                          {insightItem.boosted ? "Paid Promotion (Boosted)" : "100% Organic Viral"}
-                        </p>
+                        <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.boosted ? "Paid Promotion (Boosted)" : "100% Organic Viral"}</p>
                         <p className="text-xs text-muted-foreground" style={{ fontFamily: "Inter,sans-serif" }}>
-                          {insightItem.boosted
-                            ? "This used paid ads to boost reach. Some views are paid."
-                            : "No paid promotion. Algorithm pushed this organically."}
+                          {insightItem.boosted ? "Used paid ads to amplify reach. Some views are paid." : "No paid promotion. Algorithm pushed this naturally."}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Engagement stats — different for YT vs IG */}
+                  {/* Stats */}
                   <div className="rounded-2xl p-4 border border-border">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3" style={{ fontFamily: "Inter,sans-serif" }}>
                       {platform === "instagram" ? "Engagement Breakdown" : "Performance Metrics"}
                     </p>
                     <div className="grid grid-cols-2 gap-3">
-                      {platform === "instagram" ? [
+                      {(platform === "instagram" ? [
                         { icon: Eye, label: "Views", val: insightItem.views, color: accentColor },
                         { icon: Heart, label: "Likes", val: insightItem.likes, color: "#ef4444" },
                         { icon: MessageCircle, label: "Comments", val: insightItem.comments, color: "#8b5cf6" },
@@ -477,7 +423,7 @@ export default function Index() {
                         { icon: Share2, label: "Shares", val: insightItem.shares, color: accentColor },
                         { icon: MousePointerClick, label: "CTR", val: insightItem.ctr, color: B },
                         { icon: TrendingUp, label: "Avg Viewed", val: insightItem.avgView, color: "#f59e0b" },
-                      ].map((s, i) => (
+                      ]).map((s, i) => (
                         <div key={i} className="flex items-center gap-2.5 p-3 rounded-xl bg-background">
                           <s.icon className="w-4 h-4 shrink-0" style={{ color: s.color }} />
                           <div>
@@ -489,73 +435,45 @@ export default function Index() {
                     </div>
                   </div>
 
-                  {/* YouTube-specific: retention + top comment */}
-                  {platform === "youtube" && (
-                    <>
-                      <div className="rounded-2xl p-4 border border-border">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>
-                          Audience Retention
-                        </p>
-                        <div className="flex items-start gap-2">
-                          <BarChart2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: B }} />
-                          <p className="text-sm text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.retention}</p>
-                        </div>
-                      </div>
-                      <div className="rounded-2xl p-4 border border-border">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>
-                          Top Comment
-                        </p>
-                        <div className="flex items-start gap-2">
-                          <MessageCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: B }} />
-                          <p className="text-sm text-foreground italic" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.topComment}</p>
-                        </div>
-                      </div>
-                      <div className="rounded-2xl p-4 border border-border">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>
-                          Thumbnail Hook
-                        </p>
-                        <div className="flex items-start gap-2">
-                          <Target className="w-4 h-4 shrink-0 mt-0.5" style={{ color: B }} />
-                          <p className="text-sm text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.thumbHook}</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                  {/* YouTube extras */}
+                  {platform === "youtube" && (<>
+                    <div className="rounded-2xl p-4 border border-border">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>Audience Retention</p>
+                      <div className="flex items-start gap-2"><BarChart2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: B }} /><p className="text-sm text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.retention}</p></div>
+                    </div>
+                    <div className="rounded-2xl p-4 border border-border">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>Top Comment</p>
+                      <div className="flex items-start gap-2"><MessageCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: B }} /><p className="text-sm text-foreground italic" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.topComment}</p></div>
+                    </div>
+                    <div className="rounded-2xl p-4 border border-border">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>Thumbnail Hook</p>
+                      <div className="flex items-start gap-2"><Target className="w-4 h-4 shrink-0 mt-0.5" style={{ color: B }} /><p className="text-sm text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.thumbHook}</p></div>
+                    </div>
+                  </>)}
 
-                  {/* Why it went viral */}
+                  {/* Why viral */}
                   <div className="rounded-2xl p-4" style={{ background: "#22c55e0D", border: "1px solid #22c55e25" }}>
-                    <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#22c55e", fontFamily: "Inter,sans-serif" }}>
-                      Why It Went Viral
-                    </p>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#22c55e", fontFamily: "Inter,sans-serif" }}>Why It Went Viral</p>
                     <p className="text-sm text-foreground leading-relaxed" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.reason}</p>
                   </div>
 
-                  {/* Hook analysis */}
+                  {/* Hook */}
                   <div className="rounded-2xl p-4 border border-border">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>
-                      Hook Analysis
-                    </p>
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accentColor }} />
-                      <p className="text-sm text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.hook}</p>
-                    </div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>Hook Analysis</p>
+                    <div className="flex items-start gap-2"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accentColor }} /><p className="text-sm text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.hook}</p></div>
                   </div>
 
-                  {/* Audio & hashtags */}
+                  {/* Audio + hashtags */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-2xl p-4 border border-border">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>Audio</p>
-                      <div className="flex items-center gap-1.5">
-                        <Music2 className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} />
-                        <p className="text-xs text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.audio}</p>
-                      </div>
+                      <div className="flex items-center gap-1.5"><Music2 className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /><p className="text-xs text-foreground" style={{ fontFamily: "Inter,sans-serif" }}>{insightItem.audio}</p></div>
                     </div>
                     <div className="rounded-2xl p-4 border border-border">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2" style={{ fontFamily: "Inter,sans-serif" }}>Hashtags</p>
                       <div className="flex flex-wrap gap-1">
                         {insightItem.hashtags.map((h: string, i: number) => (
-                          <span key={i} className="text-xs px-1.5 py-0.5 rounded-md"
-                            style={{ background: `${accentColor}15`, color: accentColor, fontFamily: "Inter,sans-serif" }}>{h}</span>
+                          <span key={i} className="text-xs px-1.5 py-0.5 rounded-md" style={{ background: `${accentColor}15`, color: accentColor, fontFamily: "Inter,sans-serif" }}>{h}</span>
                         ))}
                       </div>
                     </div>
@@ -563,11 +481,7 @@ export default function Index() {
 
                   {/* CTA */}
                   <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      setInsightItem(null);
-                      if (platform === "instagram") navigate("/scripts", { state: { topic: insightItem.niche } });
-                      else navigate("/youtube/script", { state: { topic: insightItem.niche } });
-                    }}
+                    onClick={() => { setInsightItem(null); navigate(platform === "instagram" ? "/scripts" : "/youtube/script", { state: { topic: insightItem.niche } }); }}
                     className="w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
                     style={{ background: accentGrad, color: platform === "instagram" ? "#111" : "#fff", fontFamily: "Inter,sans-serif" }}>
                     <Sparkles className="w-4 h-4" />
