@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,30 +35,64 @@ export default function Index() {
     return () => clearInterval(interval);
   }, []);
 
+  // ✅ Restore search state when coming back from InsightPage
+  useEffect(() => {
+    const lastSearch = sessionStorage.getItem('lastSearch');
+    const lastPlatform = sessionStorage.getItem('lastPlatform') as "instagram" | "youtube" | null;
+    const lastItems = sessionStorage.getItem('lastItems');
+    const lastNextPageToken = sessionStorage.getItem('lastNextPageToken');
+    const lastNextPage = sessionStorage.getItem('lastNextPage');
+
+    if (lastSearch && lastPlatform && lastItems) {
+      setPlatform(lastPlatform);
+      setSearch(lastSearch);
+      setSearched(lastSearch);
+      setAllItems(JSON.parse(lastItems));
+      setNextPageToken(lastNextPageToken || null);
+      setNextPage(parseInt(lastNextPage || '0'));
+    }
+  }, []);
+
+  const fetchItems = useCallback(async (query: string, plat: string, token: string | null = null, page = 0) => {
+    const endpoint = plat === "youtube"
+      ? `${BASE}/api/search/youtube?q=${encodeURIComponent(query)}${token ? `&pageToken=${token}` : ''}`
+      : `${BASE}/api/search/instagram?q=${encodeURIComponent(query)}&page=${page}`;
+
+    const res = await fetch(endpoint);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data;
+  }, []);
+
   const switchPlatform = (p: "instagram" | "youtube") => {
     setPlatform(p); localStorage.setItem("platform", p);
     setAllItems([]); setSearched(""); setSearch("");
     setNextPageToken(null); setNextPage(0);
+    sessionStorage.removeItem('lastSearch');
+    sessionStorage.removeItem('lastItems');
+    sessionStorage.removeItem('lastPlatform');
   };
 
-  const handleSearch = async (q?: string) => {
+  const handleSearch = async (q?: string, plat?: "instagram" | "youtube") => {
     const query = q || search;
+    const currentPlatform = plat || platform;
     if (!query.trim()) return;
+
     setSearch(query); setLoading(true); setSearched(query);
     setAllItems([]); setNextPageToken(null); setNextPage(0);
 
     try {
-      const endpoint = platform === "youtube"
-        ? `${BASE}/api/search/youtube?q=${encodeURIComponent(query)}`
-        : `${BASE}/api/search/instagram?q=${encodeURIComponent(query)}&page=0`;
-
-      const res = await fetch(endpoint);
-      const data = await res.json();
-
-      if (data.error) throw new Error(data.error);
+      const data = await fetchItems(query, currentPlatform, null, 0);
       setAllItems(data.items || []);
       setNextPageToken(data.nextPageToken || null);
       setNextPage(1);
+
+      // ✅ Save state to sessionStorage for back navigation
+      sessionStorage.setItem('lastSearch', query);
+      sessionStorage.setItem('lastPlatform', currentPlatform);
+      sessionStorage.setItem('lastItems', JSON.stringify(data.items || []));
+      sessionStorage.setItem('lastNextPageToken', data.nextPageToken || '');
+      sessionStorage.setItem('lastNextPage', '1');
     } catch (e: any) {
       console.error('Search error:', e);
       setAllItems([]);
@@ -71,21 +105,35 @@ export default function Index() {
     if (!searched) return;
     setLoadingMore(true);
     try {
-      const endpoint = platform === "youtube"
-        ? `${BASE}/api/search/youtube?q=${encodeURIComponent(searched)}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`
-        : `${BASE}/api/search/instagram?q=${encodeURIComponent(searched)}&page=${nextPage}`;
-
-      const res = await fetch(endpoint);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setAllItems(prev => [...prev, ...(data.items || [])]);
+      const data = await fetchItems(searched, platform, nextPageToken, nextPage);
+      const newItems = [...allItems, ...(data.items || [])];
+      setAllItems(newItems);
       setNextPageToken(data.nextPageToken || null);
       setNextPage(p => p + 1);
+
+      // ✅ Update sessionStorage with new items
+      sessionStorage.setItem('lastItems', JSON.stringify(newItems));
+      sessionStorage.setItem('lastNextPageToken', data.nextPageToken || '');
+      sessionStorage.setItem('lastNextPage', String(nextPage + 1));
     } catch (e) {
       console.error('Load more error:', e);
     } finally {
       setLoadingMore(false);
     }
+  };
+
+  const handleClear = () => {
+    setSearched(""); setAllItems([]); setSearch("");
+    setNextPageToken(null); setNextPage(0);
+    sessionStorage.removeItem('lastSearch');
+    sessionStorage.removeItem('lastItems');
+    sessionStorage.removeItem('lastPlatform');
+    sessionStorage.removeItem('lastNextPageToken');
+    sessionStorage.removeItem('lastNextPage');
+  };
+
+  const handleCardClick = (item: any) => {
+    navigate("/insight", { state: { item } });
   };
 
   const chips = platform === "instagram" ? instagramChips : youtubeChips;
@@ -219,7 +267,7 @@ export default function Index() {
                 {platform === "instagram" && <span className="ml-2 text-yellow-500">● Sample Data</span>}
                 <span className="ml-2">· {allItems.length} results</span>
               </p>
-              <button onClick={()=>{setSearched("");setAllItems([]);setSearch("");setNextPageToken(null);setNextPage(0);}}
+              <button onClick={handleClear}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 style={{ fontFamily:"Inter,sans-serif" }}>
                 <X className="w-3.5 h-3.5"/> Clear
@@ -229,14 +277,14 @@ export default function Index() {
             {/* Instagram Explore-style grid */}
             <div className="explore-grid">
               {allItems.map((item, i) => (
-                <motion.div key={item.id}
+                <motion.div key={`${item.id}-${i}`}
                   initial={{ opacity:0 }} animate={{ opacity:1 }}
                   transition={{ delay:(i%12)*0.03 }}
                   className={`explore-item ${item.rowSpan===2?"row-span-2":""}`}
-                  onClick={()=>navigate("/insight",{ state:{ item } })}>
+                  onClick={()=>handleCardClick(item)}>
 
                   <img src={item.thumbnail} alt={item.caption} loading="lazy"
-                    onError={(e)=>{ (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.id}/400/400`; }}/>
+                    onError={(e)=>{ (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${i}${item.niche}/400/400`; }}/>
 
                   {/* Video icon */}
                   {item.isVideo && (
@@ -293,7 +341,8 @@ export default function Index() {
             {/* Load More */}
             <div className="flex flex-col items-center mt-6 gap-2">
               <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
-                onClick={handleLoadMore} disabled={loadingMore || (platform === "youtube" && !nextPageToken)}
+                onClick={handleLoadMore}
+                disabled={loadingMore || (platform === "youtube" && !nextPageToken)}
                 className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold transition-all disabled:opacity-40"
                 style={{ border:`1px solid ${accentColor}40`,color:accentColor,fontFamily:"Inter,sans-serif",background:`${accentColor}08` }}>
                 {loadingMore
@@ -313,7 +362,7 @@ export default function Index() {
             <p className="text-sm text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
               No results found for <span style={{ color:accentColor }}>"{searched}"</span>
             </p>
-            <button onClick={()=>{setSearched("");setAllItems([]);setSearch("");}}
+            <button onClick={handleClear}
               className="text-xs text-muted-foreground hover:text-foreground underline"
               style={{ fontFamily:"Inter,sans-serif" }}>Try a different search</button>
           </div>

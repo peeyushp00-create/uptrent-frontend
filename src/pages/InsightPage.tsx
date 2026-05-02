@@ -13,7 +13,7 @@ const BLUE_G = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
 const G = "#E8B84B";
 const B = "#3B82F6";
 
-const fadeUp = (delay = 0) => ({
+// fadeUp removed
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { delay, duration: 0.45, ease: [0.16, 1, 0.3, 1] }
@@ -71,7 +71,7 @@ export default function InsightPage() {
       <div className="sticky top-0 z-20 px-4 py-3"
         style={{ background: "hsl(var(--background)/0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid hsl(var(--border))" }}>
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)}
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate('/')}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-accent"
             style={{ border: "1px solid hsl(var(--border))" }}>
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
