@@ -13,11 +13,7 @@ const BLUE_G = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
 const G = "#E8B84B";
 const B = "#3B82F6";
 
-// fadeUp removed
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { delay, duration: 0.45, ease: [0.16, 1, 0.3, 1] }
-});
+
 
 export default function InsightPage() {
   const { state } = useLocation();
