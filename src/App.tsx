@@ -21,6 +21,7 @@ import YouTubeAnalyzer from "./pages/YouTubeAnalyzer";
 import YouTubeTrending from "./pages/YouTubeTrending";
 import InstagramAnalyzer from "./pages/InstagramAnalyzer";
 import InsightPage from "./pages/InsightPage";
+import PricingPage from "./pages/PricingPage";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
+              <Route path="/pricing" element={<PricingPage />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
