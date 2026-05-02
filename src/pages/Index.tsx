@@ -35,7 +35,7 @@ export default function Index() {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Restore search state when coming back from InsightPage
+  // Restore search state when coming back from InsightPage
   useEffect(() => {
     const lastSearch = sessionStorage.getItem('lastSearch');
     const lastPlatform = sessionStorage.getItem('lastPlatform') as "instagram" | "youtube" | null;
@@ -57,7 +57,6 @@ export default function Index() {
     const endpoint = plat === "youtube"
       ? `${BASE}/api/search/youtube?q=${encodeURIComponent(query)}${token ? `&pageToken=${token}` : ''}`
       : `${BASE}/api/search/instagram?q=${encodeURIComponent(query)}&page=${page}`;
-
     const res = await fetch(endpoint);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -77,17 +76,13 @@ export default function Index() {
     const query = q || search;
     const currentPlatform = plat || platform;
     if (!query.trim()) return;
-
     setSearch(query); setLoading(true); setSearched(query);
     setAllItems([]); setNextPageToken(null); setNextPage(0);
-
     try {
       const data = await fetchItems(query, currentPlatform, null, 0);
       setAllItems(data.items || []);
       setNextPageToken(data.nextPageToken || null);
       setNextPage(1);
-
-      // ✅ Save state to sessionStorage for back navigation
       sessionStorage.setItem('lastSearch', query);
       sessionStorage.setItem('lastPlatform', currentPlatform);
       sessionStorage.setItem('lastItems', JSON.stringify(data.items || []));
@@ -110,8 +105,6 @@ export default function Index() {
       setAllItems(newItems);
       setNextPageToken(data.nextPageToken || null);
       setNextPage(p => p + 1);
-
-      // ✅ Update sessionStorage with new items
       sessionStorage.setItem('lastItems', JSON.stringify(newItems));
       sessionStorage.setItem('lastNextPageToken', data.nextPageToken || '');
       sessionStorage.setItem('lastNextPage', String(nextPage + 1));
@@ -130,10 +123,6 @@ export default function Index() {
     sessionStorage.removeItem('lastPlatform');
     sessionStorage.removeItem('lastNextPageToken');
     sessionStorage.removeItem('lastNextPage');
-  };
-
-  const handleCardClick = (item: any) => {
-    navigate("/insight", { state: { item } });
   };
 
   const chips = platform === "instagram" ? instagramChips : youtubeChips;
@@ -206,17 +195,24 @@ export default function Index() {
               ))}
             </div>
 
-            {/* Search bar */}
+            {/* Search bar with X button */}
             <div className="flex gap-2 w-full">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
                 <input value={search} onChange={e=>setSearch(e.target.value)}
                   onKeyDown={e=>e.key==="Enter"&&handleSearch()}
                   placeholder={platform==="instagram"?"Search niche (Fitness, Finance, Cricket)...":"Search niche (Tech, Gaming, Finance)..."}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
+                  className="w-full pl-10 pr-9 py-3 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
                   style={{ fontFamily:"Inter,sans-serif" }}
                   onFocus={e=>{e.target.style.borderColor=`${accentColor}50`;e.target.style.boxShadow=`0 0 0 3px ${accentColor}0A`;}}
                   onBlur={e=>{e.target.style.borderColor="";e.target.style.boxShadow="none";}}/>
+                {/* ✅ X button inside search bar */}
+                {search && (
+                  <button onClick={handleClear}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    <X className="w-4 h-4"/>
+                  </button>
+                )}
               </div>
               <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                 onClick={()=>handleSearch()}
@@ -268,7 +264,7 @@ export default function Index() {
                 <span className="ml-2">· {allItems.length} results</span>
               </p>
               <button onClick={handleClear}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 style={{ fontFamily:"Inter,sans-serif" }}>
                 <X className="w-3.5 h-3.5"/> Clear
               </button>
@@ -281,7 +277,7 @@ export default function Index() {
                   initial={{ opacity:0 }} animate={{ opacity:1 }}
                   transition={{ delay:(i%12)*0.03 }}
                   className={`explore-item ${item.rowSpan===2?"row-span-2":""}`}
-                  onClick={()=>handleCardClick(item)}>
+                  onClick={()=>navigate("/insight",{ state:{ item } })}>
 
                   <img src={item.thumbnail} alt={item.caption} loading="lazy"
                     onError={(e)=>{ (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${i}${item.niche}/400/400`; }}/>
