@@ -1,82 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Instagram, Youtube, Sparkles, X,
-  Heart, Eye, Flame, Megaphone, TrendingUp, Loader2, Play
+  Heart, Eye, Flame, Megaphone, TrendingUp, Loader2, Play, ExternalLink
 } from "lucide-react";
 
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
 const BLUE_G = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
 const G = "#E8B84B";
 const B = "#3B82F6";
-const PAGE_SIZE = 12;
 
 const instagramChips = ["Fitness","Motivation","Stock Market","Crypto","Travel","Food","Tech","Business","Fashion","Gaming","Comedy","Cricket","Education","Yoga","Entrepreneur","Bollywood"];
 const youtubeChips = ["Tech Reviews","Finance","Motivation","Gaming","Travel Vlog","Cooking","Education","Fitness","Comedy","Cricket","Business","Music","Self Improvement","Crypto","Cars","Movies"];
 const WORDS = ["Discover.", "Create.", "Go Viral."];
-
-function generateItems(niche: string, platform: string, seed = "") {
-  const n = niche.toLowerCase().replace(/\s/g, "");
-  const isYT = platform === "youtube";
-
-  const creators = isYT
-    ? ["techburner","techguruji","geekyshivam","mortalofficial","sharan_hegde","akshat_shriv","scout_yt","ca_rachit","dynamo_gaming","carryminati","triggered_insaan","mythpat"]
-    : ["beerbiceps","priyafitness","techburner_fit","sharan_hegde","akshat_shriv","rahul_creator","cricketaddicter","sneha_creates","vikram_content","bbkivines","bhuvan_bam","ashish_chanchlani"];
-  const names = isYT
-    ? ["Tech Burner","Technical Guruji","Geeky Shivam","Mortal","Sharan Hegde","Akshat Shrivastava","Scout","CA Rachit","Dynamo Gaming","CarryMinati","Triggered Insaan","Mythpat"]
-    : ["Ranveer Allahbadia","Priya Mehta","Shlok Srivastava","Sharan Hegde","Akshat Shrivastava","Rahul Sharma","Cricket Addict","Sneha Rao","Vikram Das","Bhuvan Bam","Amit Bhadana","Ashish Chanchlani"];
-
-  const captions = isYT ? [
-    `${niche} truth nobody tells you 📱`,`This ₹999 ${niche} gadget changed my life 🔥`,
-    `AI tool for ${niche} nobody is using 🤖`,`Impossible ${niche} challenge completed 🎮`,
-    `This ${niche} mistake costs crores 💸`,`How I turned ₹10K into ₹2L with ${niche} 📈`,
-    `Secret ${niche} trick nobody knows 😱`,`${niche} hacks experts don't share 🤫`,
-    `${niche} in 60 seconds 🎯`,`${niche} will change in 2025 🚀`,
-    `I went viral with ${niche} — here's how`,`${niche} for beginners — complete guide 📚`,
-  ] : [
-    `Top 5 habits for ${niche} 💪🔥`,`This ${niche} mistake costs results ❌`,
-    `30 day ${niche} challenge results 🚀`,`How I grew ${niche} to 1M 📈`,
-    `${niche} secrets nobody tells 🤫`,`Best tools for ${niche} 2024 💰`,
-    `Top 10 ${niche} moments 🔥`,`POV: You finally get ${niche} 😂`,
-    `7 days of ${niche} — honest review 😤`,`${niche} is changing everything 🌟`,
-    `My ${niche} journey — full story`,`${niche} tips that actually work ✅`,
-  ];
-
-  const views = ["12.4M","8.7M","5.2M","18.9M","15.1M","9.3M","11.4M","6.8M","7.6M","4.2M","3.1M","2.8M"];
-  const likes = ["890K","620K","410K","1.4M","1.1M","720K","870K","540K","590K","320K","245K","198K"];
-  const comments = ["18K","24K","9.8K","45K","32K","19K","28K","14K","16K","8.4K","6.9K","5.1K"];
-  const shares = ["145K","98K","67K","310K","220K","165K","195K","112K","98K","42K","31K","28K"];
-  const viralities = [97,92,85,98,99,94,93,89,83,88,79,76];
-  const boosted = [false,true,false,false,false,false,false,true,false,false,true,false];
-  const rowSpans = [1,1,2,1,1,1,2,1,1,1,1,2];
-
-  return Array.from({ length: 12 }, (_, i) => ({
-    id: `${platform}-${n}-${seed}-${i}`,
-    user: creators[i] || `creator${i}`,
-    name: names[i] || `Creator ${i}`,
-    avatar: (names[i] || "C")[0],
-    views: views[i], likes: likes[i], comments: comments[i], shares: shares[i],
-    caption: captions[i],
-    hashtags: [`#${n}`, `#${isYT ? "shorts" : "reels"}`, "#india", "#viral"],
-    boosted: boosted[i],
-    virality: viralities[i],
-    rowSpan: rowSpans[i],
-    isVideo: i % 4 !== 1,
-    thumbnail: `https://picsum.photos/seed/${n}${platform}${seed}${i + 1}/400/${rowSpans[i] === 2 ? 800 : 400}`,
-    niche, platform,
-    watchTime: ["92%","85%","88%","94%","89%","81%","97%","78%","86%","83%","79%","76%"][i],
-    saveRate: ["18%","22%","31%","42%","38%","29%","15%","12%","26%","19%","24%","17%"][i],
-    hook: ["Dramatic transformation in first 3 seconds","Controversial 'You're doing it wrong' opener","Before/after split screen in first second","Income screenshot shown immediately","Secret reveal with suspense build-up","List format saves prompt in first line","Celebrity name drives instant curiosity","POV format = instant relatability","Challenge + promised result at end","Bold claim with big number","Story-based emotional hook","Tutorial reveal with FOMO trigger"][i],
-    audio: ["Heeriye Remix","Original Audio","Kesariya Beat","Lo-fi Study","Suspense Audio","Original VO","IPL Anthem","Comedy Beat","Emotional Piano","Trending 2024","Viral Sound","Motivational Beat"][i],
-    reason: ["Transformation + trending audio + 7AM post time","Boosted + mistake hook drives saves and comments","Challenge format with high save rate triggers algorithm","Income proof + massive save rate = explore page push","Boosted + secret reveal + high shares = amplification","List format = high saves = consistent algorithm reach","Celebrity name + trending moment + seasonal timing","Relatable POV format = high shares among friends","Boosted + authenticity + promised payoff = high completion","Viral moment + trending topic + perfect timing","Personal story + emotional connection + shareable","Tutorial + FOMO + high rewatch value = algorithm loves"][i],
-    ctr: ["14.2%","11.8%","9.4%","18.2%","16.5%","13.7%","15.4%","12.1%","10.8%","11.2%","9.8%","8.6%"][i],
-    avgView: ["68%","61%","74%","91%","82%","79%","88%","71%","76%","72%","65%","69%"][i],
-    retention: ["High drop at 0:08 then steady","Strong first 15 seconds","Very high — rewatch heavy","Near perfect retention","Almost no drop-off","People rewatch for steps","Rewatch for trick details","Drops at 45s but strong open","Consistent throughout","Front-loaded strong open","Mid-video dip but recovers","Strong throughout"][i],
-    thumbHook: ["RED 'WRONG' text drives fear","Price in yellow = curiosity","Robot + shocked face","Impossible number + intense face","₹ + crying emoji = loss aversion","Graph up + exact return %","Niche UI + surprised face","Professional logo + SECRET","Stopwatch + topic = urgency","Bold contrast thumbnail","Split screen comparison","Bright background + big text"][i],
-    topComment: ["'Finally someone said the truth!' — 42K likes","'Ordering this right now!' — 28K likes","'What tool is this?!' — 18K likes","'How is this even possible?!' — 92K likes","'I made this mistake!' — 89K likes","'Which stocks?' — 55K likes","'Bhai OP trick!' — 47K likes","'Sending to my dad!' — 31K likes","'Best 60 seconds!' — 21K likes","'Game changer!' — 19K likes","'So relatable!' — 15K likes","'Sharing this!' — 12K likes"][i],
-  }));
-}
 
 export default function Index() {
   const navigate = useNavigate();
@@ -86,11 +24,11 @@ export default function Index() {
   );
   const [wordIndex, setWordIndex] = useState(0);
   const [allItems, setAllItems] = useState<any[]>([]);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searched, setSearched] = useState("");
-  const [batchSeed, setBatchSeed] = useState(0);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [nextPage, setNextPage] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => setWordIndex(i => (i + 1) % WORDS.length), 2400);
@@ -99,35 +37,57 @@ export default function Index() {
 
   const switchPlatform = (p: "instagram" | "youtube") => {
     setPlatform(p); localStorage.setItem("platform", p);
-    setAllItems([]); setSearched(""); setSearch(""); setVisibleCount(PAGE_SIZE); setBatchSeed(0);
+    setAllItems([]); setSearched(""); setSearch("");
+    setNextPageToken(null); setNextPage(0);
   };
 
   const handleSearch = async (q?: string) => {
     const query = q || search;
     if (!query.trim()) return;
     setSearch(query); setLoading(true); setSearched(query);
-    setAllItems([]); setVisibleCount(PAGE_SIZE); setBatchSeed(0);
-    await new Promise(r => setTimeout(r, 1200));
-    setAllItems(generateItems(query, platform, "0"));
-    setLoading(false);
+    setAllItems([]); setNextPageToken(null); setNextPage(0);
+
+    try {
+      const endpoint = platform === "youtube"
+        ? `${BASE}/api/search/youtube?q=${encodeURIComponent(query)}`
+        : `${BASE}/api/search/instagram?q=${encodeURIComponent(query)}&page=0`;
+
+      const res = await fetch(endpoint);
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+      setAllItems(data.items || []);
+      setNextPageToken(data.nextPageToken || null);
+      setNextPage(1);
+    } catch (e: any) {
+      console.error('Search error:', e);
+      setAllItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLoadMore = async () => {
+    if (!searched) return;
     setLoadingMore(true);
-    await new Promise(r => setTimeout(r, 900));
-    const newSeed = batchSeed + 1;
-    setBatchSeed(newSeed);
-    const more = generateItems(searched, platform, String(newSeed)).map((item, i) => ({
-      ...item,
-      id: `${item.id}-batch${newSeed}`,
-      thumbnail: `https://picsum.photos/seed/${searched.replace(/\s/g,"").toLowerCase()}b${newSeed}i${i}/400/${item.rowSpan === 2 ? 800 : 400}`,
-    }));
-    setAllItems(prev => [...prev, ...more]);
-    setVisibleCount(c => c + PAGE_SIZE);
-    setLoadingMore(false);
+    try {
+      const endpoint = platform === "youtube"
+        ? `${BASE}/api/search/youtube?q=${encodeURIComponent(searched)}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`
+        : `${BASE}/api/search/instagram?q=${encodeURIComponent(searched)}&page=${nextPage}`;
+
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAllItems(prev => [...prev, ...(data.items || [])]);
+      setNextPageToken(data.nextPageToken || null);
+      setNextPage(p => p + 1);
+    } catch (e) {
+      console.error('Load more error:', e);
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
-  const visibleItems = allItems.slice(0, visibleCount);
   const chips = platform === "instagram" ? instagramChips : youtubeChips;
   const accentColor = platform === "instagram" ? G : B;
   const accentGrad = platform === "instagram" ? GOLD : BLUE_G;
@@ -151,7 +111,6 @@ export default function Index() {
         .explore-item:hover img{transform:scale(1.06)}
         .explore-item .hover-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.45);opacity:0;transition:opacity .2s;display:flex;align-items:center;justify-content:center}
         .explore-item:hover .hover-overlay{opacity:1}
-        .explore-item .stats{position:absolute;bottom:0;left:0;right:0;padding:8px 10px;display:flex;gap:10px;align-items:center}
         .row-span-2{grid-row:span 2}
       `}</style>
 
@@ -182,7 +141,9 @@ export default function Index() {
             </div>
 
             <p className="text-xs text-center text-muted-foreground max-w-sm" style={{ fontFamily:"Inter,sans-serif" }}>
-              Search any niche to see top {platform === "instagram" ? "reels" : "shorts"} — tap any to see full insights
+              {platform === "instagram"
+                ? "Search any niche to see top reels — tap any to see full insights"
+                : "Search any niche to see real YouTube Shorts — powered by YouTube Data API"}
             </p>
 
             {/* Platform toggle */}
@@ -197,7 +158,7 @@ export default function Index() {
               ))}
             </div>
 
-            {/* Search */}
+            {/* Search bar */}
             <div className="flex gap-2 w-full">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
@@ -241,37 +202,41 @@ export default function Index() {
               {platform==="instagram"?<Instagram className="w-6 h-6" style={{ color:G }}/>:<Youtube className="w-6 h-6" style={{ color:B }}/>}
             </motion.div>
             <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
-              Searching <span style={{ color:accentColor }}>"{search}"</span>...
+              {platform === "youtube" ? "Fetching real YouTube Shorts" : "Searching"} for <span style={{ color:accentColor }}>"{search}"</span>...
             </p>
           </div>
         )}
 
         {/* ── EXPLORE GRID ── */}
-        {searched && !loading && visibleItems.length > 0 && (
+        {searched && !loading && allItems.length > 0 && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} className="pb-20">
 
             {/* Top bar */}
             <div className="flex items-center justify-between px-3 pb-2">
               <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
-                <span style={{ color:accentColor,fontWeight:600 }}>#{searched}</span> · {visibleItems.length} results
+                <span style={{ color:accentColor,fontWeight:600 }}>#{searched}</span>
+                {platform === "youtube" && <span className="ml-2 text-green-400">● Live YouTube Data</span>}
+                {platform === "instagram" && <span className="ml-2 text-yellow-500">● Sample Data</span>}
+                <span className="ml-2">· {allItems.length} results</span>
               </p>
-              <button onClick={()=>{setSearched("");setAllItems([]);setSearch("");setVisibleCount(PAGE_SIZE);setBatchSeed(0);}}
+              <button onClick={()=>{setSearched("");setAllItems([]);setSearch("");setNextPageToken(null);setNextPage(0);}}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 style={{ fontFamily:"Inter,sans-serif" }}>
                 <X className="w-3.5 h-3.5"/> Clear
               </button>
             </div>
 
-            {/* ✅ Instagram Explore-style grid */}
+            {/* Instagram Explore-style grid */}
             <div className="explore-grid">
-              {visibleItems.map((item, i) => (
+              {allItems.map((item, i) => (
                 <motion.div key={item.id}
                   initial={{ opacity:0 }} animate={{ opacity:1 }}
-                  transition={{ delay:(i % PAGE_SIZE)*0.03 }}
+                  transition={{ delay:(i%12)*0.03 }}
                   className={`explore-item ${item.rowSpan===2?"row-span-2":""}`}
                   onClick={()=>navigate("/insight",{ state:{ item } })}>
 
-                  <img src={item.thumbnail} alt={item.caption} loading="lazy"/>
+                  <img src={item.thumbnail} alt={item.caption} loading="lazy"
+                    onError={(e)=>{ (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.id}/400/400`; }}/>
 
                   {/* Video icon */}
                   {item.isVideo && (
@@ -282,8 +247,18 @@ export default function Index() {
                     </div>
                   )}
 
+                  {/* YouTube external link */}
+                  {platform === "youtube" && item.youtubeUrl && (
+                    <a href={item.youtubeUrl} target="_blank" rel="noopener noreferrer"
+                      className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full flex items-center justify-center"
+                      style={{ background:"rgba(0,0,0,0.5)" }}
+                      onClick={e=>e.stopPropagation()}>
+                      <ExternalLink className="w-3 h-3 text-white"/>
+                    </a>
+                  )}
+
                   {/* Virality badge */}
-                  <div className="absolute top-2 left-2 z-10 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full"
+                  <div className="absolute bottom-2 right-2 z-10 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full"
                     style={{
                       background:item.virality>=90?accentColor:item.virality>=80?"#22c55e":"rgba(0,0,0,0.55)",
                       color:item.virality>=90&&platform==="instagram"?"#000":"#fff",
@@ -300,7 +275,7 @@ export default function Index() {
                     </div>
                   )}
 
-                  {/* Hover overlay with stats */}
+                  {/* Hover overlay */}
                   <div className="hover-overlay">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1 text-white font-semibold text-sm" style={{ fontFamily:"Inter,sans-serif" }}>
@@ -318,8 +293,8 @@ export default function Index() {
             {/* Load More */}
             <div className="flex flex-col items-center mt-6 gap-2">
               <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
-                onClick={handleLoadMore} disabled={loadingMore}
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold transition-all disabled:opacity-60"
+                onClick={handleLoadMore} disabled={loadingMore || (platform === "youtube" && !nextPageToken)}
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold transition-all disabled:opacity-40"
                 style={{ border:`1px solid ${accentColor}40`,color:accentColor,fontFamily:"Inter,sans-serif",background:`${accentColor}08` }}>
                 {loadingMore
                   ?<><Loader2 className="w-4 h-4 animate-spin"/>Loading more...</>
@@ -330,6 +305,18 @@ export default function Index() {
               </p>
             </div>
           </motion.div>
+        )}
+
+        {/* No results */}
+        {searched && !loading && allItems.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <p className="text-sm text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
+              No results found for <span style={{ color:accentColor }}>"{searched}"</span>
+            </p>
+            <button onClick={()=>{setSearched("");setAllItems([]);setSearch("");}}
+              className="text-xs text-muted-foreground hover:text-foreground underline"
+              style={{ fontFamily:"Inter,sans-serif" }}>Try a different search</button>
+          </div>
         )}
       </div>
     </>
