@@ -152,7 +152,7 @@ export default function AppSidebar() {
                 : <><Moon className="w-4 h-4 text-muted-foreground" />Dark Mode</>}
             </button>
             <div className="border-t border-border my-1" />
-            <button onClick={() => { navigate('/settings'); setShowProfileMenu(false); }}
+            <button onClick={() => { navigate('/pricing'); setShowProfileMenu(false); }}
               className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors"
               style={{ color: BLUE }}>
               <Crown className="w-4 h-4" />Upgrade to Pro
