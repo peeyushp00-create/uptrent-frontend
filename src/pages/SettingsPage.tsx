@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const NICHES = [
   "Finance", "Fitness", "Motivation", "Tech",
   "Food", "Travel", "Business", "Education",
@@ -99,6 +101,7 @@ export default function SettingsPage() {
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
 
   const autoSave = useCallback(async (updates: Record<string, any>) => {
     clearTimeout(autoSaveTimer.current);
@@ -190,12 +193,32 @@ export default function SettingsPage() {
     if (!error) { setVoiceSaved(true); setTimeout(() => setVoiceSaved(false), 3000); }
   };
 
+  // ✅ Real feedback submission — calls backend API
   const handleFeedbackSubmit = async () => {
     if (!feedbackMessage.trim() || feedbackRating === 0) return;
     setFeedbackLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setFeedbackLoading(false);
-    setFeedbackSubmitted(true);
+    setFeedbackError("");
+    try {
+      const res = await fetch(`${BASE}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name || user?.user_metadata?.full_name || 'Anonymous',
+          email: user?.email || '',
+          category: feedbackCategory,
+          rating: feedbackRating,
+          message: feedbackMessage,
+          user_id: user?.id || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit');
+      setFeedbackSubmitted(true);
+    } catch (e: any) {
+      setFeedbackError(e.message || 'Failed to submit. Please try again.');
+    } finally {
+      setFeedbackLoading(false);
+    }
   };
 
   const avatarInitials = name
@@ -218,14 +241,11 @@ export default function SettingsPage() {
         {/* Tab bar */}
         <div className="flex gap-1 p-1 rounded-2xl bg-card border border-border">
           {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all"
               style={activeTab === tab.id
                 ? { background: BLUE_GRADIENT, color: "#fff" }
-                : { color: "hsl(var(--muted-foreground))" }}
-            >
+                : { color: "hsl(var(--muted-foreground))" }}>
               <tab.icon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
@@ -284,7 +304,6 @@ export default function SettingsPage() {
         {/* ── PREFERENCES TAB ── */}
         {activeTab === "preferences" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            {/* Platform */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Palette className="w-4 h-4" style={{ color: BLUE }} /> Platform
@@ -301,8 +320,6 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
-
-            {/* Language */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Globe className="w-4 h-4" style={{ color: BLUE }} /> Script Language
@@ -319,8 +336,6 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
-
-            {/* Style */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Palette className="w-4 h-4" style={{ color: BLUE }} /> Content Style
@@ -348,35 +363,30 @@ export default function SettingsPage() {
                 <Mic className="w-4 h-4" style={{ color: BLUE }} /> Voice Style
               </h2>
               <p className="text-xs text-muted-foreground">Record your voice so we can personalize scripts to match your natural speaking style</p>
-
               <div className="p-3 rounded-xl bg-secondary/30 border border-border space-y-1">
                 <p className="text-xs font-medium" style={{ color: BLUE }}>📖 Read this text aloud while recording:</p>
                 <p className="text-sm text-foreground leading-relaxed">
                   {sampleText[language as keyof typeof sampleText] || sampleText.hindi}
                 </p>
               </div>
-
               {voiceTranscript && !analyzingVoice && (
                 <div className="p-3 rounded-xl bg-secondary/30 border border-border">
                   <p className="text-xs text-muted-foreground mb-1">Your transcript:</p>
                   <p className="text-sm text-foreground">{voiceTranscript.slice(0, 200)}...</p>
                 </div>
               )}
-
               {voiceStyle && (
                 <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30">
                   <p className="text-xs text-green-400 mb-1">✅ Voice style analyzed!</p>
                   <p className="text-sm text-foreground">{voiceStyle}</p>
                 </div>
               )}
-
               {analyzingVoice && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Analyzing your speaking style...
                 </div>
               )}
-
               <button onClick={isRecording ? stopRecording : startRecording}
                 className={`w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-all ${isRecording ? 'bg-red-500 animate-pulse' : ''}`}
                 style={!isRecording ? { background: BLUE_GRADIENT } : {}}>
@@ -384,7 +394,6 @@ export default function SettingsPage() {
                   ? <><MicOff className="w-4 h-4" /> Stop Recording ({recordingTime}s)</>
                   : <><Mic className="w-4 h-4" /> {voiceStyle ? 'Re-record Voice' : 'Record Your Voice'}</>}
               </button>
-
               {voiceStyle && (
                 <button onClick={handleSaveVoice} disabled={voiceSaving}
                   className="w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
@@ -412,14 +421,16 @@ export default function SettingsPage() {
                   </motion.div>
                   <div>
                     <h2 className="text-xl font-bold text-foreground mb-2">Thank You! 🎉</h2>
-                    <p className="text-muted-foreground text-sm max-w-sm">Your feedback has been submitted. We review every message and use it to improve Uptrent.</p>
+                    <p className="text-muted-foreground text-sm max-w-sm">
+                      Your feedback has been saved and sent to our team. We'll review it and get back to you within 24 hours.
+                    </p>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium"
                     style={{ background: "#3B82F615", border: "1px solid #3B82F630", color: BLUE }}>
                     <ThumbsUp className="w-3.5 h-3.5" />
-                    We'll respond within 24 hours
+                    Saved to database + emailed to team ✅
                   </div>
-                  <button onClick={() => { setFeedbackSubmitted(false); setFeedbackRating(0); setFeedbackMessage(""); }}
+                  <button onClick={() => { setFeedbackSubmitted(false); setFeedbackRating(0); setFeedbackMessage(""); setFeedbackError(""); }}
                     className="px-6 py-2 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                     Submit Another
                   </button>
@@ -477,6 +488,11 @@ export default function SettingsPage() {
                       onBlur={e => { e.target.style.borderColor = ""; }} />
                     <p className="text-xs text-muted-foreground text-right">{feedbackMessage.length}/500</p>
                   </div>
+
+                  {/* Error */}
+                  {feedbackError && (
+                    <p className="text-xs text-red-400 text-center">{feedbackError}</p>
+                  )}
 
                   {/* Submit */}
                   <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
@@ -536,7 +552,6 @@ export default function SettingsPage() {
             )}
           </motion.div>
         )}
-
       </div>
     </div>
   );
