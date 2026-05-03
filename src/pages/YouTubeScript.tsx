@@ -4,6 +4,8 @@ import { FileText, Sparkles, Copy, Check, Loader2, Search, X } from "lucide-reac
 import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
+const YT_COLOR = "#FF6B6B";
 
 const SCRIPT_SUGGESTIONS = [
   "5 Ways to Save Money India", "How to start investing India",
@@ -84,7 +86,7 @@ export default function YouTubeScript() {
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <FileText className="w-5 h-5 text-red-500" />
+          <FileText className="w-5 h-5" style={{ color: YT_COLOR }} />
           <h1 className="text-lg font-bold text-foreground">YouTube Script</h1>
         </div>
       </div>
@@ -98,7 +100,9 @@ export default function YouTubeScript() {
             onKeyDown={(e) => { if (e.key === "Escape") setShowDropdown(false); }}
             onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
             placeholder="Enter video topic (e.g. 5 Ways to Save Money)"
-            className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
+            className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
+            onFocus={(e) => { e.target.style.borderColor = `${YT_COLOR}60`; }}
+            onBlur={(e) => { e.target.style.borderColor = ''; }}
           />
           {topic && (
             <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10">
@@ -120,35 +124,47 @@ export default function YouTubeScript() {
             <p className="text-xs text-muted-foreground">Popular topics:</p>
             <div className="flex flex-wrap gap-2">
               {SCRIPT_SUGGESTIONS.slice(0, 8).map((s) => (
-                <button key={s} onClick={() => setTopic(s)} className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">{s}</button>
+                <button key={s} onClick={() => setTopic(s)}
+                  className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${YT_COLOR}60`; (e.currentTarget as HTMLElement).style.color = YT_COLOR; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.color = ''; }}>
+                  {s}
+                </button>
               ))}
             </div>
           </div>
         )}
+
+        {/* Duration selector */}
         <div>
           <p className="text-xs text-muted-foreground mb-2 font-medium">Video Duration</p>
           <div className="flex gap-2">
             {[3, 5, 8, 10].map((d) => (
               <button key={d} onClick={() => setDuration(d)}
-                className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${duration === d ? 'text-white border-transparent' : 'border-border text-muted-foreground'}`}
-                style={duration === d ? { background: "linear-gradient(135deg, #14BBA6, #0D9488)" } : {}}
-              >{d} min</button>
+                className="flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all"
+                style={duration === d
+                  ? { background: YT_GRAD, color: "#fff", borderColor: "transparent" }
+                  : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                {d} min
+              </button>
             ))}
           </div>
         </div>
+
         <button onClick={() => handleGenerate()} disabled={loading}
           className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
-          style={{ background: "linear-gradient(135deg, #14BBA6, #0D9488)" }}
-        >
+          style={{ background: YT_GRAD }}>
           <Sparkles className="w-4 h-4" />
           {loading ? `Generating ${duration}-min script...` : 'Generate Script'}
         </button>
+
         {loading && (
           <div className="flex flex-col items-center justify-center py-8 gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-red-500" />
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: YT_COLOR }} />
             <p className="text-xs text-muted-foreground">Writing your {duration}-minute script...</p>
           </div>
         )}
+
         {result && !result.error && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
             <div className="flex items-center justify-between">
@@ -158,28 +174,42 @@ export default function YouTubeScript() {
                 {copied === 'all' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} Copy All
               </button>
             </div>
-            {result.title && <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4"><p className="text-xs font-bold uppercase text-red-400 mb-1">🎯 Suggested Title</p><p className="text-sm text-foreground font-medium">{result.title}</p></div>}
+            {result.title && (
+              <div className="rounded-2xl p-4" style={{ background: `${YT_COLOR}10`, border: `1px solid ${YT_COLOR}30` }}>
+                <p className="text-xs font-bold uppercase mb-1" style={{ color: YT_COLOR }}>🎯 Suggested Title</p>
+                <p className="text-sm text-foreground font-medium">{result.title}</p>
+              </div>
+            )}
             {result.intro && (
               <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center justify-between mb-2"><p className="text-xs font-bold uppercase text-blue-400">🎬 Intro</p><button onClick={() => copyText(result.intro, 'intro')}>{copied === 'intro' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button></div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold uppercase" style={{ color: YT_COLOR }}>🎬 Intro</p>
+                  <button onClick={() => copyText(result.intro, 'intro')}>{copied === 'intro' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
+                </div>
                 <p className="text-sm text-foreground whitespace-pre-wrap">{result.intro}</p>
               </div>
             )}
             {result.sections?.map((section: any, i: number) => (
               <div key={i} className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center justify-between mb-2"><p className="text-xs font-bold uppercase text-muted-foreground">📌 {section.heading}</p><button onClick={() => copyText(section.content, `sec-${i}`)}>{copied === `sec-${i}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button></div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold uppercase text-muted-foreground">📌 {section.heading}</p>
+                  <button onClick={() => copyText(section.content, `sec-${i}`)}>{copied === `sec-${i}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
+                </div>
                 <p className="text-sm text-foreground whitespace-pre-wrap">{section.content}</p>
               </div>
             ))}
             {result.outro && (
               <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-4">
-                <div className="flex items-center justify-between mb-2"><p className="text-xs font-bold uppercase text-green-400">🎯 Outro & CTA</p><button onClick={() => copyText(result.outro, 'outro')}>{copied === 'outro' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button></div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold uppercase text-green-400">🎯 Outro & CTA</p>
+                  <button onClick={() => copyText(result.outro, 'outro')}>{copied === 'outro' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
+                </div>
                 <p className="text-sm text-foreground whitespace-pre-wrap">{result.outro}</p>
               </div>
             )}
           </motion.div>
         )}
-        {result?.error && <p className="text-red-400 text-sm text-center">{result.error}</p>}
+        {result?.error && <p className="text-sm text-center" style={{ color: YT_COLOR }}>{result.error}</p>}
       </div>
     </div>
   );

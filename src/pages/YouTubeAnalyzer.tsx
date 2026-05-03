@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { Search, Copy, Check, Loader2, ChevronRight, Youtube, X } from "lucide-react";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
+const YT_COLOR = "#FF6B6B";
 
 const POPULAR_CHANNELS = [
   "MrBeast", "PewDiePie", "CarryMinati", "Technical Guruji",
@@ -75,7 +77,7 @@ export default function YouTubeAnalyzer() {
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <Search className="w-5 h-5 text-red-500" />
+          <Search className="w-5 h-5" style={{ color: YT_COLOR }} />
           <h1 className="text-lg font-bold text-foreground">Channel Analyzer</h1>
         </div>
       </div>
@@ -89,9 +91,10 @@ export default function YouTubeAnalyzer() {
             <div className="relative flex-1">
               <input ref={inputRef} value={channelUrl} onChange={(e) => setChannelUrl(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAnalyze(); if (e.key === "Escape") setShowDropdown(false); }}
-                onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
+                onFocus={(e) => { e.target.style.borderColor = `${YT_COLOR}60`; if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
+                onBlur={(e) => { e.target.style.borderColor = ''; }}
                 placeholder="Channel name (e.g. MrBeast, Ashish Chanchlani)"
-                className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
+                className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
               />
               {channelUrl && (
                 <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10">
@@ -101,8 +104,7 @@ export default function YouTubeAnalyzer() {
             </div>
             <button onClick={() => handleAnalyze()} disabled={loading}
               className="px-4 py-3 rounded-xl text-white text-sm font-medium disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #14BBA6, #0D9488)" }}
-            >
+              style={{ background: YT_GRAD }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             </button>
           </div>
@@ -110,7 +112,7 @@ export default function YouTubeAnalyzer() {
             <div ref={dropdownRef} className="absolute top-full left-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden" style={{ width: 'calc(100% - 60px)' }}>
               {dropdownSuggestions.map((s, i) => (
                 <button key={i} onClick={() => handleAnalyze(s)} className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left">
-                  <Youtube className="w-3.5 h-3.5 text-red-500 shrink-0" />{s}
+                  <Youtube className="w-3.5 h-3.5 shrink-0" style={{ color: YT_COLOR }} />{s}
                 </button>
               ))}
             </div>
@@ -121,33 +123,45 @@ export default function YouTubeAnalyzer() {
             <p className="text-xs text-muted-foreground">Popular channels:</p>
             <div className="flex flex-wrap gap-2">
               {POPULAR_CHANNELS.map((ch) => (
-                <button key={ch} onClick={() => handleAnalyze(ch)} className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">{ch}</button>
+                <button key={ch} onClick={() => handleAnalyze(ch)}
+                  className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${YT_COLOR}60`; (e.currentTarget as HTMLElement).style.color = YT_COLOR; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.color = ''; }}>
+                  {ch}
+                </button>
               ))}
             </div>
           </div>
         )}
         {loading && (
           <div className="flex flex-col items-center justify-center py-8 gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-red-500" />
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: YT_COLOR }} />
             <p className="text-xs text-muted-foreground">Analyzing {channelUrl}...</p>
           </div>
         )}
         {result && !result.error && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-            {result.summary && <div className="bg-card border border-border rounded-2xl p-4"><p className="text-xs font-bold uppercase text-red-400 mb-2">📊 Channel Summary</p><p className="text-sm text-foreground">{result.summary}</p></div>}
+            {result.summary && (
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <p className="text-xs font-bold uppercase mb-2" style={{ color: YT_COLOR }}>📊 Channel Summary</p>
+                <p className="text-sm text-foreground">{result.summary}</p>
+              </div>
+            )}
             {result.content_pillars && (
               <div className="bg-card border border-border rounded-2xl p-4">
-                <p className="text-xs font-bold uppercase text-blue-400 mb-2">🏛️ Content Pillars</p>
+                <p className="text-xs font-bold uppercase mb-2" style={{ color: YT_COLOR }}>🏛️ Content Pillars</p>
                 <div className="space-y-1.5">
                   {result.content_pillars.map((pillar: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-foreground"><ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{pillar}</div>
+                    <div key={i} className="flex items-center gap-2 text-sm text-foreground">
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{pillar}
+                    </div>
                   ))}
                 </div>
               </div>
             )}
             {result.video_ideas && (
               <div className="bg-card border border-border rounded-2xl p-4">
-                <p className="text-xs font-bold uppercase text-green-400 mb-2">💡 Video Ideas for You</p>
+                <p className="text-xs font-bold uppercase mb-2 text-green-400">💡 Video Ideas for You</p>
                 <div className="space-y-2">
                   {result.video_ideas.map((idea: string, i: number) => (
                     <div key={i} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/30">
@@ -161,7 +175,7 @@ export default function YouTubeAnalyzer() {
             )}
           </motion.div>
         )}
-        {result?.error && <p className="text-red-400 text-sm text-center">{result.error}</p>}
+        {result?.error && <p className="text-sm text-center" style={{ color: YT_COLOR }}>{result.error}</p>}
       </div>
     </div>
   );

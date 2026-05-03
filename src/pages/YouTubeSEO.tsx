@@ -4,6 +4,8 @@ import { Tag, Sparkles, Copy, Check, Loader2, Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
+const YT_COLOR = "#FF6B6B";
 
 const SEO_SUGGESTIONS = [
   "How to invest in stocks India", "Weight loss tips Hindi",
@@ -78,7 +80,7 @@ export default function YouTubeSEO() {
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <Tag className="w-5 h-5 text-red-500" />
+          <Tag className="w-5 h-5" style={{ color: YT_COLOR }} />
           <h1 className="text-lg font-bold text-foreground">YouTube SEO</h1>
         </div>
       </div>
@@ -94,7 +96,9 @@ export default function YouTubeSEO() {
                 onKeyDown={(e) => { if (e.key === "Enter") handleGenerate(); if (e.key === "Escape") setShowDropdown(false); }}
                 onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
                 placeholder="Enter video topic (e.g. How to invest in stocks)"
-                className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500 text-sm"
+                className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
+                onFocus={(e) => { e.target.style.borderColor = `${YT_COLOR}60`; }}
+                onBlur={(e) => { e.target.style.borderColor = ''; }}
               />
               {topic && (
                 <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10">
@@ -102,7 +106,9 @@ export default function YouTubeSEO() {
                 </button>
               )}
             </div>
-            <button onClick={() => handleGenerate()} disabled={loading} className="px-4 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2 disabled:opacity-60" style={{ background: "linear-gradient(135deg, #14BBA6, #0D9488)" }}>
+            <button onClick={() => handleGenerate()} disabled={loading}
+              className="px-4 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2 disabled:opacity-60"
+              style={{ background: YT_GRAD }}>
               <Sparkles className="w-4 h-4" />{loading ? '...' : 'Generate'}
             </button>
           </div>
@@ -116,15 +122,26 @@ export default function YouTubeSEO() {
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Popular topics:</p>
             <div className="flex flex-wrap gap-2">
-              {SEO_SUGGESTIONS.slice(0, 10).map((s) => <button key={s} onClick={() => handleGenerate(s)} className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">{s}</button>)}
+              {SEO_SUGGESTIONS.slice(0, 10).map((s) => (
+                <button key={s} onClick={() => handleGenerate(s)}
+                  className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${YT_COLOR}60`; (e.currentTarget as HTMLElement).style.color = YT_COLOR; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.color = ''; }}>
+                  {s}
+                </button>
+              ))}
             </div>
           </div>
         )}
-        {loading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-red-500" /></div>}
+        {loading && (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: YT_COLOR }} />
+          </div>
+        )}
         {result && !result.error && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
             <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-xs font-bold uppercase text-red-400 mb-3">🎯 Titles (pick one)</p>
+              <p className="text-xs font-bold uppercase mb-3" style={{ color: YT_COLOR }}>🎯 Titles (pick one)</p>
               <div className="space-y-2">
                 {result.titles?.map((title: string, i: number) => (
                   <div key={i} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/30 hover:bg-accent transition-colors">
@@ -137,19 +154,12 @@ export default function YouTubeSEO() {
             </div>
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold uppercase text-blue-400">📝 Description</p>
-                <button onClick={() => copyText(result.description, 'desc')} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">{copied === 'desc' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} Copy</button>
-              </div>
-              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{result.description}</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold uppercase text-green-400">🏷️ Tags with Score</p>
+                <p className="text-xs font-bold uppercase" style={{ color: YT_COLOR }}>🏷️ Tags with Score</p>
                 <button onClick={() => copyText(result.tags?.map((t: any) => t.tag || t).join(', '), 'tags')} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">{copied === 'tags' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} Copy All</button>
               </div>
               <div className="bg-secondary/30 rounded-xl p-3 mb-3 space-y-1.5">
                 <p className="text-xs font-medium text-foreground">How scores work:</p>
-                <p className="text-xs text-muted-foreground">Each tag is scored 1-100 based on estimated search volume and relevance. Higher score = more people search for that tag on YouTube.</p>
+                <p className="text-xs text-muted-foreground">Each tag is scored 1-100 based on estimated search volume and relevance.</p>
                 <div className="flex items-center gap-3 mt-2 text-xs">
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" /><span className="text-green-400">80+ High</span></span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /><span className="text-yellow-400">60+ Medium</span></span>
@@ -165,7 +175,7 @@ export default function YouTubeSEO() {
             </div>
           </motion.div>
         )}
-        {result?.error && <p className="text-red-400 text-sm text-center">{result.error}</p>}
+        {result?.error && <p className="text-sm text-center" style={{ color: YT_COLOR }}>{result.error}</p>}
       </div>
     </div>
   );
