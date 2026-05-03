@@ -1,544 +1,747 @@
 import { useNavigate } from "react-router-dom";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
-import {
-  TrendingUp, Sparkles, Newspaper, FileText,
-  Check, Star, ArrowRight, Zap, Target,
-  Instagram, Youtube, ChevronDown, Play,
-  BarChart2, Users, Flame, Menu, X
-} from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 
-const GOLD = "linear-gradient(135deg, #14BBA6, #C17D20)";
-const G = "#14BBA6";
-const C = { bg: "#0A0A0A", card: "#141414", card2: "#1A1A1A", border: "#222", text: "#F0EAD6", muted: "#5A5A5A", subtle: "#1E1E1E" };
-
-const NAV_LINKS = [
-  { label: "Features", id: "features" },
-  { label: "How it Works", id: "howitworks" },
-  { label: "Testimonials", id: "testimonials" },
-  { label: "Pricing", id: "pricing" },
-];
-
-const features = [
-  { icon: TrendingUp, title: "Trending Topics", desc: "Discover what India is watching — real-time trending data across 20+ niches before anyone else.", tag: "Live" },
-  { icon: Sparkles, title: "AI Script Generator", desc: "Generate ready-to-film Reel and YouTube scripts with hooks, body, and CTA in under 10 seconds.", tag: "AI" },
-  { icon: Newspaper, title: "Creator News Feed", desc: "Curated niche news delivered daily so you never run out of timely content ideas.", tag: "Daily" },
-  { icon: Target, title: "SEO Optimizer", desc: "Rank higher on YouTube with AI-generated titles, descriptions, and tags built for the algorithm.", tag: "YouTube" },
-  { icon: BarChart2, title: "Channel Analyzer", desc: "Deep-dive into any Instagram or YouTube channel — content pillars, ideas, and growth gaps.", tag: "Insights" },
-  { icon: Zap, title: "Viral Hook Engine", desc: "Stop the scroll with AI hooks engineered from millions of viral Indian creator posts.", tag: "Viral" },
-];
-
-const steps = [
-  { num: "01", title: "Pick Your Niche", desc: "Tell SocialRum your content niche — finance, fitness, comedy, tech or any of 20+ categories." },
-  { num: "02", title: "Discover Trends", desc: "See what's trending right now in your niche across Instagram Reels and YouTube Shorts." },
-  { num: "03", title: "Generate Content", desc: "One click to get a full script, viral hook, SEO tags or content ideas — ready to film." },
-  { num: "04", title: "Go Viral", desc: "Post with confidence knowing your content is built on real data and AI-powered strategy." },
-];
-
-const testimonials = [
-  { name: "Rahul Sharma", handle: "@rahulfinance", niche: "Finance · 280K", text: "SocialRum helped me go from 5K to 50K in 3 months. The trending topics feature is insane — I always post at the right time.", avatar: "RS", stars: 5 },
-  { name: "Priya Mehta", handle: "@priyafitness", niche: "Fitness · 120K", text: "Script generation alone saves me 4 hours a week. The hooks it writes are actually better than what I used to write myself.", avatar: "PM", stars: 5 },
-  { name: "Arjun Kapoor", handle: "@arjuntech", niche: "Tech · 95K", text: "The SEO optimizer took my YouTube views from 2K to 40K per video. I wish I had this 2 years ago.", avatar: "AK", stars: 5 },
-  { name: "Sneha Rao", handle: "@snehalifestyle", niche: "Lifestyle · 67K", text: "Finally a tool made for Indian creators. The Hinglish script option alone is worth the subscription.", avatar: "SR", stars: 5 },
-  { name: "Vikram Das", handle: "@vikramcricket", niche: "Cricket · 210K", text: "I post IPL content and SocialRum's live news feed means I'm always first. My engagement doubled.", avatar: "VD", stars: 5 },
-  { name: "Anjali Nair", handle: "@anjalifood", niche: "Food · 88K", text: "The channel analyzer showed me exactly what top food creators do differently. Changed my whole strategy.", avatar: "AN", stars: 5 },
-];
-
-const freeF = ["3 script generations/month", "Basic trending topics", "News feed (5 articles/day)", "AI chat (5 messages/day)"];
-const proF = ["Unlimited script generations", "Full trending data — 20+ niches", "Complete news feed", "Unlimited AI chat", "YouTube SEO optimizer", "Channel analyzer", "Instagram analyzer", "Priority support"];
-
+/* ─── THEME ─── */
+const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
+const C = { bg: "#0A0A0A", text: "#F0EAD6", muted: "#5A5A5A", border: "#222" };
 const WORDS = ["Discover.", "Create.", "Go Viral."];
 
+/* ─── REEL DATA ─── */
+const REELS = [
+  {
+    user: "priya.creates",
+    initials: "PC",
+    avatarColor: "#FF6B9D",
+    caption: "Morning vlog vibes ☀️",
+    audio: "Original audio · priya",
+    likes: "84K",
+    comments: "1.2K",
+    gradient: ["#1a0533", "#4B0082", "#7B2D8B", "#FF6B9D", "#FFB347", "#FF6B35"],
+    bars: [0.4, 0.7, 0.5, 0.9, 0.6, 0.8, 0.3, 0.7, 0.5, 1.0, 0.6, 0.4],
+    tag: "VLOG",
+    tagColor: "#FF6B9D",
+  },
+  {
+    user: "techtalkindia",
+    initials: "TT",
+    avatarColor: "#00BFFF",
+    caption: "AI tools that blew my mind 🤯",
+    audio: "Trending · Lo-fi Beats",
+    likes: "210K",
+    comments: "3.4K",
+    gradient: ["#001a33", "#0066CC", "#00BFFF", "#7FFFD4", "#00FF7F", "#228B22"],
+    bars: [0.6, 0.9, 0.4, 0.8, 1.0, 0.5, 0.7, 0.9, 0.3, 0.6, 0.8, 0.5],
+    tag: "TECH",
+    tagColor: "#00BFFF",
+  },
+  {
+    user: "dancewithmeg",
+    initials: "DM",
+    avatarColor: "#FFD700",
+    caption: "New hook tutorial 🔥 save this!",
+    audio: "APT · Rose ft. Bruno Mars",
+    likes: "520K",
+    comments: "8.9K",
+    gradient: ["#2d1b00", "#8B4513", "#D2691E", "#F4A460", "#FFD700", "#FFA500"],
+    bars: [1.0, 0.6, 0.8, 0.4, 0.9, 0.7, 1.0, 0.5, 0.8, 0.6, 0.9, 0.7],
+    tag: "DANCE",
+    tagColor: "#FFD700",
+  },
+  {
+    user: "foodiedelhi",
+    initials: "FD",
+    avatarColor: "#FF4500",
+    caption: "Street food in 60 sec 🍜",
+    audio: "Kya Karein · AP Dhillon",
+    likes: "145K",
+    comments: "2.1K",
+    gradient: ["#0d1f0d", "#006400", "#228B22", "#90EE90", "#00FA9A", "#48D1CC"],
+    bars: [0.5, 0.8, 0.6, 1.0, 0.4, 0.7, 0.9, 0.5, 0.8, 0.3, 0.7, 0.9],
+    tag: "FOOD",
+    tagColor: "#FF4500",
+  },
+  {
+    user: "comedykings",
+    initials: "CK",
+    avatarColor: "#DA70D6",
+    caption: "POV: mom finds ur reels 😂",
+    audio: "Pasoori · Ali Sethi",
+    likes: "1.1M",
+    comments: "22K",
+    gradient: ["#1a001a", "#800080", "#DA70D6", "#FFB6C1", "#FF69B4", "#DC143C"],
+    bars: [0.7, 1.0, 0.5, 0.8, 0.6, 0.9, 0.4, 1.0, 0.7, 0.5, 0.8, 0.6],
+    tag: "COMEDY",
+    tagColor: "#DA70D6",
+  },
+  {
+    user: "sketchbyrohan",
+    initials: "SR",
+    avatarColor: "#4169E1",
+    caption: "Timelapse art drop 🎨",
+    audio: "Calm Instrumentals",
+    likes: "67K",
+    comments: "890",
+    gradient: ["#0a0a1a", "#191970", "#4169E1", "#87CEEB", "#E0F7FA", "#B0E0E6"],
+    bars: [0.3, 0.6, 0.8, 0.5, 0.7, 1.0, 0.4, 0.8, 0.6, 0.9, 0.5, 0.7],
+    tag: "ART",
+    tagColor: "#4169E1",
+  },
+];
+
+/* ─── PHONE COMPONENT ─── */
+function ReelPhone({ reel, index }) {
+  const angle = (index / 6) * 360;
+  const animDelay = index * 0.4;
+
+  const gradientStr = `linear-gradient(180deg, ${reel.gradient
+    .map((c, i) => `${c} ${Math.round((i / (reel.gradient.length - 1)) * 100)}%`)
+    .join(", ")})`;
+
+  return (
+    <div
+      className="reel-phone"
+      style={{ transform: `rotateY(${angle}deg) translateZ(280px)` }}
+    >
+      {/* Scrolling gradient background */}
+      <div
+        className="reel-scroll-bg"
+        style={{
+          background: gradientStr,
+          animationDuration: `${4 + index * 0.7}s`,
+          animationDelay: `${-animDelay}s`,
+        }}
+      />
+
+      {/* Notch */}
+      <div className="phone-notch" />
+
+      {/* Top bar: avatar + username + follow */}
+      <div className="reel-top-bar">
+        <div
+          className="reel-avatar"
+          style={{ background: reel.avatarColor }}
+        >
+          {reel.initials}
+        </div>
+        <span className="reel-username">@{reel.user}</span>
+        <span className="reel-follow">Follow</span>
+      </div>
+
+      {/* Center: category tag + animated waveform */}
+      <div className="reel-center">
+        <div
+          className="reel-tag"
+          style={{ color: reel.tagColor, borderColor: reel.tagColor }}
+        >
+          {reel.tag}
+        </div>
+
+        {/* Animated waveform bars */}
+        <div className="reel-wave">
+          {reel.bars.map((h, i) => (
+            <div
+              key={i}
+              className="wave-bar"
+              style={{
+                height: `${h * 28}px`,
+                background: reel.tagColor,
+                animationDelay: `${i * 0.08}s`,
+                opacity: 0.85,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom: caption + music disc */}
+      <div className="reel-bottom">
+        <div className="reel-music-row">
+          <div
+            className="reel-disc"
+            style={{ borderColor: reel.tagColor, animationDuration: `${3 + index * 0.2}s` }}
+          >
+            <div
+              className="reel-disc-inner"
+              style={{ background: reel.avatarColor }}
+            />
+          </div>
+          <span className="reel-audio">{reel.audio}</span>
+        </div>
+        <div className="reel-caption-text">{reel.caption}</div>
+      </div>
+
+      {/* Right-side action buttons */}
+      <div className="reel-actions">
+        <div className="reel-action">
+          <div className="action-icon heart-icon">♥</div>
+          <span className="action-count">{reel.likes}</span>
+        </div>
+        <div className="reel-action">
+          <div className="action-icon">💬</div>
+          <span className="action-count">{reel.comments}</span>
+        </div>
+        <div className="reel-action">
+          <div className="action-icon">↗</div>
+          <span className="action-count">Share</span>
+        </div>
+        <div
+          className="reel-share-disc"
+          style={{ background: reel.avatarColor, animationDuration: `${2.5 + index * 0.3}s` }}
+        >
+          ♪
+        </div>
+      </div>
+
+      {/* Progress bar at bottom */}
+      <div className="reel-progress">
+        <div
+          className="reel-progress-fill"
+          style={{
+            background: reel.tagColor,
+            animationDuration: `${5 + index * 0.5}s`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN COMPONENT ─── */
 export default function LandingPage() {
   const navigate = useNavigate();
   const [wordIdx, setWordIdx] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [annual, setAnnual] = useState(false);
+  const [wordVisible, setWordVisible] = useState(true);
   const heroRef = useRef(null);
+
   const { scrollYProgress } = useScroll({ target: heroRef });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, -60]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   useEffect(() => {
-    const i = setInterval(() => setWordIdx(w => (w + 1) % WORDS.length), 2200);
+    const i = setInterval(() => {
+      setWordVisible(false);
+      setTimeout(() => {
+        setWordIdx(w => (w + 1) % WORDS.length);
+        setWordVisible(true);
+      }, 350);
+    }, 2400);
     return () => clearInterval(i);
   }, []);
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setMenuOpen(false);
-  };
-
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: "100vh", overflowX: "hidden" }}>
+    <div style={{ background: C.bg, color: C.text, minHeight: "100vh" }}>
+
+      {/* ─── GLOBAL STYLES ─── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
-        .cg { font-family: 'Cormorant Garamond', serif !important; }
-        .dm { font-family: 'DM Sans', sans-serif !important; }
-        .gold-text { background: linear-gradient(135deg,#14BBA6,#C17D20); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-        .grain { position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.025; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:200px; }
-        * { box-sizing:border-box; }
-        ::-webkit-scrollbar { width:4px; }
-        ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
-        .nav-link { position:relative; }
-        .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:1px; background:#14BBA6; transition:.3s; }
-        .nav-link:hover::after { width:100%; }
-        .nav-link:hover { color:#14BBA6 !important; }
-        .feature-card:hover { border-color:#14BBA625 !important; transform:translateY(-4px); }
-        .feature-card { transition: all .25s ease; }
-        .testi-card:hover { border-color:#14BBA620 !important; }
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+
+        /* ── CAROUSEL ── */
+        .carousel-scene {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          perspective: 1100px;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .carousel-ring {
+          width: 200px;
+          height: 380px;
+          transform-style: preserve-3d;
+          animation: carouselSpin 28s linear infinite;
+          position: relative;
+        }
+
+        @keyframes carouselSpin {
+          from { transform: rotateY(0deg); }
+          to   { transform: rotateY(360deg); }
+        }
+
+        /* ── PHONE SHELL ── */
+        .reel-phone {
+          position: absolute;
+          width: 130px;
+          height: 230px;
+          left: 50%;
+          top: 50%;
+          margin-left: -65px;
+          margin-top: -115px;
+          border-radius: 20px;
+          overflow: hidden;
+          background: #111;
+          border: 1.5px solid rgba(255,255,255,0.14);
+          box-shadow:
+            0 0 0 3px rgba(0,0,0,0.6),
+            0 20px 60px rgba(0,0,0,0.8),
+            inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        /* ── SCROLLING BG ── */
+        .reel-scroll-bg {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 300%;
+          top: -100%;
+          animation: reelScroll linear infinite;
+        }
+
+        @keyframes reelScroll {
+          0%   { transform: translateY(0%); }
+          100% { transform: translateY(33.33%); }
+        }
+
+        /* ── NOTCH ── */
+        .phone-notch {
+          position: absolute;
+          top: 7px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 32px;
+          height: 5px;
+          background: #000;
+          border-radius: 3px;
+          z-index: 10;
+        }
+
+        /* ── TOP BAR ── */
+        .reel-top-bar {
+          position: absolute;
+          top: 18px;
+          left: 8px;
+          right: 8px;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          z-index: 5;
+        }
+
+        .reel-avatar {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          border: 1.5px solid #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 6px;
+          font-weight: 700;
+          color: #fff;
+          font-family: -apple-system, sans-serif;
+          flex-shrink: 0;
+        }
+
+        .reel-username {
+          font-family: -apple-system, sans-serif;
+          font-size: 7px;
+          font-weight: 600;
+          color: #fff;
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .reel-follow {
+          font-family: -apple-system, sans-serif;
+          font-size: 6.5px;
+          font-weight: 700;
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.8);
+          border-radius: 4px;
+          padding: 1.5px 5px;
+          flex-shrink: 0;
+        }
+
+        /* ── CENTER ZONE ── */
+        .reel-center {
+          position: absolute;
+          top: 50%;
+          left: 8px;
+          right: 36px;
+          transform: translateY(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+          z-index: 5;
+        }
+
+        .reel-tag {
+          font-family: -apple-system, sans-serif;
+          font-size: 7px;
+          font-weight: 800;
+          letter-spacing: 0.1em;
+          border: 1px solid;
+          border-radius: 4px;
+          padding: 2px 5px;
+          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+        }
+
+        /* ── WAVEFORM ── */
+        .reel-wave {
+          display: flex;
+          align-items: flex-end;
+          gap: 2px;
+          height: 30px;
+        }
+
+        .wave-bar {
+          width: 4px;
+          border-radius: 2px;
+          animation: wavePulse 0.8s ease-in-out infinite alternate;
+          transform-origin: bottom;
+        }
+
+        @keyframes wavePulse {
+          0%   { transform: scaleY(0.3); }
+          100% { transform: scaleY(1); }
+        }
+
+        /* ── BOTTOM ── */
+        .reel-bottom {
+          position: absolute;
+          bottom: 14px;
+          left: 8px;
+          right: 36px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          z-index: 5;
+        }
+
+        .reel-music-row {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .reel-disc {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          border: 1px solid;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: discSpin linear infinite;
+          flex-shrink: 0;
+        }
+
+        @keyframes discSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+
+        .reel-disc-inner {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          opacity: 0.9;
+        }
+
+        .reel-audio {
+          font-family: -apple-system, sans-serif;
+          font-size: 6.5px;
+          color: rgba(255,255,255,0.85);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 70px;
+          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .reel-caption-text {
+          font-family: -apple-system, sans-serif;
+          font-size: 7px;
+          font-weight: 500;
+          color: #fff;
+          line-height: 1.3;
+          text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+        }
+
+        /* ── RIGHT ACTIONS ── */
+        .reel-actions {
+          position: absolute;
+          right: 6px;
+          bottom: 30px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 9px;
+          z-index: 5;
+        }
+
+        .reel-action {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1px;
+        }
+
+        .action-icon {
+          font-size: 13px;
+          line-height: 1;
+          filter: drop-shadow(0 1px 3px rgba(0,0,0,0.7));
+        }
+
+        .heart-icon {
+          animation: heartBeat 2s ease-in-out infinite;
+        }
+
+        @keyframes heartBeat {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.25); }
+        }
+
+        .action-count {
+          font-family: -apple-system, sans-serif;
+          font-size: 5.5px;
+          font-weight: 700;
+          color: #fff;
+          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .reel-share-disc {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          border: 1.5px solid #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 9px;
+          color: #fff;
+          animation: discSpin linear infinite;
+          box-shadow: 0 0 6px rgba(0,0,0,0.5);
+        }
+
+        /* ── PROGRESS BAR ── */
+        .reel-progress {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: rgba(255,255,255,0.2);
+          z-index: 5;
+        }
+
+        .reel-progress-fill {
+          height: 100%;
+          animation: progressPlay linear infinite;
+          border-radius: 1px;
+        }
+
+        @keyframes progressPlay {
+          0%   { width: 0%; }
+          100% { width: 100%; }
+        }
+
+        /* ── HERO WORD ── */
+        .hero-word-wrap {
+          min-height: 90px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .hero-word {
+          font-size: clamp(52px, 8vw, 96px);
+          font-weight: 800;
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          letter-spacing: -3px;
+          line-height: 1;
+          background: linear-gradient(135deg, #FFFFFF 0%, #E8B84B 50%, #C17D20 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          transition: opacity 0.3s ease, transform 0.35s ease;
+        }
+
+        .hero-word.hidden {
+          opacity: 0;
+          transform: translateY(-14px);
+        }
+
+        .hero-word.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* ── DARK VIGNETTE OVERLAY ── */
+        .scene-overlay {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(ellipse 70% 80% at 50% 50%,
+            rgba(10,10,10,0.45) 0%,
+            rgba(10,10,10,0.92) 100%);
+          backdrop-filter: blur(1.5px);
+          z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+          .carousel-ring { transform: scale(0.65) !important; }
+        }
       `}</style>
 
-      {/* Grain overlay */}
-      <div className="grain" />
+      {/* ─── HERO SECTION ─── */}
+      <section
+        ref={heroRef}
+        style={{
+          minHeight: "100vh",
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        }}
+      >
 
-      {/* ── NAVBAR ── */}
-      <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }}
-        className="flex items-center justify-between px-6 md:px-16 py-5 fixed top-0 left-0 right-0 z-50"
-        style={{ background: `${C.bg}cc`, borderBottom: `1px solid ${C.border}20`, backdropFilter: "blur(20px)" }}>
-        <div className="flex items-center gap-3">
-          <motion.img whileHover={{ rotate: 8, scale: 1.05 }} src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl" />
-          <span className="cg font-bold text-xl" style={{ color: C.text, letterSpacing: ".01em" }}>SocialRum</span>
-        </div>
-
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map(l => (
-            <button key={l.id} onClick={() => scrollTo(l.id)}
-              className="nav-link dm text-sm bg-transparent border-none cursor-pointer transition-colors"
-              style={{ color: C.muted }}>
-              {l.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="hidden md:flex items-center gap-3">
-          <button onClick={() => navigate("/login")} className="dm text-sm transition-colors nav-link" style={{ color: C.muted }}>Login</button>
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 24px #14BBA630" }} whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/signup")}
-            className="dm px-5 py-2.5 rounded-xl text-sm font-semibold"
-            style={{ background: GOLD, color: "#0A0A0A" }}>
-            Start Free
-          </motion.button>
-        </div>
-
-        {/* Mobile menu button */}
-        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden" style={{ color: C.muted }}>
-          {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </motion.nav>
-
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            className="fixed top-16 left-0 right-0 z-40 p-4 flex flex-col gap-2"
-            style={{ background: C.card, border: `1px solid ${C.border}`, margin: "0 16px", borderRadius: "16px" }}>
-            {NAV_LINKS.map(l => (
-              <button key={l.id} onClick={() => scrollTo(l.id)} className="dm text-sm py-2.5 text-left transition-colors" style={{ color: C.muted }}>{l.label}</button>
+        {/* 3D CAROUSEL BACKGROUND */}
+        <div className="carousel-scene">
+          <div className="carousel-ring">
+            {REELS.map((reel, i) => (
+              <ReelPhone key={i} reel={reel} index={i} />
             ))}
-            <div className="border-t my-1" style={{ borderColor: C.border }} />
-            <button onClick={() => navigate("/signup")} className="dm py-3 rounded-xl text-sm font-semibold text-center" style={{ background: GOLD, color: "#0A0A0A" }}>Start Free</button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
 
-      {/* ── HERO ── */}
-      <section ref={heroRef} className="relative flex flex-col items-center text-center px-6 pt-36 pb-20 overflow-hidden" style={{ minHeight: "100vh" }}>
-        {/* BG glow */}
-        <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }} transition={{ duration: 10, repeat: Infinity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] pointer-events-none rounded-full"
-          style={{ background: "radial-gradient(ellipse, #14BBA6, transparent 65%)", filter: "blur(80px)" }} />
-        <motion.div animate={{ scale: [1.1, 1, 1.1], opacity: [0.03, 0.07, 0.03] }} transition={{ duration: 14, repeat: Infinity, delay: 4 }}
-          className="absolute bottom-0 right-0 w-[500px] h-[500px] pointer-events-none rounded-full"
-          style={{ background: "radial-gradient(circle, #C17D20, transparent 70%)", filter: "blur(100px)" }} />
+        {/* VIGNETTE OVERLAY */}
+        <div className="scene-overlay" />
 
-        {/* Decorative grid lines */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: `linear-gradient(${C.border}40 1px, transparent 1px), linear-gradient(90deg, ${C.border}40 1px, transparent 1px)`,
-          backgroundSize: "80px 80px", maskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent)"
-        }} />
-
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="flex flex-col items-center gap-7 max-w-4xl relative z-10">
-
+        {/* HERO CONTENT */}
+        <motion.div
+          style={{ y: heroY, opacity: heroOpacity }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: "easeOut" }}
+          className="relative z-10"
+          css={{
+            position: "relative",
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "24px",
+            maxWidth: "560px",
+            padding: "0 24px",
+            textAlign: "center",
+          }}
+        >
           {/* Badge */}
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="flex items-center gap-2 px-5 py-2 rounded-full dm text-xs font-medium"
-            style={{ background: "#14BBA60D", border: "1px solid #14BBA625", color: G, letterSpacing: ".12em" }}>
-            <motion.span animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: G }} />
-            <Sparkles className="w-3 h-3" />
-            BUILT FOR INDIA'S CREATORS
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              color: "#E8B84B",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              fontFamily: "-apple-system, sans-serif",
+              fontWeight: 600,
+            }}
+          >
+            <Sparkles size={14} />
+            Built for creators
           </motion.div>
 
-          {/* Headline */}
-          <div>
-            <motion.p initial={{ opacity: 0, letterSpacing: "0.6em" }} animate={{ opacity: 1, letterSpacing: "0.22em" }} transition={{ delay: 0.3, duration: 1 }}
-              className="dm text-xs uppercase mb-3" style={{ color: "#383838", letterSpacing: "0.22em" }}>
-              The AI Creator Toolkit
-            </motion.p>
-            <div className="cg font-bold leading-none" style={{ fontSize: "clamp(56px, 9vw, 110px)", minHeight: "1.25em" }}>
-              <AnimatePresence mode="wait">
-                <motion.span key={wordIdx}
-                  initial={{ opacity: 0, y: 30, letterSpacing: "0.4em", filter: "blur(12px)" }}
-                  animate={{ opacity: 1, y: 0, letterSpacing: "0.01em", filter: "blur(0)" }}
-                  exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
-                  transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                  className={wordIdx === 1 ? "gold-text italic" : wordIdx === 2 ? "italic" : ""}
-                  style={{ display: "inline-block", color: wordIdx === 0 ? C.text : wordIdx === 2 ? "#C17D20" : undefined }}>
-                  {WORDS[wordIdx]}
-                </motion.span>
-              </AnimatePresence>
+          {/* Animated word */}
+          <div className="hero-word-wrap">
+            <div className={`hero-word ${wordVisible ? "visible" : "hidden"}`}>
+              {WORDS[wordIdx]}
             </div>
           </div>
 
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
-            className="dm text-base md:text-lg max-w-lg leading-relaxed" style={{ color: C.muted }}>
-            Trending topics, AI scripts, SEO tools and news — everything an Indian Instagram and YouTube creator needs in one place.
+          {/* Subtext */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            style={{
+              color: C.muted,
+              maxWidth: "440px",
+              fontSize: "16px",
+              lineHeight: "1.6",
+              fontFamily: "-apple-system, sans-serif",
+              margin: 0,
+            }}
+          >
+            Trending topics, AI scripts, SEO tools and news —
+            everything an Indian creator needs.
           </motion.p>
 
-          {/* CTAs */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
-            className="flex items-center gap-4 flex-wrap justify-center">
-            <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #14BBA635" }} whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/signup")}
-              className="flex items-center gap-2 px-8 py-4 rounded-2xl dm font-semibold text-base"
-              style={{ background: GOLD, color: "#0A0A0A" }}>
-              Start for Free <ArrowRight className="w-4 h-4" />
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.02, borderColor: "#14BBA640" }} whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/login")}
-              className="flex items-center gap-2 px-8 py-4 rounded-2xl dm font-medium text-base transition-all"
-              style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text }}>
-              <Play className="w-4 h-4" style={{ color: G }} /> See Demo
-            </motion.button>
-          </motion.div>
-
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
-            className="dm text-xs" style={{ color: "#303030" }}>
-            No credit card · Free forever plan · 10,000+ creators
-          </motion.p>
-
-          {/* Platform pills */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}
-            className="flex items-center gap-3">
-            {[{ icon: Instagram, label: "Instagram Reels" }, { icon: Youtube, label: "YouTube Shorts" }].map((p, i) => (
-              <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl dm text-xs"
-                style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted }}>
-                <p.icon className="w-3.5 h-3.5" style={{ color: G }} /> {p.label}
-              </div>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* Hero mockup */}
-        <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-5xl mt-16 relative z-10">
-          {/* Glow under mockup */}
-          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 rounded-full pointer-events-none"
-            style={{ background: "#14BBA6", filter: "blur(40px)", opacity: 0.08 }} />
-          <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}`, boxShadow: "0 40px 80px rgba(0,0,0,0.5)" }}>
-            {/* Browser bar */}
-            <div className="flex items-center gap-2 px-5 py-3.5" style={{ background: "#0E0E0E", borderBottom: `1px solid ${C.border}` }}>
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ background: "#FF5F56" }} />
-                <div className="w-3 h-3 rounded-full" style={{ background: "#FFBD2E" }} />
-                <div className="w-3 h-3 rounded-full" style={{ background: "#27C93F" }} />
-              </div>
-              <div className="flex-1 mx-6 px-4 py-1.5 rounded-lg dm text-xs text-center" style={{ background: C.bg, color: "#383838" }}>
-                app.SocialRum.com/trending
-              </div>
-              <div className="flex items-center gap-2 dm text-xs" style={{ color: "#383838" }}>
-                <Sparkles className="w-3 h-3" style={{ color: G }} /> AI Active
-              </div>
-            </div>
-            {/* Mockup content */}
-            <div className="p-6 grid grid-cols-3 gap-4">
-              {[
-                { topic: "Fitness & Gym", posts: "2.4K posts", trend: "🔥 Hot", score: 95, tag: "Fitness" },
-                { topic: "Stock Market", posts: "1.8K posts", trend: "📈 Rising", score: 82, tag: "Finance" },
-                { topic: "Cricket & IPL", posts: "3.1K posts", trend: "🔥 Hot", score: 98, tag: "Cricket" },
-              ].map((item, i) => (
-                <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.15 }}
-                  className="rounded-xl p-4" style={{ background: C.bg, border: `1px solid ${C.border}` }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="dm text-xs px-2 py-0.5 rounded-full" style={{ background: "#14BBA612", color: G }}>#{item.tag}</span>
-                    <span className="dm text-xs" style={{ color: C.muted }}>{item.trend}</span>
-                  </div>
-                  <p className="dm font-semibold text-sm mb-1" style={{ color: C.text }}>{item.topic}</p>
-                  <p className="dm text-xs mb-3" style={{ color: C.muted }}>{item.posts}</p>
-                  <div className="w-full h-1 rounded-full" style={{ background: C.border }}>
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${item.score}%` }} transition={{ delay: 1.2 + i * 0.2, duration: 1 }}
-                      className="h-1 rounded-full" style={{ background: GOLD }} />
-                  </div>
-                  <div className="flex justify-between mt-1.5">
-                    <span className="dm text-xs" style={{ color: C.muted }}>Trend Score</span>
-                    <span className="dm text-xs font-semibold" style={{ color: G }}>{item.score}</span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            {/* Bottom bar */}
-            <div className="flex items-center justify-between px-6 py-3" style={{ borderTop: `1px solid ${C.border}`, background: "#0E0E0E" }}>
-              <div className="flex items-center gap-4">
-                {[{ icon: TrendingUp, label: "154 Topics" }, { icon: FileText, label: "Scripts" }, { icon: BarChart2, label: "Analytics" }].map((item, i) => (
-                  <div key={i} className="flex items-center gap-1.5 dm text-xs" style={{ color: C.muted }}>
-                    <item.icon className="w-3 h-3" style={{ color: G }} />{item.label}
-                  </div>
-                ))}
-              </div>
-              <div className="dm text-xs px-3 py-1 rounded-full" style={{ background: "#14BBA612", color: G }}>● Live</div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Scroll cue */}
-        <motion.button animate={{ y: [0, 8, 0] }} transition={{ duration: 2.5, repeat: Infinity }}
-          onClick={() => scrollTo("features")}
-          className="flex flex-col items-center gap-1.5 mt-16 relative z-10 bg-transparent border-none cursor-pointer" style={{ color: C.muted }}>
-          <span className="dm text-xs" style={{ letterSpacing: ".14em" }}>EXPLORE</span>
-          <ChevronDown className="w-4 h-4" />
-        </motion.button>
-      </section>
-
-      {/* ── STATS BAR ── */}
-      <section style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-        <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { val: "20+", label: "Niches Covered" },
-            { val: "10K+", label: "Scripts Generated" },
-            { val: "154", label: "Trending Daily" },
-            { val: "99%", label: "Creator Satisfaction" },
-          ].map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.09 }}>
-              <p className="cg font-bold gold-text" style={{ fontSize: 42 }}>{s.val}</p>
-              <p className="dm text-xs mt-1" style={{ color: C.muted, letterSpacing: ".06em" }}>{s.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FEATURES ── */}
-      <section id="features" className="px-6 md:px-16 py-28">
-        <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="mb-16">
-            <p className="dm text-xs uppercase mb-3" style={{ color: G, letterSpacing: ".2em" }}>Features</p>
-            <div className="flex items-end justify-between flex-wrap gap-4">
-              <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text, lineHeight: 1.1 }}>
-                Everything You Need<br /><span className="italic gold-text">to Go Viral</span>
-              </h2>
-              <p className="dm text-sm max-w-xs" style={{ color: C.muted, lineHeight: 1.7 }}>
-                AI tools built specifically for Indian content creators on Instagram and YouTube.
-              </p>
-            </div>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((f, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                className="feature-card rounded-2xl p-6 cursor-default"
-                style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                <div className="flex items-start justify-between mb-5">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#14BBA60D", border: "1px solid #14BBA620" }}>
-                    <f.icon className="w-5 h-5" style={{ color: G }} />
-                  </div>
-                  <span className="dm text-xs px-2.5 py-1 rounded-full" style={{ background: "#14BBA60D", color: G, border: "1px solid #14BBA620" }}>{f.tag}</span>
-                </div>
-                <h3 className="dm font-semibold text-base mb-2" style={{ color: C.text }}>{f.title}</h3>
-                <p className="dm text-sm leading-relaxed" style={{ color: C.muted }}>{f.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section id="howitworks" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-28">
-        <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-16">
-            <p className="dm text-xs uppercase mb-3" style={{ color: G, letterSpacing: ".2em" }}>Process</p>
-            <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text }}>
-              From Zero to <span className="italic gold-text">Viral</span><br />in 4 Steps
-            </h2>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {steps.map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                className="relative">
-                {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-full w-full h-px -translate-y-1/2 z-0" style={{ background: `linear-gradient(90deg, ${C.border}, transparent)` }} />
-                )}
-                <div className="relative z-10">
-                  <div className="cg font-bold text-4xl mb-4 gold-text">{s.num}</div>
-                  <h3 className="dm font-semibold text-base mb-2" style={{ color: C.text }}>{s.title}</h3>
-                  <p className="dm text-sm leading-relaxed" style={{ color: C.muted }}>{s.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section id="testimonials" className="px-6 md:px-16 py-28">
-        <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="mb-16">
-            <p className="dm text-xs uppercase mb-3" style={{ color: G, letterSpacing: ".2em" }}>Testimonials</p>
-            <div className="flex items-end justify-between flex-wrap gap-4">
-              <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text, lineHeight: 1.1 }}>
-                Loved by <span className="italic gold-text">Creators</span><br />Across India
-              </h2>
-              <div className="flex items-center gap-2 dm text-sm" style={{ color: C.muted }}>
-                <Users className="w-4 h-4" style={{ color: G }} />
-                10,000+ active creators
-              </div>
-            </div>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {testimonials.map((t, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                className="testi-card rounded-2xl p-6 transition-all"
-                style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} className="w-3.5 h-3.5" style={{ fill: G, color: G }} />
-                  ))}
-                </div>
-                <p className="dm text-sm leading-relaxed mb-5" style={{ color: C.muted }}>"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center dm text-xs font-bold"
-                    style={{ background: GOLD, color: "#0A0A0A" }}>{t.avatar}</div>
-                  <div>
-                    <p className="dm font-semibold text-sm" style={{ color: C.text }}>{t.name}</p>
-                    <p className="dm text-xs" style={{ color: C.muted }}>{t.niche}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PRICING ── */}
-      <section id="pricing" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-28">
-        <div className="max-w-3xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
-            <p className="dm text-xs uppercase mb-3" style={{ color: G, letterSpacing: ".2em" }}>Pricing</p>
-            <h2 className="cg font-bold mb-4" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text }}>
-              Simple, <span className="italic gold-text">Honest</span> Pricing
-            </h2>
-            <p className="dm text-sm" style={{ color: C.muted }}>Start free. Upgrade only when you're ready.</p>
-            {/* Annual toggle */}
-            <div className="flex items-center justify-center gap-3 mt-6">
-              <span className="dm text-sm" style={{ color: annual ? C.muted : C.text }}>Monthly</span>
-              <button onClick={() => setAnnual(!annual)}
-                className="w-12 h-6 rounded-full transition-all relative"
-                style={{ background: annual ? GOLD : C.border }}>
-                <motion.div animate={{ x: annual ? 24 : 2 }} className="absolute top-1 w-4 h-4 rounded-full bg-white" />
-              </button>
-              <span className="dm text-sm" style={{ color: annual ? C.text : C.muted }}>
-                Annual <span className="dm text-xs px-2 py-0.5 rounded-full ml-1" style={{ background: "#14BBA615", color: G }}>Save 30%</span>
-              </span>
-            </div>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
-              className="rounded-2xl p-8" style={{ background: C.bg, border: `1px solid ${C.border}` }}>
-              <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Free</h3>
-              <p className="dm text-sm mb-6" style={{ color: C.muted }}>Perfect to get started</p>
-              <div className="mb-6 flex items-end gap-1">
-                <span className="cg font-bold" style={{ fontSize: 52, color: C.text, lineHeight: 1 }}>₹0</span>
-                <span className="dm text-sm mb-2" style={{ color: C.muted }}>/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                {freeF.map((f, i) => (
-                  <li key={i} className="flex items-center gap-2.5 dm text-sm" style={{ color: C.muted }}>
-                    <Check className="w-4 h-4 shrink-0" style={{ color: G }} />{f}
-                  </li>
-                ))}
-              </ul>
-              <motion.button whileHover={{ borderColor: "#14BBA650" }} whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/signup")}
-                className="w-full py-3.5 rounded-xl dm font-medium text-sm transition-all"
-                style={{ border: `1px solid ${C.border}`, color: C.text }}>
-                Get Started Free
-              </motion.button>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
-              whileHover={{ boxShadow: "0 0 60px #14BBA612" }}
-              className="rounded-2xl p-8 relative transition-all"
-              style={{ background: C.bg, border: `1px solid #14BBA640` }}>
-              <motion.div animate={{ opacity: [0.85, 1, 0.85] }} transition={{ duration: 2, repeat: Infinity }}
-                className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full dm text-xs font-semibold"
-                style={{ background: GOLD, color: "#0A0A0A" }}>
-                ✦ Most Popular
-              </motion.div>
-              <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Pro</h3>
-              <p className="dm text-sm mb-6" style={{ color: C.muted }}>For serious creators</p>
-              <div className="mb-6 flex items-end gap-1">
-                <span className="cg font-bold gold-text" style={{ fontSize: 52, lineHeight: 1 }}>
-                  {annual ? "₹559" : "₹799"}
-                </span>
-                <span className="dm text-sm mb-2" style={{ color: C.muted }}>/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                {proF.map((f, i) => (
-                  <li key={i} className="flex items-center gap-2.5 dm text-sm" style={{ color: C.muted }}>
-                    <Check className="w-4 h-4 shrink-0" style={{ color: G }} />{f}
-                  </li>
-                ))}
-              </ul>
-              <motion.button whileHover={{ scale: 1.02, boxShadow: "0 0 30px #14BBA625" }} whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/signup")}
-                className="w-full py-3.5 rounded-xl dm font-semibold text-sm"
-                style={{ background: GOLD, color: "#0A0A0A" }}>
-                Start Pro Trial
-              </motion.button>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="px-6 md:px-16 py-32 relative overflow-hidden">
-        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }} transition={{ duration: 9, repeat: Infinity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] pointer-events-none rounded-full"
-          style={{ background: "radial-gradient(ellipse, #14BBA6, transparent 65%)", filter: "blur(80px)" }} />
-        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto text-center relative z-10">
-          <p className="dm text-xs uppercase mb-4" style={{ color: G, letterSpacing: ".2em" }}>Get Started</p>
-          <h2 className="cg font-bold mb-5" style={{ fontSize: "clamp(44px,7vw,88px)", color: C.text, lineHeight: 1.05 }}>
-            Ready to<br /><span className="italic gold-text">Go Viral?</span>
-          </h2>
-          <p className="dm text-base mb-10 max-w-md mx-auto" style={{ color: C.muted, lineHeight: 1.7 }}>
-            Join 10,000+ Indian creators using SocialRum to grow faster on Instagram and YouTube.
-          </p>
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 50px #14BBA635" }} whileTap={{ scale: 0.97 }}
+          {/* CTA */}
+          <motion.button
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.6 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
-            className="flex items-center gap-2 px-12 py-5 rounded-2xl dm font-semibold text-base mx-auto"
-            style={{ background: GOLD, color: "#0A0A0A" }}>
-            Start for Free Today <ArrowRight className="w-4 h-4" />
+            style={{
+              background: GOLD,
+              color: "#000",
+              padding: "15px 36px",
+              borderRadius: "16px",
+              fontWeight: "700",
+              fontSize: "15px",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontFamily: "-apple-system, sans-serif",
+              boxShadow: "0 6px 32px rgba(232,184,75,0.4)",
+              letterSpacing: "0.02em",
+            }}
+          >
+            Start Free <ArrowRight size={16} />
           </motion.button>
-          <p className="dm text-xs mt-4" style={{ color: "#2A2A2A" }}>No credit card · Free forever plan · Cancel anytime</p>
+
+          {/* Social proof pills */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            style={{
+              display: "flex",
+              gap: "10px",
+              flexWrap: "wrap",
+              justifyContent: "center",
+            }}
+          >
+            {["10K+ Creators", "Free to start", "Made in India 🇮🇳"].map(label => (
+              <span
+                key={label}
+                style={{
+                  fontSize: "12px",
+                  color: "rgba(240,234,214,0.55)",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "20px",
+                  padding: "5px 12px",
+                  fontFamily: "-apple-system, sans-serif",
+                }}
+              >
+                {label}
+              </span>
+            ))}
+          </motion.div>
         </motion.div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="px-6 md:px-16 py-10" style={{ borderTop: `1px solid ${C.border}` }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-6">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="SocialRum" className="w-7 h-7 rounded-lg" />
-            <span className="cg font-bold text-lg" style={{ color: C.text }}>SocialRum</span>
-          </div>
-          <div className="flex items-center gap-6 dm text-xs" style={{ color: C.muted }}>
-            <span className="nav-link cursor-pointer">Privacy Policy</span>
-            <span className="nav-link cursor-pointer">Terms of Service</span>
-            <span className="nav-link cursor-pointer">Contact</span>
-          </div>
-          <p className="dm text-xs" style={{ color: "#2A2A2A" }}>© 2026 SocialRum Media. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }
