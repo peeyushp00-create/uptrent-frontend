@@ -5,7 +5,6 @@ import { Sparkles, ArrowRight } from "lucide-react";
 
 /* ─── THEME ─── */
 const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
-const C = { bg: "#0A0A0A", text: "#F0EAD6", muted: "#5A5A5A" };
 const WORDS = ["Discover.", "Create.", "Go Viral."];
 
 /* ─── TYPES ─── */
@@ -114,113 +113,47 @@ interface ReelPhoneProps {
 function ReelPhone({ reel, index }: ReelPhoneProps) {
   const angle = (index / 6) * 360;
   const animDelay = index * 0.4;
-
   const gradientStr = `linear-gradient(180deg, ${reel.gradient
     .map((color, i) => `${color} ${Math.round((i / (reel.gradient.length - 1)) * 100)}%`)
     .join(", ")})`;
 
   return (
-    <div
-      className="reel-phone"
-      style={{ transform: `rotateY(${angle}deg) translateZ(280px)` }}
-    >
-      {/* Scrolling gradient background */}
+    <div className="reel-phone" style={{ transform: `rotateY(${angle}deg) translateZ(280px)` }}>
       <div
         className="reel-scroll-bg"
-        style={{
-          background: gradientStr,
-          animationDuration: `${4 + index * 0.7}s`,
-          animationDelay: `${-animDelay}s`,
-        }}
+        style={{ background: gradientStr, animationDuration: `${4 + index * 0.7}s`, animationDelay: `${-animDelay}s` }}
       />
-
-      {/* Notch */}
       <div className="phone-notch" />
-
-      {/* Top bar */}
       <div className="reel-top-bar">
-        <div className="reel-avatar" style={{ background: reel.avatarColor }}>
-          {reel.initials}
-        </div>
+        <div className="reel-avatar" style={{ background: reel.avatarColor }}>{reel.initials}</div>
         <span className="reel-username">@{reel.user}</span>
         <span className="reel-follow">Follow</span>
       </div>
-
-      {/* Center: tag + waveform */}
       <div className="reel-center">
-        <div
-          className="reel-tag"
-          style={{ color: reel.tagColor, borderColor: reel.tagColor }}
-        >
-          {reel.tag}
-        </div>
+        <div className="reel-tag" style={{ color: reel.tagColor, borderColor: reel.tagColor }}>{reel.tag}</div>
         <div className="reel-wave">
           {reel.bars.map((h, i) => (
-            <div
-              key={i}
-              className="wave-bar"
-              style={{
-                height: `${h * 28}px`,
-                background: reel.tagColor,
-                animationDelay: `${i * 0.08}s`,
-                opacity: 0.85,
-              }}
-            />
+            <div key={i} className="wave-bar" style={{ height: `${h * 28}px`, background: reel.tagColor, animationDelay: `${i * 0.08}s`, opacity: 0.85 }} />
           ))}
         </div>
       </div>
-
-      {/* Bottom: music + caption */}
       <div className="reel-bottom">
         <div className="reel-music-row">
-          <div
-            className="reel-disc"
-            style={{
-              borderColor: reel.tagColor,
-              animationDuration: `${3 + index * 0.2}s`,
-            }}
-          >
+          <div className="reel-disc" style={{ borderColor: reel.tagColor, animationDuration: `${3 + index * 0.2}s` }}>
             <div className="reel-disc-inner" style={{ background: reel.avatarColor }} />
           </div>
           <span className="reel-audio">{reel.audio}</span>
         </div>
         <div className="reel-caption-text">{reel.caption}</div>
       </div>
-
-      {/* Right actions */}
       <div className="reel-actions">
-        <div className="reel-action">
-          <div className="action-icon heart-icon">♥</div>
-          <span className="action-count">{reel.likes}</span>
-        </div>
-        <div className="reel-action">
-          <div className="action-icon">💬</div>
-          <span className="action-count">{reel.comments}</span>
-        </div>
-        <div className="reel-action">
-          <div className="action-icon">↗</div>
-          <span className="action-count">Share</span>
-        </div>
-        <div
-          className="reel-share-disc"
-          style={{
-            background: reel.avatarColor,
-            animationDuration: `${2.5 + index * 0.3}s`,
-          }}
-        >
-          ♪
-        </div>
+        <div className="reel-action"><div className="action-icon heart-icon">♥</div><span className="action-count">{reel.likes}</span></div>
+        <div className="reel-action"><div className="action-icon">💬</div><span className="action-count">{reel.comments}</span></div>
+        <div className="reel-action"><div className="action-icon">↗</div><span className="action-count">Share</span></div>
+        <div className="reel-share-disc" style={{ background: reel.avatarColor, animationDuration: `${2.5 + index * 0.3}s` }}>♪</div>
       </div>
-
-      {/* Progress bar */}
       <div className="reel-progress">
-        <div
-          className="reel-progress-fill"
-          style={{
-            background: reel.tagColor,
-            animationDuration: `${5 + index * 0.5}s`,
-          }}
-        />
+        <div className="reel-progress-fill" style={{ background: reel.tagColor, animationDuration: `${5 + index * 0.5}s` }} />
       </div>
     </div>
   );
@@ -249,321 +182,143 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: "100vh" }}>
+    <div style={{ background: "#0A0A0A", color: "#F0EAD6", minHeight: "100vh", margin: 0, padding: 0, fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
 
-      {/* ─── GLOBAL STYLES ─── */}
       <style>{`
         * { box-sizing: border-box; }
         body { margin: 0; }
 
         .carousel-scene {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          position: absolute; inset: 0;
+          display: flex; align-items: center; justify-content: center;
           perspective: 1100px;
           pointer-events: none;
           z-index: 0;
         }
-
         .carousel-ring {
-          width: 200px;
-          height: 380px;
+          width: 200px; height: 380px;
           transform-style: preserve-3d;
           animation: carouselSpin 28s linear infinite;
           position: relative;
         }
-
         @keyframes carouselSpin {
           from { transform: rotateY(0deg); }
           to   { transform: rotateY(360deg); }
         }
-
         .reel-phone {
           position: absolute;
-          width: 130px;
-          height: 230px;
-          left: 50%;
-          top: 50%;
-          margin-left: -65px;
-          margin-top: -115px;
-          border-radius: 20px;
-          overflow: hidden;
+          width: 130px; height: 230px;
+          left: 50%; top: 50%;
+          margin-left: -65px; margin-top: -115px;
+          border-radius: 20px; overflow: hidden;
           background: #111;
           border: 1.5px solid rgba(255,255,255,0.14);
-          box-shadow:
-            0 0 0 3px rgba(0,0,0,0.6),
-            0 20px 60px rgba(0,0,0,0.8),
-            inset 0 1px 0 rgba(255,255,255,0.08);
+          box-shadow: 0 0 0 3px rgba(0,0,0,0.6), 0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08);
         }
-
         .reel-scroll-bg {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 300%;
-          top: -100%;
+          position: absolute; inset: 0;
+          width: 100%; height: 300%; top: -100%;
           animation: reelScroll linear infinite;
         }
-
         @keyframes reelScroll {
           0%   { transform: translateY(0%); }
           100% { transform: translateY(33.33%); }
         }
-
         .phone-notch {
-          position: absolute;
-          top: 7px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 32px;
-          height: 5px;
-          background: #000;
-          border-radius: 3px;
-          z-index: 10;
+          position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+          width: 32px; height: 5px; background: #000; border-radius: 3px; z-index: 10;
         }
-
         .reel-top-bar {
-          position: absolute;
-          top: 18px;
-          left: 8px;
-          right: 8px;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          z-index: 5;
+          position: absolute; top: 18px; left: 8px; right: 8px;
+          display: flex; align-items: center; gap: 5px; z-index: 5;
         }
-
         .reel-avatar {
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-          border: 1.5px solid #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 6px;
-          font-weight: 700;
-          color: #fff;
-          font-family: -apple-system, sans-serif;
-          flex-shrink: 0;
+          width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #fff;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 6px; font-weight: 700; color: #fff; flex-shrink: 0;
         }
-
         .reel-username {
-          font-family: -apple-system, sans-serif;
-          font-size: 7px;
-          font-weight: 600;
-          color: #fff;
-          flex: 1;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          font-size: 7px; font-weight: 600; color: #fff; flex: 1;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
           text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
-
         .reel-follow {
-          font-family: -apple-system, sans-serif;
-          font-size: 6.5px;
-          font-weight: 700;
-          color: #fff;
-          border: 1px solid rgba(255,255,255,0.8);
-          border-radius: 4px;
-          padding: 1.5px 5px;
-          flex-shrink: 0;
+          font-size: 6.5px; font-weight: 700; color: #fff;
+          border: 1px solid rgba(255,255,255,0.8); border-radius: 4px;
+          padding: 1.5px 5px; flex-shrink: 0;
         }
-
         .reel-center {
-          position: absolute;
-          top: 50%;
-          left: 8px;
-          right: 36px;
+          position: absolute; top: 50%; left: 8px; right: 36px;
           transform: translateY(-50%);
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 8px;
-          z-index: 5;
+          display: flex; flex-direction: column; align-items: flex-start; gap: 8px; z-index: 5;
         }
-
         .reel-tag {
-          font-family: -apple-system, sans-serif;
-          font-size: 7px;
-          font-weight: 800;
-          letter-spacing: 0.1em;
-          border: 1px solid;
-          border-radius: 4px;
-          padding: 2px 5px;
+          font-size: 7px; font-weight: 800; letter-spacing: 0.1em;
+          border: 1px solid; border-radius: 4px; padding: 2px 5px;
           text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
-
-        .reel-wave {
-          display: flex;
-          align-items: flex-end;
-          gap: 2px;
-          height: 30px;
-        }
-
+        .reel-wave { display: flex; align-items: flex-end; gap: 2px; height: 30px; }
         .wave-bar {
-          width: 4px;
-          border-radius: 2px;
+          width: 4px; border-radius: 2px;
           animation: wavePulse 0.8s ease-in-out infinite alternate;
           transform-origin: bottom;
         }
-
         @keyframes wavePulse {
           0%   { transform: scaleY(0.3); }
           100% { transform: scaleY(1); }
         }
-
         .reel-bottom {
-          position: absolute;
-          bottom: 14px;
-          left: 8px;
-          right: 36px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          z-index: 5;
+          position: absolute; bottom: 14px; left: 8px; right: 36px;
+          display: flex; flex-direction: column; gap: 4px; z-index: 5;
         }
-
-        .reel-music-row {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
+        .reel-music-row { display: flex; align-items: center; gap: 4px; }
         .reel-disc {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          border: 1px solid;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: discSpin linear infinite;
-          flex-shrink: 0;
+          width: 14px; height: 14px; border-radius: 50%; border: 1px solid;
+          display: flex; align-items: center; justify-content: center;
+          animation: discSpin linear infinite; flex-shrink: 0;
         }
-
         @keyframes discSpin {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
-
-        .reel-disc-inner {
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          opacity: 0.9;
-        }
-
+        .reel-disc-inner { width: 5px; height: 5px; border-radius: 50%; opacity: 0.9; }
         .reel-audio {
-          font-family: -apple-system, sans-serif;
-          font-size: 6.5px;
-          color: rgba(255,255,255,0.85);
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          max-width: 70px;
-          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+          font-size: 6.5px; color: rgba(255,255,255,0.85);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          max-width: 70px; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
-
         .reel-caption-text {
-          font-family: -apple-system, sans-serif;
-          font-size: 7px;
-          font-weight: 500;
-          color: #fff;
-          line-height: 1.3;
-          text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+          font-size: 7px; font-weight: 500; color: #fff;
+          line-height: 1.3; text-shadow: 0 1px 4px rgba(0,0,0,0.9);
         }
-
         .reel-actions {
-          position: absolute;
-          right: 6px;
-          bottom: 30px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 9px;
-          z-index: 5;
+          position: absolute; right: 6px; bottom: 30px;
+          display: flex; flex-direction: column; align-items: center; gap: 9px; z-index: 5;
         }
-
-        .reel-action {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1px;
-        }
-
-        .action-icon {
-          font-size: 13px;
-          line-height: 1;
-          filter: drop-shadow(0 1px 3px rgba(0,0,0,0.7));
-        }
-
-        .heart-icon {
-          animation: heartBeat 2s ease-in-out infinite;
-        }
-
+        .reel-action { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+        .action-icon { font-size: 13px; line-height: 1; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.7)); }
+        .heart-icon { animation: heartBeat 2s ease-in-out infinite; }
         @keyframes heartBeat {
           0%, 100% { transform: scale(1); }
           50%       { transform: scale(1.25); }
         }
-
-        .action-count {
-          font-family: -apple-system, sans-serif;
-          font-size: 5.5px;
-          font-weight: 700;
-          color: #fff;
-          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-        }
-
+        .action-count { font-size: 5.5px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
         .reel-share-disc {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          border: 1.5px solid #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 9px;
-          color: #fff;
+          width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #fff;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 9px; color: #fff;
           animation: discSpin linear infinite;
           box-shadow: 0 0 6px rgba(0,0,0,0.5);
         }
-
-        .reel-progress {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: rgba(255,255,255,0.2);
-          z-index: 5;
-        }
-
-        .reel-progress-fill {
-          height: 100%;
-          animation: progressPlay linear infinite;
-          border-radius: 1px;
-        }
-
+        .reel-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.2); z-index: 5; }
+        .reel-progress-fill { height: 100%; animation: progressPlay linear infinite; border-radius: 1px; }
         @keyframes progressPlay {
           0%   { width: 0%; }
           100% { width: 100%; }
         }
-
-        .hero-word-wrap {
-          min-height: 90px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
         .hero-word {
           font-size: clamp(52px, 8vw, 96px);
           font-weight: 800;
-          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
           letter-spacing: -3px;
           line-height: 1;
           background: linear-gradient(135deg, #FFFFFF 0%, #E8B84B 50%, #C17D20 100%);
@@ -572,45 +327,49 @@ export default function LandingPage() {
           background-clip: text;
           transition: opacity 0.3s ease, transform 0.35s ease;
         }
-
-        .hero-word.hidden {
-          opacity: 0;
-          transform: translateY(-14px);
+        .hero-word.hidden { opacity: 0; transform: translateY(-14px); }
+        .hero-word.visible { opacity: 1; transform: translateY(0px); }
+        .cta-btn {
+          background: ${GOLD};
+          color: #000;
+          padding: 15px 36px;
+          border-radius: 16px;
+          font-weight: 700;
+          font-size: 15px;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-family: -apple-system, sans-serif;
+          box-shadow: 0 6px 32px rgba(232,184,75,0.4);
+          letter-spacing: 0.02em;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-
-        .hero-word.visible {
-          opacity: 1;
-          transform: translateY(0);
+        .cta-btn:hover {
+          transform: scale(1.05) translateY(-2px);
+          box-shadow: 0 10px 40px rgba(232,184,75,0.55);
         }
-
-        .scene-overlay {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(ellipse 70% 80% at 50% 50%,
-            rgba(10,10,10,0.45) 0%,
-            rgba(10,10,10,0.92) 100%);
-          backdrop-filter: blur(1.5px);
-          z-index: 1;
+        .pill {
+          font-size: 12px;
+          color: rgba(240,234,214,0.55);
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 20px;
+          padding: 5px 12px;
         }
-
         @media (max-width: 768px) {
-          .carousel-ring { transform: scale(0.65) !important; }
+          .carousel-ring { transform: scale(0.6) !important; }
         }
       `}</style>
 
-      {/* ─── HERO SECTION ─── */}
+      {/* ── HERO SECTION ── */}
       <section
         ref={heroRef}
-        style={{
-          minHeight: "100vh",
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-        }}
+        style={{ minHeight: "100vh", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}
       >
-        {/* 3D CAROUSEL BACKGROUND */}
+
+        {/* BACKGROUND: 3D carousel */}
         <div className="carousel-scene">
           <div className="carousel-ring">
             {REELS.map((reel, i) => (
@@ -619,14 +378,22 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* VIGNETTE OVERLAY */}
-        <div className="scene-overlay" />
+        {/* OVERLAY: dark vignette */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse 70% 80% at 50% 50%, rgba(10,10,10,0.4) 0%, rgba(10,10,10,0.92) 100%)",
+          backdropFilter: "blur(1.5px)",
+          zIndex: 1,
+        }} />
 
-        {/* HERO CONTENT */}
+        {/* FOREGROUND: hero content — z-index 10 ensures it's always on top */}
         <motion.div
-          style={{
-            y: heroY,
-            opacity: heroOpacity,
+          style={{ y: heroY, opacity: heroOpacity }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: "easeOut" }}
+        >
+          <div style={{
             position: "relative",
             zIndex: 10,
             display: "flex",
@@ -636,115 +403,63 @@ export default function LandingPage() {
             maxWidth: "560px",
             padding: "0 24px",
             textAlign: "center",
-          }}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-        >
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              fontSize: "13px",
-              color: "#E8B84B",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              fontFamily: "-apple-system, sans-serif",
-              fontWeight: 600,
-            }}
-          >
-            <Sparkles size={14} />
-            Built for creators
-          </motion.div>
+          }}>
 
-          {/* Animated word */}
-          <div className="hero-word-wrap">
-            <div className={`hero-word ${wordVisible ? "visible" : "hidden"}`}>
-              {WORDS[wordIdx]}
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#E8B84B", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}
+            >
+              <Sparkles size={14} />
+              Built for creators
+            </motion.div>
+
+            {/* Cycling word */}
+            <div style={{ minHeight: "90px", display: "flex", alignItems: "center" }}>
+              <div className={`hero-word ${wordVisible ? "visible" : "hidden"}`}>
+                {WORDS[wordIdx]}
+              </div>
             </div>
+
+            {/* Subtext */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              style={{ color: "#5A5A5A", maxWidth: "440px", fontSize: "16px", lineHeight: "1.6", margin: 0 }}
+            >
+              Trending topics, AI scripts, SEO tools and news —{" "}
+              everything an Indian creator needs.
+            </motion.p>
+
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              <button className="cta-btn" onClick={() => navigate("/signup")}>
+                Start Free <ArrowRight size={16} />
+              </button>
+            </motion.div>
+
+            {/* Social proof pills */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}
+            >
+              {["10K+ Creators", "Free to start", "Made in India 🇮🇳"].map((label) => (
+                <span key={label} className="pill">{label}</span>
+              ))}
+            </motion.div>
+
           </div>
-
-          {/* Subtext */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            style={{
-              color: C.muted,
-              maxWidth: "440px",
-              fontSize: "16px",
-              lineHeight: "1.6",
-              fontFamily: "-apple-system, sans-serif",
-              margin: 0,
-            }}
-          >
-            Trending topics, AI scripts, SEO tools and news —
-            everything an Indian creator needs.
-          </motion.p>
-
-          {/* CTA Button */}
-          <motion.button
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6 }}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/signup")}
-            style={{
-              background: GOLD,
-              color: "#000",
-              padding: "15px 36px",
-              borderRadius: "16px",
-              fontWeight: "700",
-              fontSize: "15px",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              fontFamily: "-apple-system, sans-serif",
-              boxShadow: "0 6px 32px rgba(232,184,75,0.4)",
-              letterSpacing: "0.02em",
-            }}
-          >
-            Start Free <ArrowRight size={16} />
-          </motion.button>
-
-          {/* Social proof pills */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            style={{
-              display: "flex",
-              gap: "10px",
-              flexWrap: "wrap",
-              justifyContent: "center",
-            }}
-          >
-            {["10K+ Creators", "Free to start", "Made in India 🇮🇳"].map((label) => (
-              <span
-                key={label}
-                style={{
-                  fontSize: "12px",
-                  color: "rgba(240,234,214,0.55)",
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: "20px",
-                  padding: "5px 12px",
-                  fontFamily: "-apple-system, sans-serif",
-                }}
-              >
-                {label}
-              </span>
-            ))}
-          </motion.div>
         </motion.div>
+
       </section>
     </div>
   );
