@@ -8,8 +8,8 @@ import {
   BarChart2, Users, Flame, Menu, X
 } from "lucide-react";
 
-const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
-const G = "#E8B84B";
+const GOLD = "linear-gradient(135deg, #14BBA6, #C17D20)";
+const G = "#14BBA6";
 const C = { bg: "#0A0A0A", card: "#141414", card2: "#1A1A1A", border: "#222", text: "#F0EAD6", muted: "#5A5A5A", subtle: "#1E1E1E" };
 
 const NAV_LINKS = [
@@ -75,19 +75,19 @@ export default function LandingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
         .cg { font-family: 'Cormorant Garamond', serif !important; }
         .dm { font-family: 'DM Sans', sans-serif !important; }
-        .gold-text { background: linear-gradient(135deg,#E8B84B,#C17D20); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .gold-text { background: linear-gradient(135deg,#14BBA6,#C17D20); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
         .grain { position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.025; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:200px; }
         * { box-sizing:border-box; }
         ::-webkit-scrollbar { width:4px; }
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
         .nav-link { position:relative; }
-        .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:1px; background:#E8B84B; transition:.3s; }
+        .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:1px; background:#14BBA6; transition:.3s; }
         .nav-link:hover::after { width:100%; }
-        .nav-link:hover { color:#E8B84B !important; }
-        .feature-card:hover { border-color:#E8B84B25 !important; transform:translateY(-4px); }
+        .nav-link:hover { color:#14BBA6 !important; }
+        .feature-card:hover { border-color:#14BBA625 !important; transform:translateY(-4px); }
         .feature-card { transition: all .25s ease; }
-        .testi-card:hover { border-color:#E8B84B20 !important; }
+        .testi-card:hover { border-color:#14BBA620 !important; }
       `}</style>
 
       {/* Grain overlay */}
@@ -115,7 +115,7 @@ export default function LandingPage() {
 
         <div className="hidden md:flex items-center gap-3">
           <button onClick={() => navigate("/login")} className="dm text-sm transition-colors nav-link" style={{ color: C.muted }}>Login</button>
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 24px #E8B84B30" }} whileTap={{ scale: 0.97 }}
+          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 24px #14BBA630" }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
             className="dm px-5 py-2.5 rounded-xl text-sm font-semibold"
             style={{ background: GOLD, color: "#0A0A0A" }}>
@@ -149,7 +149,7 @@ export default function LandingPage() {
         {/* BG glow */}
         <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }} transition={{ duration: 10, repeat: Infinity }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] pointer-events-none rounded-full"
-          style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(80px)" }} />
+          style={{ background: "radial-gradient(ellipse, #14BBA6, transparent 65%)", filter: "blur(80px)" }} />
         <motion.div animate={{ scale: [1.1, 1, 1.1], opacity: [0.03, 0.07, 0.03] }} transition={{ duration: 14, repeat: Infinity, delay: 4 }}
           className="absolute bottom-0 right-0 w-[500px] h-[500px] pointer-events-none rounded-full"
           style={{ background: "radial-gradient(circle, #C17D20, transparent 70%)", filter: "blur(100px)" }} />
@@ -165,7 +165,7 @@ export default function LandingPage() {
           {/* Badge */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="flex items-center gap-2 px-5 py-2 rounded-full dm text-xs font-medium"
-            style={{ background: "#E8B84B0D", border: "1px solid #E8B84B25", color: G, letterSpacing: ".12em" }}>
+            style={{ background: "#14BBA60D", border: "1px solid #14BBA625", color: G, letterSpacing: ".12em" }}>
             <motion.span animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: G }} />
             <Sparkles className="w-3 h-3" />
             BUILT FOR INDIA'S CREATORS
@@ -200,13 +200,13 @@ export default function LandingPage() {
           {/* CTAs */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
             className="flex items-center gap-4 flex-wrap justify-center">
-            <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #E8B84B35" }} whileTap={{ scale: 0.97 }}
+            <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #14BBA635" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/signup")}
               className="flex items-center gap-2 px-8 py-4 rounded-2xl dm font-semibold text-base"
               style={{ background: GOLD, color: "#0A0A0A" }}>
               Start for Free <ArrowRight className="w-4 h-4" />
             </motion.button>
-            <motion.button whileHover={{ scale: 1.02, borderColor: "#E8B84B40" }} whileTap={{ scale: 0.97 }}
+            <motion.button whileHover={{ scale: 1.02, borderColor: "#14BBA640" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/login")}
               className="flex items-center gap-2 px-8 py-4 rounded-2xl dm font-medium text-base transition-all"
               style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text }}>
@@ -236,7 +236,7 @@ export default function LandingPage() {
           className="w-full max-w-5xl mt-16 relative z-10">
           {/* Glow under mockup */}
           <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 rounded-full pointer-events-none"
-            style={{ background: "#E8B84B", filter: "blur(40px)", opacity: 0.08 }} />
+            style={{ background: "#14BBA6", filter: "blur(40px)", opacity: 0.08 }} />
           <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}`, boxShadow: "0 40px 80px rgba(0,0,0,0.5)" }}>
             {/* Browser bar */}
             <div className="flex items-center gap-2 px-5 py-3.5" style={{ background: "#0E0E0E", borderBottom: `1px solid ${C.border}` }}>
@@ -262,7 +262,7 @@ export default function LandingPage() {
                 <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.15 }}
                   className="rounded-xl p-4" style={{ background: C.bg, border: `1px solid ${C.border}` }}>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="dm text-xs px-2 py-0.5 rounded-full" style={{ background: "#E8B84B12", color: G }}>#{item.tag}</span>
+                    <span className="dm text-xs px-2 py-0.5 rounded-full" style={{ background: "#14BBA612", color: G }}>#{item.tag}</span>
                     <span className="dm text-xs" style={{ color: C.muted }}>{item.trend}</span>
                   </div>
                   <p className="dm font-semibold text-sm mb-1" style={{ color: C.text }}>{item.topic}</p>
@@ -287,7 +287,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <div className="dm text-xs px-3 py-1 rounded-full" style={{ background: "#E8B84B12", color: G }}>● Live</div>
+              <div className="dm text-xs px-3 py-1 rounded-full" style={{ background: "#14BBA612", color: G }}>● Live</div>
             </div>
           </div>
         </motion.div>
@@ -339,10 +339,10 @@ export default function LandingPage() {
                 className="feature-card rounded-2xl p-6 cursor-default"
                 style={{ background: C.card, border: `1px solid ${C.border}` }}>
                 <div className="flex items-start justify-between mb-5">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#E8B84B0D", border: "1px solid #E8B84B20" }}>
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#14BBA60D", border: "1px solid #14BBA620" }}>
                     <f.icon className="w-5 h-5" style={{ color: G }} />
                   </div>
-                  <span className="dm text-xs px-2.5 py-1 rounded-full" style={{ background: "#E8B84B0D", color: G, border: "1px solid #E8B84B20" }}>{f.tag}</span>
+                  <span className="dm text-xs px-2.5 py-1 rounded-full" style={{ background: "#14BBA60D", color: G, border: "1px solid #14BBA620" }}>{f.tag}</span>
                 </div>
                 <h3 className="dm font-semibold text-base mb-2" style={{ color: C.text }}>{f.title}</h3>
                 <p className="dm text-sm leading-relaxed" style={{ color: C.muted }}>{f.desc}</p>
@@ -437,7 +437,7 @@ export default function LandingPage() {
                 <motion.div animate={{ x: annual ? 24 : 2 }} className="absolute top-1 w-4 h-4 rounded-full bg-white" />
               </button>
               <span className="dm text-sm" style={{ color: annual ? C.text : C.muted }}>
-                Annual <span className="dm text-xs px-2 py-0.5 rounded-full ml-1" style={{ background: "#E8B84B15", color: G }}>Save 30%</span>
+                Annual <span className="dm text-xs px-2 py-0.5 rounded-full ml-1" style={{ background: "#14BBA615", color: G }}>Save 30%</span>
               </span>
             </div>
           </motion.div>
@@ -458,7 +458,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <motion.button whileHover={{ borderColor: "#E8B84B50" }} whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ borderColor: "#14BBA650" }} whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/signup")}
                 className="w-full py-3.5 rounded-xl dm font-medium text-sm transition-all"
                 style={{ border: `1px solid ${C.border}`, color: C.text }}>
@@ -467,9 +467,9 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
-              whileHover={{ boxShadow: "0 0 60px #E8B84B12" }}
+              whileHover={{ boxShadow: "0 0 60px #14BBA612" }}
               className="rounded-2xl p-8 relative transition-all"
-              style={{ background: C.bg, border: `1px solid #E8B84B40` }}>
+              style={{ background: C.bg, border: `1px solid #14BBA640` }}>
               <motion.div animate={{ opacity: [0.85, 1, 0.85] }} transition={{ duration: 2, repeat: Infinity }}
                 className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full dm text-xs font-semibold"
                 style={{ background: GOLD, color: "#0A0A0A" }}>
@@ -490,7 +490,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <motion.button whileHover={{ scale: 1.02, boxShadow: "0 0 30px #E8B84B25" }} whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ scale: 1.02, boxShadow: "0 0 30px #14BBA625" }} whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/signup")}
                 className="w-full py-3.5 rounded-xl dm font-semibold text-sm"
                 style={{ background: GOLD, color: "#0A0A0A" }}>
@@ -505,7 +505,7 @@ export default function LandingPage() {
       <section className="px-6 md:px-16 py-32 relative overflow-hidden">
         <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }} transition={{ duration: 9, repeat: Infinity }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] pointer-events-none rounded-full"
-          style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(80px)" }} />
+          style={{ background: "radial-gradient(ellipse, #14BBA6, transparent 65%)", filter: "blur(80px)" }} />
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto text-center relative z-10">
           <p className="dm text-xs uppercase mb-4" style={{ color: G, letterSpacing: ".2em" }}>Get Started</p>
           <h2 className="cg font-bold mb-5" style={{ fontSize: "clamp(44px,7vw,88px)", color: C.text, lineHeight: 1.05 }}>
@@ -514,7 +514,7 @@ export default function LandingPage() {
           <p className="dm text-base mb-10 max-w-md mx-auto" style={{ color: C.muted, lineHeight: 1.7 }}>
             Join 10,000+ Indian creators using SocialRum to grow faster on Instagram and YouTube.
           </p>
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 50px #E8B84B35" }} whileTap={{ scale: 0.97 }}
+          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 50px #14BBA635" }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
             className="flex items-center gap-2 px-12 py-5 rounded-2xl dm font-semibold text-base mx-auto"
             style={{ background: GOLD, color: "#0A0A0A" }}>

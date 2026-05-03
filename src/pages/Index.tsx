@@ -332,7 +332,7 @@ export default function Index() {
                   </div>
                   {item.boosted&&(
                     <div className="absolute bottom-2 left-2 z-10 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full"
-                      style={{ background:"#3B82F6",color:"#fff",fontSize:9,fontFamily:"Inter,sans-serif" }}>
+                      style={{ background:"#14BBA6",color:"#fff",fontSize:9,fontFamily:"Inter,sans-serif" }}>
                       <Megaphone className="w-2.5 h-2.5"/> Boosted
                     </div>
                   )}

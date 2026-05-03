@@ -51,7 +51,7 @@ const PLANS = [
     cta: "Upgrade to Pro",
     disabled: false,
     planKey: "pro_monthly",
-    accent: "#3B82F6",
+    accent: "#14BBA6",
   },
   {
     id: "pro_quarterly",
@@ -70,7 +70,7 @@ const PLANS = [
     cta: "Get Quarterly Plan",
     disabled: false,
     planKey: "pro_quarterly",
-    accent: "#E8B84B",
+    accent: "#14BBA6",
   },
   {
     id: "pro_annual",
@@ -140,7 +140,7 @@ export default function PricingPage() {
         image: '/logo.png',
         order_id: order.order_id,
         prefill: { name: user.user_metadata?.full_name || '', email: user.email || '' },
-        theme: { color: '#3B82F6' },
+        theme: { color: '#14BBA6' },
         modal: { ondismiss: () => setLoading(null) },
         handler: async (response: any) => {
           const verifyRes = await fetch(`${BASE}/api/payment/verify`, {
@@ -207,10 +207,10 @@ export default function PricingPage() {
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div animate={{ scale:[1,1.2,1],opacity:[0.06,0.12,0.06] }} transition={{ duration:10,repeat:Infinity }}
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full"
-          style={{ background:"radial-gradient(circle,#3B82F6,transparent 70%)",filter:"blur(80px)" }}/>
+          style={{ background:"radial-gradient(circle,#14BBA6,transparent 70%)",filter:"blur(80px)" }}/>
         <motion.div animate={{ scale:[1.1,1,1.1],opacity:[0.04,0.09,0.04] }} transition={{ duration:14,repeat:Infinity,delay:3 }}
           className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full"
-          style={{ background:"radial-gradient(circle,#E8B84B,transparent 70%)",filter:"blur(80px)" }}/>
+          style={{ background:"radial-gradient(circle,#14BBA6,transparent 70%)",filter:"blur(80px)" }}/>
         <motion.div animate={{ scale:[1,1.15,1],opacity:[0.03,0.07,0.03] }} transition={{ duration:12,repeat:Infinity,delay:6 }}
           className="absolute top-3/4 left-1/2 w-64 h-64 rounded-full"
           style={{ background:"radial-gradient(circle,#22c55e,transparent 70%)",filter:"blur(80px)" }}/>
@@ -220,11 +220,11 @@ export default function PricingPage() {
       <div className="sticky top-0 z-20 px-4 py-3"
         style={{ background:"rgba(0,0,0,0.4)",backdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-6xl mx-auto flex items-center gap-2">
-          <Crown className="w-5 h-5" style={{ color:"#E8B84B" }}/>
+          <Crown className="w-5 h-5" style={{ color:"#14BBA6" }}/>
           <h1 className="cg font-bold text-lg text-foreground">Pricing</h1>
           {isPro && (
             <span className="ml-2 flex items-center gap-1 px-2.5 py-1 rounded-full dm text-xs font-semibold"
-              style={{ background:"rgba(232,184,75,0.15)",color:"#E8B84B",border:"1px solid rgba(232,184,75,0.3)" }}>
+              style={{ background:"rgba(232,184,75,0.15)",color:"#14BBA6",border:"1px solid rgba(232,184,75,0.3)" }}>
               <Crown className="w-3 h-3"/> Pro Active
             </span>
           )}
@@ -254,14 +254,14 @@ export default function PricingPage() {
         <motion.div initial={{ opacity:0,y:24 }} animate={{ opacity:1,y:0 }} className="text-center mb-14">
           <motion.div initial={{ opacity:0,scale:0.9 }} animate={{ opacity:1,scale:1 }} transition={{ delay:0.1 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full dm text-xs font-medium mb-6"
-            style={{ background:"rgba(232,184,75,0.1)",border:"1px solid rgba(232,184,75,0.2)",color:"#E8B84B",letterSpacing:".12em" }}>
+            style={{ background:"rgba(232,184,75,0.1)",border:"1px solid rgba(232,184,75,0.2)",color:"#14BBA6",letterSpacing:".12em" }}>
             <motion.span animate={{ opacity:[1,0.2,1] }} transition={{ duration:2,repeat:Infinity }}
-              className="w-1.5 h-1.5 rounded-full inline-block" style={{ background:"#E8B84B" }}/>
+              className="w-1.5 h-1.5 rounded-full inline-block" style={{ background:"#14BBA6" }}/>
             SIMPLE · TRANSPARENT · HONEST
           </motion.div>
 
           <h2 className="cg font-bold text-foreground mb-4" style={{ fontSize:"clamp(42px,7vw,80px)",lineHeight:1.05 }}>
-            Choose Your <span className="italic" style={{ background:"linear-gradient(135deg,#E8B84B,#C17D20)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Plan</span>
+            Choose Your <span className="italic" style={{ background:"linear-gradient(135deg,#14BBA6,#C17D20)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Plan</span>
           </h2>
           <p className="dm text-muted-foreground text-base max-w-lg mx-auto" style={{ lineHeight:1.7 }}>
             Start free and upgrade when you're ready. All paid plans include full access to every Pro feature.
@@ -282,8 +282,8 @@ export default function PricingPage() {
                   className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full dm text-xs font-semibold whitespace-nowrap"
                   style={{
                     background: plan.tag === "Most Popular"
-                      ? "linear-gradient(135deg,#E8B84B,#C17D20)"
-                      : "linear-gradient(135deg,#3B82F6,#1D4ED8)",
+                      ? "linear-gradient(135deg,#14BBA6,#C17D20)"
+                      : "linear-gradient(135deg,#14BBA6,#0D9488)",
                     color: "#fff"
                   }}>
                   ✦ {plan.tag}
@@ -371,7 +371,7 @@ export default function PricingPage() {
               <div key={i} className="flex flex-col gap-2">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                   style={{ background:"rgba(232,184,75,0.12)",border:"1px solid rgba(232,184,75,0.2)" }}>
-                  <f.icon className="w-4 h-4" style={{ color:"#E8B84B" }}/>
+                  <f.icon className="w-4 h-4" style={{ color:"#14BBA6" }}/>
                 </div>
                 <p className="dm font-semibold text-foreground text-sm">{f.label}</p>
                 <p className="dm text-xs text-muted-foreground">{f.desc}</p>

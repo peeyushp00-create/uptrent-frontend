@@ -290,14 +290,14 @@ export default function TrendingDashboard() {
           <button
             onClick={() => setActiveTab('forYou')}
             className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'forYou' ? 'text-white shadow-sm' : 'text-muted-foreground'}`}
-            style={activeTab === 'forYou' ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : {}}
+            style={activeTab === 'forYou' ? { background: "linear-gradient(135deg, #14BBA6, #0D9488)" } : {}}
           >
             For You ({forYouTopics.length})
           </button>
           <button
             onClick={() => setActiveTab('all')}
             className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'all' ? 'text-white shadow-sm' : 'text-muted-foreground'}`}
-            style={activeTab === 'all' ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : {}}
+            style={activeTab === 'all' ? { background: "linear-gradient(135deg, #14BBA6, #0D9488)" } : {}}
           >
             All Topics ({topics.length})
           </button>
@@ -364,7 +364,7 @@ export default function TrendingDashboard() {
                   <button
                     onClick={() => handleGenerate(topic)}
                     className="flex items-center gap-1 px-3 py-2 rounded-xl text-white text-xs font-medium shrink-0"
-                    style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" }}
+                    style={{ background: "linear-gradient(135deg, #14BBA6, #0D9488)" }}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     Script

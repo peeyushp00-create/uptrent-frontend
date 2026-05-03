@@ -26,18 +26,18 @@ export default function InsightPage() {
   const ag = isIG ? IG_GRAD : YT_GRAD;
 
   const engagementStats = isIG ? [
-    { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#3B82F610" },
+    { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#14BBA610" },
     { icon: Heart, label: "Likes", val: item.likes, color: "#F87171", bg: "#ef444410" },
     { icon: MessageCircle, label: "Comments", val: item.comments, color: "#A78BFA", bg: "#8b5cf610" },
     { icon: Share2, label: "Shares", val: item.shares, color: ac, bg: `${ac}15` },
     { icon: Clock, label: "Watch Time", val: item.watchTime || "N/A", color: "#34D399", bg: "#22c55e10" },
     { icon: Bookmark, label: "Save Rate", val: item.saveRate || "N/A", color: "#FBBF24", bg: "#f59e0b10" },
   ] : [
-    { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#3B82F610" },
+    { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#14BBA610" },
     { icon: ThumbsUp, label: "Likes", val: item.likes, color: "#34D399", bg: "#22c55e10" },
     { icon: MessageCircle, label: "Comments", val: item.comments, color: "#A78BFA", bg: "#8b5cf610" },
     { icon: Share2, label: "Shares", val: item.shares, color: ac, bg: `${ac}15` },
-    { icon: MousePointerClick, label: "CTR", val: item.ctr || "N/A", color: "#60A5FA", bg: "#3B82F610" },
+    { icon: MousePointerClick, label: "CTR", val: item.ctr || "N/A", color: "#60A5FA", bg: "#14BBA610" },
     { icon: TrendingUp, label: "Avg Viewed", val: item.avgView || "N/A", color: "#FBBF24", bg: "#f59e0b10" },
   ];
 
@@ -174,7 +174,7 @@ export default function InsightPage() {
             <p className="dm text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3" style={{ letterSpacing: ".12em" }}>Boost Status</p>
             <div className="flex items-center gap-2.5 mb-2">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: item.boosted ? "#3B82F612" : "#22c55e12" }}>
+                style={{ background: item.boosted ? "#14BBA612" : "#22c55e12" }}>
                 {item.boosted ? <Megaphone className="w-4 h-4 text-blue-400" /> : <CheckCircle2 className="w-4 h-4 text-green-400" />}
               </div>
               <p className="dm font-semibold text-foreground text-sm">
