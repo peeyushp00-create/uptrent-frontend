@@ -159,9 +159,9 @@ export default function SignupPage() {
       >
         {/* Header */}
         <div className="flex flex-col items-center gap-3 text-center">
-          <img src="/logo.png" alt="Uptrent" className="w-12 h-12 rounded-xl" />
+          <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
           <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
-          <p className="text-sm text-muted-foreground">Join thousands of creators on Uptrent</p>
+          <p className="text-sm text-muted-foreground">Join thousands of creators on SocialRum</p>
         </div>
 
         {/* Step indicator */}

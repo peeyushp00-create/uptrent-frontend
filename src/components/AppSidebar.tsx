@@ -87,10 +87,10 @@ export default function AppSidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border">
         <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
-          <img src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-lg object-cover" />
+          <img src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-lg object-cover" />
         </div>
         {!collapsed && (
-          <span className="font-heading font-bold text-lg tracking-tight text-foreground">Uptrent</span>
+          <span className="font-heading font-bold text-lg tracking-tight text-foreground">SocialRum</span>
         )}
         <button onClick={() => setCollapsed(!collapsed)} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
           {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}

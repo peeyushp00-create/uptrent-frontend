@@ -19,7 +19,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950">
       <div className="bg-gray-900 p-8 rounded-xl w-full max-w-md">
-        <h1 className="text-2xl font-bold text-white mb-6">Login to Uptrent</h1>
+        <h1 className="text-2xl font-bold text-white mb-6">Login to SocialRum</h1>
         {error && <p className="text-red-400 mb-4">{error}</p>}
         <form onSubmit={handleLogin} className="space-y-4">
           <input

@@ -135,7 +135,7 @@ export default function PricingPage() {
         key: RAZORPAY_KEY || order.key_id,
         amount: order.amount,
         currency: order.currency,
-        name: 'Uptrent',
+        name: 'SocialRum',
         description: order.description,
         image: '/logo.png',
         order_id: order.order_id,
@@ -243,7 +243,7 @@ export default function PricingPage() {
                 <Check className="w-5 h-5 text-green-400"/>
               </div>
               <div>
-                <p className="cg font-bold text-foreground text-lg">Welcome to Uptrent Pro! ✦</p>
+                <p className="cg font-bold text-foreground text-lg">Welcome to SocialRum Pro! ✦</p>
                 <p className="dm text-xs text-muted-foreground">Your subscription is now active. Enjoy unlimited access to everything.</p>
               </div>
             </motion.div>

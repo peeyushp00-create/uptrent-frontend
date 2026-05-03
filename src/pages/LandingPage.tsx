@@ -29,18 +29,18 @@ const features = [
 ];
 
 const steps = [
-  { num: "01", title: "Pick Your Niche", desc: "Tell Uptrent your content niche — finance, fitness, comedy, tech or any of 20+ categories." },
+  { num: "01", title: "Pick Your Niche", desc: "Tell SocialRum your content niche — finance, fitness, comedy, tech or any of 20+ categories." },
   { num: "02", title: "Discover Trends", desc: "See what's trending right now in your niche across Instagram Reels and YouTube Shorts." },
   { num: "03", title: "Generate Content", desc: "One click to get a full script, viral hook, SEO tags or content ideas — ready to film." },
   { num: "04", title: "Go Viral", desc: "Post with confidence knowing your content is built on real data and AI-powered strategy." },
 ];
 
 const testimonials = [
-  { name: "Rahul Sharma", handle: "@rahulfinance", niche: "Finance · 280K", text: "Uptrent helped me go from 5K to 50K in 3 months. The trending topics feature is insane — I always post at the right time.", avatar: "RS", stars: 5 },
+  { name: "Rahul Sharma", handle: "@rahulfinance", niche: "Finance · 280K", text: "SocialRum helped me go from 5K to 50K in 3 months. The trending topics feature is insane — I always post at the right time.", avatar: "RS", stars: 5 },
   { name: "Priya Mehta", handle: "@priyafitness", niche: "Fitness · 120K", text: "Script generation alone saves me 4 hours a week. The hooks it writes are actually better than what I used to write myself.", avatar: "PM", stars: 5 },
   { name: "Arjun Kapoor", handle: "@arjuntech", niche: "Tech · 95K", text: "The SEO optimizer took my YouTube views from 2K to 40K per video. I wish I had this 2 years ago.", avatar: "AK", stars: 5 },
   { name: "Sneha Rao", handle: "@snehalifestyle", niche: "Lifestyle · 67K", text: "Finally a tool made for Indian creators. The Hinglish script option alone is worth the subscription.", avatar: "SR", stars: 5 },
-  { name: "Vikram Das", handle: "@vikramcricket", niche: "Cricket · 210K", text: "I post IPL content and Uptrent's live news feed means I'm always first. My engagement doubled.", avatar: "VD", stars: 5 },
+  { name: "Vikram Das", handle: "@vikramcricket", niche: "Cricket · 210K", text: "I post IPL content and SocialRum's live news feed means I'm always first. My engagement doubled.", avatar: "VD", stars: 5 },
   { name: "Anjali Nair", handle: "@anjalifood", niche: "Food · 88K", text: "The channel analyzer showed me exactly what top food creators do differently. Changed my whole strategy.", avatar: "AN", stars: 5 },
 ];
 
@@ -98,8 +98,8 @@ export default function LandingPage() {
         className="flex items-center justify-between px-6 md:px-16 py-5 fixed top-0 left-0 right-0 z-50"
         style={{ background: `${C.bg}cc`, borderBottom: `1px solid ${C.border}20`, backdropFilter: "blur(20px)" }}>
         <div className="flex items-center gap-3">
-          <motion.img whileHover={{ rotate: 8, scale: 1.05 }} src="/logo.png" alt="Uptrent" className="w-8 h-8 rounded-xl" />
-          <span className="cg font-bold text-xl" style={{ color: C.text, letterSpacing: ".01em" }}>Uptrent</span>
+          <motion.img whileHover={{ rotate: 8, scale: 1.05 }} src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl" />
+          <span className="cg font-bold text-xl" style={{ color: C.text, letterSpacing: ".01em" }}>SocialRum</span>
         </div>
 
         {/* Desktop nav */}
@@ -246,7 +246,7 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full" style={{ background: "#27C93F" }} />
               </div>
               <div className="flex-1 mx-6 px-4 py-1.5 rounded-lg dm text-xs text-center" style={{ background: C.bg, color: "#383838" }}>
-                app.uptrent.com/trending
+                app.SocialRum.com/trending
               </div>
               <div className="flex items-center gap-2 dm text-xs" style={{ color: "#383838" }}>
                 <Sparkles className="w-3 h-3" style={{ color: G }} /> AI Active
@@ -512,7 +512,7 @@ export default function LandingPage() {
             Ready to<br /><span className="italic gold-text">Go Viral?</span>
           </h2>
           <p className="dm text-base mb-10 max-w-md mx-auto" style={{ color: C.muted, lineHeight: 1.7 }}>
-            Join 10,000+ Indian creators using Uptrent to grow faster on Instagram and YouTube.
+            Join 10,000+ Indian creators using SocialRum to grow faster on Instagram and YouTube.
           </p>
           <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 50px #E8B84B35" }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
@@ -528,15 +528,15 @@ export default function LandingPage() {
       <footer className="px-6 md:px-16 py-10" style={{ borderTop: `1px solid ${C.border}` }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-6">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Uptrent" className="w-7 h-7 rounded-lg" />
-            <span className="cg font-bold text-lg" style={{ color: C.text }}>Uptrent</span>
+            <img src="/logo.png" alt="SocialRum" className="w-7 h-7 rounded-lg" />
+            <span className="cg font-bold text-lg" style={{ color: C.text }}>SocialRum</span>
           </div>
           <div className="flex items-center gap-6 dm text-xs" style={{ color: C.muted }}>
             <span className="nav-link cursor-pointer">Privacy Policy</span>
             <span className="nav-link cursor-pointer">Terms of Service</span>
             <span className="nav-link cursor-pointer">Contact</span>
           </div>
-          <p className="dm text-xs" style={{ color: "#2A2A2A" }}>© 2026 Uptrent Media. All rights reserved.</p>
+          <p className="dm text-xs" style={{ color: "#2A2A2A" }}>© 2026 SocialRum Media. All rights reserved.</p>
         </div>
       </footer>
     </div>

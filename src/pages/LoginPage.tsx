@@ -32,9 +32,9 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-background px-4">
       <div className="w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-3">
-          <img src="/logo.png" alt="Uptrent" className="w-12 h-12 rounded-xl" />
+          <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
           <h1 className="font-heading text-2xl font-bold text-foreground">Welcome back</h1>
-          <p className="text-sm text-muted-foreground">Sign in to your Uptrent account</p>
+          <p className="text-sm text-muted-foreground">Sign in to your SocialRum account</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
