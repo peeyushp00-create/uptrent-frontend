@@ -281,7 +281,7 @@ export default function Index() {
               <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
                 <span style={{ color:accentColor,fontWeight:600 }}>#{searched}</span>
                 {platform === "youtube" && <span className="ml-2 text-green-400">● Live YouTube Data</span>}
-                {platform === "instagram" && <span className="ml-2 text-green-400">● Live Instagram Data</span>}
+               {platform === "instagram" && <span className="ml-2 text-yellow-500">● Sample Data</span>}
                 <span className="ml-2">· {allItems.length} results</span>
               </p>
               <button onClick={handleClear}
