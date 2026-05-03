@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, TrendingUp, Newspaper, FileText,
@@ -28,16 +28,35 @@ const youtubeNav = [
 const BLUE = "#3B82F6";
 const BLUE_GRADIENT = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
 
+// ✅ Global platform state key
+const PLATFORM_KEY = "platform";
+
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [platform, setPlatform] = useState<"instagram" | "youtube">(
-    () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
+    () => (localStorage.getItem(PLATFORM_KEY) as "instagram" | "youtube") || "instagram"
   );
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  // ✅ Listen for platform changes from Index page
+  useEffect(() => {
+    const handleStorage = () => {
+      const p = localStorage.getItem(PLATFORM_KEY) as "instagram" | "youtube";
+      if (p && p !== platform) setPlatform(p);
+    };
+    window.addEventListener("storage", handleStorage);
+    // Also listen for custom event (same tab)
+    const handleCustom = (e: any) => setPlatform(e.detail);
+    window.addEventListener("platformChanged", handleCustom);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("platformChanged", handleCustom);
+    };
+  }, [platform]);
 
   const handleLogout = async () => {
     await signOut();
@@ -45,13 +64,14 @@ export default function AppSidebar() {
   };
 
   const switchPlatform = (p: "instagram" | "youtube") => {
-  setPlatform(p);
-  localStorage.setItem("platform", p);
-  window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-  // Only navigate if NOT already on home page
-  if (p === "youtube" && location.pathname !== "/youtube/seo") navigate("/youtube/seo");
-  else if (p === "instagram" && location.pathname !== "/") navigate("/");
-};
+    setPlatform(p);
+    localStorage.setItem(PLATFORM_KEY, p);
+    // ✅ Fire both storage and custom event
+    window.dispatchEvent(new StorageEvent("storage", { key: PLATFORM_KEY, newValue: p }));
+    window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
+    if (p === "youtube") navigate("/youtube/seo");
+    else navigate("/");
+  };
 
   const isYoutubePath = location.pathname.startsWith("/youtube");
   const effectivePlatform = isYoutubePath ? "youtube" : platform;
@@ -86,8 +106,7 @@ export default function AppSidebar() {
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={effectivePlatform === "instagram"
                 ? { background: BLUE_GRADIENT, color: "#fff" }
-                : { color: "hsl(var(--muted-foreground))" }}
-            >
+                : { color: "hsl(var(--muted-foreground))" }}>
               <Instagram className="w-3.5 h-3.5" />
               Instagram
             </button>
@@ -96,8 +115,7 @@ export default function AppSidebar() {
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={effectivePlatform === "youtube"
                 ? { background: BLUE_GRADIENT, color: "#fff" }
-                : { color: "hsl(var(--muted-foreground))" }}
-            >
+                : { color: "hsl(var(--muted-foreground))" }}>
               <Youtube className="w-3.5 h-3.5" />
               YouTube
             </button>
@@ -110,16 +128,11 @@ export default function AppSidebar() {
         {navItems.map((item) => {
           const active = location.pathname === item.path;
           return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
+            <button key={item.path} onClick={() => navigate(item.path)}
               className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 active ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
               }`}
-              style={active
-                ? { background: `${BLUE}18`, borderLeft: `2px solid ${BLUE}` }
-                : { borderLeft: "2px solid transparent" }}
-            >
+              style={active ? { background: `${BLUE}18`, borderLeft: `2px solid ${BLUE}` } : { borderLeft: "2px solid transparent" }}>
               <item.icon className="w-4 h-4 flex-shrink-0" style={active ? { color: BLUE } : {}} />
               {!collapsed && <span style={active ? { color: BLUE } : {}}>{item.label}</span>}
             </button>
@@ -133,9 +146,7 @@ export default function AppSidebar() {
           <div className="p-3 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-                style={{ background: BLUE_GRADIENT }}>
-                {avatarInitials}
-              </div>
+                style={{ background: BLUE_GRADIENT }}>{avatarInitials}</div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
@@ -172,9 +183,7 @@ export default function AppSidebar() {
         <button onClick={() => setShowProfileMenu(!showProfileMenu)}
           className={`flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-sidebar-accent/50 transition-colors ${showProfileMenu ? 'bg-sidebar-accent' : ''}`}>
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-            style={{ background: BLUE_GRADIENT }}>
-            {avatarInitials}
-          </div>
+            style={{ background: BLUE_GRADIENT }}>{avatarInitials}</div>
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0 text-left">
