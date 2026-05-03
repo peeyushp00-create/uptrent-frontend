@@ -73,7 +73,7 @@ const PLANS = [
   {
     id: "pro_annual",
     label: "Pro Annual",
-    price: "₹559",
+    price: "₹599",
     period: "/month",
     desc: "Billed ₹6,708/year · Save 30%",
     tag: "Most Popular",
