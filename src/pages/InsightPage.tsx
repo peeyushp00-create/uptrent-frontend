@@ -91,13 +91,16 @@ export default function InsightPage() {
             style={{ background: "linear-gradient(160deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.95) 100%)" }} />
 
          {item.isVideo && (
-  <a href={item.youtubeUrl || `https://youtube.com/shorts/${item.id}`}
-    target="_blank" rel="noopener noreferrer"
+  
+    <a href={item.youtubeUrl || item.instagramUrl || '#'}
+    target="_blank"
+    rel="noopener noreferrer"
     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center"
     style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)" }}
     onClick={e => e.stopPropagation()}>
     <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
   </a>
+)}
 )}
 
           <div className="absolute top-4 left-4 flex gap-2">
