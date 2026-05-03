@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Instagram, Youtube, Sparkles, X,
+  Search, Instagram, Youtube, X,
   Heart, Eye, Flame, Megaphone, TrendingUp, Loader2, Play, ExternalLink
 } from "lucide-react";
 
@@ -30,12 +30,30 @@ export default function Index() {
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const [nextPage, setNextPage] = useState(0);
 
+  // ✅ Cycle headline words
   useEffect(() => {
     const interval = setInterval(() => setWordIndex(i => (i + 1) % WORDS.length), 2400);
     return () => clearInterval(interval);
   }, []);
 
-  // Restore search state when coming back from InsightPage
+  // ✅ Listen for platform change from sidebar
+  useEffect(() => {
+    const handler = (e: any) => {
+      setPlatform(e.detail);
+      setAllItems([]);
+      setSearched("");
+      setSearch("");
+      setNextPageToken(null);
+      setNextPage(0);
+      sessionStorage.removeItem('lastSearch');
+      sessionStorage.removeItem('lastItems');
+      sessionStorage.removeItem('lastPlatform');
+    };
+    window.addEventListener("platformChanged", handler);
+    return () => window.removeEventListener("platformChanged", handler);
+  }, []);
+
+  // ✅ Restore search state when coming back from InsightPage
   useEffect(() => {
     const lastSearch = sessionStorage.getItem('lastSearch');
     const lastPlatform = sessionStorage.getItem('lastPlatform') as "instagram" | "youtube" | null;
@@ -64,7 +82,10 @@ export default function Index() {
   }, []);
 
   const switchPlatform = (p: "instagram" | "youtube") => {
-    setPlatform(p); localStorage.setItem("platform", p);
+    setPlatform(p);
+    localStorage.setItem("platform", p);
+    // ✅ Also dispatch event so sidebar stays in sync
+    window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
     setAllItems([]); setSearched(""); setSearch("");
     setNextPageToken(null); setNextPage(0);
     sessionStorage.removeItem('lastSearch');
@@ -183,7 +204,7 @@ export default function Index() {
                 : "Search any niche to see real YouTube Shorts — powered by YouTube Data API"}
             </p>
 
-            {/* Platform toggle */}
+            {/* Platform toggle — syncs with sidebar */}
             <div className="flex items-center gap-1 p-1 rounded-2xl bg-card border border-border">
               {(["instagram","youtube"] as const).map(p=>(
                 <button key={p} onClick={()=>switchPlatform(p)}
@@ -206,7 +227,7 @@ export default function Index() {
                   style={{ fontFamily:"Inter,sans-serif" }}
                   onFocus={e=>{e.target.style.borderColor=`${accentColor}50`;e.target.style.boxShadow=`0 0 0 3px ${accentColor}0A`;}}
                   onBlur={e=>{e.target.style.borderColor="";e.target.style.boxShadow="none";}}/>
-                {/* ✅ X button inside search bar */}
+                {/* ✅ X clear button */}
                 {search && (
                   <button onClick={handleClear}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
@@ -282,7 +303,6 @@ export default function Index() {
                   <img src={item.thumbnail} alt={item.caption} loading="lazy"
                     onError={(e)=>{ (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${i}${item.niche}/400/400`; }}/>
 
-                  {/* Video icon */}
                   {item.isVideo && (
                     <div className="absolute top-2 right-2 z-10">
                       {platform==="instagram"
@@ -291,7 +311,6 @@ export default function Index() {
                     </div>
                   )}
 
-                  {/* YouTube external link */}
                   {platform === "youtube" && item.youtubeUrl && (
                     <a href={item.youtubeUrl} target="_blank" rel="noopener noreferrer"
                       className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full flex items-center justify-center"
@@ -301,7 +320,6 @@ export default function Index() {
                     </a>
                   )}
 
-                  {/* Virality badge */}
                   <div className="absolute bottom-2 right-2 z-10 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full"
                     style={{
                       background:item.virality>=90?accentColor:item.virality>=80?"#22c55e":"rgba(0,0,0,0.55)",
@@ -311,7 +329,6 @@ export default function Index() {
                     <Flame className="w-2.5 h-2.5"/>{item.virality}
                   </div>
 
-                  {/* Boosted */}
                   {item.boosted && (
                     <div className="absolute bottom-2 left-2 z-10 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full"
                       style={{ background:B,color:"#fff",fontSize:9,fontFamily:"Inter,sans-serif" }}>
@@ -319,7 +336,6 @@ export default function Index() {
                     </div>
                   )}
 
-                  {/* Hover overlay */}
                   <div className="hover-overlay">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1 text-white font-semibold text-sm" style={{ fontFamily:"Inter,sans-serif" }}>

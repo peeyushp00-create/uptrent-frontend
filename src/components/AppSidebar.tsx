@@ -47,6 +47,8 @@ export default function AppSidebar() {
   const switchPlatform = (p: "instagram" | "youtube") => {
     setPlatform(p);
     localStorage.setItem("platform", p);
+    // ✅ Dispatch custom event so Index page toggle syncs
+    window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
     if (p === "youtube") navigate("/youtube/seo");
     else navigate("/");
   };
