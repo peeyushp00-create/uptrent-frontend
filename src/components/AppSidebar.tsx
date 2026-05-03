@@ -25,38 +25,30 @@ const youtubeNav = [
   { icon: TrendingUp, label: "Trending", path: "/youtube/trending" },
 ];
 
-const BLUE = "#3B82F6";
-const BLUE_GRADIENT = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
+// ── Instagram: Teal + Aqua ──
+const IG_COLOR = "#14BBA6";
+const IG_GRAD = "linear-gradient(135deg, #14BBA6, #22D3EE)";
 
-// ✅ Global platform state key
-const PLATFORM_KEY = "platform";
+// ── YouTube: Warm Sunset ──
+const YT_COLOR = "#FF6B6B";
+const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
 
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [platform, setPlatform] = useState<"instagram" | "youtube">(
-    () => (localStorage.getItem(PLATFORM_KEY) as "instagram" | "youtube") || "instagram"
+    () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
   );
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  // ✅ Listen for platform changes from Index page
   useEffect(() => {
-    const handleStorage = () => {
-      const p = localStorage.getItem(PLATFORM_KEY) as "instagram" | "youtube";
-      if (p && p !== platform) setPlatform(p);
-    };
-    window.addEventListener("storage", handleStorage);
-    // Also listen for custom event (same tab)
     const handleCustom = (e: any) => setPlatform(e.detail);
     window.addEventListener("platformChanged", handleCustom);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("platformChanged", handleCustom);
-    };
-  }, [platform]);
+    return () => window.removeEventListener("platformChanged", handleCustom);
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -65,9 +57,8 @@ export default function AppSidebar() {
 
   const switchPlatform = (p: "instagram" | "youtube") => {
     setPlatform(p);
-    localStorage.setItem(PLATFORM_KEY, p);
-    // ✅ Fire both storage and custom event
-    window.dispatchEvent(new StorageEvent("storage", { key: PLATFORM_KEY, newValue: p }));
+    localStorage.setItem("platform", p);
+    window.dispatchEvent(new StorageEvent("storage", { key: "platform", newValue: p }));
     window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
     if (p === "youtube") navigate("/youtube/seo");
     else navigate("/");
@@ -76,6 +67,8 @@ export default function AppSidebar() {
   const isYoutubePath = location.pathname.startsWith("/youtube");
   const effectivePlatform = isYoutubePath ? "youtube" : platform;
   const navItems = effectivePlatform === "youtube" ? youtubeNav : instagramNav;
+  const ac = effectivePlatform === "instagram" ? IG_COLOR : YT_COLOR;
+  const ag = effectivePlatform === "instagram" ? IG_GRAD : YT_GRAD;
 
   const avatarInitials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -101,20 +94,18 @@ export default function AppSidebar() {
       {!collapsed && (
         <div className="px-3 pt-3 pb-1">
           <div className="flex items-center gap-1 p-1 rounded-xl bg-background border border-border">
-            <button
-              onClick={() => switchPlatform("instagram")}
+            <button onClick={() => switchPlatform("instagram")}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={effectivePlatform === "instagram"
-                ? { background: BLUE_GRADIENT, color: "#fff" }
+                ? { background: IG_GRAD, color: "#fff" }
                 : { color: "hsl(var(--muted-foreground))" }}>
               <Instagram className="w-3.5 h-3.5" />
               Instagram
             </button>
-            <button
-              onClick={() => switchPlatform("youtube")}
+            <button onClick={() => switchPlatform("youtube")}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={effectivePlatform === "youtube"
-                ? { background: BLUE_GRADIENT, color: "#fff" }
+                ? { background: YT_GRAD, color: "#fff" }
                 : { color: "hsl(var(--muted-foreground))" }}>
               <Youtube className="w-3.5 h-3.5" />
               YouTube
@@ -132,9 +123,11 @@ export default function AppSidebar() {
               className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 active ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
               }`}
-              style={active ? { background: `${BLUE}18`, borderLeft: `2px solid ${BLUE}` } : { borderLeft: "2px solid transparent" }}>
-              <item.icon className="w-4 h-4 flex-shrink-0" style={active ? { color: BLUE } : {}} />
-              {!collapsed && <span style={active ? { color: BLUE } : {}}>{item.label}</span>}
+              style={active
+                ? { background: `${ac}18`, borderLeft: `2px solid ${ac}` }
+                : { borderLeft: "2px solid transparent" }}>
+              <item.icon className="w-4 h-4 flex-shrink-0" style={active ? { color: ac } : {}} />
+              {!collapsed && <span style={active ? { color: ac } : {}}>{item.label}</span>}
             </button>
           );
         })}
@@ -146,7 +139,7 @@ export default function AppSidebar() {
           <div className="p-3 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-                style={{ background: BLUE_GRADIENT }}>{avatarInitials}</div>
+                style={{ background: ag }}>{avatarInitials}</div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
@@ -167,7 +160,7 @@ export default function AppSidebar() {
             <div className="border-t border-border my-1" />
             <button onClick={() => { navigate('/pricing'); setShowProfileMenu(false); }}
               className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors"
-              style={{ color: BLUE }}>
+              style={{ color: ac }}>
               <Crown className="w-4 h-4" />Upgrade to Pro
             </button>
             <button onClick={handleLogout}
@@ -183,7 +176,7 @@ export default function AppSidebar() {
         <button onClick={() => setShowProfileMenu(!showProfileMenu)}
           className={`flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-sidebar-accent/50 transition-colors ${showProfileMenu ? 'bg-sidebar-accent' : ''}`}>
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-            style={{ background: BLUE_GRADIENT }}>{avatarInitials}</div>
+            style={{ background: ag }}>{avatarInitials}</div>
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0 text-left">

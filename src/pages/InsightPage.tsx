@@ -7,10 +7,11 @@ import {
   Play, Instagram, Youtube, ArrowRight, CheckCircle2, Zap, Award
 } from "lucide-react";
 
-const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
-const BLUE_G = "linear-gradient(135deg, #3B82F6, #1D4ED8)";
-const G = "#E8B84B";
-const B = "#3B82F6";
+const IG_GRAD = "linear-gradient(135deg, #14BBA6, #22D3EE)";
+const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
+
+const IG_COLOR = "#14BBA6";
+const YT_COLOR = "#FF6B6B";
 
 export default function InsightPage() {
   const { state } = useLocation();
@@ -21,8 +22,8 @@ export default function InsightPage() {
 
   const platform = item.platform;
   const isIG = platform === "instagram";
-  const ac = isIG ? G : B;
-  const ag = isIG ? GOLD : BLUE_G;
+  const ac = isIG ? IG_COLOR : YT_COLOR;
+  const ag = isIG ? IG_GRAD : YT_GRAD;
 
   const engagementStats = isIG ? [
     { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#3B82F610" },
@@ -90,18 +91,12 @@ export default function InsightPage() {
           <div className="absolute inset-0"
             style={{ background: "linear-gradient(160deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.95) 100%)" }} />
 
-         {item.isVideo && (
-  
-    <a href={item.youtubeUrl || item.instagramUrl || '#'}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center"
-    style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)" }}
-    onClick={e => e.stopPropagation()}>
-    <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-  </a>
-)}
-)}
+          {item.isVideo && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)" }}>
+              <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+            </div>
+          )}
 
           <div className="absolute top-4 left-4 flex gap-2">
             {item.boosted && (
