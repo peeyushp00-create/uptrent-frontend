@@ -5,11 +5,26 @@ import { Sparkles, ArrowRight } from "lucide-react";
 
 /* ─── THEME ─── */
 const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
-const C = { bg: "#0A0A0A", text: "#F0EAD6", muted: "#5A5A5A", border: "#222" };
+const C = { bg: "#0A0A0A", text: "#F0EAD6", muted: "#5A5A5A" };
 const WORDS = ["Discover.", "Create.", "Go Viral."];
 
+/* ─── TYPES ─── */
+interface ReelData {
+  user: string;
+  initials: string;
+  avatarColor: string;
+  caption: string;
+  audio: string;
+  likes: string;
+  comments: string;
+  gradient: string[];
+  bars: number[];
+  tag: string;
+  tagColor: string;
+}
+
 /* ─── REEL DATA ─── */
-const REELS = [
+const REELS: ReelData[] = [
   {
     user: "priya.creates",
     initials: "PC",
@@ -91,12 +106,17 @@ const REELS = [
 ];
 
 /* ─── PHONE COMPONENT ─── */
-function ReelPhone({ reel, index }) {
+interface ReelPhoneProps {
+  reel: ReelData;
+  index: number;
+}
+
+function ReelPhone({ reel, index }: ReelPhoneProps) {
   const angle = (index / 6) * 360;
   const animDelay = index * 0.4;
 
   const gradientStr = `linear-gradient(180deg, ${reel.gradient
-    .map((c, i) => `${c} ${Math.round((i / (reel.gradient.length - 1)) * 100)}%`)
+    .map((color, i) => `${color} ${Math.round((i / (reel.gradient.length - 1)) * 100)}%`)
     .join(", ")})`;
 
   return (
@@ -117,19 +137,16 @@ function ReelPhone({ reel, index }) {
       {/* Notch */}
       <div className="phone-notch" />
 
-      {/* Top bar: avatar + username + follow */}
+      {/* Top bar */}
       <div className="reel-top-bar">
-        <div
-          className="reel-avatar"
-          style={{ background: reel.avatarColor }}
-        >
+        <div className="reel-avatar" style={{ background: reel.avatarColor }}>
           {reel.initials}
         </div>
         <span className="reel-username">@{reel.user}</span>
         <span className="reel-follow">Follow</span>
       </div>
 
-      {/* Center: category tag + animated waveform */}
+      {/* Center: tag + waveform */}
       <div className="reel-center">
         <div
           className="reel-tag"
@@ -137,8 +154,6 @@ function ReelPhone({ reel, index }) {
         >
           {reel.tag}
         </div>
-
-        {/* Animated waveform bars */}
         <div className="reel-wave">
           {reel.bars.map((h, i) => (
             <div
@@ -155,24 +170,24 @@ function ReelPhone({ reel, index }) {
         </div>
       </div>
 
-      {/* Bottom: caption + music disc */}
+      {/* Bottom: music + caption */}
       <div className="reel-bottom">
         <div className="reel-music-row">
           <div
             className="reel-disc"
-            style={{ borderColor: reel.tagColor, animationDuration: `${3 + index * 0.2}s` }}
+            style={{
+              borderColor: reel.tagColor,
+              animationDuration: `${3 + index * 0.2}s`,
+            }}
           >
-            <div
-              className="reel-disc-inner"
-              style={{ background: reel.avatarColor }}
-            />
+            <div className="reel-disc-inner" style={{ background: reel.avatarColor }} />
           </div>
           <span className="reel-audio">{reel.audio}</span>
         </div>
         <div className="reel-caption-text">{reel.caption}</div>
       </div>
 
-      {/* Right-side action buttons */}
+      {/* Right actions */}
       <div className="reel-actions">
         <div className="reel-action">
           <div className="action-icon heart-icon">♥</div>
@@ -188,13 +203,16 @@ function ReelPhone({ reel, index }) {
         </div>
         <div
           className="reel-share-disc"
-          style={{ background: reel.avatarColor, animationDuration: `${2.5 + index * 0.3}s` }}
+          style={{
+            background: reel.avatarColor,
+            animationDuration: `${2.5 + index * 0.3}s`,
+          }}
         >
           ♪
         </div>
       </div>
 
-      {/* Progress bar at bottom */}
+      {/* Progress bar */}
       <div className="reel-progress">
         <div
           className="reel-progress-fill"
@@ -211,23 +229,23 @@ function ReelPhone({ reel, index }) {
 /* ─── MAIN COMPONENT ─── */
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [wordIdx, setWordIdx] = useState(0);
-  const [wordVisible, setWordVisible] = useState(true);
-  const heroRef = useRef(null);
+  const [wordIdx, setWordIdx] = useState<number>(0);
+  const [wordVisible, setWordVisible] = useState<boolean>(true);
+  const heroRef = useRef<HTMLElement>(null);
 
   const { scrollYProgress } = useScroll({ target: heroRef });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, -60]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   useEffect(() => {
-    const i = setInterval(() => {
+    const interval = setInterval(() => {
       setWordVisible(false);
       setTimeout(() => {
-        setWordIdx(w => (w + 1) % WORDS.length);
+        setWordIdx((w) => (w + 1) % WORDS.length);
         setWordVisible(true);
       }, 350);
     }, 2400);
-    return () => clearInterval(i);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -238,7 +256,6 @@ export default function LandingPage() {
         * { box-sizing: border-box; }
         body { margin: 0; }
 
-        /* ── CAROUSEL ── */
         .carousel-scene {
           position: absolute;
           inset: 0;
@@ -263,7 +280,6 @@ export default function LandingPage() {
           to   { transform: rotateY(360deg); }
         }
 
-        /* ── PHONE SHELL ── */
         .reel-phone {
           position: absolute;
           width: 130px;
@@ -282,7 +298,6 @@ export default function LandingPage() {
             inset 0 1px 0 rgba(255,255,255,0.08);
         }
 
-        /* ── SCROLLING BG ── */
         .reel-scroll-bg {
           position: absolute;
           inset: 0;
@@ -297,7 +312,6 @@ export default function LandingPage() {
           100% { transform: translateY(33.33%); }
         }
 
-        /* ── NOTCH ── */
         .phone-notch {
           position: absolute;
           top: 7px;
@@ -310,7 +324,6 @@ export default function LandingPage() {
           z-index: 10;
         }
 
-        /* ── TOP BAR ── */
         .reel-top-bar {
           position: absolute;
           top: 18px;
@@ -360,7 +373,6 @@ export default function LandingPage() {
           flex-shrink: 0;
         }
 
-        /* ── CENTER ZONE ── */
         .reel-center {
           position: absolute;
           top: 50%;
@@ -385,7 +397,6 @@ export default function LandingPage() {
           text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
 
-        /* ── WAVEFORM ── */
         .reel-wave {
           display: flex;
           align-items: flex-end;
@@ -405,7 +416,6 @@ export default function LandingPage() {
           100% { transform: scaleY(1); }
         }
 
-        /* ── BOTTOM ── */
         .reel-bottom {
           position: absolute;
           bottom: 14px;
@@ -467,7 +477,6 @@ export default function LandingPage() {
           text-shadow: 0 1px 4px rgba(0,0,0,0.9);
         }
 
-        /* ── RIGHT ACTIONS ── */
         .reel-actions {
           position: absolute;
           right: 6px;
@@ -498,7 +507,7 @@ export default function LandingPage() {
 
         @keyframes heartBeat {
           0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.25); }
+          50%       { transform: scale(1.25); }
         }
 
         .action-count {
@@ -523,7 +532,6 @@ export default function LandingPage() {
           box-shadow: 0 0 6px rgba(0,0,0,0.5);
         }
 
-        /* ── PROGRESS BAR ── */
         .reel-progress {
           position: absolute;
           bottom: 0;
@@ -545,7 +553,6 @@ export default function LandingPage() {
           100% { width: 100%; }
         }
 
-        /* ── HERO WORD ── */
         .hero-word-wrap {
           min-height: 90px;
           display: flex;
@@ -576,7 +583,6 @@ export default function LandingPage() {
           transform: translateY(0);
         }
 
-        /* ── DARK VIGNETTE OVERLAY ── */
         .scene-overlay {
           position: absolute;
           inset: 0;
@@ -604,7 +610,6 @@ export default function LandingPage() {
           overflow: "hidden",
         }}
       >
-
         {/* 3D CAROUSEL BACKGROUND */}
         <div className="carousel-scene">
           <div className="carousel-ring">
@@ -619,12 +624,9 @@ export default function LandingPage() {
 
         {/* HERO CONTENT */}
         <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-          className="relative z-10"
-          css={{
+          style={{
+            y: heroY,
+            opacity: heroOpacity,
             position: "relative",
             zIndex: 10,
             display: "flex",
@@ -635,6 +637,9 @@ export default function LandingPage() {
             padding: "0 24px",
             textAlign: "center",
           }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: "easeOut" }}
         >
           {/* Badge */}
           <motion.div
@@ -682,7 +687,7 @@ export default function LandingPage() {
             everything an Indian creator needs.
           </motion.p>
 
-          {/* CTA */}
+          {/* CTA Button */}
           <motion.button
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -722,7 +727,7 @@ export default function LandingPage() {
               justifyContent: "center",
             }}
           >
-            {["10K+ Creators", "Free to start", "Made in India 🇮🇳"].map(label => (
+            {["10K+ Creators", "Free to start", "Made in India 🇮🇳"].map((label) => (
               <span
                 key={label}
                 style={{
@@ -741,7 +746,6 @@ export default function LandingPage() {
           </motion.div>
         </motion.div>
       </section>
-
     </div>
   );
 }
