@@ -81,17 +81,16 @@ export default function Index() {
     return data;
   }, []);
 
-  const switchPlatform = (p: "instagram" | "youtube") => {
-    setPlatform(p);
-    localStorage.setItem("platform", p);
-    // ✅ Also dispatch event so sidebar stays in sync
-    window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-    setAllItems([]); setSearched(""); setSearch("");
-    setNextPageToken(null); setNextPage(0);
-    sessionStorage.removeItem('lastSearch');
-    sessionStorage.removeItem('lastItems');
-    sessionStorage.removeItem('lastPlatform');
-  };
+ const switchPlatform = (p: "instagram" | "youtube") => {
+  setPlatform(p);
+  localStorage.setItem("platform", p);
+  window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
+  setAllItems([]); setSearched(""); setSearch("");
+  setNextPageToken(null); setNextPage(0);
+  sessionStorage.removeItem('lastSearch');
+  sessionStorage.removeItem('lastItems');
+  sessionStorage.removeItem('lastPlatform');
+};
 
   const handleSearch = async (q?: string, plat?: "instagram" | "youtube") => {
     const query = q || search;

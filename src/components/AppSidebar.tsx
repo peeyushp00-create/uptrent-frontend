@@ -45,13 +45,13 @@ export default function AppSidebar() {
   };
 
   const switchPlatform = (p: "instagram" | "youtube") => {
-    setPlatform(p);
-    localStorage.setItem("platform", p);
-    // ✅ Dispatch custom event so Index page toggle syncs
-    window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-    if (p === "youtube") navigate("/youtube/seo");
-    else navigate("/");
-  };
+  setPlatform(p);
+  localStorage.setItem("platform", p);
+  window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
+  // Only navigate if NOT already on home page
+  if (p === "youtube" && location.pathname !== "/youtube/seo") navigate("/youtube/seo");
+  else if (p === "instagram" && location.pathname !== "/") navigate("/");
+};
 
   const isYoutubePath = location.pathname.startsWith("/youtube");
   const effectivePlatform = isYoutubePath ? "youtube" : platform;
