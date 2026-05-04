@@ -243,7 +243,7 @@ export default function InsightPage() {
               <div className="rounded-2xl p-4 bg-card border border-border">
                 <p className="dm text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2" style={{ letterSpacing: ".12em" }}>Audience Retention</p>
                 <div className="flex items-start gap-2">
-                  <BarChart2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: B }} />
+                  <BarChart2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: ac }} />
                   <p className="dm text-sm text-foreground">{item.retention}</p>
                 </div>
               </div>
@@ -252,7 +252,7 @@ export default function InsightPage() {
               <div className="rounded-2xl p-4 bg-card border border-border">
                 <p className="dm text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2" style={{ letterSpacing: ".12em" }}>Thumbnail Hook</p>
                 <div className="flex items-start gap-2">
-                  <Target className="w-4 h-4 shrink-0 mt-0.5" style={{ color: B }} />
+                  <Target className="w-4 h-4 shrink-0 mt-0.5" style={{ color: ac }} />
                   <p className="dm text-sm text-foreground">{item.thumbHook}</p>
                 </div>
               </div>
