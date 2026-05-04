@@ -2,30 +2,16 @@ import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import {
-  TrendingUp,
-  Sparkles,
-  Newspaper,
-  FileText,
-  Check,
-  Star,
-  ArrowRight,
-  Zap,
-  Target,
-  Instagram,
-  Youtube,
-  Play,
-  ChevronDown,
+  TrendingUp, Sparkles, Newspaper, FileText,
+  Check, Star, ArrowRight, Zap, Target,
+  Instagram, Youtube, Play, ChevronDown
 } from "lucide-react";
 
 const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
 const GOLD_SOLID = "#E8B84B";
-
 const C = {
-  bg: "#111111",
-  card: "#1C1C1C",
-  border: "#2E2E2E",
-  text: "#EDE0C8",
-  muted: "#6B6B6B",
+  bg: "#111111", card: "#1C1C1C", border: "#2E2E2E",
+  text: "#EDE0C8", muted: "#6B6B6B", subtle: "#242424"
 };
 
 const features = [
@@ -38,48 +24,13 @@ const features = [
 ];
 
 const testimonials = [
-  {
-    name: "Rahul Sharma",
-    handle: "@rahulfinance",
-    niche: "Finance Creator",
-    text: "SocialRum helped me grow from 5K to 50K followers in 3 months. The trending topics feature is a game changer!",
-    avatar: "RS",
-    stars: 5,
-  },
-  {
-    name: "Priya Mehta",
-    handle: "@priyafitness",
-    niche: "Fitness Creator",
-    text: "I used to spend hours writing scripts. Now SocialRum generates them in seconds and they perform way better!",
-    avatar: "PM",
-    stars: 5,
-  },
-  {
-    name: "Arjun Kapoor",
-    handle: "@arjuntech",
-    niche: "Tech Creator",
-    text: "The AI chat feature is incredible. It's like having a personal content strategist available 24/7.",
-    avatar: "AK",
-    stars: 5,
-  },
+  { name: "Rahul Sharma", handle: "@rahulfinance", niche: "Finance Creator", text: "SocialRum helped me grow from 5K to 50K followers in 3 months. The trending topics feature is a game changer!", avatar: "RS", stars: 5 },
+  { name: "Priya Mehta", handle: "@priyafitness", niche: "Fitness Creator", text: "I used to spend hours writing scripts. Now SocialRum generates them in seconds and they perform way better!", avatar: "PM", stars: 5 },
+  { name: "Arjun Kapoor", handle: "@arjuntech", niche: "Tech Creator", text: "The AI chat feature is incredible. It's like having a personal content strategist available 24/7.", avatar: "AK", stars: 5 },
 ];
 
-const freeFeatures = [
-  "3 script generations per month",
-  "Limited trending topics",
-  "Basic news feed",
-  "AI chat (5 messages/day)",
-];
-
-const proFeatures = [
-  "Unlimited script generations",
-  "Full trending data (20+ niches)",
-  "Complete news feed",
-  "Unlimited AI chat",
-  "SEO optimization",
-  "Content calendar",
-  "Priority support",
-];
+const freeFeatures = ["3 script generations per month", "Limited trending topics", "Basic news feed", "AI chat (5 messages/day)"];
+const proFeatures = ["Unlimited script generations", "Full trending data (20+ niches)", "Complete news feed", "Unlimited AI chat", "SEO optimization", "Content calendar", "Priority support"];
 
 const STATS = [
   { value: "20+", label: "Niches Covered" },
@@ -96,16 +47,123 @@ const NAV_LINKS = [
   { label: "Pricing", id: "pricing" },
 ];
 
+/* ─── REEL DATA ─── */
+interface ReelData {
+  user: string; initials: string; avatarColor: string;
+  caption: string; audio: string; likes: string; comments: string;
+  gradient: string[]; bars: number[]; tag: string; tagColor: string;
+}
+
+const REELS: ReelData[] = [
+  {
+    user: "priya.creates", initials: "PC", avatarColor: "#FF6B9D",
+    caption: "Morning vlog vibes ☀️", audio: "Original audio · priya",
+    likes: "84K", comments: "1.2K",
+    gradient: ["#1a0533", "#4B0082", "#7B2D8B", "#FF6B9D", "#FFB347", "#FF6B35"],
+    bars: [0.4, 0.7, 0.5, 0.9, 0.6, 0.8, 0.3, 0.7, 0.5, 1.0, 0.6, 0.4],
+    tag: "VLOG", tagColor: "#FF6B9D",
+  },
+  {
+    user: "techtalkindia", initials: "TT", avatarColor: "#00BFFF",
+    caption: "AI tools that blew my mind 🤯", audio: "Trending · Lo-fi Beats",
+    likes: "210K", comments: "3.4K",
+    gradient: ["#001a33", "#0066CC", "#00BFFF", "#7FFFD4", "#00FF7F", "#228B22"],
+    bars: [0.6, 0.9, 0.4, 0.8, 1.0, 0.5, 0.7, 0.9, 0.3, 0.6, 0.8, 0.5],
+    tag: "TECH", tagColor: "#00BFFF",
+  },
+  {
+    user: "dancewithmeg", initials: "DM", avatarColor: "#FFD700",
+    caption: "New hook tutorial 🔥 save this!", audio: "APT · Rose ft. Bruno Mars",
+    likes: "520K", comments: "8.9K",
+    gradient: ["#2d1b00", "#8B4513", "#D2691E", "#F4A460", "#FFD700", "#FFA500"],
+    bars: [1.0, 0.6, 0.8, 0.4, 0.9, 0.7, 1.0, 0.5, 0.8, 0.6, 0.9, 0.7],
+    tag: "DANCE", tagColor: "#FFD700",
+  },
+  {
+    user: "foodiedelhi", initials: "FD", avatarColor: "#FF4500",
+    caption: "Street food in 60 sec 🍜", audio: "Kya Karein · AP Dhillon",
+    likes: "145K", comments: "2.1K",
+    gradient: ["#0d1f0d", "#006400", "#228B22", "#90EE90", "#00FA9A", "#48D1CC"],
+    bars: [0.5, 0.8, 0.6, 1.0, 0.4, 0.7, 0.9, 0.5, 0.8, 0.3, 0.7, 0.9],
+    tag: "FOOD", tagColor: "#FF4500",
+  },
+  {
+    user: "comedykings", initials: "CK", avatarColor: "#DA70D6",
+    caption: "POV: mom finds ur reels 😂", audio: "Pasoori · Ali Sethi",
+    likes: "1.1M", comments: "22K",
+    gradient: ["#1a001a", "#800080", "#DA70D6", "#FFB6C1", "#FF69B4", "#DC143C"],
+    bars: [0.7, 1.0, 0.5, 0.8, 0.6, 0.9, 0.4, 1.0, 0.7, 0.5, 0.8, 0.6],
+    tag: "COMEDY", tagColor: "#DA70D6",
+  },
+  {
+    user: "sketchbyrohan", initials: "SR", avatarColor: "#4169E1",
+    caption: "Timelapse art drop 🎨", audio: "Calm Instrumentals",
+    likes: "67K", comments: "890",
+    gradient: ["#0a0a1a", "#191970", "#4169E1", "#87CEEB", "#E0F7FA", "#B0E0E6"],
+    bars: [0.3, 0.6, 0.8, 0.5, 0.7, 1.0, 0.4, 0.8, 0.6, 0.9, 0.5, 0.7],
+    tag: "ART", tagColor: "#4169E1",
+  },
+];
+
+/* ─── REEL PHONE COMPONENT ─── */
+interface ReelPhoneProps { reel: ReelData; index: number; }
+
+function ReelPhone({ reel, index }: ReelPhoneProps) {
+  const angle = (index / 6) * 360;
+  const gradientStr = `linear-gradient(180deg, ${reel.gradient
+    .map((c, i) => `${c} ${Math.round((i / (reel.gradient.length - 1)) * 100)}%`)
+    .join(", ")})`;
+
+  return (
+    <div className="reel-phone" style={{ transform: `rotateY(${angle}deg) translateZ(280px)` }}>
+      <div className="reel-scroll-bg" style={{ background: gradientStr, animationDuration: `${4 + index * 0.7}s`, animationDelay: `${-(index * 0.4)}s` }} />
+      <div className="phone-notch" />
+      <div className="reel-top-bar">
+        <div className="reel-avatar" style={{ background: reel.avatarColor }}>{reel.initials}</div>
+        <span className="reel-username">@{reel.user}</span>
+        <span className="reel-follow">Follow</span>
+      </div>
+      <div className="reel-center">
+        <div className="reel-tag" style={{ color: reel.tagColor, borderColor: reel.tagColor }}>{reel.tag}</div>
+        <div className="reel-wave">
+          {reel.bars.map((h, i) => (
+            <div key={i} className="wave-bar" style={{ height: `${h * 28}px`, background: reel.tagColor, animationDelay: `${i * 0.08}s` }} />
+          ))}
+        </div>
+      </div>
+      <div className="reel-bottom">
+        <div className="reel-music-row">
+          <div className="reel-disc" style={{ borderColor: reel.tagColor, animationDuration: `${3 + index * 0.2}s` }}>
+            <div className="reel-disc-inner" style={{ background: reel.avatarColor }} />
+          </div>
+          <span className="reel-audio">{reel.audio}</span>
+        </div>
+        <div className="reel-caption-text">{reel.caption}</div>
+      </div>
+      <div className="reel-actions">
+        <div className="reel-action"><div className="action-icon heart-icon">♥</div><span className="action-count">{reel.likes}</span></div>
+        <div className="reel-action"><div className="action-icon">💬</div><span className="action-count">{reel.comments}</span></div>
+        <div className="reel-action"><div className="action-icon">↗</div><span className="action-count">Share</span></div>
+        <div className="reel-share-disc" style={{ background: reel.avatarColor, animationDuration: `${2.5 + index * 0.3}s` }}>♪</div>
+      </div>
+      <div className="reel-progress">
+        <div className="reel-progress-fill" style={{ background: reel.tagColor, animationDuration: `${5 + index * 0.5}s` }} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN COMPONENT ─── */
 export default function LandingPage() {
   const navigate = useNavigate();
   const [wordIndex, setWordIndex] = useState(0);
-  const heroRef = useRef<HTMLElement | null>(null);
+  const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
-    const i = setInterval(() => setWordIndex((w) => (w + 1) % HEADLINE_WORDS.length), 2000);
+    const i = setInterval(() => setWordIndex(w => (w + 1) % HEADLINE_WORDS.length), 2000);
     return () => clearInterval(i);
   }, []);
 
@@ -118,26 +176,84 @@ export default function LandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,700&display=swap');
         .cg { font-family: 'Cormorant Garamond', serif !important; }
-        .gold-text {
-          background: linear-gradient(135deg, #E8B84B, #C17D20);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
+        .gold-text { background: linear-gradient(135deg, #E8B84B, #C17D20); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .hover-gold:hover { color: #E8B84B !important; }
         * { box-sizing: border-box; }
+
+        /* ── CAROUSEL STYLES ── */
+        .carousel-scene {
+          position: absolute; inset: 0;
+          display: flex; align-items: center; justify-content: center;
+          perspective: 1100px; pointer-events: none; z-index: 0;
+        }
+        .carousel-ring {
+          width: 200px; height: 380px;
+          transform-style: preserve-3d;
+          animation: carouselSpin 28s linear infinite;
+          position: relative;
+        }
+        @keyframes carouselSpin {
+          from { transform: rotateY(0deg); }
+          to   { transform: rotateY(360deg); }
+        }
+        .reel-phone {
+          position: absolute; width: 130px; height: 230px;
+          left: 50%; top: 50%; margin-left: -65px; margin-top: -115px;
+          border-radius: 20px; overflow: hidden; background: #111;
+          border: 1.5px solid rgba(255,255,255,0.14);
+          box-shadow: 0 0 0 3px rgba(0,0,0,0.6), 0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .reel-scroll-bg {
+          position: absolute; inset: 0; width: 100%; height: 300%; top: -100%;
+          animation: reelScroll linear infinite;
+        }
+        @keyframes reelScroll {
+          0%   { transform: translateY(0%); }
+          100% { transform: translateY(33.33%); }
+        }
+        .phone-notch {
+          position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+          width: 32px; height: 5px; background: #000; border-radius: 3px; z-index: 10;
+        }
+        .reel-top-bar { position: absolute; top: 18px; left: 8px; right: 8px; display: flex; align-items: center; gap: 5px; z-index: 5; }
+        .reel-avatar { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 6px; font-weight: 700; color: #fff; flex-shrink: 0; }
+        .reel-username { font-size: 7px; font-weight: 600; color: #fff; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+        .reel-follow { font-size: 6.5px; font-weight: 700; color: #fff; border: 1px solid rgba(255,255,255,0.8); border-radius: 4px; padding: 1.5px 5px; }
+        .reel-center { position: absolute; top: 50%; left: 8px; right: 36px; transform: translateY(-50%); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; z-index: 5; }
+        .reel-tag { font-size: 7px; font-weight: 800; letter-spacing: 0.1em; border: 1px solid; border-radius: 4px; padding: 2px 5px; }
+        .reel-wave { display: flex; align-items: flex-end; gap: 2px; height: 30px; }
+        .wave-bar { width: 4px; border-radius: 2px; opacity: 0.85; animation: wavePulse 0.8s ease-in-out infinite alternate; transform-origin: bottom; }
+        @keyframes wavePulse { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }
+        .reel-bottom { position: absolute; bottom: 14px; left: 8px; right: 36px; display: flex; flex-direction: column; gap: 4px; z-index: 5; }
+        .reel-music-row { display: flex; align-items: center; gap: 4px; }
+        .reel-disc { width: 14px; height: 14px; border-radius: 50%; border: 1px solid; display: flex; align-items: center; justify-content: center; animation: discSpin linear infinite; flex-shrink: 0; }
+        @keyframes discSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .reel-disc-inner { width: 5px; height: 5px; border-radius: 50%; opacity: 0.9; }
+        .reel-audio { font-size: 6.5px; color: rgba(255,255,255,0.85); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70px; }
+        .reel-caption-text { font-size: 7px; font-weight: 500; color: #fff; line-height: 1.3; }
+        .reel-actions { position: absolute; right: 6px; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: 9px; z-index: 5; }
+        .reel-action { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+        .action-icon { font-size: 13px; line-height: 1; }
+        .heart-icon { animation: heartBeat 2s ease-in-out infinite; }
+        @keyframes heartBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+        .action-count { font-size: 5.5px; font-weight: 700; color: #fff; }
+        .reel-share-disc { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; animation: discSpin linear infinite; }
+        .reel-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.2); z-index: 5; }
+        .reel-progress-fill { height: 100%; animation: progressPlay linear infinite; border-radius: 1px; }
+        @keyframes progressPlay { 0% { width: 0%; } 100% { width: 100%; } }
+
+        @media (max-width: 768px) {
+          .carousel-ring { transform: scale(0.55) !important; }
+        }
       `}</style>
 
+      {/* ── NAVBAR ── */}
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
         className="flex items-center justify-between px-6 md:px-16 py-4 sticky top-0 z-50"
-        style={{
-          background: `${C.bg}ee`,
-          borderBottom: `1px solid ${C.border}`,
-          backdropFilter: "blur(12px)",
-        }}
+        style={{ background: `${C.bg}ee`, borderBottom: `1px solid ${C.border}`, backdropFilter: "blur(12px)" }}
       >
         <div className="flex items-center gap-2">
           <motion.img whileHover={{ rotate: 10 }} src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-lg" />
@@ -145,7 +261,7 @@ export default function LandingPage() {
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: C.muted }}>
-          {NAV_LINKS.map((item) => (
+          {NAV_LINKS.map(item => (
             <button
               key={item.id}
               onClick={() => scrollTo(item.id)}
@@ -158,16 +274,11 @@ export default function LandingPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/login")}
-            className="px-4 py-2 text-sm transition-colors hover-gold"
-            style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}
-          >
+          <button onClick={() => navigate("/login")} className="px-4 py-2 text-sm transition-colors hover-gold" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
             Login
           </button>
           <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
             className="px-5 py-2 rounded-xl text-sm font-semibold"
             style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
@@ -177,258 +288,160 @@ export default function LandingPage() {
         </div>
       </motion.nav>
 
-      <section
-        ref={heroRef}
-        className="relative flex flex-col items-center text-center px-6 py-24 md:py-36 gap-10 overflow-hidden"
-      >
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          className="absolute inset-0 h-full w-full object-cover pointer-events-none"
-          style={{ opacity: 0.28 }}
-        >
-          <source src="/socialrum-hero.mp4" type="video/mp4" />
-        </video>
+      {/* ── HERO (with reel carousel background) ── */}
+      <section ref={heroRef} className="relative flex flex-col items-center text-center px-6 py-24 md:py-36 gap-10 overflow-hidden">
 
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(17,17,17,0.58) 0%, rgba(17,17,17,0.78) 45%, rgba(17,17,17,0.96) 100%)",
-          }}
-        />
+        {/* 3D REEL CAROUSEL — background layer */}
+        <div className="carousel-scene">
+          <div className="carousel-ring">
+            {REELS.map((reel, i) => <ReelPhone key={i} reel={reel} index={i} />)}
+          </div>
+        </div>
 
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }}
-          transition={{ duration: 10, repeat: Infinity }}
+        {/* Dark vignette over the carousel */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse 75% 85% at 50% 50%, rgba(17,17,17,0.25) 0%, rgba(17,17,17,0.94) 100%)",
+          backdropFilter: "blur(1px)",
+          zIndex: 1,
+          pointerEvents: "none",
+        }} />
+
+        {/* Original gold glow blobs — kept exactly as original */}
+        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }} transition={{ duration: 10, repeat: Infinity }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse, #E8B84B, transparent 65%)",
-            filter: "blur(60px)",
-          }}
+          style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(60px)", zIndex: 2 }}
         />
-        <motion.div
-          animate={{ scale: [1.1, 1, 1.1], opacity: [0.03, 0.06, 0.03] }}
-          transition={{ duration: 14, repeat: Infinity, delay: 3 }}
+        <motion.div animate={{ scale: [1.1, 1, 1.1], opacity: [0.03, 0.06, 0.03] }} transition={{ duration: 14, repeat: Infinity, delay: 3 }}
           className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none"
-          style={{
-            background: "radial-gradient(circle, #C17D20, transparent 70%)",
-            filter: "blur(80px)",
-          }}
+          style={{ background: "radial-gradient(circle, #C17D20, transparent 70%)", filter: "blur(80px)", zIndex: 2 }}
         />
 
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="flex flex-col items-center gap-8 max-w-4xl relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
+        {/* All original hero content — z-index 10 to sit above carousel + overlay */}
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="flex flex-col items-center gap-8 max-w-4xl relative" css={{ zIndex: 10 }}>
+
+          {/* Badge */}
+          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}
             className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium uppercase"
-            style={{
-              background: "#E8B84B12",
-              border: "1px solid #E8B84B30",
-              color: GOLD_SOLID,
-              letterSpacing: "0.14em",
-            }}
+            style={{ background: "#E8B84B12", border: "1px solid #E8B84B30", color: GOLD_SOLID, letterSpacing: "0.14em" }}
           >
-            <motion.div
-              animate={{ opacity: [1, 0.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: GOLD_SOLID }}
-            />
+            <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }}
+              className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD_SOLID }} />
             <Sparkles className="w-3 h-3" />
             AI-Powered · Built for Indian Creators
           </motion.div>
 
+          {/* Headline */}
           <div className="flex flex-col items-center gap-2">
-            <motion.p
-              initial={{ opacity: 0, letterSpacing: "0.5em" }}
-              animate={{ opacity: 1, letterSpacing: "0.2em" }}
+            <motion.p initial={{ opacity: 0, letterSpacing: "0.5em" }} animate={{ opacity: 1, letterSpacing: "0.2em" }}
               transition={{ delay: 0.3, duration: 1 }}
-              className="text-xs uppercase tracking-widest"
-              style={{ color: "#8E8A81", fontFamily: "Inter, sans-serif" }}
-            >
-              The Creator&apos;s AI Toolkit
+              className="text-xs uppercase tracking-widest" style={{ color: "#3A3A3A", fontFamily: "Inter, sans-serif" }}>
+              The Creator's AI Toolkit
             </motion.p>
-
             <div className="cg text-6xl md:text-8xl font-bold" style={{ minHeight: "1.3em" }}>
               <AnimatePresence mode="wait">
-                <motion.span
-                  key={wordIndex}
+                <motion.span key={wordIndex}
                   initial={{ opacity: 0, y: 24, letterSpacing: "0.35em", filter: "blur(10px)" }}
                   animate={{ opacity: 1, y: 0, letterSpacing: "0.01em", filter: "blur(0)" }}
                   exit={{ opacity: 0, y: -18, letterSpacing: "0.18em", filter: "blur(5px)" }}
                   transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                   className={wordIndex === 1 ? "gold-text italic" : wordIndex === 2 ? "italic" : ""}
-                  style={{
-                    display: "inline-block",
-                    color: wordIndex === 0 ? C.text : wordIndex === 2 ? "#C17D20" : undefined,
-                  }}
+                  style={{ display: "inline-block", color: wordIndex === 0 ? C.text : wordIndex === 2 ? "#C17D20" : undefined }}
                 >
                   {HEADLINE_WORDS[wordIndex]}
                 </motion.span>
               </AnimatePresence>
             </div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-              className="text-base md:text-lg max-w-xl mt-2"
-              style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}
-            >
-              Discover trending topics, generate AI scripts, find viral hashtags and grow your audience,
-              all in one platform.
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }}
+              className="text-base md:text-lg max-w-xl mt-2" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+              Discover trending topics, generate AI scripts, find viral hashtags and grow your audience — all in one platform.
             </motion.p>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-            className="flex items-center gap-4 flex-wrap justify-center"
-          >
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: "0 0 30px #E8B84B30" }}
-              whileTap={{ scale: 0.97 }}
+          {/* CTA */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
+            className="flex items-center gap-4 flex-wrap justify-center">
+            <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 30px #E8B84B30" }} whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/signup")}
               className="flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-base"
-              style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
-            >
+              style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
               Start for Free <ArrowRight className="w-4 h-4" />
             </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02, borderColor: "#E8B84B50" }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => scrollTo("features")}
+            <motion.button whileHover={{ scale: 1.02, borderColor: "#E8B84B50" }} whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/login")}
               className="flex items-center gap-2 px-8 py-4 rounded-2xl font-medium text-base transition-all"
-              style={{
-                border: `1px solid ${C.border}`,
-                background: "rgba(28,28,28,0.72)",
-                color: C.text,
-                fontFamily: "Inter, sans-serif",
-                backdropFilter: "blur(8px)",
-              }}
-            >
+              style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text, fontFamily: "Inter, sans-serif" }}>
               <Play className="w-4 h-4" style={{ color: GOLD_SOLID }} /> Watch Demo
             </motion.button>
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.85 }}
-            className="text-xs"
-            style={{ color: "#9D9587", fontFamily: "Inter, sans-serif" }}
-          >
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.85 }}
+            className="text-xs" style={{ color: "#3A3A3A", fontFamily: "Inter, sans-serif" }}>
             No credit card required · Free plan available · 10,000+ creators
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.5 }}
-            className="flex items-center gap-4"
-          >
+          {/* Platform badges */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.5 }}
+            className="flex items-center gap-4">
             {[{ icon: Instagram, label: "Instagram" }, { icon: Youtube, label: "YouTube" }].map((p, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ scale: 1.06, borderColor: "#E8B84B50" }}
+              <motion.div key={i} whileHover={{ scale: 1.06, borderColor: "#E8B84B50" }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all"
-                style={{
-                  background: "rgba(28,28,28,0.7)",
-                  border: `1px solid ${C.border}`,
-                  color: C.muted,
-                  fontFamily: "Inter, sans-serif",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
+                style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted, fontFamily: "Inter, sans-serif" }}>
                 <p.icon className="w-4 h-4" style={{ color: GOLD_SOLID }} /> {p.label}
               </motion.div>
             ))}
           </motion.div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-4xl relative z-10 mt-4"
-        >
+        {/* Mockup */}
+        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-4xl relative mt-4" style={{ zIndex: 10 }}>
           <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}` }}>
             <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${C.border}`, background: "#171717" }}>
               <div className="w-3 h-3 rounded-full" style={{ background: "#FF5F56" }} />
               <div className="w-3 h-3 rounded-full" style={{ background: "#FFBD2E" }} />
               <div className="w-3 h-3 rounded-full" style={{ background: "#27C93F" }} />
-              <div className="flex-1 mx-4 px-3 py-1 rounded-lg text-xs text-center" style={{ background: C.bg, color: C.muted, fontFamily: "Inter, sans-serif" }}>
-                socialrum.app
-              </div>
+              <div className="flex-1 mx-4 px-3 py-1 rounded-lg text-xs text-center" style={{ background: C.bg, color: C.muted, fontFamily: "Inter, sans-serif" }}>socialrum.app</div>
             </div>
-
-            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-6 grid grid-cols-3 gap-4">
               {[
-                { topic: "Fitness & Gym", posts: "2.4K posts", trend: "Hot", score: 95 },
-                { topic: "Stock Market", posts: "1.8K posts", trend: "Rising", score: 82 },
-                { topic: "Cricket & IPL", posts: "3.1K posts", trend: "Hot", score: 98 },
+                { topic: "Fitness & Gym", posts: "2.4K posts", trend: "🔥 Hot", score: 95 },
+                { topic: "Stock Market", posts: "1.8K posts", trend: "📈 Rising", score: 82 },
+                { topic: "Cricket & IPL", posts: "3.1K posts", trend: "🔥 Hot", score: 98 },
               ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
+                <motion.div key={i}
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 + i * 0.15, duration: 0.5 }}
                   whileHover={{ borderColor: "#E8B84B40", scale: 1.02 }}
                   className="rounded-xl p-4 transition-all"
-                  style={{ background: C.bg, border: `1px solid ${C.border}` }}
-                >
+                  style={{ background: C.bg, border: `1px solid ${C.border}` }}>
                   <div className="flex items-center justify-between mb-2">
                     <TrendingUp className="w-4 h-4" style={{ color: GOLD_SOLID }} />
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: "#E8B84B15", color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}
-                    >
-                      {item.trend}
-                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#E8B84B15", color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>{item.trend}</span>
                   </div>
-                  <p className="font-semibold text-sm mb-1" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>
-                    {item.topic}
-                  </p>
-                  <p className="text-xs mb-3" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-                    {item.posts}
-                  </p>
+                  <p className="font-semibold text-sm mb-1" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{item.topic}</p>
+                  <p className="text-xs mb-3" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{item.posts}</p>
                   <div className="w-full h-1 rounded-full" style={{ background: C.border }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.score}%` }}
-                      transition={{ delay: 1 + i * 0.2, duration: 0.8 }}
-                      className="h-1 rounded-full"
-                      style={{ background: GOLD }}
-                    />
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${item.score}%` }} transition={{ delay: 1 + i * 0.2, duration: 0.8 }}
+                      className="h-1 rounded-full" style={{ background: GOLD }} />
                   </div>
-                  <p className="text-xs mt-1 text-right" style={{ color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>
-                    {item.score}
-                  </p>
+                  <p className="text-xs mt-1 text-right" style={{ color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>{item.score}</p>
                 </motion.div>
               ))}
             </div>
           </div>
         </motion.div>
 
-        <motion.button
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
+        {/* Scroll indicator */}
+        <motion.button animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }}
           onClick={() => scrollTo("features")}
-          className="flex flex-col items-center gap-1 mt-4 bg-transparent border-none cursor-pointer relative z-10"
-          style={{ color: C.muted }}
-        >
+          className="flex flex-col items-center gap-1 mt-4 bg-transparent border-none cursor-pointer" style={{ color: C.muted, zIndex: 10, position: "relative" }}>
           <span className="text-xs" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.12em" }}>SCROLL</span>
           <ChevronDown className="w-4 h-4" />
         </motion.button>
       </section>
 
+      {/* ── STATS ── */}
       <section style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, background: C.card }}>
         <div className="max-w-5xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {STATS.map((s, i) => (
@@ -440,34 +453,24 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── FEATURES ── */}
       <section id="features" className="px-6 md:px-16 py-24">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>
-              Features
-            </p>
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Features</p>
             <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Everything to Go Viral</h2>
-            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-              Powerful AI tools built specifically for Indian content creators
-            </p>
+            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>Powerful AI tools built specifically for Indian content creators</p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map((f, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
+              <motion.div key={i}
+                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
                 whileHover={{ borderColor: "#E8B84B40", y: -4 }}
                 className="rounded-2xl p-6 transition-all cursor-default"
-                style={{ background: C.card, border: `1px solid ${C.border}` }}
-              >
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
+                style={{ background: C.card, border: `1px solid ${C.border}` }}>
+                <motion.div whileHover={{ scale: 1.1, rotate: 5 }}
                   className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: "#E8B84B15", border: "1px solid #E8B84B25" }}
-                >
+                  style={{ background: "#E8B84B15", border: "1px solid #E8B84B25" }}>
                   <f.icon className="w-5 h-5" style={{ color: GOLD_SOLID }} />
                 </motion.div>
                 <h3 className="font-semibold mb-2" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{f.title}</h3>
@@ -478,45 +481,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section
-        id="testimonials"
-        style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}
-        className="px-6 md:px-16 py-24"
-      >
+      {/* ── TESTIMONIALS ── */}
+      <section id="testimonials" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-24">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>
-              Testimonials
-            </p>
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Testimonials</p>
             <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Loved by Creators</h2>
-            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-              See what creators across India are saying
-            </p>
+            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>See what creators across India are saying</p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {testimonials.map((t, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+              <motion.div key={i}
+                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                 whileHover={{ borderColor: "#E8B84B30", y: -4 }}
                 className="rounded-2xl p-6 transition-all"
-                style={{ background: C.bg, border: `1px solid ${C.border}` }}
-              >
+                style={{ background: C.bg, border: `1px solid ${C.border}` }}>
                 <div className="flex items-center gap-1 mb-4">
                   {Array.from({ length: t.stars }).map((_, j) => (
                     <Star key={j} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-                  "{t.text}"
-                </p>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>"{t.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: GOLD, color: "#111" }}>
-                    {t.avatar}
-                  </div>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ background: GOLD, color: "#111" }}>{t.avatar}</div>
                   <div>
                     <p className="font-semibold text-sm" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{t.name}</p>
                     <p className="text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{t.niche}</p>
@@ -528,26 +516,17 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── PRICING ── */}
       <section id="pricing" className="px-6 md:px-16 py-24">
         <div className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>
-              Pricing
-            </p>
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Pricing</p>
             <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Simple Pricing</h2>
-            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-              Start free, upgrade when you're ready
-            </p>
+            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>Start free, upgrade when you're ready</p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <motion.div
-              initial={{ opacity: 0, x: -24 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="rounded-2xl p-8"
-              style={{ background: C.card, border: `1px solid ${C.border}` }}
-            >
+            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
+              className="rounded-2xl p-8" style={{ background: C.card, border: `1px solid ${C.border}` }}>
               <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Free</h3>
               <p className="text-sm mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>Perfect to get started</p>
               <div className="mb-6">
@@ -557,37 +536,26 @@ export default function LandingPage() {
               <ul className="space-y-3 mb-8">
                 {freeFeatures.map((f, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: GOLD_SOLID }} />
-                    {f}
+                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: GOLD_SOLID }} />{f}
                   </li>
                 ))}
               </ul>
-              <motion.button
-                whileHover={{ borderColor: "#E8B84B50", color: GOLD_SOLID }}
-                whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ borderColor: "#E8B84B50", color: GOLD_SOLID }} whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/signup")}
                 className="w-full py-3 rounded-xl font-medium text-sm transition-all"
-                style={{ border: `1px solid ${C.border}`, color: C.text, fontFamily: "Inter, sans-serif" }}
-              >
+                style={{ border: `1px solid ${C.border}`, color: C.text, fontFamily: "Inter, sans-serif" }}>
                 Get Started Free
               </motion.button>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 24 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
+            <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
               whileHover={{ boxShadow: "0 0 40px #E8B84B15" }}
               className="rounded-2xl p-8 relative transition-all"
-              style={{ background: C.card, border: `1px solid #E8B84B50` }}
-            >
-              <motion.div
-                animate={{ opacity: [0.8, 1, 0.8] }}
-                transition={{ duration: 2, repeat: Infinity }}
+              style={{ background: C.card, border: `1px solid #E8B84B50` }}>
+              <motion.div animate={{ opacity: [0.8, 1, 0.8] }} transition={{ duration: 2, repeat: Infinity }}
                 className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
-              >
-                Most Popular
+                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
+                ✦ Most Popular
               </motion.div>
               <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Pro</h3>
               <p className="text-sm mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>For serious creators</p>
@@ -598,18 +566,14 @@ export default function LandingPage() {
               <ul className="space-y-3 mb-8">
                 {proFeatures.map((f, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: GOLD_SOLID }} />
-                    {f}
+                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: GOLD_SOLID }} />{f}
                   </li>
                 ))}
               </ul>
-              <motion.button
-                whileHover={{ scale: 1.02, boxShadow: "0 0 24px #E8B84B30" }}
-                whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ scale: 1.02, boxShadow: "0 0 24px #E8B84B30" }} whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/signup")}
                 className="w-full py-3 rounded-xl font-semibold text-sm"
-                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
-              >
+                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
                 Start Pro Trial
               </motion.button>
             </motion.div>
@@ -617,48 +581,36 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── CTA ── */}
       <section style={{ background: C.card, borderTop: `1px solid ${C.border}` }} className="px-6 md:px-16 py-24 relative overflow-hidden">
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.07, 0.03] }}
-          transition={{ duration: 8, repeat: Infinity }}
+        <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.07, 0.03] }} transition={{ duration: 8, repeat: Infinity }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse, #E8B84B, transparent 65%)",
-            filter: "blur(60px)",
-          }}
+          style={{ background: "radial-gradient(ellipse, #E8B84B, transparent 65%)", filter: "blur(60px)" }}
         />
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto text-center relative z-10">
-          <p className="text-xs uppercase tracking-widest mb-4" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>
-            Get Started
-          </p>
+          <p className="text-xs uppercase tracking-widest mb-4" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>Get Started</p>
           <h2 className="cg text-4xl md:text-6xl font-bold mb-4" style={{ color: C.text }}>Ready to Go Viral?</h2>
           <p className="text-base mb-8" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
             Join 10,000+ creators using SocialRum to grow faster on Instagram and YouTube
           </p>
-          <motion.button
-            whileHover={{ scale: 1.04, boxShadow: "0 0 40px #E8B84B30" }}
-            whileTap={{ scale: 0.97 }}
+          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #E8B84B30" }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/signup")}
             className="flex items-center gap-2 px-10 py-4 rounded-2xl font-semibold text-base mx-auto"
-            style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
-          >
+            style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}>
             Start for Free Today <ArrowRight className="w-4 h-4" />
           </motion.button>
-          <p className="text-xs mt-4" style={{ color: "#8E8A81", fontFamily: "Inter, sans-serif" }}>
-            No credit card · Free forever plan · Cancel anytime
-          </p>
+          <p className="text-xs mt-4" style={{ color: "#3A3A3A", fontFamily: "Inter, sans-serif" }}>No credit card · Free forever plan · Cancel anytime</p>
         </motion.div>
       </section>
 
+      {/* ── FOOTER ── */}
       <footer className="px-6 md:px-16 py-8" style={{ borderTop: `1px solid ${C.border}` }}>
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="SocialRum" className="w-6 h-6 rounded" />
             <span className="font-bold text-sm cg" style={{ color: C.text }}>SocialRum</span>
           </div>
-          <p className="text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
-            © 2026 SocialRum Media. All rights reserved.
-          </p>
+          <p className="text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>© 2026 SocialRum Media. All rights reserved.</p>
           <div className="flex items-center gap-4 text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
             <span className="hover-gold cursor-pointer transition-colors">Privacy Policy</span>
             <span className="hover-gold cursor-pointer transition-colors">Terms of Service</span>
