@@ -76,168 +76,13 @@ const PLANS = [
   },
 ];
 
-const REELS = [
-  { grad: ["#1a1a3a", "#2d1f4a"], emoji: "💪", tag: "Fitness", views: "12.4M", likes: "890K" },
-  { grad: ["#0d2b0d", "#1a3d2a"], emoji: "📈", tag: "Finance", views: "8.7M", likes: "620K" },
-  { grad: ["#2b0d0d", "#3d1a1a"], emoji: "🏏", tag: "Cricket", views: "18.9M", likes: "1.4M" },
-  { grad: ["#0d1a2b", "#1a2d3d"], emoji: "🤖", tag: "Tech", views: "5.2M", likes: "410K" },
-  { grad: ["#2b2010", "#3d2f18"], emoji: "🍳", tag: "Food", views: "9.3M", likes: "720K" },
-  { grad: ["#0d2b2b", "#1a3d3d"], emoji: "✈️", tag: "Travel", views: "15.1M", likes: "1.1M" },
-  { grad: ["#2b1a2b", "#3d2b3d"], emoji: "😂", tag: "Comedy", views: "11.4M", likes: "870K" },
-  { grad: ["#1a2b10", "#2b3d18"], emoji: "🧘", tag: "Yoga", views: "6.8M", likes: "540K" },
-];
 
-const EMOJIS = ["❤️", "🔥", "👍", "💬", "🔁", "⭐", "😍", "🎉", "💯", "👏"];
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const angleRef = useRef(0);
-  const rafRef = useRef<number>(0);
-  const [floatingEmojis, setFloatingEmojis] = useState<{ id: number; emoji: string; x: number; y: number; dx: number }[]>([]);
-  const emojiIdRef = useRef(0);
 
-  // Orbit ring — only front half visible
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const W = canvas.width;
-    const H = canvas.height;
-    const cx = W / 2;
-    const cy = H * 0.48;
-    const Rx = W * 0.4;
-    const Ry = H * 0.2;
-    const N = REELS.length;
 
-    function drawCard(x: number, y: number, scale: number, alpha: number, reel: typeof REELS[0]) {
-      const w = 78 * scale;
-      const h = 128 * scale;
-      ctx!.save();
-      ctx!.globalAlpha = Math.max(0, alpha);
-      ctx!.translate(x, y);
-
-      // Card with gradient background
-      const grad = ctx!.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
-      grad.addColorStop(0, reel.grad[0]);
-      grad.addColorStop(1, reel.grad[1]);
-
-      ctx!.beginPath();
-      (ctx as any).roundRect(-w / 2, -h / 2, w, h, 12 * scale);
-      ctx!.fillStyle = grad;
-      ctx!.fill();
-
-      // Glass overlay
-      const glassGrad = ctx!.createLinearGradient(-w / 2, -h / 2, -w / 2, h / 2);
-      glassGrad.addColorStop(0, "rgba(255,255,255,0.1)");
-      glassGrad.addColorStop(0.5, "rgba(255,255,255,0.03)");
-      glassGrad.addColorStop(1, "rgba(0,0,0,0.3)");
-      ctx!.fillStyle = glassGrad;
-      ctx!.fill();
-
-      // Border
-      ctx!.strokeStyle = `rgba(255,255,255,${0.15 * alpha})`;
-      ctx!.lineWidth = 0.8;
-      ctx!.stroke();
-
-      // Thumbnail area (top 60%)
-      ctx!.beginPath();
-      (ctx as any).roundRect(-w / 2 + 4 * scale, -h / 2 + 4 * scale, w - 8 * scale, h * 0.55, 8 * scale);
-      ctx!.fillStyle = "rgba(0,0,0,0.2)";
-      ctx!.fill();
-
-      // Big emoji
-      ctx!.font = `${28 * scale}px serif`;
-      ctx!.textAlign = "center";
-      ctx!.textBaseline = "middle";
-      ctx!.fillText(reel.emoji, 0, -h * 0.18);
-
-      // Play button
-      ctx!.beginPath();
-      ctx!.arc(0, -h * 0.18, 12 * scale, 0, Math.PI * 2);
-      ctx!.fillStyle = `rgba(255,255,255,0.2)`;
-      ctx!.fill();
-      ctx!.beginPath();
-      ctx!.moveTo(-4 * scale, -h * 0.18 - 5 * scale);
-      ctx!.lineTo(6 * scale, -h * 0.18);
-      ctx!.lineTo(-4 * scale, -h * 0.18 + 5 * scale);
-      ctx!.closePath();
-      ctx!.fillStyle = "rgba(255,255,255,0.9)";
-      ctx!.fill();
-
-      // Bottom info area
-      const infoY = h * 0.14;
-
-      // Tag pill
-      ctx!.beginPath();
-      (ctx as any).roundRect(-w / 2 + 5 * scale, infoY - 6 * scale, 36 * scale, 12 * scale, 6 * scale);
-      ctx!.fillStyle = "rgba(20,187,166,0.4)";
-      ctx!.fill();
-      ctx!.font = `${7 * scale}px DM Sans, sans-serif`;
-      ctx!.fillStyle = "rgba(255,255,255,0.9)";
-      ctx!.textAlign = "left";
-      ctx!.fillText(reel.tag, -w / 2 + 8 * scale, infoY);
-
-      // Views
-      ctx!.font = `600 ${9 * scale}px DM Sans, sans-serif`;
-      ctx!.textAlign = "left";
-      ctx!.fillStyle = "rgba(255,255,255,0.95)";
-      ctx!.fillText(reel.views, -w / 2 + 5 * scale, infoY + 14 * scale);
-
-      // Heart + likes
-      ctx!.font = `${8 * scale}px serif`;
-      ctx!.fillText("❤️", -w / 2 + 5 * scale, infoY + 26 * scale);
-      ctx!.font = `${8 * scale}px DM Sans, sans-serif`;
-      ctx!.fillStyle = "rgba(255,255,255,0.6)";
-      ctx!.fillText(reel.likes, -w / 2 + 18 * scale, infoY + 26 * scale);
-
-      ctx!.restore();
-    }
-
-    function draw() {
-      ctx!.clearRect(0, 0, W, H);
-
-      const items = REELS.map((reel, i) => {
-        const a = angleRef.current + i * (Math.PI * 2 / N);
-        const x = cx + Rx * Math.cos(a);
-        const y = cy + Ry * Math.sin(a);
-        const z = Math.sin(a); // -1 back, +1 front
-        const scale = 0.5 + 0.5 * ((z + 1) / 2);
-        // Only show front half — fade out back half quickly
-        const alpha = z > -0.2 ? 0.3 + 0.7 * ((z + 0.2) / 1.2) : 0;
-        return { x, y, z, scale, alpha, reel };
-      });
-
-      // Sort back to front
-      items.sort((a, b) => a.z - b.z);
-      items.forEach(item => {
-        if (item.alpha > 0.05) {
-          drawCard(item.x, item.y, item.scale, item.alpha, item.reel);
-        }
-      });
-
-      angleRef.current += 0.005;
-      rafRef.current = requestAnimationFrame(draw);
-    }
-
-    draw();
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
-
-  // Floating emojis
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const id = emojiIdRef.current++;
-      const emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-      const x = 15 + Math.random() * 70;
-      const y = 30 + Math.random() * 50;
-      const dx = (Math.random() - 0.5) * 100;
-      setFloatingEmojis(prev => [...prev.slice(-10), { id, emoji, x, y, dx }]);
-    }, 450);
-    return () => clearInterval(interval);
-  }, []);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -259,9 +104,6 @@ export default function LandingPage() {
         .feature-card { transition: all .25s ease; }
         .feature-card:hover { border-color:#14BBA625 !important; transform:translateY(-4px); }
         .plan-card { transition: all .25s ease; }
-        .float-emoji { position:absolute; pointer-events:none; font-size:22px; animation: floatUp 2.2s ease-out forwards; z-index:5; }
-        @keyframes floatUp {
-          0% { opacity:1; transform:translate(0,0) scale(0.4) rotate(0deg); }
           40% { opacity:1; transform:translate(var(--dx), -70px) scale(1.1) rotate(var(--rot)); }
           100% { opacity:0; transform:translate(var(--dx2), -150px) scale(0.7) rotate(var(--rot2)); }
         }
@@ -394,23 +236,6 @@ export default function LandingPage() {
           ))}
         </motion.div>
 
-        {/* ── ORBIT RING — front half only ── */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 1 }}
-          className="relative z-10 w-full" style={{ maxWidth: 720 }}>
-          {floatingEmojis.map(e => (
-            <div key={e.id} className="float-emoji"
-              style={{
-                left: `${e.x}%`, top: `${e.y}%`,
-                "--dx": `${e.dx}px`, "--dx2": `${e.dx * 1.5}px`,
-                "--rot": `${(Math.random() - 0.5) * 30}deg`,
-                "--rot2": `${(Math.random() - 0.5) * 60}deg`,
-              } as any}>
-              {e.emoji}
-            </div>
-          ))}
-          <canvas ref={canvasRef} width={720} height={300}
-            style={{ width: "100%", height: "auto", display: "block" }} />
-        </motion.div>
 
         <motion.button animate={{ y: [0, 8, 0] }} transition={{ duration: 2.5, repeat: Infinity }}
           onClick={() => scrollTo("features")}
