@@ -71,9 +71,83 @@ const TRENDING_SUGGESTIONS = [
   "Business", "Education", "Fashion", "Comedy", "IPL", "AI",
 ];
 
+// ── shared helpers (extracted so they're not duplicated) ──────────────────────
+const MomentumIcon = ({ momentum }: { momentum: string }) => {
+  if (momentum === "rising") return <ArrowUpRight className="w-3 h-3" />;
+  if (momentum === "falling") return <ArrowDownRight className="w-3 h-3" />;
+  return <Minus className="w-3 h-3" />;
+};
+
+const momentumColor = (m: string) =>
+  m === "rising" ? "text-green-400" : m === "falling" ? "text-red-400" : "text-muted-foreground";
+
+const getScoreLabel = (score: number) => {
+  if (score >= 80) return { label: "🔥 Hot", color: "text-orange-400 bg-orange-400/10" };
+  if (score >= 60) return { label: "📈 Rising", color: "text-green-400 bg-green-400/10" };
+  return { label: "📊 Stable", color: "text-blue-400 bg-blue-400/10" };
+};
+
+// ── niche keyword lookup ──────────────────────────────────────────────────────
+const getKeywordsForNiche = (niche: string): string[] => {
+  if (nicheKeywords[niche]) return nicheKeywords[niche];
+  for (const [key, keywords] of Object.entries(nicheKeywords)) {
+    if (
+      key.toLowerCase().includes(niche.toLowerCase()) ||
+      niche.toLowerCase().includes(key.toLowerCase())
+    ) {
+      return keywords;
+    }
+  }
+  return [niche.toLowerCase()];
+};
+
+// ── search filter (now used for BOTH search and For You tab) ──────────────────
+/**
+ * Filters a topic list by a free-text query.
+ * - Short queries (≤2 chars): word-boundary match to avoid false positives.
+ * - Longer queries: substring match on name + hashtags.
+ * - Also expands the query through nicheKeywords so typing "Fitness" matches
+ *   topics tagged with "gym", "workout", etc.
+ */
+const filterTopicsByQuery = (topicList: Topic[], query: string): Topic[] => {
+  const q = query.toLowerCase().trim();
+  if (!q) return topicList;
+
+  // Expand query through niche keyword map so "Fitness" → ["fitness","gym","workout",...]
+  const expandedKeywords = getKeywordsForNiche(query);
+
+  return topicList.filter((t) => {
+    const name = t.name.toLowerCase();
+    const hashtags = t.hashtags?.map((h) => h.toLowerCase()) ?? [];
+
+    if (q.length <= 2) {
+      const wb = new RegExp(`\\b${q}\\b`, "i");
+      return (
+        wb.test(name) ||
+        hashtags.some((h) => wb.test(h)) ||
+        expandedKeywords.some((kw) => wb.test(kw))
+      );
+    }
+
+    // Direct match on name or hashtags
+    const directMatch =
+      name.includes(q) || hashtags.some((h) => h.includes(q));
+
+    // Expanded keyword match — topic name/hashtags contain any niche keyword
+    const nicheMatch = expandedKeywords.some(
+      (kw) => name.includes(kw) || hashtags.some((h) => h.includes(kw))
+    );
+
+    return directMatch || nicheMatch;
+  });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function TrendingDashboard() {
   const { user } = useAuth();
-  const userNiche = user?.user_metadata?.niche || 'General';
+  const userNiche = user?.user_metadata?.niche || "General";
+
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -81,34 +155,35 @@ export default function TrendingDashboard() {
   const [script, setScript] = useState<ScriptResult | null>(null);
   const [scriptOpen, setScriptOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'forYou' | 'all'>('forYou');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<"forYou" | "all">("forYou");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // ✅ Autofill state
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Load all topics once on mount
   useEffect(() => {
     setLoading(true);
     getTopics("7d")
       .then((data: any) => {
         const arr = Array.isArray(data) ? data : data.topics ?? [];
-        const sorted = arr.sort((a: Topic, b: Topic) =>
-          (b.trend_score || 0) - (a.trend_score || 0)
+        const sorted = arr.sort(
+          (a: Topic, b: Topic) => (b.trend_score || 0) - (a.trend_score || 0)
         );
         setTopics(sorted);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  // ✅ Filter dropdown as user types
+  // Autocomplete dropdown
   useEffect(() => {
     if (searchQuery.trim().length > 0) {
-      const filtered = TRENDING_SUGGESTIONS.filter(s =>
-        s.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        s.toLowerCase() !== searchQuery.toLowerCase()
+      const filtered = TRENDING_SUGGESTIONS.filter(
+        (s) =>
+          s.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          s.toLowerCase() !== searchQuery.toLowerCase()
       ).slice(0, 5);
       setDropdownSuggestions(filtered);
       setShowDropdown(filtered.length > 0);
@@ -118,61 +193,55 @@ export default function TrendingDashboard() {
     }
   }, [searchQuery]);
 
-  // ✅ Close dropdown on outside click
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-          inputRef.current && !inputRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const getKeywordsForNiche = (niche: string): string[] => {
-    if (nicheKeywords[niche]) return nicheKeywords[niche];
-    for (const [key, keywords] of Object.entries(nicheKeywords)) {
-      if (key.toLowerCase().includes(niche.toLowerCase()) ||
-          niche.toLowerCase().includes(key.toLowerCase())) {
-        return keywords;
-      }
-    }
-    return [niche.toLowerCase()];
-  };
+  // ── derived topic lists ───────────────────────────────────────────────────
 
-  const keywords = getKeywordsForNiche(userNiche);
+  // "For You" tab: always filtered by the user's stored niche (no search involvement)
+  const forYouTopics = filterTopicsByQuery(topics, userNiche);
 
-  const forYouTopics = topics.filter(t =>
-    keywords.some(keyword =>
-      t.name.toLowerCase().includes(keyword) ||
-      t.hashtags?.some(h => h.toLowerCase().includes(keyword))
-    )
-  );
-
-  const baseTopics = activeTab === 'forYou' && forYouTopics.length > 0 ? forYouTopics : topics;
-
+  // BUG FIX: when the user types in the search bar, ALWAYS search across ALL topics.
+  // Previously, searching on the "For You" tab silently restricted results to the
+  // user's stored niche, so typing "Fitness" with niche="Finance" returned stocks/AI.
   const displayTopics = searchQuery.trim()
-    ? baseTopics.filter(t => {
-        const q = searchQuery.toLowerCase().trim();
-        const name = t.name.toLowerCase();
-        const hashtags = t.hashtags?.map(h => h.toLowerCase()) || [];
-        if (q.length <= 2) {
-          const wordBoundary = new RegExp(`\\b${q}\\b`, 'i');
-          return wordBoundary.test(name) || hashtags.some(h => wordBoundary.test(h));
-        }
-        return name.includes(q) || hashtags.some(h => h.includes(q));
-      })
-    : baseTopics;
+    ? filterTopicsByQuery(topics, searchQuery)          // ← search all topics
+    : activeTab === "forYou" && forYouTopics.length > 0
+    ? forYouTopics                                       // ← For You: niche filter
+    : topics;                                            // ← All Topics: no filter
+
+  // ── handlers ─────────────────────────────────────────────────────────────
 
   const handleGenerate = (topic: Topic) => {
     setSelectedTopic(topic);
     setGenerating(true);
     setScript(null);
     setScriptOpen(true);
-    generateScript(topic.id || topic.name, user?.user_metadata?.niche, user?.user_metadata?.language)
+    generateScript(
+      topic.id || topic.name,
+      user?.user_metadata?.niche,
+      user?.user_metadata?.language
+    )
       .then((data: any) => {
-        setScript({ hook: data.hook ?? "", body: data.body ?? "", cta: data.cta ?? "", duration_seconds: data.duration_seconds });
+        setScript({
+          hook: data.hook ?? "",
+          body: data.body ?? "",
+          cta: data.cta ?? "",
+          duration_seconds: data.duration_seconds,
+        });
       })
       .catch(() => toast.error("Failed to generate script"))
       .finally(() => setGenerating(false));
@@ -189,28 +258,16 @@ export default function TrendingDashboard() {
     if (!script) return;
     const full = `HOOK:\n${script.hook}\n\nBODY:\n${script.body}\n\nCTA:\n${script.cta}`;
     navigator.clipboard.writeText(full);
-    setCopied('all');
-    toast.success('Full script copied!');
+    setCopied("all");
+    toast.success("Full script copied!");
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const MomentumIcon = ({ momentum }: { momentum: string }) => {
-    if (momentum === "rising") return <ArrowUpRight className="w-3 h-3" />;
-    if (momentum === "falling") return <ArrowDownRight className="w-3 h-3" />;
-    return <Minus className="w-3 h-3" />;
-  };
-
-  const momentumColor = (m: string) =>
-    m === "rising" ? "text-green-400" : m === "falling" ? "text-red-400" : "text-muted-foreground";
-
-  const getScoreLabel = (score: number) => {
-    if (score >= 80) return { label: "🔥 Hot", color: "text-orange-400 bg-orange-400/10" };
-    if (score >= 60) return { label: "📈 Rising", color: "text-green-400 bg-green-400/10" };
-    return { label: "📊 Stable", color: "text-blue-400 bg-blue-400/10" };
-  };
+  // ── render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -226,7 +283,7 @@ export default function TrendingDashboard() {
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
 
-        {/* ✅ Search with autofill */}
+        {/* Search with autocomplete */}
         <div className="relative">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -238,18 +295,26 @@ export default function TrendingDashboard() {
               onKeyDown={(e) => {
                 if (e.key === "Escape") setShowDropdown(false);
               }}
-              onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
+              onFocus={() => {
+                if (dropdownSuggestions.length > 0) setShowDropdown(true);
+              }}
               placeholder="Search trending topics..."
               className="w-full pl-10 pr-10 py-3 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 transition-colors text-sm"
             />
             {searchQuery && (
-              <button onClick={() => { setSearchQuery(''); setShowDropdown(false); }} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowDropdown(false);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+              >
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             )}
           </div>
 
-          {/* ✅ Dropdown */}
+          {/* Dropdown */}
           {showDropdown && dropdownSuggestions.length > 0 && (
             <div
               ref={dropdownRef}
@@ -258,7 +323,10 @@ export default function TrendingDashboard() {
               {dropdownSuggestions.map((s, i) => (
                 <button
                   key={i}
-                  onClick={() => { setSearchQuery(s); setShowDropdown(false); }}
+                  onClick={() => {
+                    setSearchQuery(s);
+                    setShowDropdown(false);
+                  }}
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
                 >
                   <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -269,7 +337,7 @@ export default function TrendingDashboard() {
           )}
         </div>
 
-        {/* ✅ Popular chips — only when search is empty */}
+        {/* Popular chips — only when search is empty */}
         {!searchQuery && (
           <div className="flex flex-wrap gap-2">
             <p className="w-full text-xs text-muted-foreground">Try searching:</p>
@@ -285,26 +353,42 @@ export default function TrendingDashboard() {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 p-1 bg-card rounded-2xl border border-border">
-          <button
-            onClick={() => setActiveTab('forYou')}
-            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'forYou' ? 'text-white shadow-sm' : 'text-muted-foreground'}`}
-            style={activeTab === 'forYou' ? { background: "linear-gradient(135deg, #14BBA6, #0D9488)" } : {}}
-          >
-            For You ({forYouTopics.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'all' ? 'text-white shadow-sm' : 'text-muted-foreground'}`}
-            style={activeTab === 'all' ? { background: "linear-gradient(135deg, #14BBA6, #0D9488)" } : {}}
-          >
-            All Topics ({topics.length})
-          </button>
-        </div>
+        {/* Tabs — hidden while searching since search always covers all topics */}
+        {!searchQuery && (
+          <div className="flex gap-2 p-1 bg-card rounded-2xl border border-border">
+            <button
+              onClick={() => setActiveTab("forYou")}
+              className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "forYou" ? "text-white shadow-sm" : "text-muted-foreground"
+              }`}
+              style={
+                activeTab === "forYou"
+                  ? { background: "linear-gradient(135deg, #14BBA6, #0D9488)" }
+                  : {}
+              }
+            >
+              For You ({forYouTopics.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "all" ? "text-white shadow-sm" : "text-muted-foreground"
+              }`}
+              style={
+                activeTab === "all"
+                  ? { background: "linear-gradient(135deg, #14BBA6, #0D9488)" }
+                  : {}
+              }
+            >
+              All Topics ({topics.length})
+            </button>
+          </div>
+        )}
 
         {searchQuery && !loading && (
-          <p className="text-xs text-muted-foreground px-1">{displayTopics.length} results for "{searchQuery}"</p>
+          <p className="text-xs text-muted-foreground px-1">
+            {displayTopics.length} results for &quot;{searchQuery}&quot;
+          </p>
         )}
 
         {loading && (
@@ -318,12 +402,15 @@ export default function TrendingDashboard() {
             {displayTopics.length === 0 && (
               <div className="text-center py-16">
                 <p className="text-muted-foreground text-sm">
-                  {searchQuery ? `No topics found for "${searchQuery}"` : "No trending topics yet."}
+                  {searchQuery
+                    ? `No topics found for "${searchQuery}"`
+                    : "No trending topics yet."}
                 </p>
               </div>
             )}
             {displayTopics.map((topic, i) => {
-              const scoreInfo = topic.trend_score ? getScoreLabel(topic.trend_score) : null;
+              const scoreInfo =
+                topic.trend_score ? getScoreLabel(topic.trend_score) : null;
               return (
                 <motion.div
                   key={topic.name}
@@ -337,27 +424,43 @@ export default function TrendingDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-foreground text-sm">{topic.name}</span>
-                      {scoreInfo && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${scoreInfo.color}`}>{scoreInfo.label}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground">{topic.volume} posts</span>
-                      <span className={`text-xs flex items-center gap-0.5 ${momentumColor(topic.momentum)}`}>
-                        <MomentumIcon momentum={topic.momentum} />
-                        {topic.momentum}
+                      <span className="font-semibold text-foreground text-sm">
+                        {topic.name}
                       </span>
-                      {topic.trend_score !== undefined && topic.trend_score > 0 && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-                          <BarChart2 className="w-3 h-3" />
-                          {topic.trend_score}
+                      {scoreInfo && (
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${scoreInfo.color}`}
+                        >
+                          {scoreInfo.label}
                         </span>
                       )}
                     </div>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-xs text-muted-foreground">
+                        {topic.volume} posts
+                      </span>
+                      <span
+                        className={`text-xs flex items-center gap-0.5 ${momentumColor(topic.momentum)}`}
+                      >
+                        <MomentumIcon momentum={topic.momentum} />
+                        {topic.momentum}
+                      </span>
+                      {topic.trend_score !== undefined &&
+                        topic.trend_score > 0 && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                            <BarChart2 className="w-3 h-3" />
+                            {topic.trend_score}
+                          </span>
+                        )}
+                    </div>
                     <div className="flex items-center gap-1 mt-1.5 flex-wrap">
                       {topic.hashtags?.slice(0, 2).map((tag) => (
-                        <span key={tag} className="text-xs px-2 py-0.5 rounded-lg bg-accent text-muted-foreground">{tag}</span>
+                        <span
+                          key={tag}
+                          className="text-xs px-2 py-0.5 rounded-lg bg-accent text-muted-foreground"
+                        >
+                          {tag}
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -376,13 +479,21 @@ export default function TrendingDashboard() {
         )}
       </div>
 
-      {/* Bottom sheet */}
+      {/* Script bottom sheet */}
       <AnimatePresence>
         {scriptOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setScriptOpen(false)} className="fixed inset-0 bg-black/60 z-40" />
             <motion.div
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setScriptOpen(false)}
+              className="fixed inset-0 bg-black/60 z-40"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl border-t border-border max-h-[85vh] overflow-y-auto"
             >
@@ -393,59 +504,123 @@ export default function TrendingDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="font-bold text-foreground">Script</h2>
-                    <p className="text-xs text-muted-foreground">{selectedTopic?.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedTopic?.name}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {script && (
-                      <button onClick={copyAll} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        {copied === 'all' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />} Copy All
+                      <button
+                        onClick={copyAll}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {copied === "all" ? (
+                          <Check className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                        Copy All
                       </button>
                     )}
-                    <button onClick={() => setScriptOpen(false)} className="p-2 rounded-xl hover:bg-accent transition-colors">
+                    <button
+                      onClick={() => setScriptOpen(false)}
+                      className="p-2 rounded-xl hover:bg-accent transition-colors"
+                    >
                       <X className="w-5 h-5 text-muted-foreground" />
                     </button>
                   </div>
                 </div>
+
                 {generating && (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-                    <p className="text-sm text-muted-foreground">Generating script...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Generating script...
+                    </p>
                   </div>
                 )}
+
                 {!generating && script && (
                   <div className="space-y-3">
+                    {/* Hook */}
                     <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold uppercase text-blue-400">🎣 Hook</span>
-                        <button onClick={() => copyText(script.hook, "Hook")} className="text-xs text-muted-foreground flex items-center gap-1">
-                          {copied === 'Hook' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} Copy
+                        <span className="text-xs font-bold uppercase text-blue-400">
+                          🎣 Hook
+                        </span>
+                        <button
+                          onClick={() => copyText(script.hook, "Hook")}
+                          className="text-xs text-muted-foreground flex items-center gap-1"
+                        >
+                          {copied === "Hook" ? (
+                            <Check className="w-3 h-3 text-green-400" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                          Copy
                         </button>
                       </div>
-                      <p className="text-sm text-foreground leading-relaxed">{script.hook}</p>
+                      <p className="text-sm text-foreground leading-relaxed">
+                        {script.hook}
+                      </p>
                     </div>
+
+                    {/* Body */}
                     <div className="rounded-2xl border border-border bg-secondary/20 p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold uppercase text-muted-foreground">📝 Body</span>
-                        <button onClick={() => copyText(script.body, "Body")} className="text-xs text-muted-foreground flex items-center gap-1">
-                          {copied === 'Body' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} Copy
+                        <span className="text-xs font-bold uppercase text-muted-foreground">
+                          📝 Body
+                        </span>
+                        <button
+                          onClick={() => copyText(script.body, "Body")}
+                          className="text-xs text-muted-foreground flex items-center gap-1"
+                        >
+                          {copied === "Body" ? (
+                            <Check className="w-3 h-3 text-green-400" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                          Copy
                         </button>
                       </div>
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{script.body}</p>
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                        {script.body}
+                      </p>
                     </div>
+
+                    {/* CTA */}
                     <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold uppercase text-green-400">📣 CTA</span>
-                        <button onClick={() => copyText(script.cta, "CTA")} className="text-xs text-muted-foreground flex items-center gap-1">
-                          {copied === 'CTA' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} Copy
+                        <span className="text-xs font-bold uppercase text-green-400">
+                          📣 CTA
+                        </span>
+                        <button
+                          onClick={() => copyText(script.cta, "CTA")}
+                          className="text-xs text-muted-foreground flex items-center gap-1"
+                        >
+                          {copied === "CTA" ? (
+                            <Check className="w-3 h-3 text-green-400" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                          Copy
                         </button>
                       </div>
-                      <p className="text-sm text-foreground leading-relaxed">{script.cta}</p>
+                      <p className="text-sm text-foreground leading-relaxed">
+                        {script.cta}
+                      </p>
                     </div>
+
                     {script.duration_seconds && (
-                      <p className="text-xs text-muted-foreground text-center">~{script.duration_seconds} seconds</p>
+                      <p className="text-xs text-muted-foreground text-center">
+                        ~{script.duration_seconds} seconds
+                      </p>
                     )}
+
                     <button
-                      onClick={() => selectedTopic && handleGenerate(selectedTopic)}
+                      onClick={() =>
+                        selectedTopic && handleGenerate(selectedTopic)
+                      }
                       className="w-full py-3 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2"
                     >
                       <Sparkles className="w-4 h-4" />
