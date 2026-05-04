@@ -314,6 +314,13 @@ export default function LandingPage() {
       {/* ── HERO ── */}
       <section className="relative flex flex-col items-center text-center pt-28 pb-8 overflow-hidden" style={{ minHeight: "100vh" }}>
 
+        {/* ── BACKGROUND VIDEO ── */}
+        <video autoPlay loop muted playsInline
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          style={{ opacity: 0.18, zIndex: 0 }}>
+          <source src="/bg-hero.mp4" type="video/mp4" />
+        </video>
+
         {/* Glow orbs */}
         <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }} transition={{ duration: 10, repeat: Infinity }}
           className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] pointer-events-none rounded-full"
