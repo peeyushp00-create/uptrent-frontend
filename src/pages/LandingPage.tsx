@@ -1,610 +1,670 @@
 import { useNavigate } from "react-router-dom";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import {
-  Sparkles, ArrowRight, TrendingUp, FileText, Search,
-  Newspaper, Zap, Users, Star, Check, Menu, X
+  TrendingUp,
+  Sparkles,
+  Newspaper,
+  FileText,
+  Check,
+  Star,
+  ArrowRight,
+  Zap,
+  Target,
+  Instagram,
+  Youtube,
+  Play,
+  ChevronDown,
 } from "lucide-react";
 
-/* ─── THEME ─── */
-const BRAND = "linear-gradient(135deg, #FF6B35, #FF3CAC)";
-const BRAND_SOLID = "#FF6B35";
-const BRAND_PINK = "#FF3CAC";
-const BG = "#0A0A0A";
-const TEXT = "#F5F5F5";
-const MUTED = "#888";
-const BORDER = "rgba(255,255,255,0.08)";
-const WORDS = ["Discover.", "Create.", "Go Viral."];
+const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
+const GOLD_SOLID = "#E8B84B";
 
-/* ─── TYPES ─── */
-interface ReelData {
-  user: string;
-  initials: string;
-  avatarColor: string;
-  caption: string;
-  audio: string;
-  likes: string;
-  comments: string;
-  gradient: string[];
-  bars: number[];
-  tag: string;
-  tagColor: string;
-}
+const C = {
+  bg: "#111111",
+  card: "#1C1C1C",
+  border: "#2E2E2E",
+  text: "#EDE0C8",
+  muted: "#6B6B6B",
+};
 
-/* ─── REEL DATA ─── */
-const REELS: ReelData[] = [
+const features = [
+  { icon: TrendingUp, title: "Trending Topics", description: "Discover what's trending across 20+ niches in real time." },
+  { icon: Sparkles, title: "AI Script Generator", description: "Generate ready-to-film scripts with hooks, body and CTA in seconds." },
+  { icon: Newspaper, title: "Live News Feed", description: "Stay updated with the latest news to create timely content." },
+  { icon: FileText, title: "Content Ideas", description: "Get AI-powered content suggestions tailored to your niche." },
+  { icon: Target, title: "SEO Optimization", description: "Find the best titles, descriptions and tags for maximum reach." },
+  { icon: Zap, title: "Quick Hooks", description: "Generate viral hooks that stop the scroll in the first 3 seconds." },
+];
+
+const testimonials = [
   {
-    user: "priya.creates", initials: "PC", avatarColor: "#FF6B9D",
-    caption: "Morning vlog vibes ☀️", audio: "Original audio · priya",
-    likes: "84K", comments: "1.2K",
-    gradient: ["#1a0533", "#4B0082", "#7B2D8B", "#FF6B9D", "#FFB347", "#FF6B35"],
-    bars: [0.4, 0.7, 0.5, 0.9, 0.6, 0.8, 0.3, 0.7, 0.5, 1.0, 0.6, 0.4],
-    tag: "VLOG", tagColor: "#FF6B9D",
+    name: "Rahul Sharma",
+    handle: "@rahulfinance",
+    niche: "Finance Creator",
+    text: "SocialRum helped me grow from 5K to 50K followers in 3 months. The trending topics feature is a game changer!",
+    avatar: "RS",
+    stars: 5,
   },
   {
-    user: "techtalkindia", initials: "TT", avatarColor: "#00BFFF",
-    caption: "AI tools that blew my mind 🤯", audio: "Trending · Lo-fi Beats",
-    likes: "210K", comments: "3.4K",
-    gradient: ["#001a33", "#0066CC", "#00BFFF", "#7FFFD4", "#00FF7F", "#228B22"],
-    bars: [0.6, 0.9, 0.4, 0.8, 1.0, 0.5, 0.7, 0.9, 0.3, 0.6, 0.8, 0.5],
-    tag: "TECH", tagColor: "#00BFFF",
+    name: "Priya Mehta",
+    handle: "@priyafitness",
+    niche: "Fitness Creator",
+    text: "I used to spend hours writing scripts. Now SocialRum generates them in seconds and they perform way better!",
+    avatar: "PM",
+    stars: 5,
   },
   {
-    user: "dancewithmeg", initials: "DM", avatarColor: "#FFD700",
-    caption: "New hook tutorial 🔥 save this!", audio: "APT · Rose ft. Bruno Mars",
-    likes: "520K", comments: "8.9K",
-    gradient: ["#2d1b00", "#8B4513", "#D2691E", "#F4A460", "#FFD700", "#FFA500"],
-    bars: [1.0, 0.6, 0.8, 0.4, 0.9, 0.7, 1.0, 0.5, 0.8, 0.6, 0.9, 0.7],
-    tag: "DANCE", tagColor: "#FFD700",
-  },
-  {
-    user: "foodiedelhi", initials: "FD", avatarColor: "#FF4500",
-    caption: "Street food in 60 sec 🍜", audio: "Kya Karein · AP Dhillon",
-    likes: "145K", comments: "2.1K",
-    gradient: ["#0d1f0d", "#006400", "#228B22", "#90EE90", "#00FA9A", "#48D1CC"],
-    bars: [0.5, 0.8, 0.6, 1.0, 0.4, 0.7, 0.9, 0.5, 0.8, 0.3, 0.7, 0.9],
-    tag: "FOOD", tagColor: "#FF4500",
-  },
-  {
-    user: "comedykings", initials: "CK", avatarColor: "#DA70D6",
-    caption: "POV: mom finds ur reels 😂", audio: "Pasoori · Ali Sethi",
-    likes: "1.1M", comments: "22K",
-    gradient: ["#1a001a", "#800080", "#DA70D6", "#FFB6C1", "#FF69B4", "#DC143C"],
-    bars: [0.7, 1.0, 0.5, 0.8, 0.6, 0.9, 0.4, 1.0, 0.7, 0.5, 0.8, 0.6],
-    tag: "COMEDY", tagColor: "#DA70D6",
-  },
-  {
-    user: "sketchbyrohan", initials: "SR", avatarColor: "#4169E1",
-    caption: "Timelapse art drop 🎨", audio: "Calm Instrumentals",
-    likes: "67K", comments: "890",
-    gradient: ["#0a0a1a", "#191970", "#4169E1", "#87CEEB", "#E0F7FA", "#B0E0E6"],
-    bars: [0.3, 0.6, 0.8, 0.5, 0.7, 1.0, 0.4, 0.8, 0.6, 0.9, 0.5, 0.7],
-    tag: "ART", tagColor: "#4169E1",
+    name: "Arjun Kapoor",
+    handle: "@arjuntech",
+    niche: "Tech Creator",
+    text: "The AI chat feature is incredible. It's like having a personal content strategist available 24/7.",
+    avatar: "AK",
+    stars: 5,
   },
 ];
 
-/* ─── REEL PHONE ─── */
-interface ReelPhoneProps { reel: ReelData; index: number; }
+const freeFeatures = [
+  "3 script generations per month",
+  "Limited trending topics",
+  "Basic news feed",
+  "AI chat (5 messages/day)",
+];
 
-function ReelPhone({ reel, index }: ReelPhoneProps) {
-  const angle = (index / 6) * 360;
-  const gradientStr = `linear-gradient(180deg, ${reel.gradient
-    .map((c, i) => `${c} ${Math.round((i / (reel.gradient.length - 1)) * 100)}%`)
-    .join(", ")})`;
+const proFeatures = [
+  "Unlimited script generations",
+  "Full trending data (20+ niches)",
+  "Complete news feed",
+  "Unlimited AI chat",
+  "SEO optimization",
+  "Content calendar",
+  "Priority support",
+];
 
-  return (
-    <div className="reel-phone" style={{ transform: `rotateY(${angle}deg) translateZ(280px)` }}>
-      <div className="reel-scroll-bg" style={{ background: gradientStr, animationDuration: `${4 + index * 0.7}s`, animationDelay: `${-(index * 0.4)}s` }} />
-      <div className="phone-notch" />
-      <div className="reel-top-bar">
-        <div className="reel-avatar" style={{ background: reel.avatarColor }}>{reel.initials}</div>
-        <span className="reel-username">@{reel.user}</span>
-        <span className="reel-follow">Follow</span>
-      </div>
-      <div className="reel-center">
-        <div className="reel-tag" style={{ color: reel.tagColor, borderColor: reel.tagColor }}>{reel.tag}</div>
-        <div className="reel-wave">
-          {reel.bars.map((h, i) => (
-            <div key={i} className="wave-bar" style={{ height: `${h * 28}px`, background: reel.tagColor, animationDelay: `${i * 0.08}s` }} />
-          ))}
-        </div>
-      </div>
-      <div className="reel-bottom">
-        <div className="reel-music-row">
-          <div className="reel-disc" style={{ borderColor: reel.tagColor, animationDuration: `${3 + index * 0.2}s` }}>
-            <div className="reel-disc-inner" style={{ background: reel.avatarColor }} />
-          </div>
-          <span className="reel-audio">{reel.audio}</span>
-        </div>
-        <div className="reel-caption-text">{reel.caption}</div>
-      </div>
-      <div className="reel-actions">
-        <div className="reel-action"><div className="action-icon heart-icon">♥</div><span className="action-count">{reel.likes}</span></div>
-        <div className="reel-action"><div className="action-icon">💬</div><span className="action-count">{reel.comments}</span></div>
-        <div className="reel-action"><div className="action-icon">↗</div><span className="action-count">Share</span></div>
-        <div className="reel-share-disc" style={{ background: reel.avatarColor, animationDuration: `${2.5 + index * 0.3}s` }}>♪</div>
-      </div>
-      <div className="reel-progress">
-        <div className="reel-progress-fill" style={{ background: reel.tagColor, animationDuration: `${5 + index * 0.5}s` }} />
-      </div>
-    </div>
-  );
-}
+const STATS = [
+  { value: "20+", label: "Niches Covered" },
+  { value: "10K+", label: "Scripts Generated" },
+  { value: "154", label: "Trending Topics" },
+  { value: "99%", label: "Creator Satisfaction" },
+];
 
-/* ─── FEATURE CARD ─── */
-interface FeatureCardProps { icon: React.ReactNode; title: string; desc: string; delay: number; }
+const HEADLINE_WORDS = ["Discover.", "Create.", "Go Viral."];
 
-function FeatureCard({ icon, title, desc, delay }: FeatureCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay, duration: 0.6 }}
-      whileHover={{ borderColor: "rgba(255,107,53,0.4)", y: -4 }}
-      style={{
-        background: "rgba(255,255,255,0.03)",
-        border: `1px solid ${BORDER}`,
-        borderRadius: "20px",
-        padding: "28px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "14px",
-        transition: "border-color 0.3s, transform 0.3s",
-      }}
-    >
-      <div style={{ width: 44, height: 44, borderRadius: "12px", background: "rgba(255,107,53,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: BRAND_SOLID }}>
-        {icon}
-      </div>
-      <div style={{ fontSize: "17px", fontWeight: 700, color: TEXT }}>{title}</div>
-      <div style={{ fontSize: "14px", color: MUTED, lineHeight: "1.6" }}>{desc}</div>
-    </motion.div>
-  );
-}
+const NAV_LINKS = [
+  { label: "Features", id: "features" },
+  { label: "Testimonials", id: "testimonials" },
+  { label: "Pricing", id: "pricing" },
+];
 
-/* ─── MAIN COMPONENT ─── */
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [wordIdx, setWordIdx] = useState<number>(0);
-  const [wordVisible, setWordVisible] = useState<boolean>(true);
-  const [menuOpen, setMenuOpen] = useState<boolean>(false);
-  const heroRef = useRef<HTMLElement>(null);
-
+  const [wordIndex, setWordIndex] = useState(0);
+  const heroRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({ target: heroRef });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, -60]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setWordVisible(false);
-      setTimeout(() => {
-        setWordIdx((w) => (w + 1) % WORDS.length);
-        setWordVisible(true);
-      }, 350);
-    }, 2400);
-    return () => clearInterval(interval);
+    const i = setInterval(() => setWordIndex((w) => (w + 1) % HEADLINE_WORDS.length), 2000);
+    return () => clearInterval(i);
   }, []);
 
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <div style={{ background: BG, color: TEXT, minHeight: "100vh", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-
+    <div style={{ background: C.bg, color: C.text, minHeight: "100vh" }}>
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        /* ── NAVBAR ── */
-        .navbar {
-          position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 18px 48px;
-          background: rgba(10,10,10,0.85);
-          backdrop-filter: blur(20px);
-          border-bottom: 1px solid ${BORDER};
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,700&display=swap');
+        .cg { font-family: 'Cormorant Garamond', serif !important; }
+        .gold-text {
+          background: linear-gradient(135deg, #E8B84B, #C17D20);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
-        .nav-logo {
-          font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
-          background: ${BRAND}; -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent; background-clip: text;
-        }
-        .nav-logo span { font-weight: 300; }
-        .nav-links { display: flex; align-items: center; gap: 32px; }
-        .nav-link { font-size: 14px; color: ${MUTED}; cursor: pointer; transition: color 0.2s; }
-        .nav-link:hover { color: ${TEXT}; }
-        .nav-cta {
-          background: ${BRAND}; color: #fff; border: none; cursor: pointer;
-          padding: 9px 22px; border-radius: 10px; font-weight: 700;
-          font-size: 13px; font-family: inherit; transition: opacity 0.2s;
-        }
-        .nav-cta:hover { opacity: 0.85; }
-        .nav-mobile-btn { display: none; background: none; border: none; color: ${TEXT}; cursor: pointer; }
-
-        /* ── CAROUSEL ── */
-        .carousel-scene {
-          position: absolute; inset: 0;
-          display: flex; align-items: center; justify-content: center;
-          perspective: 1100px; pointer-events: none; z-index: 0;
-        }
-        .carousel-ring {
-          width: 200px; height: 380px;
-          transform-style: preserve-3d;
-          animation: carouselSpin 28s linear infinite;
-          position: relative;
-        }
-        @keyframes carouselSpin {
-          from { transform: rotateY(0deg); }
-          to   { transform: rotateY(360deg); }
-        }
-        .reel-phone {
-          position: absolute; width: 130px; height: 230px;
-          left: 50%; top: 50%; margin-left: -65px; margin-top: -115px;
-          border-radius: 20px; overflow: hidden; background: #111;
-          border: 1.5px solid rgba(255,255,255,0.14);
-          box-shadow: 0 0 0 3px rgba(0,0,0,0.6), 0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08);
-        }
-        .reel-scroll-bg {
-          position: absolute; inset: 0; width: 100%; height: 300%; top: -100%;
-          animation: reelScroll linear infinite;
-        }
-        @keyframes reelScroll {
-          0%   { transform: translateY(0%); }
-          100% { transform: translateY(33.33%); }
-        }
-        .phone-notch {
-          position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
-          width: 32px; height: 5px; background: #000; border-radius: 3px; z-index: 10;
-        }
-        .reel-top-bar { position: absolute; top: 18px; left: 8px; right: 8px; display: flex; align-items: center; gap: 5px; z-index: 5; }
-        .reel-avatar { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 6px; font-weight: 700; color: #fff; flex-shrink: 0; }
-        .reel-username { font-size: 7px; font-weight: 600; color: #fff; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
-        .reel-follow { font-size: 6.5px; font-weight: 700; color: #fff; border: 1px solid rgba(255,255,255,0.8); border-radius: 4px; padding: 1.5px 5px; }
-        .reel-center { position: absolute; top: 50%; left: 8px; right: 36px; transform: translateY(-50%); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; z-index: 5; }
-        .reel-tag { font-size: 7px; font-weight: 800; letter-spacing: 0.1em; border: 1px solid; border-radius: 4px; padding: 2px 5px; }
-        .reel-wave { display: flex; align-items: flex-end; gap: 2px; height: 30px; }
-        .wave-bar { width: 4px; border-radius: 2px; opacity: 0.85; animation: wavePulse 0.8s ease-in-out infinite alternate; transform-origin: bottom; }
-        @keyframes wavePulse { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }
-        .reel-bottom { position: absolute; bottom: 14px; left: 8px; right: 36px; display: flex; flex-direction: column; gap: 4px; z-index: 5; }
-        .reel-music-row { display: flex; align-items: center; gap: 4px; }
-        .reel-disc { width: 14px; height: 14px; border-radius: 50%; border: 1px solid; display: flex; align-items: center; justify-content: center; animation: discSpin linear infinite; flex-shrink: 0; }
-        @keyframes discSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .reel-disc-inner { width: 5px; height: 5px; border-radius: 50%; opacity: 0.9; }
-        .reel-audio { font-size: 6.5px; color: rgba(255,255,255,0.85); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70px; }
-        .reel-caption-text { font-size: 7px; font-weight: 500; color: #fff; line-height: 1.3; }
-        .reel-actions { position: absolute; right: 6px; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: 9px; z-index: 5; }
-        .reel-action { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-        .action-icon { font-size: 13px; line-height: 1; }
-        .heart-icon { animation: heartBeat 2s ease-in-out infinite; }
-        @keyframes heartBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
-        .action-count { font-size: 5.5px; font-weight: 700; color: #fff; }
-        .reel-share-disc { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; animation: discSpin linear infinite; }
-        .reel-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.2); z-index: 5; }
-        .reel-progress-fill { height: 100%; animation: progressPlay linear infinite; border-radius: 1px; }
-        @keyframes progressPlay { 0% { width: 0%; } 100% { width: 100%; } }
-
-        /* ── HERO WORD ── */
-        .hero-word {
-          font-size: clamp(52px, 8vw, 96px); font-weight: 800; letter-spacing: -3px; line-height: 1;
-          background: linear-gradient(135deg, #FFFFFF 0%, #FF6B35 50%, #FF3CAC 100%);
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-          transition: opacity 0.3s ease, transform 0.35s ease;
-        }
-        .hero-word.hidden { opacity: 0; transform: translateY(-14px); }
-        .hero-word.visible { opacity: 1; transform: translateY(0px); }
-
-        /* ── BUTTONS ── */
-        .cta-btn {
-          background: ${BRAND}; color: #fff; padding: 15px 36px; border-radius: 16px;
-          font-weight: 700; font-size: 15px; border: none; cursor: pointer;
-          display: flex; align-items: center; gap: 8px; font-family: inherit;
-          box-shadow: 0 6px 32px rgba(255,107,53,0.35); transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .cta-btn:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 40px rgba(255,107,53,0.5); }
-        .cta-btn-outline {
-          background: transparent; color: ${TEXT}; padding: 15px 36px; border-radius: 16px;
-          font-weight: 600; font-size: 15px; border: 1px solid ${BORDER}; cursor: pointer;
-          display: flex; align-items: center; gap: 8px; font-family: inherit; transition: border-color 0.2s, color 0.2s;
-        }
-        .cta-btn-outline:hover { border-color: rgba(255,107,53,0.5); color: ${BRAND_SOLID}; }
-
-        /* ── SECTIONS ── */
-        .section { padding: 100px 48px; max-width: 1200px; margin: 0 auto; }
-        .section-label { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: ${BRAND_SOLID}; margin-bottom: 16px; }
-        .section-title { font-size: clamp(32px, 4vw, 48px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 16px; }
-        .section-sub { font-size: 16px; color: ${MUTED}; line-height: 1.6; max-width: 520px; }
-
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 60px; }
-
-        .steps-row { display: flex; gap: 24px; margin-top: 60px; flex-wrap: wrap; }
-        .step-card { flex: 1; min-width: 200px; padding: 32px 28px; background: rgba(255,255,255,0.02); border: 1px solid ${BORDER}; border-radius: 20px; display: flex; flex-direction: column; gap: 14px; }
-        .step-num { font-size: 40px; font-weight: 900; letter-spacing: -2px; background: ${BRAND}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-
-        .stats-row { display: flex; gap: 0; border: 1px solid ${BORDER}; border-radius: 20px; overflow: hidden; margin-top: 60px; flex-wrap: wrap; }
-        .stat-item { flex: 1; min-width: 150px; padding: 36px 24px; text-align: center; border-right: 1px solid ${BORDER}; }
-        .stat-item:last-child { border-right: none; }
-        .stat-num { font-size: 36px; font-weight: 900; background: ${BRAND}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .stat-label { font-size: 13px; color: ${MUTED}; margin-top: 6px; }
-
-        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 60px; }
-        .pricing-card { padding: 36px 32px; border-radius: 24px; border: 1px solid ${BORDER}; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 20px; }
-        .pricing-card.featured { background: rgba(255,107,53,0.06); border-color: rgba(255,107,53,0.35); position: relative; }
-        .pricing-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: ${BRAND}; color: #fff; font-size: 11px; font-weight: 800; padding: 4px 16px; border-radius: 20px; white-space: nowrap; }
-        .price-amount { font-size: 42px; font-weight: 900; letter-spacing: -2px; }
-        .price-period { font-size: 14px; color: ${MUTED}; font-weight: 400; }
-        .price-features { display: flex; flex-direction: column; gap: 10px; }
-        .price-feature { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(245,245,245,0.8); }
-
-        .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 60px; }
-        .testimonial-card { padding: 28px; background: rgba(255,255,255,0.02); border: 1px solid ${BORDER}; border-radius: 20px; display: flex; flex-direction: column; gap: 16px; }
-        .testimonial-stars { display: flex; gap: 4px; color: ${BRAND_SOLID}; }
-        .testimonial-text { font-size: 14px; color: rgba(245,245,245,0.7); line-height: 1.6; }
-        .testimonial-author { display: flex; align-items: center; gap: 10px; }
-        .testimonial-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
-
-        .pill { font-size: 12px; color: rgba(245,245,245,0.45); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 5px 12px; }
-        .divider { height: 1px; background: ${BORDER}; margin: 0 48px; }
-
-        .footer { border-top: 1px solid ${BORDER}; padding: 48px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
-        .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
-        .footer-link { font-size: 13px; color: ${MUTED}; cursor: pointer; transition: color 0.2s; }
-        .footer-link:hover { color: ${TEXT}; }
-
-        @media (max-width: 768px) {
-          .navbar { padding: 16px 20px; }
-          .nav-links { display: none; }
-          .nav-mobile-btn { display: block; }
-          .section { padding: 80px 20px; }
-          .carousel-ring { transform: scale(0.55) !important; }
-          .steps-row { flex-direction: column; }
-          .stats-row { flex-direction: column; }
-          .stat-item { border-right: none; border-bottom: 1px solid ${BORDER}; }
-          .stat-item:last-child { border-bottom: none; }
-          .footer { flex-direction: column; text-align: center; padding: 32px 20px; }
-          .footer-links { justify-content: center; }
-          .divider { margin: 0 20px; }
-        }
+        .hover-gold:hover { color: #E8B84B !important; }
+        * { box-sizing: border-box; }
       `}</style>
 
-      {/* ══════════════ NAVBAR ══════════════ */}
-      <nav className="navbar">
-        <div className="nav-logo">Social<span>Rum</span></div>
-        <div className="nav-links">
-          <span className="nav-link" onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}>Features</span>
-          <span className="nav-link" onClick={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}>How it works</span>
-          <span className="nav-link" onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}>Pricing</span>
-          <span className="nav-link" onClick={() => navigate("/login")}>Login</span>
-          <button className="nav-cta" onClick={() => navigate("/signup")}>Get Started Free</button>
+      <motion.nav
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="flex items-center justify-between px-6 md:px-16 py-4 sticky top-0 z-50"
+        style={{
+          background: `${C.bg}ee`,
+          borderBottom: `1px solid ${C.border}`,
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <motion.img whileHover={{ rotate: 10 }} src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-lg" />
+          <span className="font-bold text-lg cg" style={{ color: C.text }}>SocialRum</span>
         </div>
-        <button className="nav-mobile-btn" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-      </nav>
 
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div style={{ position: "fixed", top: 65, left: 0, right: 0, background: "rgba(10,10,10,0.97)", backdropFilter: "blur(20px)", zIndex: 99, padding: "24px", display: "flex", flexDirection: "column", gap: "20px", borderBottom: `1px solid ${BORDER}` }}>
-          {["Features", "How it works", "Pricing", "Login"].map((item) => (
-            <span key={item} className="nav-link" style={{ fontSize: "16px" }} onClick={() => setMenuOpen(false)}>{item}</span>
+        <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: C.muted }}>
+          {NAV_LINKS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => scrollTo(item.id)}
+              className="hover-gold cursor-pointer transition-colors bg-transparent border-none outline-none"
+              style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}
+            >
+              {item.label}
+            </button>
           ))}
-          <button className="cta-btn" style={{ justifyContent: "center" }} onClick={() => navigate("/signup")}>Get Started Free</button>
-        </div>
-      )}
-
-      {/* ══════════════ HERO ══════════════ */}
-      <section ref={heroRef} style={{ minHeight: "100vh", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-
-        {/* 3D Reel Carousel Background */}
-        <div className="carousel-scene">
-          <div className="carousel-ring">
-            {REELS.map((reel, i) => <ReelPhone key={i} reel={reel} index={i} />)}
-          </div>
         </div>
 
-        {/* Dark vignette overlay */}
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 80% at 50% 50%, rgba(10,10,10,0.35) 0%, rgba(10,10,10,0.92) 100%)", backdropFilter: "blur(1.5px)", zIndex: 1 }} />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/login")}
+            className="px-4 py-2 text-sm transition-colors hover-gold"
+            style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}
+          >
+            Login
+          </button>
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/signup")}
+            className="px-5 py-2 rounded-xl text-sm font-semibold"
+            style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
+          >
+            Get Started Free
+          </motion.button>
+        </div>
+      </motion.nav>
 
-        {/* Hero content */}
-        <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
+      <section
+        ref={heroRef}
+        className="relative flex flex-col items-center text-center px-6 py-24 md:py-36 gap-10 overflow-hidden"
+      >
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+          style={{ opacity: 0.28 }}
         >
-          <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", maxWidth: "620px", padding: "0 24px", textAlign: "center" }}>
+          <source src="/socialrum-hero.mp4" type="video/mp4" />
+        </video>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: BRAND_SOLID, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>
-              <Sparkles size={14} /> Built for Indian Creators
-            </motion.div>
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(17,17,17,0.58) 0%, rgba(17,17,17,0.78) 45%, rgba(17,17,17,0.96) 100%)",
+          }}
+        />
 
-            <div style={{ minHeight: "90px", display: "flex", alignItems: "center" }}>
-              <div className={`hero-word ${wordVisible ? "visible" : "hidden"}`}>{WORDS[wordIdx]}</div>
-            </div>
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse, #E8B84B, transparent 65%)",
+            filter: "blur(60px)",
+          }}
+        />
+        <motion.div
+          animate={{ scale: [1.1, 1, 1.1], opacity: [0.03, 0.06, 0.03] }}
+          transition={{ duration: 14, repeat: Infinity, delay: 3 }}
+          className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, #C17D20, transparent 70%)",
+            filter: "blur(80px)",
+          }}
+        />
 
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-              style={{ color: MUTED, maxWidth: "480px", fontSize: "17px", lineHeight: "1.7", margin: 0 }}>
-              Trending topics, AI-powered scripts, SEO tools and creator news —
-              everything you need to grow on Instagram, YouTube & more.
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="flex flex-col items-center gap-8 max-w-4xl relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium uppercase"
+            style={{
+              background: "#E8B84B12",
+              border: "1px solid #E8B84B30",
+              color: GOLD_SOLID,
+              letterSpacing: "0.14em",
+            }}
+          >
+            <motion.div
+              animate={{ opacity: [1, 0.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: GOLD_SOLID }}
+            />
+            <Sparkles className="w-3 h-3" />
+            AI-Powered · Built for Indian Creators
+          </motion.div>
+
+          <div className="flex flex-col items-center gap-2">
+            <motion.p
+              initial={{ opacity: 0, letterSpacing: "0.5em" }}
+              animate={{ opacity: 1, letterSpacing: "0.2em" }}
+              transition={{ delay: 0.3, duration: 1 }}
+              className="text-xs uppercase tracking-widest"
+              style={{ color: "#8E8A81", fontFamily: "Inter, sans-serif" }}
+            >
+              The Creator&apos;s AI Toolkit
             </motion.p>
 
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6 }}
-              style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
-              <button className="cta-btn" onClick={() => navigate("/signup")}>Start for Free <ArrowRight size={16} /></button>
-              <button className="cta-btn-outline" onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}>See Features</button>
-            </motion.div>
+            <div className="cg text-6xl md:text-8xl font-bold" style={{ minHeight: "1.3em" }}>
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={wordIndex}
+                  initial={{ opacity: 0, y: 24, letterSpacing: "0.35em", filter: "blur(10px)" }}
+                  animate={{ opacity: 1, y: 0, letterSpacing: "0.01em", filter: "blur(0)" }}
+                  exit={{ opacity: 0, y: -18, letterSpacing: "0.18em", filter: "blur(5px)" }}
+                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  className={wordIndex === 1 ? "gold-text italic" : wordIndex === 2 ? "italic" : ""}
+                  style={{
+                    display: "inline-block",
+                    color: wordIndex === 0 ? C.text : wordIndex === 2 ? "#C17D20" : undefined,
+                  }}
+                >
+                  {HEADLINE_WORDS[wordIndex]}
+                </motion.span>
+              </AnimatePresence>
+            </div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
-              style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
-              {["10K+ Creators", "Free to start", "No credit card", "Made in India 🇮🇳"].map((label) => (
-                <span key={label} className="pill">{label}</span>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+              className="text-base md:text-lg max-w-xl mt-2"
+              style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}
+            >
+              Discover trending topics, generate AI scripts, find viral hashtags and grow your audience,
+              all in one platform.
+            </motion.p>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+            className="flex items-center gap-4 flex-wrap justify-center"
+          >
+            <motion.button
+              whileHover={{ scale: 1.04, boxShadow: "0 0 30px #E8B84B30" }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/signup")}
+              className="flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-base"
+              style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
+            >
+              Start for Free <ArrowRight className="w-4 h-4" />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02, borderColor: "#E8B84B50" }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => scrollTo("features")}
+              className="flex items-center gap-2 px-8 py-4 rounded-2xl font-medium text-base transition-all"
+              style={{
+                border: `1px solid ${C.border}`,
+                background: "rgba(28,28,28,0.72)",
+                color: C.text,
+                fontFamily: "Inter, sans-serif",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <Play className="w-4 h-4" style={{ color: GOLD_SOLID }} /> Watch Demo
+            </motion.button>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.85 }}
+            className="text-xs"
+            style={{ color: "#9D9587", fontFamily: "Inter, sans-serif" }}
+          >
+            No credit card required · Free plan available · 10,000+ creators
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.5 }}
+            className="flex items-center gap-4"
+          >
+            {[{ icon: Instagram, label: "Instagram" }, { icon: Youtube, label: "YouTube" }].map((p, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ scale: 1.06, borderColor: "#E8B84B50" }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all"
+                style={{
+                  background: "rgba(28,28,28,0.7)",
+                  border: `1px solid ${C.border}`,
+                  color: C.muted,
+                  fontFamily: "Inter, sans-serif",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <p.icon className="w-4 h-4" style={{ color: GOLD_SOLID }} /> {p.label}
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-4xl relative z-10 mt-4"
+        >
+          <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}` }}>
+            <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${C.border}`, background: "#171717" }}>
+              <div className="w-3 h-3 rounded-full" style={{ background: "#FF5F56" }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: "#FFBD2E" }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: "#27C93F" }} />
+              <div className="flex-1 mx-4 px-3 py-1 rounded-lg text-xs text-center" style={{ background: C.bg, color: C.muted, fontFamily: "Inter, sans-serif" }}>
+                socialrum.app
+              </div>
+            </div>
+
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { topic: "Fitness & Gym", posts: "2.4K posts", trend: "Hot", score: 95 },
+                { topic: "Stock Market", posts: "1.8K posts", trend: "Rising", score: 82 },
+                { topic: "Cricket & IPL", posts: "3.1K posts", trend: "Hot", score: 98 },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 + i * 0.15, duration: 0.5 }}
+                  whileHover={{ borderColor: "#E8B84B40", scale: 1.02 }}
+                  className="rounded-xl p-4 transition-all"
+                  style={{ background: C.bg, border: `1px solid ${C.border}` }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <TrendingUp className="w-4 h-4" style={{ color: GOLD_SOLID }} />
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ background: "#E8B84B15", color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}
+                    >
+                      {item.trend}
+                    </span>
+                  </div>
+                  <p className="font-semibold text-sm mb-1" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>
+                    {item.topic}
+                  </p>
+                  <p className="text-xs mb-3" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+                    {item.posts}
+                  </p>
+                  <div className="w-full h-1 rounded-full" style={{ background: C.border }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${item.score}%` }}
+                      transition={{ delay: 1 + i * 0.2, duration: 0.8 }}
+                      className="h-1 rounded-full"
+                      style={{ background: GOLD }}
+                    />
+                  </div>
+                  <p className="text-xs mt-1 text-right" style={{ color: GOLD_SOLID, fontFamily: "Inter, sans-serif" }}>
+                    {item.score}
+                  </p>
+                </motion.div>
               ))}
-            </motion.div>
-
+            </div>
           </div>
         </motion.div>
-      </section>
 
-      {/* ══════════════ STATS ══════════════ */}
-      <div style={{ padding: "0 48px" }}>
-        <motion.div className="stats-row" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          {[
-            { num: "10K+", label: "Active Creators" },
-            { num: "50M+", label: "Views Generated" },
-            { num: "500+", label: "Trending Topics Daily" },
-            { num: "4.9★", label: "Average Rating" },
-          ].map((s) => (
-            <div key={s.label} className="stat-item">
-              <div className="stat-num">{s.num}</div>
-              <div className="stat-label">{s.label}</div>
-            </div>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* ══════════════ FEATURES ══════════════ */}
-      <div className="divider" style={{ marginTop: 80 }} />
-      <section id="features" className="section">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <div className="section-label">Features</div>
-          <div className="section-title">Everything a creator needs</div>
-          <p className="section-sub">Stop switching between 10 apps. SocialRum brings all your creator tools into one place.</p>
-        </motion.div>
-        <div className="features-grid">
-          <FeatureCard delay={0.1} icon={<TrendingUp size={20} />} title="Trending Topics" desc="Real-time trending topics across Instagram, YouTube and Twitter tailored for Indian audiences." />
-          <FeatureCard delay={0.2} icon={<FileText size={20} />} title="AI Script Generator" desc="Generate viral reel scripts, YouTube hooks and captions in seconds using AI." />
-          <FeatureCard delay={0.3} icon={<Search size={20} />} title="SEO Tools" desc="Find the best hashtags, keywords and thumbnails to maximise your reach organically." />
-          <FeatureCard delay={0.4} icon={<Newspaper size={20} />} title="Creator News" desc="Stay up to date with algorithm changes, brand deals and creator economy news." />
-          <FeatureCard delay={0.5} icon={<Zap size={20} />} title="Viral Idea Generator" desc="Never run out of content ideas. Get 30 fresh ideas every day based on your niche." />
-          <FeatureCard delay={0.6} icon={<Users size={20} />} title="Collaboration Hub" desc="Find other creators in your niche for collabs, shoutouts and brand partnerships." />
-        </div>
-      </section>
-
-      {/* ══════════════ HOW IT WORKS ══════════════ */}
-      <div className="divider" />
-      <section id="how" className="section">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <div className="section-label">How it works</div>
-          <div className="section-title">Go viral in 3 steps</div>
-          <p className="section-sub">From idea to upload in minutes — not days.</p>
-        </motion.div>
-        <div className="steps-row">
-          {[
-            { num: "01", title: "Pick a trend", desc: "Browse today's top trending topics filtered by your niche and platform." },
-            { num: "02", title: "Generate your script", desc: "Let our AI write a full script, hook and CTA tailored to go viral." },
-            { num: "03", title: "Publish & grow", desc: "Use our SEO tools to optimise hashtags, post time and thumbnail — then watch the views roll in." },
-          ].map((step, i) => (
-            <motion.div key={i} className="step-card" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>
-              <div className="step-num">{step.num}</div>
-              <div style={{ fontSize: "17px", fontWeight: 700 }}>{step.title}</div>
-              <div style={{ fontSize: "14px", color: MUTED, lineHeight: "1.6" }}>{step.desc}</div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════ TESTIMONIALS ══════════════ */}
-      <div className="divider" />
-      <section className="section">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <div className="section-label">Testimonials</div>
-          <div className="section-title">Creators love SocialRum</div>
-        </motion.div>
-        <div className="testimonials-grid">
-          {[
-            { name: "Priya S.", handle: "@priya.creates", avatar: "#FF6B9D", initials: "PS", text: "I went from 2K to 80K followers in 3 months using SocialRum's trending topics and AI scripts. This tool is insane!" },
-            { name: "Rahul T.", handle: "@techtalkindia", avatar: "#00BFFF", initials: "RT", text: "The SEO tools alone are worth it. My videos are ranking on YouTube search now for the first time ever." },
-            { name: "Meghna D.", handle: "@dancewithmeg", avatar: "#FFD700", initials: "MD", text: "I use the viral idea generator every single day. Never run out of content anymore. 10/10 recommend." },
-          ].map((t, i) => (
-            <motion.div key={i} className="testimonial-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-              <div className="testimonial-stars">{[...Array(5)].map((_, j) => <Star key={j} size={14} fill={BRAND_SOLID} color={BRAND_SOLID} />)}</div>
-              <div className="testimonial-text">"{t.text}"</div>
-              <div className="testimonial-author">
-                <div className="testimonial-avatar" style={{ background: t.avatar }}>{t.initials}</div>
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: 700 }}>{t.name}</div>
-                  <div style={{ fontSize: "12px", color: MUTED }}>{t.handle}</div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════ PRICING ══════════════ */}
-      <div className="divider" />
-      <section id="pricing" className="section">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <div className="section-label">Pricing</div>
-          <div className="section-title">Simple, honest pricing</div>
-          <p className="section-sub">Start free. Upgrade when you're ready to scale.</p>
-        </motion.div>
-        <div className="pricing-grid">
-          {[
-            {
-              name: "Free", price: "₹0", period: "/month", featured: false,
-              features: ["5 trending topics/day", "10 AI scripts/month", "Basic SEO tools", "Creator news feed"],
-              cta: "Get Started Free",
-            },
-            {
-              name: "Pro", price: "₹499", period: "/month", featured: true,
-              features: ["Unlimited trending topics", "Unlimited AI scripts", "Advanced SEO + analytics", "Viral idea generator", "Collab hub access", "Priority support"],
-              cta: "Start Pro Free Trial",
-            },
-            {
-              name: "Agency", price: "₹1499", period: "/month", featured: false,
-              features: ["Everything in Pro", "Up to 10 team members", "White-label reports", "Dedicated account manager", "Custom integrations"],
-              cta: "Contact Sales",
-            },
-          ].map((plan, i) => (
-            <motion.div key={i} className={`pricing-card ${plan.featured ? "featured" : ""}`} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>
-              {plan.featured && <div className="pricing-badge">Most Popular</div>}
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: plan.featured ? BRAND_SOLID : MUTED, marginBottom: 8 }}>{plan.name}</div>
-                <span className="price-amount">{plan.price}</span>
-                <span className="price-period">{plan.period}</span>
-              </div>
-              <div className="price-features">
-                {plan.features.map((f) => (
-                  <div key={f} className="price-feature">
-                    <Check size={15} color={BRAND_SOLID} /> {f}
-                  </div>
-                ))}
-              </div>
-              <button className={plan.featured ? "cta-btn" : "cta-btn-outline"} style={{ justifyContent: "center", width: "100%" }} onClick={() => navigate("/signup")}>
-                {plan.cta}
-              </button>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════ BOTTOM CTA ══════════════ */}
-      <div className="divider" />
-      <section className="section" style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <div className="section-title">Ready to go viral?</div>
-          <p style={{ color: MUTED, fontSize: "16px", lineHeight: "1.6", marginTop: 12 }}>
-            Join 10,000+ Indian creators already using SocialRum to grow faster.
-          </p>
-        </motion.div>
-        <motion.button className="cta-btn" style={{ fontSize: "16px", padding: "16px 40px" }}
-          onClick={() => navigate("/signup")}
-          initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} whileHover={{ scale: 1.05 }}>
-          Start for Free Today <ArrowRight size={18} />
+        <motion.button
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          onClick={() => scrollTo("features")}
+          className="flex flex-col items-center gap-1 mt-4 bg-transparent border-none cursor-pointer relative z-10"
+          style={{ color: C.muted }}
+        >
+          <span className="text-xs" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.12em" }}>SCROLL</span>
+          <ChevronDown className="w-4 h-4" />
         </motion.button>
       </section>
 
-      {/* ══════════════ FOOTER ══════════════ */}
-      <div className="divider" />
-      <footer className="footer">
-        <div style={{ fontSize: "20px", fontWeight: 900, background: BRAND, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-          SocialRum
-        </div>
-        <div className="footer-links">
-          {["Privacy", "Terms", "Contact", "Blog"].map((l) => (
-            <span key={l} className="footer-link">{l}</span>
+      <section style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, background: C.card }}>
+        <div className="max-w-5xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {STATS.map((s, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+              <p className="text-4xl font-bold cg gold-text">{s.value}</p>
+              <p className="text-sm mt-1" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{s.label}</p>
+            </motion.div>
           ))}
         </div>
-        <div style={{ fontSize: "13px", color: MUTED }}>© 2024 SocialRum. Made with ❤️ in India.</div>
-      </footer>
+      </section>
 
+      <section id="features" className="px-6 md:px-16 py-24">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>
+              Features
+            </p>
+            <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Everything to Go Viral</h2>
+            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+              Powerful AI tools built specifically for Indian content creators
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {features.map((f, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                whileHover={{ borderColor: "#E8B84B40", y: -4 }}
+                className="rounded-2xl p-6 transition-all cursor-default"
+                style={{ background: C.card, border: `1px solid ${C.border}` }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: "#E8B84B15", border: "1px solid #E8B84B25" }}
+                >
+                  <f.icon className="w-5 h-5" style={{ color: GOLD_SOLID }} />
+                </motion.div>
+                <h3 className="font-semibold mb-2" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{f.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{f.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="testimonials"
+        style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}
+        className="px-6 md:px-16 py-24"
+      >
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>
+              Testimonials
+            </p>
+            <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Loved by Creators</h2>
+            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+              See what creators across India are saying
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {testimonials.map((t, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ borderColor: "#E8B84B30", y: -4 }}
+                className="rounded-2xl p-6 transition-all"
+                style={{ background: C.bg, border: `1px solid ${C.border}` }}
+              >
+                <div className="flex items-center gap-1 mb-4">
+                  {Array.from({ length: t.stars }).map((_, j) => (
+                    <Star key={j} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+                  "{t.text}"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: GOLD, color: "#111" }}>
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: C.text, fontFamily: "Inter, sans-serif" }}>{t.name}</p>
+                    <p className="text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>{t.niche}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="px-6 md:px-16 py-24">
+        <div className="max-w-3xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>
+              Pricing
+            </p>
+            <h2 className="cg text-4xl md:text-5xl font-bold mb-4" style={{ color: C.text }}>Simple Pricing</h2>
+            <p className="text-base" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+              Start free, upgrade when you're ready
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, x: -24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              className="rounded-2xl p-8"
+              style={{ background: C.card, border: `1px solid ${C.border}` }}
+            >
+              <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Free</h3>
+              <p className="text-sm mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>Perfect to get started</p>
+              <div className="mb-6">
+                <span className="cg text-5xl font-bold" style={{ color: C.text }}>₹0</span>
+                <span className="text-sm ml-1" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {freeFeatures.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: GOLD_SOLID }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <motion.button
+                whileHover={{ borderColor: "#E8B84B50", color: GOLD_SOLID }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/signup")}
+                className="w-full py-3 rounded-xl font-medium text-sm transition-all"
+                style={{ border: `1px solid ${C.border}`, color: C.text, fontFamily: "Inter, sans-serif" }}
+              >
+                Get Started Free
+              </motion.button>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              whileHover={{ boxShadow: "0 0 40px #E8B84B15" }}
+              className="rounded-2xl p-8 relative transition-all"
+              style={{ background: C.card, border: `1px solid #E8B84B50` }}
+            >
+              <motion.div
+                animate={{ opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full text-xs font-semibold"
+                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
+              >
+                Most Popular
+              </motion.div>
+              <h3 className="cg font-bold text-2xl mb-1" style={{ color: C.text }}>Pro</h3>
+              <p className="text-sm mb-5" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>For serious creators</p>
+              <div className="mb-6">
+                <span className="cg text-5xl font-bold gold-text">₹799</span>
+                <span className="text-sm ml-1" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {proFeatures.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: GOLD_SOLID }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: "0 0 24px #E8B84B30" }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/signup")}
+                className="w-full py-3 rounded-xl font-semibold text-sm"
+                style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
+              >
+                Start Pro Trial
+              </motion.button>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <section style={{ background: C.card, borderTop: `1px solid ${C.border}` }} className="px-6 md:px-16 py-24 relative overflow-hidden">
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.07, 0.03] }}
+          transition={{ duration: 8, repeat: Infinity }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse, #E8B84B, transparent 65%)",
+            filter: "blur(60px)",
+          }}
+        />
+        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto text-center relative z-10">
+          <p className="text-xs uppercase tracking-widest mb-4" style={{ color: GOLD_SOLID, letterSpacing: "0.18em", fontFamily: "Inter, sans-serif" }}>
+            Get Started
+          </p>
+          <h2 className="cg text-4xl md:text-6xl font-bold mb-4" style={{ color: C.text }}>Ready to Go Viral?</h2>
+          <p className="text-base mb-8" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+            Join 10,000+ creators using SocialRum to grow faster on Instagram and YouTube
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.04, boxShadow: "0 0 40px #E8B84B30" }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/signup")}
+            className="flex items-center gap-2 px-10 py-4 rounded-2xl font-semibold text-base mx-auto"
+            style={{ background: GOLD, color: "#111", fontFamily: "Inter, sans-serif" }}
+          >
+            Start for Free Today <ArrowRight className="w-4 h-4" />
+          </motion.button>
+          <p className="text-xs mt-4" style={{ color: "#8E8A81", fontFamily: "Inter, sans-serif" }}>
+            No credit card · Free forever plan · Cancel anytime
+          </p>
+        </motion.div>
+      </section>
+
+      <footer className="px-6 md:px-16 py-8" style={{ borderTop: `1px solid ${C.border}` }}>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="SocialRum" className="w-6 h-6 rounded" />
+            <span className="font-bold text-sm cg" style={{ color: C.text }}>SocialRum</span>
+          </div>
+          <p className="text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+            © 2026 SocialRum Media. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4 text-xs" style={{ color: C.muted, fontFamily: "Inter, sans-serif" }}>
+            <span className="hover-gold cursor-pointer transition-colors">Privacy Policy</span>
+            <span className="hover-gold cursor-pointer transition-colors">Terms of Service</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
