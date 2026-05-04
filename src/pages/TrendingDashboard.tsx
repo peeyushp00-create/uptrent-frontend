@@ -169,7 +169,17 @@ export default function TrendingDashboard() {
     getTopics("7d")
       .then((data: any) => {
         const arr = Array.isArray(data) ? data : data.topics ?? [];
-        const sorted = arr.sort(
+
+        // Deduplicate by topic name (case-insensitive)
+        const seen = new Set<string>();
+        const unique = arr.filter((t: Topic) => {
+          const key = t.name.toLowerCase().trim();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        const sorted = unique.sort(
           (a: Topic, b: Topic) => (b.trend_score || 0) - (a.trend_score || 0)
         );
         setTopics(sorted);
