@@ -60,6 +60,7 @@ const App = () => (
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
               <Route path="/pricing" element={<PricingPage />} />
+            
             </Route>
 
             <Route path="*" element={<NotFound />} />
