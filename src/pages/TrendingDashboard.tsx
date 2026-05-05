@@ -165,6 +165,8 @@ function getMicroNiches(query: string): MicroNiche[] {
 
 export default function TrendingDashboard() {
   const { user } = useAuth();
+  const savedLanguage = localStorage.getItem("userLanguage") || user?.user_metadata?.language || "english";
+  const savedStyle = localStorage.getItem("userStyle") || user?.user_metadata?.style || "casual";
   const userNiche = user?.user_metadata?.niche || "General";
   const platform = (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram";
   const isIG = platform === "instagram";
@@ -246,7 +248,7 @@ export default function TrendingDashboard() {
         topic: topic.name,
         niche: userNiche,
         language: user?.user_metadata?.language || "hinglish",
-        style: user?.user_metadata?.style || 'casual',
+        style: savedStyle,
         platform: isIG ? "instagram" : "youtube",
       });
       setScript(result);

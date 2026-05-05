@@ -71,8 +71,6 @@ const sampleText = {
 export default function SettingsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
-
-  // Profile state
   const [voiceSaving, setVoiceSaving] = useState(false);
   const [voiceSaved, setVoiceSaved] = useState(false);
   const [name, setName] = useState(user?.user_metadata?.full_name || '');
@@ -80,11 +78,16 @@ export default function SettingsPage() {
     user?.user_metadata?.niches ||
     (user?.user_metadata?.niche ? [user.user_metadata.niche] : [])
   );
-  const [language, setLanguage] = useState(user?.user_metadata?.language || 'hindi');
-  const [style, setStyle] = useState(user?.user_metadata?.style || 'casual');
+
+  // ✅ Read from localStorage first, then user metadata, then default to english
+  const [language, setLanguage] = useState(
+    localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english'
+  );
+  const [style, setStyle] = useState(
+    localStorage.getItem('userStyle') || user?.user_metadata?.style || 'casual'
+  );
   const [platform, setPlatform] = useState(user?.user_metadata?.platform || 'both');
 
-  // Voice state
   const [isRecording, setIsRecording] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState(user?.user_metadata?.voice_transcript || '');
   const [voiceStyle, setVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
@@ -94,7 +97,6 @@ export default function SettingsPage() {
   const timerRef = useRef<any>(null);
   const autoSaveTimer = useRef<any>(null);
 
-  // Feedback state
   const [feedbackCategory, setFeedbackCategory] = useState("general");
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -102,12 +104,15 @@ export default function SettingsPage() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState("");
+  const [savingIndicator, setSavingIndicator] = useState(false);
 
   const autoSave = useCallback(async (updates: Record<string, any>) => {
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
+      setSavingIndicator(true);
       await supabase.auth.updateUser({ data: updates });
-    }, 1000);
+      setSavingIndicator(false);
+    }, 800);
   }, []);
 
   const handleNameChange = (val: string) => {
@@ -121,13 +126,17 @@ export default function SettingsPage() {
     autoSave({ full_name: name, niche: updated[0] || '', niches: updated, language, style, platform });
   };
 
+  // ✅ Save language to localStorage immediately + Supabase
   const handleLanguageChange = (val: string) => {
     setLanguage(val);
+    localStorage.setItem('userLanguage', val);
     autoSave({ full_name: name, niche: niches[0] || '', niches, language: val, style, platform });
   };
 
+  // ✅ Save style to localStorage immediately + Supabase
   const handleStyleChange = (val: string) => {
     setStyle(val);
+    localStorage.setItem('userStyle', val);
     autoSave({ full_name: name, niche: niches[0] || '', niches, language, style: val, platform });
   };
 
@@ -193,7 +202,6 @@ export default function SettingsPage() {
     if (!error) { setVoiceSaved(true); setTimeout(() => setVoiceSaved(false), 3000); }
   };
 
-  // ✅ Real feedback submission — calls backend API
   const handleFeedbackSubmit = async () => {
     if (!feedbackMessage.trim() || feedbackRating === 0) return;
     setFeedbackLoading(true);
@@ -225,14 +233,19 @@ export default function SettingsPage() {
     ? name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : user?.email?.[0].toUpperCase() || 'U';
 
+  const currentLangLabel = LANGUAGES.find(l => l.value === language)?.label || 'English';
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           <Settings className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-bold text-foreground">Settings</h1>
-          <span className="text-xs text-muted-foreground ml-auto">Auto-saved</span>
+          <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+            {savingIndicator
+              ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</>
+              : <><Check className="w-3 h-3 text-green-400" /> Auto-saved</>}
+          </span>
         </div>
       </div>
 
@@ -265,13 +278,18 @@ export default function SettingsPage() {
                 <div>
                   <p className="font-medium text-foreground">{name || 'Your Name'}</p>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  <p className="text-xs mt-0.5" style={{ color: BLUE }}>
+                    🌐 {currentLangLabel} · 🎨 {style}
+                  </p>
                 </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Full Name</label>
                 <input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Your full name"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none focus:border-blue-500 transition-colors text-sm" />
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none transition-colors text-sm"
+                  onFocus={e => e.target.style.borderColor = `${BLUE}60`}
+                  onBlur={e => e.target.style.borderColor = ''} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</label>
@@ -280,7 +298,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Niches */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Target className="w-4 h-4" style={{ color: BLUE }} /> Content Niches
@@ -304,6 +321,23 @@ export default function SettingsPage() {
         {/* ── PREFERENCES TAB ── */}
         {activeTab === "preferences" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+
+            {/* Current settings banner */}
+            <div className="p-3 rounded-2xl flex items-center gap-3"
+              style={{ background: `${BLUE}10`, border: `1px solid ${BLUE}25` }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: BLUE_GRADIENT }}>
+                <Check className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Current Settings</p>
+                <p className="text-xs text-muted-foreground">
+                  Language: <span style={{ color: BLUE }}>{currentLangLabel}</span> ·
+                  Style: <span style={{ color: BLUE }}>{style}</span>
+                </p>
+              </div>
+            </div>
+
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Palette className="w-4 h-4" style={{ color: BLUE }} /> Platform
@@ -320,22 +354,26 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
+
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Globe className="w-4 h-4" style={{ color: BLUE }} /> Script Language
               </h2>
+              <p className="text-xs text-muted-foreground">All scripts across the app will be generated in this language</p>
               <div className="flex flex-col gap-2">
                 {LANGUAGES.map((l) => (
                   <button key={l.value} onClick={() => handleLanguageChange(l.value)}
-                    className="w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left"
+                    className="w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left flex items-center justify-between"
                     style={language === l.value
                       ? { background: BLUE_GRADIENT, color: "#fff", borderColor: "transparent" }
                       : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    {l.label}
+                    <span>{l.label}</span>
+                    {language === l.value && <Check className="w-4 h-4" />}
                   </button>
                 ))}
               </div>
             </div>
+
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Palette className="w-4 h-4" style={{ color: BLUE }} /> Content Style
@@ -343,11 +381,12 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 {STYLES.map((s) => (
                   <button key={s.value} onClick={() => handleStyleChange(s.value)}
-                    className="w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left"
+                    className="w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left flex items-center justify-between"
                     style={style === s.value
                       ? { background: BLUE_GRADIENT, color: "#fff", borderColor: "transparent" }
                       : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    {s.label}
+                    <span>{s.label}</span>
+                    {style === s.value && <Check className="w-4 h-4" />}
                   </button>
                 ))}
               </div>
@@ -366,7 +405,7 @@ export default function SettingsPage() {
               <div className="p-3 rounded-xl bg-secondary/30 border border-border space-y-1">
                 <p className="text-xs font-medium" style={{ color: BLUE }}>📖 Read this text aloud while recording:</p>
                 <p className="text-sm text-foreground leading-relaxed">
-                  {sampleText[language as keyof typeof sampleText] || sampleText.hindi}
+                  {sampleText[language as keyof typeof sampleText] || sampleText.english}
                 </p>
               </div>
               {voiceTranscript && !analyzingVoice && (
@@ -437,7 +476,6 @@ export default function SettingsPage() {
                 </motion.div>
               ) : (
                 <motion.div key="form" className="space-y-4">
-                  {/* Category */}
                   <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
                     <h2 className="font-semibold text-foreground text-sm flex items-center gap-2">
                       <MessageSquare className="w-4 h-4" style={{ color: BLUE }} /> Category
@@ -455,7 +493,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Rating */}
                   <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
                     <h2 className="font-semibold text-foreground text-sm">Overall Rating</h2>
                     <div className="flex items-center justify-center gap-3">
@@ -477,7 +514,6 @@ export default function SettingsPage() {
                     )}
                   </div>
 
-                  {/* Message */}
                   <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
                     <h2 className="font-semibold text-foreground text-sm">Your Feedback</h2>
                     <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value.slice(0, 500))}
@@ -489,12 +525,8 @@ export default function SettingsPage() {
                     <p className="text-xs text-muted-foreground text-right">{feedbackMessage.length}/500</p>
                   </div>
 
-                  {/* Error */}
-                  {feedbackError && (
-                    <p className="text-xs text-red-400 text-center">{feedbackError}</p>
-                  )}
+                  {feedbackError && <p className="text-xs text-red-400 text-center">{feedbackError}</p>}
 
-                  {/* Submit */}
                   <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                     onClick={handleFeedbackSubmit}
                     disabled={feedbackLoading || !feedbackMessage.trim() || feedbackRating === 0}
@@ -514,7 +546,6 @@ export default function SettingsPage() {
               )}
             </AnimatePresence>
 
-            {/* Recent reviews */}
             {!feedbackSubmitted && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 border-t border-border pt-4">
