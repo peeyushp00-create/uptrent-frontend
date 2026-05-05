@@ -245,7 +245,7 @@ export default function TrendingDashboard() {
       const result = await generateScript({
         topic: topic.name,
         niche: userNiche,
-        language: user?.user_metadata?.language || "hinglish",
+        language: user?.user_metadata?.language || "english",
         style: user?.user_metadata?.style || "casual",
         platform: isIG ? "instagram" : "youtube",
       });
