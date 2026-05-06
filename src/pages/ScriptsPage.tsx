@@ -120,6 +120,10 @@ export default function ScriptsPage() {
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
   const [showSeriesPrompt, setShowSeriesPrompt] = useState(false);
   const [seriesTopic, setSeriesTopic] = useState('');
+  const [seriesParts, setSeriesParts] = useState(5);
+  const [seriesFrequency, setSeriesFrequency] = useState<'daily' | 'alternate' | 'weekly'>('weekly');
+  const [seriesStartDate, setSeriesStartDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [seriesStep, setSeriesStep] = useState<'prompt' | 'customize'>('prompt');
   const [generatingSeries, setGeneratingSeries] = useState(false);
   const [seriesScripts, setSeriesScripts] = useState<any[]>([]);
   const [showSeriesResult, setShowSeriesResult] = useState(false);
@@ -184,26 +188,48 @@ export default function ScriptsPage() {
     setCopied('all'); setTimeout(() => setCopied(null), 2000);
   };
 
+  const getScheduleDates = (start: string, parts: number, freq: string) => {
+    const dates: string[] = [];
+    const d = new Date(start);
+    for (let i = 0; i < parts; i++) {
+      dates.push(d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }));
+      if (freq === 'daily') d.setDate(d.getDate() + 1);
+      else if (freq === 'alternate') d.setDate(d.getDate() + 2);
+      else d.setDate(d.getDate() + 7);
+    }
+    return dates;
+  };
+
   const generateSeries = async () => {
     setGeneratingSeries(true);
     setShowSeriesPrompt(false);
+    setSeriesStep('prompt');
     setShowSeriesResult(true);
     setSeriesScripts([]);
     const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
-    const angles = [
-      `${seriesTopic} for complete beginners — Part 1`,
-      `Top mistakes in ${seriesTopic} — Part 2`,
-      `Advanced ${seriesTopic} tips — Part 3`,
-      `${seriesTopic} secrets nobody tells you — Part 4`,
-      `${seriesTopic} results after 30 days — Part 5`,
+    const scheduleDates = getScheduleDates(seriesStartDate, seriesParts, seriesFrequency);
+    const angleTemplates = [
+      `${seriesTopic} for complete beginners`,
+      `Top mistakes in ${seriesTopic}`,
+      `Advanced ${seriesTopic} tips`,
+      `${seriesTopic} secrets nobody tells you`,
+      `${seriesTopic} results after 30 days`,
+      `${seriesTopic} tools and resources`,
+      `${seriesTopic} case study`,
+      `${seriesTopic} myths busted`,
+      `${seriesTopic} for professionals`,
+      `${seriesTopic} future trends`,
     ];
+    const angles = Array.from({ length: seriesParts }, (_, i) =>
+      `${angleTemplates[i % angleTemplates.length]} — Part ${i + 1}`
+    );
     const results: any[] = [];
-    for (const angle of angles) {
+    for (let i = 0; i < angles.length; i++) {
       try {
-        const result = await generateScript({ topic: angle, niche: userNiche, language: userLanguage, voiceStyle: userVoiceStyle, duration: 60 });
-        results.push({ angle, script: result });
+        const result = await generateScript({ topic: angles[i], niche: userNiche, language: userLanguage, voiceStyle: userVoiceStyle, duration: 60 });
+        results.push({ angle: angles[i], script: result, postDate: scheduleDates[i], part: i + 1 });
         setSeriesScripts([...results]);
-      } catch { results.push({ angle, script: null }); }
+      } catch { results.push({ angle: angles[i], script: null, postDate: scheduleDates[i], part: i + 1 }); }
     }
     setGeneratingSeries(false);
   };
@@ -473,32 +499,119 @@ export default function ScriptsPage() {
               {showSeriesPrompt && (
                 <motion.div initial={{ opacity:0, scale:0.95, y:10 }} animate={{ opacity:1, scale:1, y:0 }} exit={{ opacity:0, scale:0.95 }}
                   className="rounded-2xl p-5 space-y-4"
-                  style={{ background: `${IG}08`, border: `2px solid ${IG}40` }}>
-                  <div className="flex items-start gap-3">
-                    <div className="text-3xl">🎬</div>
-                    <div>
-                      <p className="font-bold text-foreground text-sm">Want a Reel Series?</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        You've searched <span style={{ color: IG }}>"{seriesTopic}"</span> multiple times. Want us to generate a <strong>5-part reel series</strong> covering this topic from all angles?
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    {["Part 1: Beginners", "Part 2: Mistakes", "Part 3: Advanced", "Part 4: Secrets", "Part 5: Results"].map((p, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-full" style={{ background: `${IG}15`, color: IG }}>📌 {p}</span>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={generateSeries}
-                      className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2"
-                      style={{ background: IG_GRAD }}>
-                      <Sparkles className="w-4 h-4" /> Yes! Generate 5-Part Series
-                    </button>
-                    <button onClick={() => setShowSeriesPrompt(false)}
-                      className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground">
-                      Not now
-                    </button>
-                  </div>
+                  style={{ background:`${IG}08`, border:`2px solid ${IG}40` }}>
+
+                  {seriesStep === 'prompt' && (
+                    <>
+                      <div className="flex items-start gap-3">
+                        <div className="text-3xl">🎬</div>
+                        <div>
+                          <p className="font-bold text-foreground text-sm">Want a Reel Series?</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            You've searched <span style={{ color: IG }}>"{seriesTopic}"</span> multiple times. Want to create a full content series?
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => setSeriesStep('customize')}
+                          className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2"
+                          style={{ background: IG_GRAD }}>
+                          <Sparkles className="w-4 h-4" /> Yes, Create Series!
+                        </button>
+                        <button onClick={() => setShowSeriesPrompt(false)}
+                          className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground">
+                          Not now
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {seriesStep === 'customize' && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <div className="text-2xl">📅</div>
+                        <p className="font-bold text-foreground text-sm">Customize Your Series</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">How many parts?</p>
+                        <div className="flex gap-2">
+                          {[3, 5, 7, 10].map(n => (
+                            <button key={n} onClick={() => setSeriesParts(n)}
+                              className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all"
+                              style={seriesParts === n
+                                ? { background: IG_GRAD, color: '#fff', borderColor: 'transparent' }
+                                : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>
+                              {n}
+                            </button>
+                          ))}
+                          <input type="number" min={2} max={20} value={seriesParts}
+                            onChange={e => setSeriesParts(Math.min(20, Math.max(2, parseInt(e.target.value) || 2)))}
+                            className="w-16 text-center py-2 rounded-xl border border-border bg-card text-foreground text-sm outline-none"
+                            onFocus={e => e.target.style.borderColor = `${IG}50`}
+                            onBlur={e => e.target.style.borderColor = ''} />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Posting Frequency</p>
+                        <div className="flex gap-2">
+                          {([
+                            { id: 'daily', label: 'Every Day' },
+                            { id: 'alternate', label: 'Every 2 Days' },
+                            { id: 'weekly', label: 'Every Week' },
+                          ] as const).map(f => (
+                            <button key={f.id} onClick={() => setSeriesFrequency(f.id)}
+                              className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
+                              style={seriesFrequency === f.id
+                                ? { background: IG_GRAD, color: '#fff', borderColor: 'transparent' }
+                                : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>
+                              {f.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Start Date</p>
+                        <input type="date" value={seriesStartDate}
+                          onChange={e => setSeriesStartDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-foreground text-sm outline-none transition-all"
+                          onFocus={e => e.target.style.borderColor = `${IG}50`}
+                          onBlur={e => e.target.style.borderColor = ''} />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Schedule Preview</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {getScheduleDates(seriesStartDate, Math.min(seriesParts, 5), seriesFrequency).map((d, i) => (
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1"
+                              style={{ background: `${IG}15`, color: IG }}>
+                              📌 Part {i+1}: {d}
+                            </span>
+                          ))}
+                          {seriesParts > 5 && (
+                            <span className="text-xs px-2.5 py-1 rounded-full text-muted-foreground" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                              +{seriesParts - 5} more...
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button onClick={generateSeries}
+                          className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2"
+                          style={{ background: IG_GRAD }}>
+                          <Sparkles className="w-4 h-4" /> Generate {seriesParts}-Part Series
+                        </button>
+                        <button onClick={() => setSeriesStep('prompt')}
+                          className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground">
+                          Back
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -508,19 +621,19 @@ export default function ScriptsPage() {
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-bold text-foreground text-sm">🎬 5-Part Series: <span style={{ color: IG }}>{seriesTopic}</span></p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{seriesScripts.length}/5 scripts generated</p>
+                    <p className="font-bold text-foreground text-sm">🎬 {seriesParts}-Part Series: <span style={{ color: IG }}>{seriesTopic}</span></p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{seriesScripts.length}/{seriesParts} scripts generated</p>
                   </div>
                   <button onClick={() => { setShowSeriesResult(false); setSeriesScripts([]); }}
                     className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
                 </div>
 
-                {generatingSeries && seriesScripts.length < 5 && (
+                {generatingSeries && seriesScripts.length < seriesParts && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
                     <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:"linear" }}>
                       <Sparkles className="w-4 h-4" style={{ color: IG }} />
                     </motion.div>
-                    Generating Part {seriesScripts.length + 1} of 5...
+                    Generating Part {seriesScripts.length + 1} of {seriesParts}...
                   </div>
                 )}
 
@@ -532,7 +645,10 @@ export default function ScriptsPage() {
                         style={{ background: IG_GRAD }}>{idx + 1}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">{item.angle}</p>
-                        {item.script?.hook && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.script.hook.slice(0, 60)}...</p>}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {item.script?.hook && <p className="text-xs text-muted-foreground truncate">{item.script.hook.slice(0, 50)}...</p>}
+                          {item.postDate && <span className="text-xs shrink-0" style={{ color: IG }}>📅 {item.postDate}</span>}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {item.script && (
@@ -557,13 +673,15 @@ export default function ScriptsPage() {
                   </div>
                 ))}
 
-                {!generatingSeries && seriesScripts.length === 5 && (
+                {!generatingSeries && seriesScripts.length === seriesParts && (
                   <button onClick={() => {
-                    const all = seriesScripts.map((s, i) => `PART ${i+1}: ${s.angle}\n\nHOOK: ${s.script?.hook}\n\nBODY: ${s.script?.body}\n\nCTA: ${s.script?.cta}`).join('\n\n─────────────\n\n');
+                    const all = seriesScripts.map((s, i) =>
+                      `PART ${i+1} — Post: ${s.postDate}\n${s.angle}\n\nHOOK: ${s.script?.hook}\n\nBODY: ${s.script?.body}\n\nCTA: ${s.script?.cta}`
+                    ).join('\n\n─────────────\n\n');
                     navigator.clipboard.writeText(all); setCopied('series'); setTimeout(() => setCopied(null), 2000);
                   }} className="w-full py-3 rounded-2xl text-white font-semibold text-sm flex items-center justify-center gap-2"
                     style={{ background: IG_GRAD }}>
-                    {copied === 'series' ? <><Check className="w-4 h-4"/> All Copied!</> : <><Copy className="w-4 h-4"/> Copy All 5 Scripts</>}
+                    {copied === 'series' ? <><Check className="w-4 h-4"/> All Copied!</> : <><Copy className="w-4 h-4"/> Copy All {seriesParts} Scripts with Schedule</>}
                   </button>
                 )}
               </motion.div>
