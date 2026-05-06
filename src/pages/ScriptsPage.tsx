@@ -383,16 +383,18 @@ export default function ScriptsPage() {
         {activeView === "generate" && (
           <>
             {/* Mode selector */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {MODES.map((m) => (
-                <button key={m.id} onClick={() => { setMode(m.id); setScript(null); }}
-                  className="p-3 rounded-2xl border text-left transition-all"
-                  style={mode === m.id ? { background: IG_GRAD, borderColor: "transparent", color: "#fff" } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                  <p className="text-xs font-semibold">{m.label}</p>
-                  <p className="text-xs opacity-70 mt-0.5">{m.description}</p>
-                </button>
-              ))}
-            </div>
+           {/* Mode selector */}
+<div className="flex items-center gap-2">
+  <p className="text-xs text-muted-foreground font-medium whitespace-nowrap">Script Type</p>
+  <select value={mode} onChange={e => { setMode(e.target.value); setScript(null); }}
+    className="flex-1 px-4 py-2.5 rounded-2xl border border-border bg-card text-foreground text-sm outline-none transition-all"
+    onFocus={e => e.target.style.borderColor = `${IG}50`}
+    onBlur={e => e.target.style.borderColor = ''}>
+    {MODES.map(m => (
+      <option key={m.id} value={m.id}>{m.label} — {m.description}</option>
+    ))}
+  </select>
+</div>
 
             {/* Duration */}
             <div>
