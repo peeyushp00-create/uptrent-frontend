@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Sparkles, Copy, Check, Loader2, Search, X, ChevronRight, Clock, Trash2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -88,9 +88,103 @@ function formatTime(ts: number) {
   return `${days}d ago`;
 }
 
+// ── Real Calendar Component ──
+function SeriesCalendar({ startDate, parts, frequency, accentColor, accentGrad }: {
+  startDate: string; parts: number; frequency: string; accentColor: string; accentGrad: string;
+}) {
+  const [viewMonth, setViewMonth] = useState(() => {
+    const d = new Date(startDate);
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+
+  const scheduledDates = useMemo(() => {
+    const dates: Record<string, number> = {};
+    const d = new Date(startDate);
+    for (let i = 0; i < parts; i++) {
+      const key = d.toISOString().split('T')[0];
+      dates[key] = i + 1;
+      if (frequency === 'daily') d.setDate(d.getDate() + 1);
+      else if (frequency === 'alternate') d.setDate(d.getDate() + 2);
+      else d.setDate(d.getDate() + 7);
+    }
+    return dates;
+  }, [startDate, parts, frequency]);
+
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const getFirstDay = (year: number, month: number) => new Date(year, month, 1).getDay();
+  const prevMonth = () => setViewMonth(v => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 });
+  const nextMonth = () => setViewMonth(v => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 });
+
+  const { year, month } = viewMonth;
+  const daysInMonth = getDaysInMonth(year, month);
+  const firstDay = getFirstDay(year, month);
+  const today = new Date().toISOString().split('T')[0];
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📅 Upload Calendar</p>
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <button onClick={prevMonth} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-sm">‹</button>
+          <p className="text-sm font-semibold text-foreground">{monthNames[month]} {year}</p>
+          <button onClick={nextMonth} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-sm">›</button>
+        </div>
+        <div className="grid grid-cols-7 px-3 pt-2">
+          {dayNames.map(d => <div key={d} className="text-center text-xs text-muted-foreground py-1 font-medium">{d}</div>)}
+        </div>
+        <div className="grid grid-cols-7 px-3 pb-3 gap-y-1">
+          {cells.map((day, i) => {
+            if (!day) return <div key={`e-${i}`} />;
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const partNum = scheduledDates[dateStr];
+            const isToday = dateStr === today;
+            const isScheduled = !!partNum;
+            return (
+              <div key={dateStr} className="flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg flex flex-col items-center justify-center transition-all"
+                  style={{
+                    background: isScheduled ? accentGrad : isToday ? 'rgba(255,255,255,0.06)' : 'transparent',
+                    border: isToday && !isScheduled ? '1px solid rgba(255,255,255,0.15)' : 'none',
+                  }}>
+                  <span className="text-xs font-medium leading-none" style={{ color: isScheduled ? '#fff' : isToday ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))' }}>
+                    {day}
+                  </span>
+                  {isScheduled && <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 8 }} className="leading-none mt-0.5">P{partNum}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-4 px-4 py-2 border-t border-border">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-md" style={{ background: accentGrad }} />
+            <span className="text-xs text-muted-foreground">Upload day (P = Part #)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-md border" style={{ borderColor: 'rgba(255,255,255,0.15)' }} />
+            <span className="text-xs text-muted-foreground">Today</span>
+          </div>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground text-center">
+        {parts} videos scheduled · {Object.keys(scheduledDates).filter(d => {
+          const [y, m] = d.split('-').map(Number);
+          return y === year && m - 1 === month;
+        }).length} in {monthNames[month]}
+      </p>
+    </div>
+  );
+}
+
 export default function YouTubeScript() {
   const { user } = useAuth();
-  const [activeView, setActiveView] = useState<"generate" | "history">("generate");
+  const [activeView, setActiveView] = useState<"generate" | "history" | "calendar">("generate");
   const [topic, setTopic] = useState(() => localStorage.getItem('yt_script_topic') || "");
   const [duration, setDuration] = useState(5);
   const [loading, setLoading] = useState(false);
@@ -297,6 +391,13 @@ export default function YouTubeScript() {
             <Clock className="w-3.5 h-3.5" />
             History {history.length > 0 && <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-xs" style={{ background: "rgba(255,255,255,0.25)" }}>{history.length}</span>}
           </button>
+          <button onClick={() => setActiveView(activeView === "calendar" ? "generate" : "calendar")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+            style={activeView === "calendar"
+              ? { background: YT_GRAD, color: "#fff" }
+              : { background: `${YT_COLOR}15`, color: YT_COLOR, border: `1px solid ${YT_COLOR}30` }}>
+            📅
+          </button>
         </div>
       </div>
 
@@ -368,6 +469,38 @@ export default function YouTubeScript() {
                     </AnimatePresence>
                   </div>
                 ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── CALENDAR VIEW ── */}
+        {activeView === "calendar" && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-foreground">📅 Upload Calendar</p>
+              {seriesScripts.length > 0 && (
+                <span className="text-xs text-muted-foreground">{seriesParts} parts · {seriesFrequency}</span>
+              )}
+            </div>
+            {seriesScripts.length > 0 || showSeriesResult ? (
+              <SeriesCalendar
+                startDate={seriesStartDate}
+                parts={seriesParts}
+                frequency={seriesFrequency}
+                accentColor={YT_COLOR}
+                accentGrad={YT_GRAD}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                <span className="text-5xl">📅</span>
+                <p className="text-sm font-semibold text-foreground">No Series Scheduled Yet</p>
+                <p className="text-xs text-muted-foreground max-w-xs">Generate a YouTube series to see your upload calendar here. Search any topic 3+ times to unlock the series feature.</p>
+                <button onClick={() => setActiveView("generate")}
+                  className="text-xs px-4 py-2 rounded-xl text-white mt-2"
+                  style={{ background: YT_GRAD }}>
+                  Go Generate Scripts
+                </button>
               </div>
             )}
           </motion.div>
@@ -581,22 +714,14 @@ export default function YouTubeScript() {
                           onBlur={e => e.target.style.borderColor = ''} />
                       </div>
 
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Upload Schedule Preview</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {getScheduleDates(seriesStartDate, Math.min(seriesParts, 5), seriesFrequency).map((d, i) => (
-                            <span key={i} className="text-xs px-2.5 py-1 rounded-full"
-                              style={{ background: `${YT_COLOR}15`, color: YT_COLOR }}>
-                              📌 Part {i+1}: {d}
-                            </span>
-                          ))}
-                          {seriesParts > 5 && (
-                            <span className="text-xs px-2.5 py-1 rounded-full text-muted-foreground" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                              +{seriesParts - 5} more...
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      {/* ── REAL CALENDAR ── */}
+                      <SeriesCalendar
+                        startDate={seriesStartDate}
+                        parts={seriesParts}
+                        frequency={seriesFrequency}
+                        accentColor={YT_COLOR}
+                        accentGrad={YT_GRAD}
+                      />
 
                       <div className="flex gap-2">
                         <button onClick={generateSeries}
