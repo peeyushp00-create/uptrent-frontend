@@ -8,11 +8,8 @@ import {
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-// ── Instagram: Teal + Aqua ──
 const IG_COLOR = "#14BBA6";
 const IG_GRAD = "linear-gradient(135deg, #14BBA6, #22D3EE)";
-
-// ── YouTube: Warm Sunset ──
 const YT_COLOR = "#FF6B6B";
 const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
 
@@ -34,53 +31,51 @@ export default function Index() {
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const [nextPage, setNextPage] = useState(0);
 
+  // 1. Word Animation Timer
   useEffect(() => {
     const interval = setInterval(() => setWordIndex(i => (i + 1) % WORDS.length), 2400);
     return () => clearInterval(interval);
   }, []);
 
-  // Poll localStorage for sidebar platform changes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const stored = localStorage.getItem("platform") as "instagram" | "youtube" | null;
-      if (stored && stored !== platform) {
-        setPlatform(stored);
-        setAllItems([]); setSearched(""); setSearch("");
-        setNextPageToken(null); setNextPage(0);
-        sessionStorage.removeItem('lastSearch');
-        sessionStorage.removeItem('lastItems');
-        sessionStorage.removeItem('lastPlatform');
-      }
-    }, 300);
-    return () => clearInterval(interval);
-  }, [platform]);
-
-  // Listen for custom event from sidebar
+  // 2. FIXED: Optimized Platform Change Listener (Removed the 300ms polling)
   useEffect(() => {
     const handler = (e: any) => {
-      if (e.detail !== platform) {
-        setPlatform(e.detail);
-        setAllItems([]); setSearched(""); setSearch("");
-        setNextPageToken(null); setNextPage(0);
-        sessionStorage.removeItem('lastSearch');
-        sessionStorage.removeItem('lastItems');
-        sessionStorage.removeItem('lastPlatform');
+      const newPlatform = e.detail;
+      if (newPlatform !== platform) {
+        setPlatform(newPlatform);
+        clearSearchState();
       }
     };
     window.addEventListener("platformChanged", handler);
     return () => window.removeEventListener("platformChanged", handler);
   }, [platform]);
 
-  // Restore search state when coming back from InsightPage
+  // Helper to clear state and storage
+  const clearSearchState = () => {
+    setAllItems([]); 
+    setSearched(""); 
+    setSearch("");
+    setNextPageToken(null); 
+    setNextPage(0);
+    sessionStorage.removeItem('lastSearch');
+    sessionStorage.removeItem('lastItems');
+    sessionStorage.removeItem('lastPlatform');
+    sessionStorage.removeItem('lastNextPageToken');
+    sessionStorage.removeItem('lastNextPage');
+  };
+
+  // 3. Restore state when coming back from InsightPage
   useEffect(() => {
     const lastSearch = sessionStorage.getItem('lastSearch');
     const lastPlatform = sessionStorage.getItem('lastPlatform') as "instagram" | "youtube" | null;
     const lastItems = sessionStorage.getItem('lastItems');
     const lastNextPageToken = sessionStorage.getItem('lastNextPageToken');
     const lastNextPage = sessionStorage.getItem('lastNextPage');
+    
     if (lastSearch && lastPlatform && lastItems) {
       setPlatform(lastPlatform);
-      setSearch(lastSearch); setSearched(lastSearch);
+      setSearch(lastSearch); 
+      setSearched(lastSearch);
       setAllItems(JSON.parse(lastItems));
       setNextPageToken(lastNextPageToken || null);
       setNextPage(parseInt(lastNextPage || '0'));
@@ -98,28 +93,34 @@ export default function Index() {
   }, []);
 
   const switchPlatform = (p: "instagram" | "youtube") => {
-    setPlatform(p); localStorage.setItem("platform", p);
+    setPlatform(p); 
+    localStorage.setItem("platform", p);
     window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-    setAllItems([]); setSearched(""); setSearch("");
-    setNextPageToken(null); setNextPage(0);
-    sessionStorage.removeItem('lastSearch');
-    sessionStorage.removeItem('lastItems');
-    sessionStorage.removeItem('lastPlatform');
+    clearSearchState();
   };
 
   const handleSearch = async (q?: string) => {
     const query = q || search;
     if (!query.trim()) return;
-    setSearch(query); setLoading(true); setSearched(query);
-    setAllItems([]); setNextPageToken(null); setNextPage(0);
+    
+    setSearch(query); 
+    setLoading(true); 
+    setSearched(query);
+    setAllItems([]); 
+    setNextPageToken(null); 
+    setNextPage(0);
+
     try {
       const data = await fetchItems(query, platform, null, 0);
-      setAllItems(data.items || []);
+      const items = data.items || [];
+      setAllItems(items);
       setNextPageToken(data.nextPageToken || null);
       setNextPage(1);
+      
+      // Save to session
       sessionStorage.setItem('lastSearch', query);
       sessionStorage.setItem('lastPlatform', platform);
-      sessionStorage.setItem('lastItems', JSON.stringify(data.items || []));
+      sessionStorage.setItem('lastItems', JSON.stringify(items));
       sessionStorage.setItem('lastNextPageToken', data.nextPageToken || '');
       sessionStorage.setItem('lastNextPage', '1');
     } catch (e: any) {
@@ -138,10 +139,12 @@ export default function Index() {
       const newItems = [...allItems, ...(data.items || [])];
       setAllItems(newItems);
       setNextPageToken(data.nextPageToken || null);
-      setNextPage(p => p + 1);
+      const updatedPage = nextPage + 1;
+      setNextPage(updatedPage);
+      
       sessionStorage.setItem('lastItems', JSON.stringify(newItems));
       sessionStorage.setItem('lastNextPageToken', data.nextPageToken || '');
-      sessionStorage.setItem('lastNextPage', String(nextPage + 1));
+      sessionStorage.setItem('lastNextPage', String(updatedPage));
     } catch (e) {
       console.error('Load more error:', e);
     } finally {
@@ -150,13 +153,7 @@ export default function Index() {
   };
 
   const handleClear = () => {
-    setSearched(""); setAllItems([]); setSearch("");
-    setNextPageToken(null); setNextPage(0);
-    sessionStorage.removeItem('lastSearch');
-    sessionStorage.removeItem('lastItems');
-    sessionStorage.removeItem('lastPlatform');
-    sessionStorage.removeItem('lastNextPageToken');
-    sessionStorage.removeItem('lastNextPage');
+    clearSearchState();
   };
 
   const isIG = platform === "instagram";
@@ -172,7 +169,16 @@ export default function Index() {
         .teal-text{background:linear-gradient(135deg,#14BBA6,#22D3EE);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .sunset-text{background:linear-gradient(135deg,#FF6B6B,#FFB86C);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         *{box-sizing:border-box}
-        .explore-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:140px;gap:2px}
+        
+        /* FIXED: Responsive Grid */
+        .explore-grid{display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:140px;gap:2px}
+        @media (min-width: 640px) {
+          .explore-grid{grid-template-columns:repeat(3,1fr)}
+        }
+        @media (min-width: 1024px) {
+          .explore-grid{grid-template-columns:repeat(4,1fr)}
+        }
+
         .explore-item{position:relative;overflow:hidden;cursor:pointer;background:#1a1a1a}
         .explore-item img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
         .explore-item:hover img{transform:scale(1.06)}
@@ -183,7 +189,7 @@ export default function Index() {
 
       <div className="flex-1 flex flex-col min-h-screen bg-background">
 
-        {/* HERO */}
+        {/* HERO SECTION */}
         <div className="flex flex-col items-center px-4 pt-8 pb-5 relative overflow-hidden">
           <motion.div animate={{ opacity:[0.04,0.1,0.04] }} transition={{ duration:8,repeat:Infinity }}
             className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none rounded-full"
@@ -192,7 +198,6 @@ export default function Index() {
           <motion.div initial={{ opacity:0,y:16 }} animate={{ opacity:1,y:0 }} transition={{ duration:0.6 }}
             className="flex flex-col items-center gap-4 w-full max-w-xl relative z-10">
 
-            {/* Headline */}
             <div className="cg text-4xl md:text-6xl font-bold text-center leading-tight" style={{ minHeight:"1.2em" }}>
               <AnimatePresence mode="wait">
                 <motion.span key={wordIndex}
@@ -212,7 +217,7 @@ export default function Index() {
                     : "Search any niche to see real YouTube Shorts — powered by YouTube Data API"}
             </p>
 
-            {/* Platform toggle */}
+            {/* Platform Toggle */}
             <div className="flex items-center gap-1 p-1 rounded-2xl bg-card border border-border">
               {(["instagram","youtube"] as const).map(p=>(
                 <button key={p} onClick={()=>switchPlatform(p)}
@@ -226,7 +231,7 @@ export default function Index() {
               ))}
             </div>
 
-            {/* Search */}
+            {/* Search Bar */}
             <div className="flex gap-2 w-full">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
@@ -252,7 +257,7 @@ export default function Index() {
               </motion.button>
             </div>
 
-            {/* Chips */}
+            {/* Niche Chips */}
             {!searched && (
               <div className="flex flex-wrap justify-center gap-1.5">
                 {chips.slice(0,12).map(chip=>(
@@ -269,7 +274,7 @@ export default function Index() {
           </motion.div>
         </div>
 
-        {/* Loading */}
+        {/* Loading State */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <motion.div animate={{ rotate:360 }} transition={{ duration:1,repeat:Infinity,ease:"linear" }}>
@@ -283,14 +288,12 @@ export default function Index() {
           </div>
         )}
 
-        {/* Explore Grid */}
+        {/* Results Grid */}
         {searched && !loading && allItems.length > 0 && (
           <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} className="pb-20">
             <div className="flex items-center justify-between px-3 pb-2">
               <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
                 <span style={{ color:ac,fontWeight:600 }}>#{searched}</span>
-                {platform==="youtube"&&<span className="ml-2" style={{ color:YT_COLOR }}>● Live YouTube Data</span>}
-                {platform==="instagram"&&<span className="ml-2" style={{ color:IG_COLOR }}>● Live Instagram Data</span>}
                 <span className="ml-2">· {allItems.length} results</span>
               </p>
               <button onClick={handleClear}
@@ -360,9 +363,6 @@ export default function Index() {
                   ?<><Loader2 className="w-4 h-4 animate-spin"/>Loading more...</>
                   :<><TrendingUp className="w-4 h-4"/>Load More {isIG?"Reels":"Shorts"}</>}
               </motion.button>
-              <p className="text-xs text-muted-foreground" style={{ fontFamily:"Inter,sans-serif" }}>
-                Tap any card to see full insights →
-              </p>
             </div>
           </motion.div>
         )}
