@@ -141,8 +141,8 @@ export default function SignupPage() {
 
     if (error) { setError(error.message); setLoading(false); }
     else {
-      setSuccess("Account created! Check your email to confirm.");
-      setTimeout(() => navigate("/login"), 3000);
+      setSuccess("Account created! Welcome to SocialRum 🎉");
+setTimeout(() => navigate("/"), 1500);
       setLoading(false);
     }
   };
