@@ -434,29 +434,38 @@ export default function SignupPage() {
 
         {/* ── Step 4 — Email Verification ── */}
         {step === 4 && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center text-center gap-5 py-4">
-
-            {/* Animated email icon */}
-            <motion.div
-              animate={{ scale: [1, 1.08, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-24 h-24 rounded-full flex items-center justify-center"
-              style={{ background: `${IG}15`, border: `2px solid ${IG}30` }}>
-              <Mail className="w-12 h-12" style={{ color: IG }} />
-            </motion.div>
-
-            <div className="space-y-2">
-              <h2 className="text-xl font-bold text-foreground">Verify your email</h2>
-              <p className="text-sm text-muted-foreground">We sent a verification link to</p>
-              <p className="text-sm font-semibold px-3 py-1.5 rounded-xl" style={{ background: `${IG}15`, color: IG }}>
-                {email}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Click the link in the email to activate your account and start creating!
-              </p>
-            </div>
-
+  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+    className="flex flex-col items-center text-center gap-4 py-4">
+    <motion.div animate={{ scale:[1,1.08,1] }} transition={{ duration:2, repeat:Infinity }}
+      className="w-16 h-16 rounded-full flex items-center justify-center"
+      style={{ background:`${IG}15`, border:`2px solid ${IG}30` }}>
+      <Mail className="w-8 h-8" style={{ color: IG }} />
+    </motion.div>
+    <div className="space-y-1">
+      <h2 className="text-lg font-bold text-foreground">Check your email!</h2>
+      <p className="text-xs text-muted-foreground">Verification link sent to</p>
+      <p className="text-sm font-semibold" style={{ color: IG }}>{email}</p>
+    </div>
+    <AnimatePresence>
+      {resendSuccess && (
+        <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+          className="text-xs text-green-400">✅ Email resent!</motion.p>
+      )}
+    </AnimatePresence>
+    <div className="flex gap-2 w-full">
+      <button onClick={handleResend} disabled={resendLoading}
+        className="flex-1 py-2.5 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50">
+        {resendLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <RefreshCw className="w-3.5 h-3.5"/>}
+        Resend
+      </button>
+      <button onClick={() => navigate("/login")}
+        className="flex-1 py-2.5 rounded-xl text-white text-xs font-medium"
+        style={{ background: IG_GRAD }}>
+        Go to Login
+      </button>
+    </div>
+  </motion.div>
+)}
             {/* Steps */}
             <div className="w-full space-y-2">
               {[
