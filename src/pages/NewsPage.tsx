@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Newspaper, ExternalLink, Loader2, X, Search, RefreshCw } from "lucide-react";
+import { Newspaper, ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Flame } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 
@@ -21,11 +21,20 @@ interface NewsArticle {
   image_url?: string;
 }
 
-const SUGGESTED = [
-  "Finance", "Cricket", "Tech", "Bollywood", "Fitness",
-  "Business", "Crypto", "Travel", "Food", "Gaming",
-  "Education", "Fashion", "Yoga", "Skincare", "IPL"
-];
+interface TrendingTopic {
+  topic: string;
+  count: number;
+  emoji: string;
+}
+
+const TOPIC_EMOJIS: Record<string, string> = {
+  Finance: "📈", StockMarket: "📊", MutualFunds: "💰", Crypto: "🪙",
+  PersonalFinance: "💵", Tech: "💻", AINews: "🤖", Cricket: "🏏",
+  IPL: "🏆", Bollywood: "🎬", Business: "💼", Fitness: "💪",
+  WeightLoss: "🔥", Travel: "✈️", Food: "🍳", Gaming: "🎮",
+  Education: "📚", Fashion: "👗", Motivation: "🚀", Skincare: "✨",
+  Yoga: "🧘", Comedy: "😂", RealEstate: "🏠", Jobs: "💼",
+};
 
 const DATE_FILTERS = [
   { label: "Today", value: "today", desc: "Last 24 hours" },
@@ -34,25 +43,13 @@ const DATE_FILTERS = [
   { label: "All", value: "all", desc: "Last 7 days" },
 ];
 
-const NICHE_TOPIC_MAP: Record<string, string[]> = {
-  finance: ["Finance", "MutualFunds", "StockMarket", "PersonalFinance"],
-  "stock market": ["StockMarket", "Finance"],
-  crypto: ["Crypto"],
-  fitness: ["Fitness", "WeightLoss", "Yoga"],
-  yoga: ["Yoga", "Fitness"],
-  tech: ["Tech", "AINews"],
-  ai: ["AINews", "Tech"],
-  business: ["Business"],
-  cricket: ["Cricket", "IPL"],
-  ipl: ["IPL", "Cricket"],
-  bollywood: ["Bollywood"],
-  travel: ["Travel"],
-  food: ["Food"],
-  gaming: ["Gaming"],
-  education: ["Education"],
-  fashion: ["Fashion"],
-  motivation: ["Motivation"],
-  skincare: ["Skincare"],
+const NICHE_TOPIC_MAP: Record<string, string> = {
+  finance: "Finance", "stock market": "StockMarket", crypto: "Crypto",
+  fitness: "Fitness", yoga: "Yoga", tech: "Tech", ai: "AINews",
+  business: "Business", cricket: "Cricket", ipl: "IPL",
+  bollywood: "Bollywood", travel: "Travel", food: "Food",
+  gaming: "Gaming", education: "Education", fashion: "Fashion",
+  motivation: "Motivation", skincare: "Skincare",
 };
 
 const getCategoryImage = (headline: string) => {
@@ -85,31 +82,48 @@ export default function NewsPage() {
   const initialQuery = (location.state as any)?.query || "";
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [allArticles, setAllArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [dateFilter, setDateFilter] = useState("today");
+  const [trendingFilter, setTrendingFilter] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // ✅ Fetch from backend with filter param
-  const fetchNews = async (filter: string, topicQuery?: string) => {
+  // ── Compute trending topics from articles ──
+  const trendingTopics = useMemo<TrendingTopic[]>(() => {
+    const counts: Record<string, number> = {};
+    allArticles.forEach(a => {
+      if (a.topic) counts[a.topic] = (counts[a.topic] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([topic, count]) => ({
+        topic,
+        count,
+        emoji: TOPIC_EMOJIS[topic] || '📰',
+      }));
+  }, [allArticles]);
+
+  const fetchNews = async (filter: string, topicQuery?: string, trending?: string | null) => {
     setLoading(true);
     setError(null);
     try {
       let url = `${BASE}/api/news?filter=${filter}`;
-      if (topicQuery) {
-        // Map query to topic IDs
-        const q = topicQuery.toLowerCase().trim();
-        let topicId = topicQuery;
-        for (const [niche, topics] of Object.entries(NICHE_TOPIC_MAP)) {
+      const activeQuery = trending || topicQuery;
+      if (activeQuery) {
+        const q = activeQuery.toLowerCase().trim();
+        let topicId = activeQuery;
+        for (const [niche, topic] of Object.entries(NICHE_TOPIC_MAP)) {
           if (niche === q || niche.includes(q) || q.includes(niche)) {
-            topicId = topics[0];
+            topicId = topic;
             break;
           }
         }
@@ -118,9 +132,12 @@ export default function NewsPage() {
       const res = await fetch(url);
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
-      setArticles(list.sort((a, b) =>
+      const sorted = list.sort((a: NewsArticle, b: NewsArticle) =>
         new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
-      ));
+      );
+      setArticles(sorted);
+      // Save all articles (no topic filter) for computing trending
+      if (!activeQuery) setAllArticles(sorted);
     } catch {
       setError("Failed to load news");
     } finally {
@@ -128,16 +145,24 @@ export default function NewsPage() {
     }
   };
 
+  // Fetch all articles once for trending computation
   useEffect(() => {
-    fetchNews(dateFilter, initialQuery || undefined);
+    fetch(`${BASE}/api/news?filter=today`)
+      .then(r => r.json())
+      .then(data => setAllArticles(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchNews(dateFilter, initialQuery || undefined, null);
   }, []);
 
   useEffect(() => {
     if (searchInput.trim().length > 0) {
-      const filtered = SUGGESTED.filter(s =>
-        s.toLowerCase().includes(searchInput.toLowerCase()) &&
-        s.toLowerCase() !== searchInput.toLowerCase()
-      ).slice(0, 6);
+      const filtered = Object.keys(NICHE_TOPIC_MAP)
+        .filter(s => s.includes(searchInput.toLowerCase()) && s !== searchInput.toLowerCase())
+        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+        .slice(0, 6);
       setDropdownSuggestions(filtered);
       setShowDropdown(filtered.length > 0);
     } else {
@@ -149,27 +174,38 @@ export default function NewsPage() {
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-          inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
+        inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   const handleSearch = (q: string) => {
-    setQuery(q);
-    setSearchInput(q);
-    setShowDropdown(false);
-    fetchNews(dateFilter, q || undefined);
+    setQuery(q); setSearchInput(q); setShowDropdown(false);
+    setTrendingFilter(null);
+    fetchNews(dateFilter, q || undefined, null);
   };
 
   const handleDateFilter = (filter: string) => {
     setDateFilter(filter);
-    fetchNews(filter, query || undefined);
+    fetchNews(filter, query || undefined, trendingFilter);
+  };
+
+  const handleTrendingFilter = (topic: string) => {
+    if (trendingFilter === topic) {
+      setTrendingFilter(null);
+      setQuery(''); setSearchInput('');
+      fetchNews(dateFilter, undefined, null);
+    } else {
+      setTrendingFilter(topic);
+      setQuery(''); setSearchInput('');
+      fetchNews(dateFilter, undefined, topic);
+    }
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchNews(dateFilter, query || undefined);
+    await fetchNews(dateFilter, query || undefined, trendingFilter);
     setRefreshing(false);
   };
 
@@ -217,7 +253,7 @@ export default function NewsPage() {
           )}
         </div>
 
-        {/* ✅ Date filter tabs */}
+        {/* Date filter tabs */}
         <div className="flex gap-1.5 p-1 rounded-2xl bg-card border border-border overflow-x-auto">
           {DATE_FILTERS.map(f => (
             <button key={f.value} onClick={() => handleDateFilter(f.value)}
@@ -226,33 +262,52 @@ export default function NewsPage() {
                 ? { background: IG_GRAD, color: '#fff' }
                 : { color: 'hsl(var(--muted-foreground))' }}>
               <span className="font-semibold">{f.label}</span>
-              <span className="opacity-70 text-xs mt-0.5" style={{ fontSize: 9 }}>{f.desc}</span>
+              <span className="opacity-70 mt-0.5" style={{ fontSize: 9 }}>{f.desc}</span>
             </button>
           ))}
         </div>
 
-        {/* Suggested chips */}
-        {!query && (
-          <div className="flex flex-wrap gap-2">
-            {SUGGESTED.map(s => (
-              <button key={s} onClick={() => handleSearch(s)}
-                className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground transition-colors"
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${IG}50`; (e.currentTarget as HTMLElement).style.color = IG; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.color = ''; }}>
-                {s}
-              </button>
-            ))}
+        {/* ── TRENDING FILTER ── */}
+        {trendingTopics.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Flame className="w-3.5 h-3.5" style={{ color: IG }} />
+              <p className="text-xs font-semibold text-foreground">Trending Now</p>
+              {trendingFilter && (
+                <button onClick={() => { setTrendingFilter(null); fetchNews(dateFilter, undefined, null); }}
+                  className="ml-auto text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                  <X className="w-3 h-3" /> Clear
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {trendingTopics.map((t, i) => (
+                <motion.button key={t.topic}
+                  initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => handleTrendingFilter(t.topic)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all whitespace-nowrap shrink-0"
+                  style={trendingFilter === t.topic
+                    ? { background: IG_GRAD, color: '#fff', borderColor: 'transparent' }
+                    : { background: `${IG}08`, borderColor: `${IG}25`, color: IG }}>
+                  <span>{t.emoji}</span>
+                  <span>{t.topic}</span>
+                  <span className="px-1.5 py-0.5 rounded-full text-xs font-bold"
+                    style={{ background: trendingFilter === t.topic ? 'rgba(255,255,255,0.25)' : `${IG}20` }}>
+                    {t.count}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
           </div>
         )}
 
         {!loading && (
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
-              <span style={{ color: IG, fontWeight: 600 }}>{articles.length}</span> articles
-              {query && <span> for "<span style={{ color: IG }}>{query}</span>"</span>}
-              {' · '}{DATE_FILTERS.find(f => f.value === dateFilter)?.label}
-            </p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            <span style={{ color: IG, fontWeight: 600 }}>{articles.length}</span> articles
+            {(query || trendingFilter) && <span> for "<span style={{ color: IG }}>{trendingFilter || query}</span>"</span>}
+            {' · '}{DATE_FILTERS.find(f => f.value === dateFilter)?.label}
+          </p>
         )}
 
         {loading && (
@@ -267,13 +322,13 @@ export default function NewsPage() {
         {!loading && !error && articles.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
             <Newspaper className="w-10 h-10 text-muted-foreground opacity-30" />
-            <p className="text-sm font-semibold text-foreground">No news for {DATE_FILTERS.find(f => f.value === dateFilter)?.label}</p>
+            <p className="text-sm font-semibold text-foreground">No news found</p>
             <p className="text-xs text-muted-foreground">
-              {dateFilter === 'yesterday' ? 'Yesterday\'s articles will appear here' :
+              {dateFilter === 'yesterday' ? "Yesterday's articles will appear here" :
                dateFilter === 'week' ? 'Older articles will appear here' :
                'Fresh news will appear here soon'}
             </p>
-            <button onClick={() => handleDateFilter('all')}
+            <button onClick={() => { setTrendingFilter(null); handleDateFilter('all'); }}
               className="text-xs px-4 py-2 rounded-xl text-white mt-1"
               style={{ background: IG_GRAD }}>
               Show All News
@@ -289,6 +344,7 @@ export default function NewsPage() {
               const timeAgo = getTimeAgo(date);
               const topic = item.topic || '';
               const thumbnail = item.image_url;
+              const isTrending = trendingTopics.slice(0, 3).some(t => t.topic === topic);
               return (
                 <motion.div key={item.id || i}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -297,29 +353,31 @@ export default function NewsPage() {
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${IG}30`; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}>
                   <div className="flex items-start gap-3">
-                    {thumbnail && (
-                      <img src={thumbnail} alt={headline}
-                        className="w-20 h-16 rounded-xl object-cover shrink-0"
+                    <div className="relative shrink-0">
+                      <img src={thumbnail || getCategoryImage(headline)} alt={headline}
+                        className="w-20 h-16 rounded-xl object-cover"
                         onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
-                    )}
-                    {!thumbnail && (
-                      <img src={getCategoryImage(headline)} alt={headline}
-                        className="w-20 h-16 rounded-xl object-cover shrink-0" />
-                    )}
+                      {isTrending && (
+                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                          style={{ background: IG_GRAD }}>
+                          <TrendingUp className="w-2.5 h-2.5 text-white" />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <h3 className="font-medium text-foreground text-sm leading-snug line-clamp-2">{headline}</h3>
                         <div className="flex gap-1.5 shrink-0">
                           {item.summary && (
                             <button onClick={() => setSelectedArticle(item)}
-                              className="text-xs px-2.5 py-1 rounded-lg font-medium transition-colors"
+                              className="text-xs px-2.5 py-1 rounded-lg font-medium"
                               style={{ background: `${IG}15`, color: IG }}>
                               Summary
                             </button>
                           )}
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
-                              className="text-muted-foreground hover:text-foreground transition-colors p-1">
+                              className="text-muted-foreground hover:text-foreground p-1">
                               <ExternalLink className="w-3.5 h-3.5" />
                             </button>
                           )}
@@ -331,10 +389,10 @@ export default function NewsPage() {
                         <span className="text-xs font-medium" style={{ color: IG }}>{timeAgo}</span>
                         {topic && (
                           <Badge variant="secondary"
-                            className="text-xs cursor-pointer transition-colors"
+                            className="text-xs cursor-pointer"
                             style={{ background: `${IG}12`, color: IG, border: 'none' }}
-                            onClick={() => handleSearch(topic)}>
-                            {topic}
+                            onClick={() => handleTrendingFilter(topic)}>
+                            {TOPIC_EMOJIS[topic] || '📰'} {topic}
                           </Badge>
                         )}
                       </div>
@@ -374,7 +432,7 @@ export default function NewsPage() {
                 <span className="text-xs text-muted-foreground">{selectedArticle.source}</span>
                 {selectedArticle.url && (
                   <button onClick={() => window.open(selectedArticle.url, '_blank')}
-                    className="flex items-center gap-1 text-sm font-medium transition-colors" style={{ color: IG }}>
+                    className="flex items-center gap-1 text-sm font-medium" style={{ color: IG }}>
                     Read full article <ExternalLink className="w-3 h-3" />
                   </button>
                 )}
