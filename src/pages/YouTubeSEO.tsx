@@ -94,10 +94,9 @@ export default function YouTubeSEO() {
             <div className="relative flex-1">
               <input ref={inputRef} value={topic} onChange={(e) => setTopic(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleGenerate(); if (e.key === "Escape") setShowDropdown(false); }}
-                onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
+                onFocus={(e) => { if (dropdownSuggestions.length > 0) setShowDropdown(true); e.target.style.borderColor = `${YT_COLOR}60`; }}
                 placeholder="Enter video topic (e.g. How to invest in stocks)"
                 className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-                onFocus={(e) => { e.target.style.borderColor = `${YT_COLOR}60`; }}
                 onBlur={(e) => { e.target.style.borderColor = ''; }}
               />
               {topic && (
