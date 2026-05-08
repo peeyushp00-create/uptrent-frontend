@@ -424,7 +424,7 @@ export default function SignupPage() {
                   style={{ background: IG_GRAD }}>
                   {loading
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</>
-                    : voiceStyle ? "Save & Create Account ✨" : "Skip & Create Account"}
+                    : (voiceStyle || recordingDone) ? "Save & Create Account ✨" : "Skip & Create Account"}
                 </button>
               </div>
             </motion.div>
