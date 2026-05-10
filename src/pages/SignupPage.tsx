@@ -57,6 +57,11 @@ export default function SignupPage() {
   const timerRef = useRef<any>(null);
   const navigate = useNavigate();
 
+  const goToStep2 = () => {
+    if (!name || !email || !password) { setError("Please fill all fields"); return; }
+    setError(""); setStep(2);
+  };
+
   const toggleNiche = (n: string) => {
     setNiches(prev => prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]);
   };
@@ -128,8 +133,7 @@ export default function SignupPage() {
     setError("");
     localStorage.setItem('userLanguage', language);
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email, password,
       options: {
         data: { full_name: name, niche: niches[0], niches, language, voice_transcript: voiceTranscript, voice_style: voiceStyle },
         emailRedirectTo: `${window.location.origin}/`,
@@ -161,22 +165,17 @@ export default function SignupPage() {
           <p className="text-sm text-muted-foreground">Join thousands of creators on SocialRum</p>
         </div>
 
-        {/* Step indicator — steps 1-3 only */}
+        {/* Step indicator */}
         {step <= 3 && (
           <>
             <div className="flex items-center justify-center gap-1">
               {[1, 2, 3].map(n => (
                 <div key={n} className="flex items-center gap-1">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                    style={step >= n
-                      ? { background: IG_GRAD, color: '#fff' }
-                      : { border: '1px solid hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>
+                    style={step >= n ? { background: IG_GRAD, color: '#fff' } : { border: '1px solid hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>
                     {step > n ? <Check className="w-4 h-4" /> : n}
                   </div>
-                  {n < 3 && (
-                    <div className="w-8 h-0.5 transition-all"
-                      style={{ background: step > n ? IG : 'hsl(var(--border))' }} />
-                  )}
+                  {n < 3 && <div className="w-8 h-0.5 transition-all" style={{ background: step > n ? IG : 'hsl(var(--border))' }} />}
                 </div>
               ))}
             </div>
@@ -193,27 +192,53 @@ export default function SignupPage() {
           {/* ── Step 1 — Account ── */}
           {step === 1 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              {[
-                { label: "Full Name", type: "text", placeholder: "Your name", value: name, set: setName },
-                { label: "Email", type: "email", placeholder: "you@example.com", value: email, set: setEmail },
-                { label: "Password", type: "password", placeholder: "Min 6 characters", value: password, set: setPassword, min: 6 },
-              ].map(f => (
-                <div key={f.label} className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">{f.label}</label>
-                  <input type={f.type} placeholder={f.placeholder} value={f.value}
-                    onChange={e => f.set(e.target.value)} required minLength={f.min}
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-                    onFocus={e => e.target.style.borderColor = `${IG}60`}
-                    onBlur={e => e.target.style.borderColor = ''} />
-                </div>
-              ))}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Full Name</label>
+                <input
+                  id="signup-name"
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('signup-email')?.focus(); } }}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
+                  onFocus={e => e.target.style.borderColor = `${IG}60`}
+                  onBlur={e => e.target.style.borderColor = ''} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Email</label>
+                <input
+                  id="signup-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('signup-password')?.focus(); } }}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
+                  onFocus={e => e.target.style.borderColor = `${IG}60`}
+                  onBlur={e => e.target.style.borderColor = ''} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Password</label>
+                <input
+                  id="signup-password"
+                  type="password"
+                  placeholder="Min 6 characters"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); goToStep2(); } }}
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
+                  onFocus={e => e.target.style.borderColor = `${IG}60`}
+                  onBlur={e => e.target.style.borderColor = ''} />
+              </div>
               {error && <p className="text-sm text-red-400">{error}</p>}
-              <button type="button" className="w-full py-3 rounded-xl text-white font-medium text-sm"
-                style={{ background: IG_GRAD }}
-                onClick={() => {
-                  if (!name || !email || !password) { setError("Please fill all fields"); return; }
-                  setError(""); setStep(2);
-                }}>
+              <button type="button" onClick={goToStep2}
+                className="w-full py-3 rounded-xl text-white font-medium text-sm"
+                style={{ background: IG_GRAD }}>
                 Next →
               </button>
             </motion.div>
@@ -256,7 +281,6 @@ export default function SignupPage() {
                   </button>
                 </div>
 
-                {/* Custom niches */}
                 {niches.filter(n => !NICHES.includes(n)).length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     <p className="text-xs text-muted-foreground w-full">Custom:</p>
@@ -296,10 +320,7 @@ export default function SignupPage() {
                   ← Back
                 </button>
                 <button type="button"
-                  onClick={() => {
-                    if (niches.length === 0) { setError("Please select at least one niche"); return; }
-                    setError(""); setStep(3);
-                  }}
+                  onClick={() => { if (niches.length === 0) { setError("Please select at least one niche"); return; } setError(""); setStep(3); }}
                   className="flex-1 py-3 rounded-xl text-white font-medium text-sm"
                   style={{ background: IG_GRAD }}>
                   Next →
