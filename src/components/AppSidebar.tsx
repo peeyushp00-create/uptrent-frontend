@@ -60,7 +60,7 @@ export default function AppSidebar() {
     localStorage.setItem("platform", p);
     window.dispatchEvent(new StorageEvent("storage", { key: "platform", newValue: p }));
     window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-    if (p === "youtube") navigate("/youtube/seo");
+   if (p === "youtube") navigate("/youtube/trending");
     else navigate("/");
   };
 
