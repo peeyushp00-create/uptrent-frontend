@@ -1,24 +1,25 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Image, Sparkles, Download, RefreshCw, X } from "lucide-react";
+import { Image, Sparkles, Download, RefreshCw, X, Loader2 } from "lucide-react";
 
 const IG_GRAD = "linear-gradient(135deg, #14BBA6, #0D9488)";
 const IG = "#14BBA6";
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const STYLES = [
-  { id: "cinematic", label: "🎬 Cinematic", prompt: "cinematic dramatic movie poster style, dark background, professional lighting" },
-  { id: "bold", label: "⚡ Bold Text", prompt: "bold colorful YouTube thumbnail, big text overlay, high contrast, eye-catching" },
-  { id: "minimal", label: "✨ Minimal", prompt: "clean minimal modern design, white background, simple elegant" },
-  { id: "viral", label: "🔥 Viral", prompt: "viral YouTube thumbnail style, shocked face, bright colors, dramatic" },
-  { id: "professional", label: "💼 Professional", prompt: "professional business style, corporate, clean, trustworthy" },
-  { id: "gaming", label: "🎮 Gaming", prompt: "gaming thumbnail style, neon lights, dark background, energetic" },
+  { id: "viral", label: "🔥 Viral", prompt: "viral YouTube thumbnail, dramatic lighting, bold colors, high contrast, cinematic, professional photography" },
+  { id: "cinematic", label: "🎬 Cinematic", prompt: "cinematic movie poster style, dramatic dark background, professional studio lighting, ultra realistic" },
+  { id: "bold", label: "⚡ Bold", prompt: "bold colorful design, eye-catching, vibrant colors, dynamic composition, professional" },
+  { id: "minimal", label: "✨ Minimal", prompt: "clean minimal modern design, white background, simple elegant, professional" },
+  { id: "gaming", label: "🎮 Gaming", prompt: "gaming thumbnail style, neon lights, dark background, futuristic, energetic, dramatic" },
+  { id: "motivational", label: "💪 Motivational", prompt: "motivational inspiring poster, powerful composition, warm colors, dramatic lighting" },
 ];
 
 const PLATFORMS = [
-  { id: "youtube", label: "YouTube", width: 1280, height: 720, ratio: "16:9" },
-  { id: "instagram", label: "Instagram", width: 1080, height: 1080, ratio: "1:1" },
-  { id: "reel", label: "Reel/Short", width: 1080, height: 1920, ratio: "9:16" },
+  { id: "youtube", label: "YouTube", width: 1280, height: 720 },
+  { id: "instagram", label: "Instagram", width: 1080, height: 1080 },
+  { id: "reel", label: "Reel/Short", width: 1080, height: 1920 },
 ];
 
 export default function ThumbnailPage() {
@@ -26,53 +27,68 @@ export default function ThumbnailPage() {
   const initialTopic = searchParams.get("topic") || "";
 
   const [topic, setTopic] = useState(initialTopic);
-  const [style, setStyle] = useState("cinematic");
+  const [style, setStyle] = useState("viral");
   const [platform, setPlatform] = useState("youtube");
   const [generating, setGenerating] = useState(false);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  const buildPrompt = (seed: number) => {
-    const selectedStyle = STYLES.find(s => s.id === style);
-    const selectedPlatform = PLATFORMS.find(p => p.id === platform);
-    return `${topic}, ${selectedStyle?.prompt}, ${selectedPlatform?.label} thumbnail, ${selectedPlatform?.ratio} aspect ratio, high quality, seed:${seed}`;
-  };
+  const [progress, setProgress] = useState(0);
 
   const generateThumbnails = async () => {
     if (!topic.trim()) { setError("Please enter a topic"); return; }
     setGenerating(true);
     setError("");
     setThumbnails([]);
+    setProgress(0);
 
-    try {
-      const selectedPlatform = PLATFORMS.find(p => p.id === platform);
-      const seeds = [Date.now(), Date.now() + 1, Date.now() + 2, Date.now() + 3];
+    const selectedStyle = STYLES.find(s => s.id === style);
+    const selectedPlatform = PLATFORMS.find(p => p.id === platform);
 
-      const urls = seeds.map(seed => {
-        const prompt = encodeURIComponent(buildPrompt(seed));
-        return `https://image.pollinations.ai/prompt/${prompt}?width=${selectedPlatform?.width}&height=${selectedPlatform?.height}&nologo=true&seed=${seed}`;
-      });
+    const prompts = [
+      `${topic}, ${selectedStyle?.prompt}, ${selectedPlatform?.label} thumbnail format, 4K quality`,
+      `${topic}, ${selectedStyle?.prompt}, different angle, professional content creator thumbnail`,
+      `${topic} concept, ${selectedStyle?.prompt}, creative composition, stunning visuals`,
+      `${topic}, ${selectedStyle?.prompt}, unique perspective, high quality digital art`,
+    ];
 
-      setThumbnails(urls);
-    } catch {
-      setError("Failed to generate thumbnails. Please try again.");
-    } finally {
-      setGenerating(false);
+    const results: string[] = [];
+
+    for (let i = 0; i < prompts.length; i++) {
+      try {
+        setProgress(i + 1);
+        const res = await fetch(`${BASE}/api/thumbnail/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: prompts[i],
+            width: selectedPlatform?.width,
+            height: selectedPlatform?.height,
+          }),
+        });
+
+        if (!res.ok) throw new Error('Generation failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        results.push(url);
+        setThumbnails([...results]);
+      } catch (err) {
+        console.error(`Thumbnail ${i + 1} failed:`, err);
+      }
     }
+
+    if (results.length === 0) {
+      setError("Failed to generate thumbnails. Please try again.");
+    }
+    setGenerating(false);
+    setProgress(0);
   };
 
   const downloadImage = async (url: string, index: number) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `thumbnail-${topic.slice(0, 20)}-${index + 1}.jpg`;
-      link.click();
-    } catch {
-      window.open(url, "_blank");
-    }
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `thumbnail-${topic.slice(0, 20).replace(/\s+/g, '-')}-${index + 1}.png`;
+    link.click();
   };
 
   return (
@@ -83,7 +99,7 @@ export default function ThumbnailPage() {
           <Image className="w-5 h-5" style={{ color: IG }} />
           <h1 className="text-lg font-bold text-foreground">Thumbnail Generator</h1>
           <span className="ml-1 text-xs px-2 py-0.5 rounded-full text-white" style={{ background: IG_GRAD }}>
-            AI Free
+            AI Powered
           </span>
         </div>
       </div>
@@ -96,7 +112,7 @@ export default function ThumbnailPage() {
           <div className="flex gap-2">
             <input type="text" value={topic} onChange={e => setTopic(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') generateThumbnails(); }}
-              placeholder="e.g. How to invest in stocks, BGMI tips..."
+              placeholder="e.g. How to invest in stocks, BGMI tips, Weight loss..."
               className="flex-1 px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
               onFocus={e => e.target.style.borderColor = `${IG}60`}
               onBlur={e => e.target.style.borderColor = ''} />
@@ -119,8 +135,7 @@ export default function ThumbnailPage() {
                 style={platform === p.id
                   ? { background: IG_GRAD, color: '#fff', borderColor: 'transparent' }
                   : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>
-                <p className="font-semibold">{p.label}</p>
-                <p className="text-xs opacity-70">{p.ratio}</p>
+                {p.label}
               </button>
             ))}
           </div>
@@ -128,7 +143,7 @@ export default function ThumbnailPage() {
 
         {/* Style selector */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Thumbnail Style</label>
+          <label className="text-sm font-medium text-foreground">Style</label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {STYLES.map(s => (
               <button key={s.id} onClick={() => setStyle(s.id)}
@@ -149,47 +164,59 @@ export default function ThumbnailPage() {
           className="w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
           style={{ background: IG_GRAD }}>
           <Sparkles className="w-4 h-4" />
-          {generating ? 'Generating 4 thumbnails...' : 'Generate Thumbnails'}
+          {generating ? `Generating thumbnail ${progress}/4...` : 'Generate 4 Thumbnails'}
         </button>
 
         {/* Loading */}
         {generating && (
-          <div className="flex flex-col items-center justify-center py-10 gap-3">
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-              <Sparkles className="w-6 h-6" style={{ color: IG }} />
-            </motion.div>
-            <p className="text-sm text-muted-foreground">Creating thumbnails for <span style={{ color: IG }}>"{topic}"</span>...</p>
-            <p className="text-xs text-muted-foreground">This takes 15-30 seconds</p>
-          </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center py-8 gap-3">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: IG }} />
+            <p className="text-sm text-muted-foreground text-center">
+              Generating thumbnail {progress}/4 for <span style={{ color: IG }}>"{topic}"</span>...
+            </p>
+            <p className="text-xs text-muted-foreground">Using FLUX.1 AI — takes 15-30 seconds each</p>
+            {/* Progress bar */}
+            <div className="w-full max-w-xs h-1.5 bg-border rounded-full overflow-hidden">
+              <motion.div className="h-full rounded-full"
+                style={{ background: IG_GRAD }}
+                animate={{ width: `${(progress / 4) * 100}%` }}
+                transition={{ duration: 0.3 }} />
+            </div>
+          </motion.div>
         )}
 
         {/* Thumbnails grid */}
-        {thumbnails.length > 0 && !generating && (
+        {thumbnails.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-foreground">Generated Thumbnails</p>
-              <button onClick={generateThumbnails}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border border-border text-muted-foreground hover:text-foreground transition-colors">
-                <RefreshCw className="w-3.5 h-3.5" /> Regenerate
-              </button>
+              <p className="text-sm font-semibold text-foreground">
+                Generated Thumbnails
+                {generating && <span className="ml-2 text-xs text-muted-foreground">({thumbnails.length}/4 ready)</span>}
+              </p>
+              {!generating && (
+                <button onClick={generateThumbnails}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border border-border text-muted-foreground hover:text-foreground transition-colors">
+                  <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               {thumbnails.map((url, i) => (
-                <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}
+                <motion.div key={i}
+                  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.1 }}
                   className="relative group rounded-2xl overflow-hidden border border-border bg-card cursor-pointer"
                   onClick={() => setSelectedImage(url)}>
                   <img src={url} alt={`Thumbnail ${i + 1}`}
                     className="w-full object-cover transition-transform group-hover:scale-105"
-                    style={{ aspectRatio: platform === 'reel' ? '9/16' : platform === 'instagram' ? '1/1' : '16/9' }}
-                    loading="lazy" />
+                    style={{ aspectRatio: platform === 'reel' ? '9/16' : platform === 'instagram' ? '1/1' : '16/9' }} />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <div className="flex gap-2">
-                      <button onClick={e => { e.stopPropagation(); downloadImage(url, i); }}
-                        className="p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors">
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button onClick={e => { e.stopPropagation(); downloadImage(url, i); }}
+                      className="p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors">
+                      <Download className="w-4 h-4" />
+                    </button>
                   </div>
                   <div className="absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full text-white font-medium"
                     style={{ background: `${IG}CC` }}>
@@ -198,10 +225,7 @@ export default function ThumbnailPage() {
                 </motion.div>
               ))}
             </div>
-
-            <p className="text-xs text-center text-muted-foreground">
-              Click any thumbnail to preview · Hover to download
-            </p>
+            <p className="text-xs text-center text-muted-foreground">Click to preview · Hover to download</p>
           </motion.div>
         )}
 
