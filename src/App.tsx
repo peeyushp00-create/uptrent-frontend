@@ -22,6 +22,7 @@ import YouTubeTrending from "./pages/YouTubeTrending";
 import InstagramAnalyzer from "./pages/InstagramAnalyzer";
 import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
+import ThumbnailPage from "./pages/ThumbnailPage";
 
 const queryClient = new QueryClient();
 
@@ -52,15 +53,17 @@ const App = () => (
               <Route path="/scripts" element={<ScriptsPage />} />
               <Route path="/trending" element={<TrendingDashboard />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/thumbnail" element={<ThumbnailPage />} />
+
               {/* Instagram routes */}
               <Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
+
               {/* YouTube routes */}
               <Route path="/youtube/seo" element={<YouTubeSEO />} />
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
-              <Route path="/pricing" element={<PricingPage />} />
-            
             </Route>
 
             <Route path="*" element={<NotFound />} />
