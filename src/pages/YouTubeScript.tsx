@@ -621,11 +621,6 @@ export default function YouTubeScript() {
                 <button onClick={handleClear} className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2">
                   <X className="w-4 h-4" /> New Topic
                 </button>
-                <button onClick={() => window.location.href = `/thumbnail?topic=${encodeURIComponent(topic)}`}
-                  className="w-full py-2.5 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 transition-colors hover:opacity-80"
-                  style={{ borderColor: `${YT_COLOR}40`, color: YT_COLOR, background: `${YT_COLOR}08` }}>
-                  🖼️ Generate Thumbnail for this Script
-                </button>
               </motion.div>
             )}
 

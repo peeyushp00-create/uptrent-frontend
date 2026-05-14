@@ -889,12 +889,7 @@ export default function ScriptsPage() {
                   <button onClick={handleClear} className="px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center gap-2">
                     <X className="w-4 h-4" /> New
                   </button>
-                </div>
-                <button onClick={() => window.location.href = `/thumbnail?topic=${encodeURIComponent(selectedTopic || topicInput)}`}
-                  className="w-full py-2.5 rounded-2xl border text-sm font-medium flex items-center justify-center gap-2 transition-colors hover:opacity-80"
-                  style={{ borderColor: `${IG}40`, color: IG, background: `${IG}08` }}>
-                  🖼️ Generate Thumbnail for this Script
-                </button>
+               </div>
               </motion.div>
             )}
           </>
