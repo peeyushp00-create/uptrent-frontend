@@ -1,481 +1,247 @@
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
-import {
-  TrendingUp, Sparkles, Newspaper, FileText,
-  Check, Star, ArrowRight, Zap, Target,
-  Instagram, Youtube, ChevronDown,
-  BarChart2, Users, Menu, X, Crown
-} from "lucide-react";
+import { useEffect, useRef } from "react";
 
-const IG_GRAD = "linear-gradient(135deg, #14BBA6, #22D3EE)";
-const IG = "#14BBA6";
-const GOLD = "linear-gradient(135deg, #E8B84B, #C17D20)";
-const G = "#E8B84B";
-const C = {
-  bg: "#0A0A0A", card: "#141414", border: "#222",
-  text: "#F0EAD6", muted: "#5A5A5A",
-};
-
-const NAV_LINKS = [
-  { label: "Features", id: "features" },
-  { label: "How it Works", id: "howitworks" },
-  { label: "Testimonials", id: "testimonials" },
-  { label: "Pricing", id: "pricing" },
+const GRID_LINES = [
+  { axis: 'h', pos: '28%', dur: '9s', dir: 'right', delay: '0s' },
+  { axis: 'h', pos: '55%', dur: '12s', dir: 'left', delay: '2s' },
+  { axis: 'h', pos: '78%', dur: '8s', dir: 'right', delay: '5s' },
+  { axis: 'v', pos: '22%', dur: '10s', dir: 'down', delay: '1s' },
+  { axis: 'v', pos: '50%', dur: '14s', dir: 'up', delay: '3s' },
+  { axis: 'v', pos: '75%', dur: '11s', dir: 'down', delay: '6s' },
 ];
 
-const features = [
-  { icon: TrendingUp, title: "Trending Topics", desc: "Discover what India is watching — real-time trending data across 20+ niches before anyone else.", tag: "Live" },
-  { icon: Sparkles, title: "AI Script Generator", desc: "Generate ready-to-film Reel and YouTube scripts with hooks, body, and CTA in under 10 seconds.", tag: "AI" },
-  { icon: Newspaper, title: "Creator News Feed", desc: "Curated niche news delivered daily so you never run out of timely content ideas.", tag: "Daily" },
-  { icon: Target, title: "SEO Optimizer", desc: "Rank higher on YouTube with AI-generated titles, descriptions, and tags built for the algorithm.", tag: "YouTube" },
-  { icon: BarChart2, title: "Channel Analyzer", desc: "Deep-dive into any Instagram or YouTube channel — content pillars, ideas, and growth gaps.", tag: "Insights" },
-  { icon: Zap, title: "Viral Hook Engine", desc: "Stop the scroll with AI hooks engineered from millions of viral Indian creator posts.", tag: "Viral" },
+const FEATURES = [
+  { emoji: '🔥', title: 'Trending Topics', desc: 'Discover what India is watching — real-time trending data across 20+ niches before anyone else.' },
+  { emoji: '✍️', title: 'AI Script Generator', desc: 'Generate ready-to-film Reel and YouTube scripts with hooks, body, and CTA in under 10 seconds.' },
+  { emoji: '📰', title: 'Creator News Feed', desc: 'Curated niche news delivered daily so you never run out of timely content ideas.' },
+  { emoji: '🎯', title: 'YouTube SEO', desc: 'Rank higher on YouTube with AI-generated titles, descriptions, and tags built for the algorithm.' },
+  { emoji: '📊', title: 'Channel Analyzer', desc: 'Deep-dive into any Instagram or YouTube channel — content pillars, ideas, and growth gaps.' },
+  { emoji: '⚡', title: 'Viral Hook Engine', desc: 'Stop the scroll with AI hooks engineered from millions of viral Indian creator posts.' },
 ];
 
-const steps = [
-  { num: "01", title: "Pick Your Niche", desc: "Tell SocialRum your content niche — finance, fitness, comedy, tech or any of 20+ categories." },
-  { num: "02", title: "Discover Trends", desc: "See what's trending right now in your niche across Instagram Reels and YouTube Shorts." },
-  { num: "03", title: "Generate Content", desc: "One click to get a full script, viral hook, SEO tags or content ideas — ready to film." },
-  { num: "04", title: "Go Viral", desc: "Post with confidence knowing your content is built on real data and AI-powered strategy." },
+const HOW_IT_WORKS = [
+  { num: '01', title: 'Pick Your Niche', desc: 'Tell SocialRum your content niche — finance, fitness, comedy, tech or any of 20+ categories.' },
+  { num: '02', title: 'Discover Trends', desc: 'See what\'s trending right now in your niche across Instagram Reels and YouTube Shorts.' },
+  { num: '03', title: 'Generate Content', desc: 'One click to get a full script, viral hook, SEO tags or content ideas — ready to film.' },
+  { num: '04', title: 'Grow Faster', desc: 'Post with confidence knowing your content is built on real data and AI-powered strategy.' },
 ];
-
-const testimonials = [
-  { name: "Rahul Sharma", handle: "@rahulfinance", niche: "Finance · 280K", text: "SocialRum helped me go from 5K to 50K in 3 months. The trending topics feature is insane — I always post at the right time.", avatar: "RS", stars: 5 },
-  { name: "Priya Mehta", handle: "@priyafitness", niche: "Fitness · 120K", text: "Script generation alone saves me 4 hours a week. The hooks it writes are actually better than what I used to write myself.", avatar: "PM", stars: 5 },
-  { name: "Arjun Kapoor", handle: "@arjuntech", niche: "Tech · 95K", text: "The SEO optimizer took my YouTube views from 2K to 40K per video. I wish I had this 2 years ago.", avatar: "AK", stars: 5 },
-  { name: "Sneha Rao", handle: "@snehalifestyle", niche: "Lifestyle · 67K", text: "Finally a tool made for Indian creators. The Hinglish script option alone is worth the subscription.", avatar: "SR", stars: 5 },
-  { name: "Vikram Das", handle: "@vikramcricket", niche: "Cricket · 210K", text: "I post IPL content and SocialRum's live news feed means I'm always first. My engagement doubled.", avatar: "VD", stars: 5 },
-  { name: "Anjali Nair", handle: "@anjalifood", niche: "Food · 88K", text: "The channel analyzer showed me exactly what top food creators do differently. Changed my whole strategy.", avatar: "AN", stars: 5 },
-];
-
-const PLANS = [
-  {
-    id: "free", label: "FREE", price: "₹0", period: "/month",
-    desc: "Perfect to get started", badge: null, badgeColor: null,
-    features: ["3 AI script generations/month", "Basic trending topics", "News feed (5 articles/day)", "Instagram Reels explorer"],
-    cta: "Get Started Free", ctaStyle: "outline", accent: C.border,
-  },
-  {
-    id: "pro", label: "PRO", price: "₹799", period: "/month",
-    desc: "Billed monthly · Cancel anytime", badge: null, badgeColor: null,
-    features: ["Unlimited AI script generations", "Full trending data — 20+ niches", "Complete news feed", "YouTube SEO optimizer", "Channel & profile analyzer", "Viral hook engine", "Priority support"],
-    cta: "Upgrade to Pro", ctaStyle: "teal", accent: IG,
-  },
-  {
-    id: "quarterly", label: "PRO QUARTERLY", price: "₹699", period: "/month",
-    desc: "Billed ₹2,097 every 3 months", badge: "Best Value", badgeColor: IG_GRAD,
-    features: ["Everything in Pro Monthly", "Save ₹300 every 3 months", "Quarterly billing flexibility", "Dedicated onboarding support", "Early access to new features"],
-    cta: "Get Quarterly", ctaStyle: "teal", accent: IG,
-  },
-  {
-    id: "annual", label: "PRO ANNUAL", price: "₹599", period: "/month",
-    desc: "Billed ₹6,708/year · Save 30%", badge: "Most Popular", badgeColor: GOLD,
-    features: ["Everything in Pro Quarterly", "Save ₹2,389 vs monthly", "Annual billing — lowest price", "Priority feature requests", "1-on-1 creator consultation"],
-    cta: "Get Annual", ctaStyle: "gold", accent: G,
-  },
-];
-
-
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-
-
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setMenuOpen(false);
-  };
+  useEffect(() => {
+    const hero = heroRef.current;
+    const content = contentRef.current;
+    if (!hero || !content) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = hero.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / rect.width - 0.5;
+      const my = (e.clientY - rect.top) / rect.height - 0.5;
+      content.style.transform = `translate(${mx * 12}px, ${my * 8}px)`;
+    };
+    hero.addEventListener('mousemove', handleMouseMove);
+    return () => hero.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: "100vh", overflowX: "hidden" }}>
+    <div style={{ background: '#0D0B14', color: '#fff', minHeight: '100vh', overflowX: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
-        .cg { font-family: 'Cormorant Garamond', serif !important; }
-        .dm { font-family: 'DM Sans', sans-serif !important; }
-        .gold-text { background: linear-gradient(135deg,#E8B84B,#C17D20); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .teal-text { background: linear-gradient(135deg,#14BBA6,#22D3EE); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        * { box-sizing:border-box; }
-        ::-webkit-scrollbar { width:4px; }
-        ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
-        .nav-link:hover { color:#14BBA6 !important; }
-        .feature-card { transition: all .25s ease; }
-        .feature-card:hover { border-color:#14BBA625 !important; transform:translateY(-4px); }
-        .plan-card { transition: all .25s ease; }
-          40% { opacity:1; transform:translate(var(--dx), -70px) scale(1.1) rotate(var(--rot)); }
-          100% { opacity:0; transform:translate(var(--dx2), -150px) scale(0.7) rotate(var(--rot2)); }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        .gradient-text { background: linear-gradient(135deg, #7C3AED, #A855F7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); }
+        .blob-purple { background: radial-gradient(circle, #7C3AED44, transparent 70%); border-radius: 50%; }
+        .glow-primary { box-shadow: 0 0 30px rgba(124,58,237,0.3); }
+        @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        @keyframes ping { 0% { transform: scale(1); opacity: 1; } 75%,100% { transform: scale(2); opacity: 0; } }
+        @keyframes line-traverse-right { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+        @keyframes line-traverse-left { 0% { transform: translateX(400%); } 100% { transform: translateX(-100%); } }
+        @keyframes line-traverse-down { 0% { transform: translateY(-100%); } 100% { transform: translateY(400%); } }
+        @keyframes line-traverse-up { 0% { transform: translateY(400%); } 100% { transform: translateY(-100%); } }
+        .line-traverse-right { animation: line-traverse-right linear infinite; }
+        .line-traverse-left { animation: line-traverse-left linear infinite; }
+        .line-traverse-down { animation: line-traverse-down linear infinite; }
+        .line-traverse-up { animation: line-traverse-up linear infinite; }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-ping { animation: ping 1.5s cubic-bezier(0,0,0.2,1) infinite; }
+        .feature-card { transition: all 0.25s ease; }
+        .feature-card:hover { transform: translateY(-4px); border-color: rgba(124,58,237,0.3) !important; }
+        * { box-sizing: border-box; }
       `}</style>
 
       {/* ── NAVBAR ── */}
-      <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }}
-        className="flex items-center justify-between px-6 md:px-16 py-5 fixed top-0 left-0 right-0 z-50"
-        style={{ background: `${C.bg}cc`, borderBottom: `1px solid ${C.border}20`, backdropFilter: "blur(20px)" }}>
-        <div className="flex items-center gap-3">
-          <motion.img whileHover={{ rotate: 8, scale: 1.05 }} src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl" />
-          <span className="cg font-bold text-xl" style={{ color: C.text }}>SocialRum</span>
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'rgba(13,11,20,0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/logo.png" alt="SocialRum" style={{ width: 36, height: 36, borderRadius: 10 }} />
+            <span style={{ fontWeight: 700, fontSize: 20, color: '#fff' }}>SocialRum</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={() => navigate('/login')}
+              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', padding: '8px 20px', borderRadius: 12, cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
+              Login
+            </button>
+            <button onClick={() => navigate('/signup')}
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: '#fff', padding: '8px 20px', borderRadius: 12, cursor: 'pointer', fontSize: 14, fontWeight: 600, border: 'none' }}
+              className="glow-primary">
+              Get Early Access
+            </button>
+          </div>
         </div>
-        <div className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map(l => (
-            <button key={l.id} onClick={() => scrollTo(l.id)}
-              className="nav-link dm text-sm bg-transparent border-none cursor-pointer transition-colors"
-              style={{ color: C.muted }}>{l.label}</button>
-          ))}
-        </div>
-        <div className="hidden md:flex items-center gap-3">
-          <button onClick={() => navigate("/login")} className="nav-link dm text-sm transition-colors" style={{ color: C.muted }}>Login</button>
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 24px #14BBA630" }} whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/signup")}
-            className="dm px-5 py-2.5 rounded-xl text-sm font-semibold"
-            style={{ background: IG_GRAD, color: "#fff" }}>
-            Start Free
-          </motion.button>
-        </div>
-        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden" style={{ color: C.muted }}>
-          {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </motion.nav>
-
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            className="fixed top-16 left-4 right-4 z-40 p-4 flex flex-col gap-2 rounded-2xl"
-            style={{ background: C.card, border: `1px solid ${C.border}` }}>
-            {NAV_LINKS.map(l => (
-              <button key={l.id} onClick={() => scrollTo(l.id)} className="dm text-sm py-2.5 text-left" style={{ color: C.muted }}>{l.label}</button>
-            ))}
-            <div className="border-t my-1" style={{ borderColor: C.border }} />
-            <button onClick={() => navigate("/signup")} className="dm py-3 rounded-xl text-sm font-semibold text-white"
-              style={{ background: IG_GRAD }}>Start Free</button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </nav>
 
       {/* ── HERO ── */}
-      <section className="relative flex flex-col items-center text-center pt-28 pb-8 overflow-hidden" style={{ minHeight: "100vh" }}>
+      <section ref={heroRef} style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', paddingTop: 80, background: 'linear-gradient(160deg, #0D0B14 0%, #110C1E 50%, #0D0B14 100%)' }}>
 
-        {/* ── BACKGROUND VIDEO ── */}
-        <video autoPlay loop muted playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ opacity: 0.18, zIndex: 0 }}>
-          <source src="/bg-hero.mp4" type="video/mp4" />
-        </video>
+        {/* Blobs */}
+        <div className="blob-purple animate-float" style={{ position: 'absolute', top: '25%', left: '25%', width: 384, height: 384, opacity: 0.6, zIndex: 2 }} />
+        <div className="blob-purple animate-float" style={{ position: 'absolute', bottom: '25%', right: '25%', width: 320, height: 320, opacity: 0.4, zIndex: 2, animationDelay: '1.5s' }} />
 
-        {/* Glow orbs */}
-        <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }} transition={{ duration: 10, repeat: Infinity }}
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] pointer-events-none rounded-full"
-          style={{ background: "radial-gradient(ellipse, #14BBA6, transparent 65%)", filter: "blur(100px)" }} />
-        <motion.div animate={{ scale: [1.1, 1, 1.1], opacity: [0.04, 0.08, 0.04] }} transition={{ duration: 12, repeat: Infinity, delay: 3 }}
-          className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] pointer-events-none rounded-full"
-          style={{ background: "radial-gradient(circle, #E8B84B, transparent 70%)", filter: "blur(100px)" }} />
-
-        {/* Grid */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: `linear-gradient(${C.border}50 1px, transparent 1px), linear-gradient(90deg, ${C.border}50 1px, transparent 1px)`,
-          backgroundSize: "80px 80px",
-          maskImage: "radial-gradient(ellipse 80% 60% at 50% 40%, black, transparent)"
-        }} />
-
-        {/* Badge */}
-        <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="flex items-center gap-2 px-5 py-2 rounded-full dm text-xs font-medium mb-6 relative z-10"
-          style={{ background: "#14BBA610", border: "1px solid #14BBA630", color: IG, letterSpacing: ".12em" }}>
-          <motion.span animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 2, repeat: Infinity }}
-            className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: IG }} />
-          <Sparkles className="w-3 h-3" />
-          BUILT FOR INDIA'S CREATORS
-        </motion.div>
-
-        {/* Static headline */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8 }}
-          className="relative z-10 mb-5 px-4">
-          <h1 className="cg font-bold leading-tight" style={{ fontSize: "clamp(48px, 8vw, 96px)" }}>
-            <span style={{ color: C.text }}>Discover. </span>
-            <span className="teal-text italic">Create. </span>
-            <span className="gold-text italic">Go Viral.</span>
-          </h1>
-        </motion.div>
-
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-          className="dm text-base max-w-md leading-relaxed mb-8 relative z-10" style={{ color: C.muted }}>
-          AI tools built for Indian creators on Instagram and YouTube.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-          className="flex items-center gap-4 flex-wrap justify-center mb-3 relative z-10">
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 40px #14BBA635" }} whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/signup")}
-            className="flex items-center gap-2 px-8 py-4 rounded-2xl dm font-semibold text-base text-white"
-            style={{ background: IG_GRAD }}>
-            Start for Free <ArrowRight className="w-4 h-4" />
-          </motion.button>
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/login")}
-            className="flex items-center gap-2 px-8 py-4 rounded-2xl dm font-medium text-base transition-all"
-            style={{ border: `1px solid ${C.border}`, background: C.card, color: C.text }}>
-            Login
-          </motion.button>
-        </motion.div>
-
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.75 }}
-          className="dm text-xs mb-4 relative z-10" style={{ color: "#303030" }}>
-          No credit card · Free forever plan · 10,000+ creators
-        </motion.p>
-
-        {/* Platform pills */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
-          className="flex items-center gap-3 mb-2 relative z-10">
-          {[{ icon: Instagram, label: "Instagram Reels", color: "#14BBA6" }, { icon: Youtube, label: "YouTube Shorts", color: "#FF6B6B" }].map((p, i) => (
-            <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl dm text-xs"
-              style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted }}>
-              <p.icon className="w-3.5 h-3.5" style={{ color: p.color }} /> {p.label}
+        {/* Grid lines */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'linear-gradient(to right, rgba(124,58,237,0.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(124,58,237,0.5) 1px, transparent 1px)', backgroundSize: '25% 25%' }} />
+          {GRID_LINES.map((line, i) => (
+            <div key={i} style={{ position: 'absolute', ...(line.axis === 'h' ? { top: line.pos, left: 0, right: 0, height: 2 } : { left: line.pos, top: 0, bottom: 0, width: 2 }) }}>
+              <div className={`line-traverse-${line.dir}`} style={{
+                position: 'absolute',
+                ...(line.axis === 'h' ? { width: '33%', height: '100%' } : { height: '33%', width: '100%' }),
+                animationDuration: line.dur,
+                animationDelay: line.delay,
+                background: line.axis === 'h'
+                  ? 'linear-gradient(to right, transparent, rgba(168,85,247,0.8), rgba(124,58,237,0.9), rgba(168,85,247,0.8), transparent)'
+                  : 'linear-gradient(to bottom, transparent, rgba(168,85,247,0.8), rgba(124,58,237,0.9), rgba(168,85,247,0.8), transparent)',
+              }} />
             </div>
           ))}
-        </motion.div>
-
-
-        <motion.button animate={{ y: [0, 8, 0] }} transition={{ duration: 2.5, repeat: Infinity }}
-          onClick={() => scrollTo("features")}
-          className="flex flex-col items-center gap-1.5 mt-2 relative z-10 bg-transparent border-none cursor-pointer"
-          style={{ color: C.muted }}>
-          <span className="dm text-xs" style={{ letterSpacing: ".14em" }}>EXPLORE</span>
-          <ChevronDown className="w-4 h-4" />
-        </motion.button>
-      </section>
-
-      {/* ── STATS ── */}
-      <section style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-        <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[{ val: "20+", label: "Niches Covered" }, { val: "10K+", label: "Scripts Generated" }, { val: "154", label: "Trending Daily" }, { val: "99%", label: "Creator Satisfaction" }].map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.09 }}>
-              <p className="cg font-bold teal-text" style={{ fontSize: 42 }}>{s.val}</p>
-              <p className="dm text-xs mt-1" style={{ color: C.muted, letterSpacing: ".06em" }}>{s.label}</p>
-            </motion.div>
-          ))}
         </div>
+
+        {/* Content */}
+        <div style={{ position: 'relative', zIndex: 10, maxWidth: 1280, margin: '0 auto', padding: '64px 24px 80px', textAlign: 'center' }}>
+
+          {/* Badge */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderRadius: 999, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)', fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#A855F7', marginBottom: 32 }}>
+            <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
+              <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#A855F7', opacity: 0.75 }} />
+              <span style={{ position: 'relative', width: 8, height: 8, borderRadius: '50%', background: '#A855F7', display: 'inline-block' }} />
+            </span>
+            Built for Indian Creators
+          </div>
+
+          {/* Headline */}
+          <div ref={contentRef} style={{ transition: 'transform 0.15s ease-out', willChange: 'transform', marginBottom: 24 }}>
+            <h1 style={{ fontSize: 'clamp(48px, 8vw, 96px)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em', margin: 0 }}>
+              <span style={{ display: 'block', color: '#fff' }}>Create Content</span>
+              <span className="gradient-text" style={{ display: 'block' }}>That Actually</span>
+              <span style={{ display: 'block', color: '#fff' }}>Gets Discovered</span>
+            </h1>
+          </div>
+
+          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.5)', maxWidth: 480, margin: '0 auto 40px', lineHeight: 1.7 }}>
+            SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, content analysis, and SEO in one premium dashboard.
+          </p>
+
+          {/* CTAs */}
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+            <button onClick={() => navigate('/signup')}
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: '#fff', padding: '16px 32px', borderRadius: 999, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+              className="glow-primary">
+              Get Early Access
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14m-7-7 7 7-7 7" /></svg>
+            </button>
+            <button onClick={() => navigate('/login')}
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', padding: '16px 32px', borderRadius: 999, fontSize: 15, fontWeight: 500, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+              Login
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div style={{ display: 'flex', gap: 40, justifyContent: 'center', flexWrap: 'wrap', paddingTop: 32, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            {[{ value: '5', label: 'Creator Tools' }, { value: 'AI', label: 'Powered Scripts' }, { value: 'Free', label: 'Early Access' }].map((s, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 }}>{s.value}</p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 4 }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom fade */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 128, background: 'linear-gradient(to top, #0D0B14, transparent)', zIndex: 10, pointerEvents: 'none' }} />
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className="px-6 md:px-16 py-28">
-        <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="mb-16">
-            <p className="dm text-xs uppercase mb-3" style={{ color: IG, letterSpacing: ".2em" }}>Features</p>
-            <div className="flex items-end justify-between flex-wrap gap-4">
-              <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text, lineHeight: 1.1 }}>
-                Everything You Need<br /><span className="italic teal-text">to Go Viral</span>
-              </h2>
-              <p className="dm text-sm max-w-xs" style={{ color: C.muted, lineHeight: 1.7 }}>
-                AI tools built specifically for Indian content creators.
-              </p>
-            </div>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((f, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                className="feature-card rounded-2xl p-6" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                <div className="flex items-start justify-between mb-5">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center"
-                    style={{ background: "#14BBA610", border: "1px solid #14BBA625" }}>
-                    <f.icon className="w-5 h-5" style={{ color: IG }} />
-                  </div>
-                  <span className="dm text-xs px-2.5 py-1 rounded-full"
-                    style={{ background: "#14BBA610", color: IG, border: "1px solid #14BBA625" }}>{f.tag}</span>
+      <section id="features" style={{ padding: '96px 24px', background: '#0D0B14' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <p style={{ fontSize: 11, color: '#A855F7', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>Features</p>
+            <h2 style={{ fontSize: 'clamp(32px,5vw,56px)', fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.1 }}>
+              Everything You Need<br /><span className="gradient-text">to Go Viral</span>
+            </h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+            {FEATURES.map((f, i) => (
+              <div key={i} className="feature-card glass-card" style={{ borderRadius: 20, padding: 24, border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 16 }}>
+                  {f.emoji}
                 </div>
-                <h3 className="dm font-semibold text-base mb-2" style={{ color: C.text }}>{f.title}</h3>
-                <p className="dm text-sm leading-relaxed" style={{ color: C.muted }}>{f.desc}</p>
-              </motion.div>
+                <h3 style={{ fontSize: 15, fontWeight: 600, color: '#fff', margin: '0 0 8px' }}>{f.title}</h3>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="howitworks" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-28">
-        <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-16">
-            <p className="dm text-xs uppercase mb-3" style={{ color: IG, letterSpacing: ".2em" }}>Process</p>
-            <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text }}>
-              From Zero to <span className="italic teal-text">Viral</span><br />in 4 Steps
+      <section id="how-it-works" style={{ padding: '96px 24px', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <p style={{ fontSize: 11, color: '#A855F7', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>Process</p>
+            <h2 style={{ fontSize: 'clamp(32px,5vw,56px)', fontWeight: 700, color: '#fff', margin: 0 }}>
+              From Zero to <span className="gradient-text">Viral</span><br />in 4 Steps
             </h2>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {steps.map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                className="relative">
-                {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-full w-full h-px z-0"
-                    style={{ background: `linear-gradient(90deg, ${C.border}, transparent)` }} />
-                )}
-                <div className="relative z-10">
-                  <div className="cg font-bold text-4xl mb-4 teal-text">{s.num}</div>
-                  <h3 className="dm font-semibold text-base mb-2" style={{ color: C.text }}>{s.title}</h3>
-                  <p className="dm text-sm leading-relaxed" style={{ color: C.muted }}>{s.desc}</p>
-                </div>
-              </motion.div>
-            ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section id="testimonials" className="px-6 md:px-16 py-28">
-        <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="mb-16">
-            <p className="dm text-xs uppercase mb-3" style={{ color: IG, letterSpacing: ".2em" }}>Testimonials</p>
-            <div className="flex items-end justify-between flex-wrap gap-4">
-              <h2 className="cg font-bold" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text, lineHeight: 1.1 }}>
-                Loved by <span className="italic teal-text">Creators</span><br />Across India
-              </h2>
-              <div className="flex items-center gap-2 dm text-sm" style={{ color: C.muted }}>
-                <Users className="w-4 h-4" style={{ color: IG }} /> 10,000+ active creators
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 32 }}>
+            {HOW_IT_WORKS.map((s, i) => (
+              <div key={i}>
+                <p className="gradient-text" style={{ fontSize: 40, fontWeight: 700, margin: '0 0 16px' }}>{s.num}</p>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: '#fff', margin: '0 0 8px' }}>{s.title}</h3>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, margin: 0 }}>{s.desc}</p>
               </div>
-            </div>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {testimonials.map((t, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                className="rounded-2xl p-6" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} className="w-3.5 h-3.5" style={{ fill: IG, color: IG }} />
-                  ))}
-                </div>
-                <p className="dm text-sm leading-relaxed mb-5" style={{ color: C.muted }}>"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center dm text-xs font-bold text-white"
-                    style={{ background: IG_GRAD }}>{t.avatar}</div>
-                  <div>
-                    <p className="dm font-semibold text-sm" style={{ color: C.text }}>{t.name}</p>
-                    <p className="dm text-xs" style={{ color: C.muted }}>{t.niche}</p>
-                  </div>
-                </div>
-              </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── PRICING ── */}
-      <section id="pricing" style={{ background: C.card, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }} className="px-6 md:px-16 py-28">
-        <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="text-center mb-14">
-            <p className="dm text-xs uppercase mb-3" style={{ color: IG, letterSpacing: ".2em" }}>Pricing</p>
-            <h2 className="cg font-bold mb-3" style={{ fontSize: "clamp(36px,5vw,60px)", color: C.text }}>
-              Simple, <span className="italic teal-text">Honest</span> Pricing
-            </h2>
-            <p className="dm text-sm" style={{ color: C.muted }}>Start free. Upgrade only when you're ready.</p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PLANS.map((plan, i) => (
-              <motion.div key={plan.id}
-                initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="plan-card rounded-2xl p-6 flex flex-col relative"
-                style={{
-                  background: C.bg,
-                  border: `1px solid ${plan.badge === "Most Popular" ? G + "50" : plan.badge === "Best Value" ? IG + "50" : C.border}`,
-                }}>
-
-                {plan.badge && (
-                  <motion.div animate={{ opacity: [0.85, 1, 0.85] }} transition={{ duration: 2.5, repeat: Infinity }}
-                    className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full dm text-xs font-semibold whitespace-nowrap flex items-center gap-1"
-                    style={{ background: plan.badgeColor!, color: plan.badge === "Most Popular" ? "#111" : "#fff" }}>
-                    {plan.badge === "Most Popular" ? <Crown className="w-3 h-3" /> : "✦"} {plan.badge}
-                  </motion.div>
-                )}
-
-                <div className="mt-2 mb-4">
-                  <p className="dm text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: C.muted, letterSpacing: ".14em" }}>{plan.label}</p>
-                  <div className="flex items-end gap-1 mb-1">
-                    <span className="cg font-bold" style={{
-                      fontSize: 48, lineHeight: 1,
-                      color: plan.id === "annual" ? G : plan.id === "free" ? C.text : IG,
-                    }}>{plan.price}</span>
-                    <span className="dm text-xs mb-1.5" style={{ color: C.muted }}>{plan.period}</span>
-                  </div>
-                  <p className="dm text-xs" style={{ color: C.muted }}>{plan.desc}</p>
-                </div>
-
-                <div className="w-full h-px mb-4" style={{ background: C.border }} />
-
-                <ul className="space-y-2.5 flex-1 mb-6">
-                  {plan.features.map((f, j) => (
-                    <li key={j} className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                        style={{ background: plan.id === "annual" ? `${G}20` : `${IG}20` }}>
-                        <Check className="w-2.5 h-2.5" style={{ color: plan.id === "annual" ? G : IG }} />
-                      </div>
-                      <span className="dm text-xs leading-relaxed" style={{ color: C.muted }}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <motion.button
-                  whileHover={{ scale: plan.id === "free" ? 1 : 1.03 }}
-                  whileTap={{ scale: plan.id === "free" ? 1 : 0.97 }}
-                  onClick={() => navigate("/signup")}
-                  className="w-full py-3 rounded-xl dm font-semibold text-xs flex items-center justify-center gap-1.5"
-                  style={
-                    plan.ctaStyle === "gold"
-                      ? { background: GOLD, color: "#111" }
-                      : plan.ctaStyle === "teal"
-                      ? { background: IG_GRAD, color: "#fff" }
-                      : { border: `1px solid ${C.border}`, color: C.muted, background: "transparent" }
-                  }>
-                  {plan.id !== "free" && <ArrowRight className="w-3.5 h-3.5" />}
-                  {plan.cta}
-                </motion.button>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
-            className="dm text-xs text-center mt-6" style={{ color: C.muted }}>
-            All payments secured by Razorpay · UPI · Cards · Netbanking
-          </motion.p>
         </div>
       </section>
 
       {/* ── CTA ── */}
-      <section className="px-6 md:px-16 py-32 relative overflow-hidden">
-        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.09, 0.04] }} transition={{ duration: 9, repeat: Infinity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] pointer-events-none rounded-full"
-          style={{ background: "radial-gradient(ellipse, #14BBA6, transparent 65%)", filter: "blur(80px)" }} />
-        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto text-center relative z-10">
-          <p className="dm text-xs uppercase mb-4" style={{ color: IG, letterSpacing: ".2em" }}>Get Started</p>
-          <h2 className="cg font-bold mb-5" style={{ fontSize: "clamp(44px,7vw,88px)", color: C.text, lineHeight: 1.05 }}>
-            Ready to<br /><span className="italic teal-text">Go Viral?</span>
+      <section style={{ padding: '96px 24px', background: '#0D0B14', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div className="blob-purple" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 400, opacity: 0.15, pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', zIndex: 10, maxWidth: 640, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 'clamp(40px,7vw,80px)', fontWeight: 700, color: '#fff', lineHeight: 1.05, margin: '0 0 20px' }}>
+            Ready to<br /><span className="gradient-text">Get Started?</span>
           </h2>
-          <p className="dm text-base mb-10 max-w-md mx-auto" style={{ color: C.muted, lineHeight: 1.7 }}>
-            Join 10,000+ Indian creators using SocialRum to grow faster on Instagram and YouTube.
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', margin: '0 0 40px', lineHeight: 1.7 }}>
+            Join SocialRum and start creating content that actually gets discovered on Instagram and YouTube.
           </p>
-          <motion.button whileHover={{ scale: 1.04, boxShadow: "0 0 50px #14BBA635" }} whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/signup")}
-            className="flex items-center gap-2 px-12 py-5 rounded-2xl dm font-semibold text-base mx-auto text-white"
-            style={{ background: IG_GRAD }}>
-            Start for Free Today <ArrowRight className="w-4 h-4" />
-          </motion.button>
-          <p className="dm text-xs mt-4" style={{ color: "#2A2A2A" }}>No credit card · Free forever plan · Cancel anytime</p>
-        </motion.div>
+          <button onClick={() => navigate('/signup')}
+            style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: '#fff', padding: '16px 48px', borderRadius: 999, fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 10 }}
+            className="glow-primary">
+            Get Early Access
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14m-7-7 7 7-7 7" /></svg>
+          </button>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', marginTop: 16 }}>No credit card required</p>
+        </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="px-6 md:px-16 py-10" style={{ borderTop: `1px solid ${C.border}` }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-6">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="SocialRum" className="w-7 h-7 rounded-lg" />
-            <span className="cg font-bold text-lg" style={{ color: C.text }}>SocialRum</span>
+      <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/logo.png" alt="SocialRum" style={{ width: 28, height: 28, borderRadius: 8 }} />
+            <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>SocialRum</span>
           </div>
-          <div className="flex items-center gap-6 dm text-xs" style={{ color: C.muted }}>
-            <span className="cursor-pointer hover:text-white transition-colors">Privacy Policy</span>
-            <span className="cursor-pointer hover:text-white transition-colors">Terms of Service</span>
-            <span className="cursor-pointer hover:text-white transition-colors">Contact</span>
-          </div>
-          <p className="dm text-xs" style={{ color: "#2A2A2A" }}>© 2026 SocialRum. All rights reserved.</p>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', margin: 0 }}>© 2026 SocialRum. Built for Indian Creators 🇮🇳</p>
         </div>
       </footer>
     </div>
