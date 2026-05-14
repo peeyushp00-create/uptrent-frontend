@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Newspaper, ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Flame } from "lucide-react";
+import { Newspaper, ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Flame, Sparkles, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 
@@ -52,6 +52,16 @@ const NICHE_TOPIC_MAP: Record<string, string> = {
   motivation: "Motivation", skincare: "Skincare",
 };
 
+// Map user niches to topic IDs
+const NICHE_TO_TOPIC: Record<string, string> = {
+  "Finance": "Finance", "Fitness": "Fitness", "Tech": "Tech",
+  "Cricket": "Cricket", "Bollywood": "Bollywood", "Business": "Business",
+  "Food": "Food", "Travel": "Travel", "Gaming": "Gaming",
+  "Education": "Education", "Fashion": "Fashion", "Motivation": "Motivation",
+  "Skincare": "Skincare", "Yoga": "Yoga", "Crypto": "Crypto",
+  "Comedy": "Comedy", "Other": "Business",
+};
+
 const getCategoryImage = (headline: string) => {
   const h = headline.toLowerCase();
   if (h.includes('cricket') || h.includes('ipl')) return 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400';
@@ -76,10 +86,46 @@ const getTimeAgo = (dateStr: string) => {
   return `${Math.floor(diff / 86400)}d ago`;
 };
 
+// Extract key points from summary
+const extractKeyPoints = (summary: string): string[] => {
+  if (!summary) return [];
+  const sentences = summary.split(/[.!?]+/).filter(s => s.trim().length > 20);
+  return sentences.slice(0, 3).map(s => s.trim());
+};
+
+// Generate impact based on topic and summary
+const getImpact = (topic: string, summary: string): { level: 'high' | 'medium' | 'low'; text: string } => {
+  const s = (summary || '').toLowerCase();
+  const highImpactWords = ['record', 'historic', 'crash', 'surge', 'ban', 'new high', 'new low', 'billion', 'million', 'major'];
+  const isHigh = highImpactWords.some(w => s.includes(w));
+
+  if (topic === 'Finance' || topic === 'StockMarket' || topic === 'Crypto') {
+    if (isHigh) return { level: 'high', text: 'Major market movement — content about this could go viral in finance niche' };
+    return { level: 'medium', text: 'Good finance content opportunity — your audience will want to know about this' };
+  }
+  if (topic === 'Cricket' || topic === 'IPL') {
+    if (isHigh) return { level: 'high', text: 'Big cricket news — perfect timing for reaction/analysis Reels' };
+    return { level: 'medium', text: 'Cricket update — good for engagement with sports audience' };
+  }
+  if (topic === 'Tech' || topic === 'AINews') {
+    if (isHigh) return { level: 'high', text: 'Major tech development — explainer content will get high views' };
+    return { level: 'medium', text: 'Tech update — your audience will appreciate a quick breakdown' };
+  }
+  if (topic === 'Bollywood') {
+    if (isHigh) return { level: 'high', text: 'Trending Bollywood news — react immediately for maximum reach' };
+    return { level: 'low', text: 'Entertainment update — good for casual content' };
+  }
+  if (isHigh) return { level: 'high', text: 'High impact story — create content around this now for maximum reach' };
+  return { level: 'medium', text: 'Relevant update for your niche — good content opportunity' };
+};
+
 export default function NewsPage() {
   const location = useLocation();
   const { user } = useAuth();
   const initialQuery = (location.state as any)?.query || "";
+
+  // Get user's niches
+  const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [allArticles, setAllArticles] = useState<NewsArticle[]>([]);
@@ -93,10 +139,10 @@ export default function NewsPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [analyzingImpact, setAnalyzingImpact] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // ── Compute trending topics from articles ──
   const trendingTopics = useMemo<TrendingTopic[]>(() => {
     const counts: Record<string, number> = {};
     allArticles.forEach(a => {
@@ -106,8 +152,7 @@ export default function NewsPage() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
       .map(([topic, count]) => ({
-        topic,
-        count,
+        topic, count,
         emoji: TOPIC_EMOJIS[topic] || '📰',
       }));
   }, [allArticles]);
@@ -131,12 +176,24 @@ export default function NewsPage() {
       }
       const res = await fetch(url);
       const data = await res.json();
-      const list = Array.isArray(data) ? data : [];
+      let list = Array.isArray(data) ? data : [];
+
+      // ✅ Filter by user's niches if no search/trending filter active
+      if (!activeQuery && userNiches.length > 0) {
+        const userTopics = userNiches
+          .map(n => NICHE_TO_TOPIC[n] || n)
+          .filter(Boolean);
+        const nicheFiltered = list.filter((a: NewsArticle) =>
+          userTopics.some(t => a.topic?.toLowerCase() === t.toLowerCase())
+        );
+        // Show niche-filtered + some general news
+        list = nicheFiltered.length >= 5 ? nicheFiltered : list;
+      }
+
       const sorted = list.sort((a: NewsArticle, b: NewsArticle) =>
         new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
       );
       setArticles(sorted);
-      // Save all articles (no topic filter) for computing trending
       if (!activeQuery) setAllArticles(sorted);
     } catch {
       setError("Failed to load news");
@@ -145,7 +202,6 @@ export default function NewsPage() {
     }
   };
 
-  // Fetch all articles once for trending computation
   useEffect(() => {
     fetch(`${BASE}/api/news?filter=today`)
       .then(r => r.json())
@@ -209,6 +265,12 @@ export default function NewsPage() {
     setRefreshing(false);
   };
 
+  const impactData = selectedArticle
+    ? getImpact(selectedArticle.topic || '', selectedArticle.summary || '')
+    : null;
+
+  const keyPoints = selectedArticle ? extractKeyPoints(selectedArticle.summary || '') : [];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -216,6 +278,11 @@ export default function NewsPage() {
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           <Newspaper className="w-5 h-5" style={{ color: IG }} />
           <h1 className="text-lg font-bold text-foreground">News Feed</h1>
+          {userNiches.length > 0 && !query && !trendingFilter && (
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${IG}15`, color: IG }}>
+              For You
+            </span>
+          )}
           <button onClick={handleRefresh} disabled={refreshing}
             className="ml-auto text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40">
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -267,7 +334,7 @@ export default function NewsPage() {
           ))}
         </div>
 
-        {/* ── TRENDING FILTER ── */}
+        {/* Trending filter */}
         {trendingTopics.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -306,6 +373,7 @@ export default function NewsPage() {
           <p className="text-xs text-muted-foreground">
             <span style={{ color: IG, fontWeight: 600 }}>{articles.length}</span> articles
             {(query || trendingFilter) && <span> for "<span style={{ color: IG }}>{trendingFilter || query}</span>"</span>}
+            {!query && !trendingFilter && userNiches.length > 0 && <span> · personalized for your niches</span>}
             {' · '}{DATE_FILTERS.find(f => f.value === dateFilter)?.label}
           </p>
         )}
@@ -313,7 +381,7 @@ export default function NewsPage() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Loader2 className="w-6 h-6 animate-spin" style={{ color: IG }} />
-            <p className="text-xs text-muted-foreground">Loading {DATE_FILTERS.find(f => f.value === dateFilter)?.label.toLowerCase()} news...</p>
+            <p className="text-xs text-muted-foreground">Loading news...</p>
           </div>
         )}
 
@@ -345,11 +413,14 @@ export default function NewsPage() {
               const topic = item.topic || '';
               const thumbnail = item.image_url;
               const isTrending = trendingTopics.slice(0, 3).some(t => t.topic === topic);
+              const isUserNiche = userNiches.some(n => (NICHE_TO_TOPIC[n] || n).toLowerCase() === topic.toLowerCase());
+
               return (
                 <motion.div key={item.id || i}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.02 }}
-                  className="bg-card border border-border rounded-2xl p-4 transition-all"
+                  className="bg-card border border-border rounded-2xl p-4 transition-all cursor-pointer"
+                  onClick={() => setSelectedArticle(item)}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${IG}30`; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}>
                   <div className="flex items-start gap-3">
@@ -367,14 +438,7 @@ export default function NewsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <h3 className="font-medium text-foreground text-sm leading-snug line-clamp-2">{headline}</h3>
-                        <div className="flex gap-1.5 shrink-0">
-                          {item.summary && (
-                            <button onClick={() => setSelectedArticle(item)}
-                              className="text-xs px-2.5 py-1 rounded-lg font-medium"
-                              style={{ background: `${IG}15`, color: IG }}>
-                              Summary
-                            </button>
-                          )}
+                        <div className="flex gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
                               className="text-muted-foreground hover:text-foreground p-1">
@@ -390,10 +454,15 @@ export default function NewsPage() {
                         {topic && (
                           <Badge variant="secondary"
                             className="text-xs cursor-pointer"
-                            style={{ background: `${IG}12`, color: IG, border: 'none' }}
-                            onClick={() => handleTrendingFilter(topic)}>
+                            style={{ background: isUserNiche ? `${IG}20` : `${IG}10`, color: IG, border: 'none' }}
+                            onClick={e => { e.stopPropagation(); handleTrendingFilter(topic); }}>
                             {TOPIC_EMOJIS[topic] || '📰'} {topic}
                           </Badge>
+                        )}
+                        {item.summary && (
+                          <span className="text-xs flex items-center gap-1" style={{ color: IG }}>
+                            <Sparkles className="w-3 h-3" /> Tap for insights
+                          </span>
                         )}
                       </div>
                     </div>
@@ -405,35 +474,106 @@ export default function NewsPage() {
         )}
       </div>
 
-      {/* Summary Popup */}
+      {/* ── Enhanced Summary Popup ── */}
       <AnimatePresence>
         {selectedArticle && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
             onClick={() => setSelectedArticle(null)}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+            <motion.div
+              initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full shadow-xl">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="font-semibold text-foreground pr-4 text-sm leading-snug">
+              className="bg-card border border-border rounded-2xl max-w-lg w-full shadow-xl overflow-hidden max-h-[85vh] overflow-y-auto">
+
+              {/* Image */}
+              <div className="relative">
+                <img src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '')}
+                  alt="" className="w-full h-40 object-cover"
+                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400'; }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                <button onClick={() => setSelectedArticle(null)}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70">
+                  <X className="w-4 h-4" />
+                </button>
+                {selectedArticle.topic && (
+                  <div className="absolute bottom-3 left-3">
+                    <span className="text-xs px-2 py-1 rounded-full text-white font-medium"
+                      style={{ background: IG_GRAD }}>
+                      {TOPIC_EMOJIS[selectedArticle.topic] || '📰'} {selectedArticle.topic}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Title */}
+                <h2 className="font-bold text-foreground text-base leading-snug">
                   {selectedArticle.title || selectedArticle.headline}
                 </h2>
-                <button onClick={() => setSelectedArticle(null)} className="text-muted-foreground hover:text-foreground shrink-0">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <img src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '')}
-                alt="" className="w-full h-40 object-cover rounded-xl mb-4"
-                onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400'; }} />
-              <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                {selectedArticle.summary || "No summary available."}
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{selectedArticle.source}</span>
+
+                {/* Meta */}
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  {selectedArticle.source && <span>{selectedArticle.source}</span>}
+                  {selectedArticle.published_at && (
+                    <span style={{ color: IG }}>{getTimeAgo(selectedArticle.published_at)}</span>
+                  )}
+                </div>
+
+                {/* ✅ Key Highlights */}
+                {keyPoints.length > 0 && (
+                  <div className="rounded-xl p-4 space-y-2" style={{ background: `${IG}08`, border: `1px solid ${IG}25` }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="w-4 h-4" style={{ color: IG }} />
+                      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: IG }}>Key Highlights</p>
+                    </div>
+                    {keyPoints.map((point, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: IG }} />
+                        <p className="text-sm text-foreground leading-relaxed">{point}.</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Full summary if no key points */}
+                {keyPoints.length === 0 && selectedArticle.summary && (
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {selectedArticle.summary}
+                  </p>
+                )}
+
+                {/* ✅ Impact for Creators */}
+                {impactData && (
+                  <div className="rounded-xl p-4 space-y-2"
+                    style={{
+                      background: impactData.level === 'high' ? 'rgba(239,68,68,0.08)' : impactData.level === 'medium' ? 'rgba(234,179,8,0.08)' : 'rgba(34,197,94,0.08)',
+                      border: `1px solid ${impactData.level === 'high' ? 'rgba(239,68,68,0.25)' : impactData.level === 'medium' ? 'rgba(234,179,8,0.25)' : 'rgba(34,197,94,0.25)'}`,
+                    }}>
+                    <div className="flex items-center gap-2">
+                      {impactData.level === 'high'
+                        ? <AlertTriangle className="w-4 h-4 text-red-400" />
+                        : impactData.level === 'medium'
+                        ? <ArrowUpRight className="w-4 h-4 text-yellow-400" />
+                        : <TrendingUp className="w-4 h-4 text-green-400" />}
+                      <p className="text-xs font-bold uppercase tracking-wider"
+                        style={{ color: impactData.level === 'high' ? '#f87171' : impactData.level === 'medium' ? '#facc15' : '#4ade80' }}>
+                        {impactData.level === 'high' ? '🔥 High Impact' : impactData.level === 'medium' ? '📊 Medium Impact' : '✅ Low Impact'} for Creators
+                      </p>
+                    </div>
+                    <p className="text-sm leading-relaxed"
+                      style={{ color: impactData.level === 'high' ? '#fca5a5' : impactData.level === 'medium' ? '#fde68a' : '#86efac' }}>
+                      {impactData.text}
+                    </p>
+                  </div>
+                )}
+
+                {/* Read full article */}
                 {selectedArticle.url && (
                   <button onClick={() => window.open(selectedArticle.url, '_blank')}
-                    className="flex items-center gap-1 text-sm font-medium" style={{ color: IG }}>
-                    Read full article <ExternalLink className="w-3 h-3" />
+                    className="w-full py-2.5 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2"
+                    style={{ background: IG_GRAD }}>
+                    Read Full Article <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
