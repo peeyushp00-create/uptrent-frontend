@@ -149,14 +149,18 @@ export default function NewsPage() {
     allArticles.forEach(a => {
       if (a.topic) counts[a.topic] = (counts[a.topic] || 0) + 1;
     });
+
+    const userTopics = userNiches.map(n => NICHE_TO_TOPIC[n] || n).filter(Boolean);
+
     return Object.entries(counts)
+      .filter(([topic]) => userTopics.length === 0 || userTopics.some(t => t.toLowerCase() === topic.toLowerCase()))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
       .map(([topic, count]) => ({
         topic, count,
         emoji: TOPIC_EMOJIS[topic] || '📰',
       }));
-  }, [allArticles]);
+  }, [allArticles, userNiches]);
 
   const fetchNews = async (filter: string, topicQuery?: string, trending?: string | null) => {
     setLoading(true);
@@ -234,7 +238,6 @@ export default function NewsPage() {
     const handleClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
         inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
-      setShowFilterMenu(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -338,7 +341,7 @@ export default function NewsPage() {
             {showFilterMenu && (
               <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px]">
                 {DATE_FILTERS.map(f => (
-                  <button key={f.value} onClick={() => { handleDateFilter(f.value); setShowFilterMenu(false); }}
+                  <button key={f.value} onClick={(e) => { e.stopPropagation(); handleDateFilter(f.value); setShowFilterMenu(false); }}
                     className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-accent transition-colors text-left gap-4"
                     style={dateFilter === f.value ? { color: IG } : { color: 'hsl(var(--foreground))' }}>
                     <span className="font-medium">{f.label}</span>
