@@ -140,6 +140,7 @@ export default function NewsPage() {
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [analyzingImpact, setAnalyzingImpact] = useState(false);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -178,7 +179,7 @@ export default function NewsPage() {
       const data = await res.json();
       let list = Array.isArray(data) ? data : [];
 
-      // ✅ Filter by user's niches if no search/trending filter active
+      // ✅ Filter by user's niches strictly if no search/trending filter active
       if (!activeQuery && userNiches.length > 0) {
         const userTopics = userNiches
           .map(n => NICHE_TO_TOPIC[n] || n)
@@ -186,8 +187,10 @@ export default function NewsPage() {
         const nicheFiltered = list.filter((a: NewsArticle) =>
           userTopics.some(t => a.topic?.toLowerCase() === t.toLowerCase())
         );
-        // Show niche-filtered + some general news
-        list = nicheFiltered.length >= 5 ? nicheFiltered : list;
+        // Only use niche filter if we have enough articles
+        if (nicheFiltered.length >= 3) {
+          list = nicheFiltered;
+        }
       }
 
       const sorted = list.sort((a: NewsArticle, b: NewsArticle) =>
@@ -231,6 +234,7 @@ export default function NewsPage() {
     const handleClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
         inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
+      setShowFilterMenu(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -292,46 +296,59 @@ export default function NewsPage() {
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 pb-24">
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input ref={inputRef} type="text" value={searchInput}
-            onChange={e => setSearchInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") handleSearch(searchInput); if (e.key === "Escape") setShowDropdown(false); }}
-            onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
-            placeholder="Search news (Finance, Cricket, Tech)..."
-            className="w-full pl-11 pr-9 py-3 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-            onFocus={e => { e.target.style.borderColor = `${IG}50`; }}
-            onBlur={e => { e.target.style.borderColor = ''; }} />
-          {searchInput && (
-            <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <X className="w-4 h-4" />
+        {/* Filter button */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input ref={inputRef} type="text" value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") handleSearch(searchInput); if (e.key === "Escape") setShowDropdown(false); }}
+              onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
+              placeholder="Search other niches..."
+              className="w-full pl-11 pr-9 py-3 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
+              onFocus={e => { e.target.style.borderColor = `${IG}50`; }}
+              onBlur={e => { e.target.style.borderColor = ''; }} />
+            {searchInput && (
+              <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            {showDropdown && dropdownSuggestions.length > 0 && (
+              <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                {dropdownSuggestions.map((s, i) => (
+                  <button key={i} onClick={() => handleSearch(s)}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left">
+                    <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Filter dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowFilterMenu(prev => !prev)}
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+              style={dateFilter !== 'today' ? { borderColor: `${IG}50`, color: IG } : {}}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 8h10M11 12h2" />
+              </svg>
+              {DATE_FILTERS.find(f => f.value === dateFilter)?.label}
             </button>
-          )}
-          {showDropdown && dropdownSuggestions.length > 0 && (
-            <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-              {dropdownSuggestions.map((s, i) => (
-                <button key={i} onClick={() => handleSearch(s)}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left">
-                  <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{s}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Date filter tabs */}
-        <div className="flex gap-1.5 p-1 rounded-2xl bg-card border border-border overflow-x-auto">
-          {DATE_FILTERS.map(f => (
-            <button key={f.value} onClick={() => handleDateFilter(f.value)}
-              className="flex-1 flex flex-col items-center py-2 px-3 rounded-xl text-xs font-medium transition-all whitespace-nowrap"
-              style={dateFilter === f.value
-                ? { background: IG_GRAD, color: '#fff' }
-                : { color: 'hsl(var(--muted-foreground))' }}>
-              <span className="font-semibold">{f.label}</span>
-              <span className="opacity-70 mt-0.5" style={{ fontSize: 9 }}>{f.desc}</span>
-            </button>
-          ))}
+            {showFilterMenu && (
+              <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px]">
+                {DATE_FILTERS.map(f => (
+                  <button key={f.value} onClick={() => { handleDateFilter(f.value); setShowFilterMenu(false); }}
+                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-accent transition-colors text-left gap-4"
+                    style={dateFilter === f.value ? { color: IG } : { color: 'hsl(var(--foreground))' }}>
+                    <span className="font-medium">{f.label}</span>
+                    <span className="text-xs text-muted-foreground">{f.desc}</span>
+                    {dateFilter === f.value && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: IG }} />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Trending filter */}
