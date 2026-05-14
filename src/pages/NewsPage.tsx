@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Newspaper, ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Flame, Sparkles, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { Newspaper, ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Flame, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 
@@ -39,7 +39,6 @@ const TOPIC_EMOJIS: Record<string, string> = {
 const DATE_FILTERS = [
   { label: "Today", value: "today", desc: "Last 24 hours" },
   { label: "Yesterday", value: "yesterday", desc: "24–48 hrs ago" },
-  { label: "This Week", value: "week", desc: "2–7 days ago" },
   { label: "All", value: "all", desc: "Last 7 days" },
 ];
 
@@ -52,7 +51,6 @@ const NICHE_TOPIC_MAP: Record<string, string> = {
   motivation: "Motivation", skincare: "Skincare",
 };
 
-// Map user niches to topic IDs
 const NICHE_TO_TOPIC: Record<string, string> = {
   "Finance": "Finance", "Fitness": "Fitness", "Tech": "Tech",
   "Cricket": "Cricket", "Bollywood": "Bollywood", "Business": "Business",
@@ -86,19 +84,16 @@ const getTimeAgo = (dateStr: string) => {
   return `${Math.floor(diff / 86400)}d ago`;
 };
 
-// Extract key points from summary
 const extractKeyPoints = (summary: string): string[] => {
   if (!summary) return [];
   const sentences = summary.split(/[.!?]+/).filter(s => s.trim().length > 20);
   return sentences.slice(0, 3).map(s => s.trim());
 };
 
-// Generate impact based on topic and summary
 const getImpact = (topic: string, summary: string): { level: 'high' | 'medium' | 'low'; text: string } => {
   const s = (summary || '').toLowerCase();
   const highImpactWords = ['record', 'historic', 'crash', 'surge', 'ban', 'new high', 'new low', 'billion', 'million', 'major'];
   const isHigh = highImpactWords.some(w => s.includes(w));
-
   if (topic === 'Finance' || topic === 'StockMarket' || topic === 'Crypto') {
     if (isHigh) return { level: 'high', text: 'Major market movement — content about this could go viral in finance niche' };
     return { level: 'medium', text: 'Good finance content opportunity — your audience will want to know about this' };
@@ -123,8 +118,6 @@ export default function NewsPage() {
   const location = useLocation();
   const { user } = useAuth();
   const initialQuery = (location.state as any)?.query || "";
-
-  // Get user's niches
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -139,8 +132,9 @@ export default function NewsPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [analyzingImpact, setAnalyzingImpact] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -149,33 +143,26 @@ export default function NewsPage() {
     allArticles.forEach(a => {
       if (a.topic) counts[a.topic] = (counts[a.topic] || 0) + 1;
     });
-
     const userTopics = userNiches.map(n => NICHE_TO_TOPIC[n] || n).filter(Boolean);
-
     return Object.entries(counts)
       .filter(([topic]) => userTopics.length === 0 || userTopics.some(t => t.toLowerCase() === topic.toLowerCase()))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
-      .map(([topic, count]) => ({
-        topic, count,
-        emoji: TOPIC_EMOJIS[topic] || '📰',
-      }));
+      .map(([topic, count]) => ({ topic, count, emoji: TOPIC_EMOJIS[topic] || '📰' }));
   }, [allArticles, userNiches]);
 
-  const fetchNews = async (filter: string, topicQuery?: string, trending?: string | null) => {
+  const fetchNews = async (filter: string, topicQuery?: string, trending?: string | null, date?: string) => {
     setLoading(true);
     setError(null);
     try {
       let url = `${BASE}/api/news?filter=${filter}`;
+      if (date) url += `&date=${date}`;
       const activeQuery = trending || topicQuery;
       if (activeQuery) {
         const q = activeQuery.toLowerCase().trim();
         let topicId = activeQuery;
         for (const [niche, topic] of Object.entries(NICHE_TOPIC_MAP)) {
-          if (niche === q || niche.includes(q) || q.includes(niche)) {
-            topicId = topic;
-            break;
-          }
+          if (niche === q || niche.includes(q) || q.includes(niche)) { topicId = topic; break; }
         }
         url += `&topicId=${encodeURIComponent(topicId)}`;
       }
@@ -183,18 +170,13 @@ export default function NewsPage() {
       const data = await res.json();
       let list = Array.isArray(data) ? data : [];
 
-      // ✅ Filter by user's niches strictly if no search/trending filter active
+      // ✅ Filter by user's niches strictly only if no search/trending
       if (!activeQuery && userNiches.length > 0) {
-        const userTopics = userNiches
-          .map(n => NICHE_TO_TOPIC[n] || n)
-          .filter(Boolean);
+        const userTopics = userNiches.map(n => NICHE_TO_TOPIC[n] || n).filter(Boolean);
         const nicheFiltered = list.filter((a: NewsArticle) =>
           userTopics.some(t => a.topic?.toLowerCase() === t.toLowerCase())
         );
-        // Only use niche filter if we have enough articles
-        if (nicheFiltered.length >= 3) {
-          list = nicheFiltered;
-        }
+        if (nicheFiltered.length >= 3) list = nicheFiltered;
       }
 
       const sorted = list.sort((a: NewsArticle, b: NewsArticle) =>
@@ -216,22 +198,16 @@ export default function NewsPage() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    fetchNews(dateFilter, initialQuery || undefined, null);
-  }, []);
+  useEffect(() => { fetchNews(dateFilter, initialQuery || undefined, null); }, []);
 
   useEffect(() => {
     if (searchInput.trim().length > 0) {
       const filtered = Object.keys(NICHE_TOPIC_MAP)
         .filter(s => s.includes(searchInput.toLowerCase()) && s !== searchInput.toLowerCase())
-        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-        .slice(0, 6);
+        .map(s => s.charAt(0).toUpperCase() + s.slice(1)).slice(0, 6);
       setDropdownSuggestions(filtered);
       setShowDropdown(filtered.length > 0);
-    } else {
-      setShowDropdown(false);
-      setDropdownSuggestions([]);
-    }
+    } else { setShowDropdown(false); setDropdownSuggestions([]); }
   }, [searchInput]);
 
   useEffect(() => {
@@ -245,38 +221,45 @@ export default function NewsPage() {
 
   const handleSearch = (q: string) => {
     setQuery(q); setSearchInput(q); setShowDropdown(false);
-    setTrendingFilter(null);
+    setTrendingFilter(null); setCustomDate(null);
     fetchNews(dateFilter, q || undefined, null);
   };
 
   const handleDateFilter = (filter: string) => {
-    setDateFilter(filter);
+    setDateFilter(filter); setCustomDate(null);
     fetchNews(filter, query || undefined, trendingFilter);
   };
 
   const handleTrendingFilter = (topic: string) => {
     if (trendingFilter === topic) {
-      setTrendingFilter(null);
-      setQuery(''); setSearchInput('');
+      setTrendingFilter(null); setQuery(''); setSearchInput('');
       fetchNews(dateFilter, undefined, null);
     } else {
-      setTrendingFilter(topic);
-      setQuery(''); setSearchInput('');
+      setTrendingFilter(topic); setQuery(''); setSearchInput('');
       fetchNews(dateFilter, undefined, topic);
     }
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchNews(dateFilter, query || undefined, trendingFilter);
+    await fetchNews(dateFilter, query || undefined, trendingFilter, customDate || undefined);
     setRefreshing(false);
   };
 
-  const impactData = selectedArticle
-    ? getImpact(selectedArticle.topic || '', selectedArticle.summary || '')
-    : null;
+  const handleCustomDate = () => {
+    if (!customDate) return;
+    setShowDatePicker(false);
+    setDateFilter('custom');
+    setQuery(''); setSearchInput(''); setTrendingFilter(null);
+    fetchNews('custom', undefined, null, customDate);
+  };
 
+  const impactData = selectedArticle ? getImpact(selectedArticle.topic || '', selectedArticle.summary || '') : null;
   const keyPoints = selectedArticle ? extractKeyPoints(selectedArticle.summary || '') : [];
+
+  const filterLabel = customDate
+    ? new Date(customDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+    : DATE_FILTERS.find(f => f.value === dateFilter)?.label || 'Today';
 
   return (
     <div className="min-h-screen bg-background">
@@ -299,8 +282,9 @@ export default function NewsPage() {
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 pb-24">
 
-        {/* Filter button */}
-        <div className="flex items-center gap-2">
+        {/* Search + Filter + Customize */}
+        <div className="flex gap-2">
+          {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input ref={inputRef} type="text" value={searchInput}
@@ -327,31 +311,38 @@ export default function NewsPage() {
               </div>
             )}
           </div>
-          {/* Filter dropdown */}
+
+          {/* Filter button */}
           <div className="relative">
-            <button
-              onClick={() => setShowFilterMenu(prev => !prev)}
-              className="flex items-center gap-2 px-4 py-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-              style={dateFilter !== 'today' ? { borderColor: `${IG}50`, color: IG } : {}}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 8h10M11 12h2" />
-              </svg>
-              {DATE_FILTERS.find(f => f.value === dateFilter)?.label}
+            <button onClick={() => { setShowFilterMenu(prev => !prev); setShowDatePicker(false); }}
+              className="flex items-center gap-1.5 px-3 py-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+              style={(dateFilter !== 'today' || customDate) ? { borderColor: `${IG}50`, color: IG } : {}}>
+              <SlidersHorizontal className="w-4 h-4" />
+              {filterLabel}
             </button>
             {showFilterMenu && (
               <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px]">
                 {DATE_FILTERS.map(f => (
-                  <button key={f.value} onClick={(e) => { e.stopPropagation(); handleDateFilter(f.value); setShowFilterMenu(false); }}
+                  <button key={f.value}
+                    onClick={(e) => { e.stopPropagation(); handleDateFilter(f.value); setShowFilterMenu(false); }}
                     className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-accent transition-colors text-left gap-4"
-                    style={dateFilter === f.value ? { color: IG } : { color: 'hsl(var(--foreground))' }}>
+                    style={dateFilter === f.value && !customDate ? { color: IG } : { color: 'hsl(var(--foreground))' }}>
                     <span className="font-medium">{f.label}</span>
                     <span className="text-xs text-muted-foreground">{f.desc}</span>
-                    {dateFilter === f.value && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: IG }} />}
+                    {dateFilter === f.value && !customDate && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: IG }} />}
                   </button>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Customize button */}
+          <button
+            onClick={() => { setShowDatePicker(prev => !prev); setShowFilterMenu(false); }}
+            className="flex items-center gap-1.5 px-3 py-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+            style={customDate ? { borderColor: `${IG}50`, color: IG } : {}}>
+            <Calendar className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Trending filter */}
@@ -359,7 +350,7 @@ export default function NewsPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Flame className="w-3.5 h-3.5" style={{ color: IG }} />
-              <p className="text-xs font-semibold text-foreground">Trending Now</p>
+              <p className="text-xs font-semibold text-foreground">Trending in Your Niches</p>
               {trendingFilter && (
                 <button onClick={() => { setTrendingFilter(null); fetchNews(dateFilter, undefined, null); }}
                   className="ml-auto text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
@@ -393,8 +384,9 @@ export default function NewsPage() {
           <p className="text-xs text-muted-foreground">
             <span style={{ color: IG, fontWeight: 600 }}>{articles.length}</span> articles
             {(query || trendingFilter) && <span> for "<span style={{ color: IG }}>{trendingFilter || query}</span>"</span>}
-            {!query && !trendingFilter && userNiches.length > 0 && <span> · personalized for your niches</span>}
-            {' · '}{DATE_FILTERS.find(f => f.value === dateFilter)?.label}
+            {customDate && <span> on <span style={{ color: IG }}>{new Date(customDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span></span>}
+            {!query && !trendingFilter && !customDate && userNiches.length > 0 && <span> · personalized for your niches</span>}
+            {' · '}{filterLabel}
           </p>
         )}
 
@@ -412,13 +404,11 @@ export default function NewsPage() {
             <Newspaper className="w-10 h-10 text-muted-foreground opacity-30" />
             <p className="text-sm font-semibold text-foreground">No news found</p>
             <p className="text-xs text-muted-foreground">
-              {dateFilter === 'yesterday' ? "Yesterday's articles will appear here" :
-               dateFilter === 'week' ? 'Older articles will appear here' :
-               'Fresh news will appear here soon'}
+              {customDate ? `No articles found for ${new Date(customDate).toLocaleDateString('en-IN')}` :
+               dateFilter === 'yesterday' ? "Yesterday's articles will appear here" : 'Fresh news will appear here soon'}
             </p>
-            <button onClick={() => { setTrendingFilter(null); handleDateFilter('all'); }}
-              className="text-xs px-4 py-2 rounded-xl text-white mt-1"
-              style={{ background: IG_GRAD }}>
+            <button onClick={() => { setCustomDate(null); setTrendingFilter(null); handleDateFilter('all'); }}
+              className="text-xs px-4 py-2 rounded-xl text-white mt-1" style={{ background: IG_GRAD }}>
               Show All News
             </button>
           </div>
@@ -458,22 +448,17 @@ export default function NewsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <h3 className="font-medium text-foreground text-sm leading-snug line-clamp-2">{headline}</h3>
-                        <div className="flex gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
-                          {item.url && (
-                            <button onClick={() => window.open(item.url, '_blank')}
-                              className="text-muted-foreground hover:text-foreground p-1">
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
+                        <button onClick={e => { e.stopPropagation(); window.open(item.url, '_blank'); }}
+                          className="text-muted-foreground hover:text-foreground p-1 shrink-0">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         {item.source && <span className="text-xs text-muted-foreground">{item.source}</span>}
                         {item.source && timeAgo && <span className="text-xs text-muted-foreground">·</span>}
                         <span className="text-xs font-medium" style={{ color: IG }}>{timeAgo}</span>
                         {topic && (
-                          <Badge variant="secondary"
-                            className="text-xs cursor-pointer"
+                          <Badge variant="secondary" className="text-xs cursor-pointer"
                             style={{ background: isUserNiche ? `${IG}20` : `${IG}10`, color: IG, border: 'none' }}
                             onClick={e => { e.stopPropagation(); handleTrendingFilter(topic); }}>
                             {TOPIC_EMOJIS[topic] || '📰'} {topic}
@@ -481,7 +466,7 @@ export default function NewsPage() {
                         )}
                         {item.summary && (
                           <span className="text-xs flex items-center gap-1" style={{ color: IG }}>
-                            <Sparkles className="w-3 h-3" /> Tap for insights
+                            <Sparkles className="w-3 h-3" /> Insights
                           </span>
                         )}
                       </div>
@@ -494,19 +479,67 @@ export default function NewsPage() {
         )}
       </div>
 
+      {/* ── Date Picker Modal ── */}
+      <AnimatePresence>
+        {showDatePicker && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowDatePicker(false)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm shadow-xl">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-bold text-foreground">Pick a Date</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Browse news from any date in the last 7 days</p>
+                </div>
+                <button onClick={() => setShowDatePicker(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <input
+                type="date"
+                max={new Date().toISOString().split('T')[0]}
+                min={new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                value={customDate || new Date().toISOString().split('T')[0]}
+                onChange={e => setCustomDate(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground outline-none text-sm mb-5 transition-all"
+                onFocus={e => e.target.style.borderColor = `${IG}60`}
+                onBlur={e => e.target.style.borderColor = ''} />
+
+              {customDate && (
+                <p className="text-xs text-center mb-4" style={{ color: IG }}>
+                  📅 {new Date(customDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+
+              <div className="flex gap-2">
+                <button onClick={() => { setCustomDate(null); setDateFilter('today'); setShowDatePicker(false); fetchNews('today', query || undefined, trendingFilter); }}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Reset
+                </button>
+                <button onClick={handleCustomDate} disabled={!customDate}
+                  className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50"
+                  style={{ background: IG_GRAD }}>
+                  Show News
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Enhanced Summary Popup ── */}
       <AnimatePresence>
         {selectedArticle && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
             onClick={() => setSelectedArticle(null)}>
-            <motion.div
-              initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
               onClick={e => e.stopPropagation()}
               className="bg-card border border-border rounded-2xl max-w-lg w-full shadow-xl overflow-hidden max-h-[85vh] overflow-y-auto">
 
-              {/* Image */}
               <div className="relative">
                 <img src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '')}
                   alt="" className="w-full h-40 object-cover"
@@ -518,8 +551,7 @@ export default function NewsPage() {
                 </button>
                 {selectedArticle.topic && (
                   <div className="absolute bottom-3 left-3">
-                    <span className="text-xs px-2 py-1 rounded-full text-white font-medium"
-                      style={{ background: IG_GRAD }}>
+                    <span className="text-xs px-2 py-1 rounded-full text-white font-medium" style={{ background: IG_GRAD }}>
                       {TOPIC_EMOJIS[selectedArticle.topic] || '📰'} {selectedArticle.topic}
                     </span>
                   </div>
@@ -527,12 +559,9 @@ export default function NewsPage() {
               </div>
 
               <div className="p-5 space-y-4">
-                {/* Title */}
                 <h2 className="font-bold text-foreground text-base leading-snug">
                   {selectedArticle.title || selectedArticle.headline}
                 </h2>
-
-                {/* Meta */}
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   {selectedArticle.source && <span>{selectedArticle.source}</span>}
                   {selectedArticle.published_at && (
@@ -540,7 +569,7 @@ export default function NewsPage() {
                   )}
                 </div>
 
-                {/* ✅ Key Highlights */}
+                {/* Key Highlights */}
                 {keyPoints.length > 0 && (
                   <div className="rounded-xl p-4 space-y-2" style={{ background: `${IG}08`, border: `1px solid ${IG}25` }}>
                     <div className="flex items-center gap-2 mb-3">
@@ -556,14 +585,11 @@ export default function NewsPage() {
                   </div>
                 )}
 
-                {/* Full summary if no key points */}
                 {keyPoints.length === 0 && selectedArticle.summary && (
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {selectedArticle.summary}
-                  </p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{selectedArticle.summary}</p>
                 )}
 
-                {/* ✅ Impact for Creators */}
+                {/* Impact */}
                 {impactData && (
                   <div className="rounded-xl p-4 space-y-2"
                     style={{
@@ -571,10 +597,8 @@ export default function NewsPage() {
                       border: `1px solid ${impactData.level === 'high' ? 'rgba(239,68,68,0.25)' : impactData.level === 'medium' ? 'rgba(234,179,8,0.25)' : 'rgba(34,197,94,0.25)'}`,
                     }}>
                     <div className="flex items-center gap-2">
-                      {impactData.level === 'high'
-                        ? <AlertTriangle className="w-4 h-4 text-red-400" />
-                        : impactData.level === 'medium'
-                        ? <ArrowUpRight className="w-4 h-4 text-yellow-400" />
+                      {impactData.level === 'high' ? <AlertTriangle className="w-4 h-4 text-red-400" />
+                        : impactData.level === 'medium' ? <ArrowUpRight className="w-4 h-4 text-yellow-400" />
                         : <TrendingUp className="w-4 h-4 text-green-400" />}
                       <p className="text-xs font-bold uppercase tracking-wider"
                         style={{ color: impactData.level === 'high' ? '#f87171' : impactData.level === 'medium' ? '#facc15' : '#4ade80' }}>
@@ -588,7 +612,6 @@ export default function NewsPage() {
                   </div>
                 )}
 
-                {/* Read full article */}
                 {selectedArticle.url && (
                   <button onClick={() => window.open(selectedArticle.url, '_blank')}
                     className="w-full py-2.5 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2"
