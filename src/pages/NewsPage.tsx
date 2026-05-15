@@ -135,6 +135,9 @@ export default function NewsPage() {
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [customDate, setCustomDate] = useState<string | null>(null);
+  const [pickerDay, setPickerDay] = useState('');
+  const [pickerMonth, setPickerMonth] = useState('');
+  const [pickerYear, setPickerYear] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -246,14 +249,6 @@ export default function NewsPage() {
     setRefreshing(false);
   };
 
-  const handleCustomDate = () => {
-    if (!customDate) return;
-    setShowDatePicker(false);
-    setDateFilter('custom');
-    setQuery(''); setSearchInput(''); setTrendingFilter(null);
-    fetchNews('custom', undefined, null, customDate);
-  };
-
   const impactData = selectedArticle ? getImpact(selectedArticle.topic || '', selectedArticle.summary || '') : null;
   const keyPoints = selectedArticle ? extractKeyPoints(selectedArticle.summary || '') : [];
 
@@ -312,19 +307,20 @@ export default function NewsPage() {
             )}
           </div>
 
-          {/* Filter button */}
+          {/* Filter button with calendar inside */}
           <div className="relative">
-            <button onClick={() => { setShowFilterMenu(prev => !prev); setShowDatePicker(false); }}
+            <button onClick={() => setShowFilterMenu(prev => !prev)}
               className="flex items-center gap-1.5 px-3 py-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
               style={(dateFilter !== 'today' || customDate) ? { borderColor: `${IG}50`, color: IG } : {}}>
               <SlidersHorizontal className="w-4 h-4" />
               {filterLabel}
             </button>
             {showFilterMenu && (
-              <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px]">
+              <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[220px]">
+                {/* Date filter options */}
                 {DATE_FILTERS.map(f => (
                   <button key={f.value}
-                    onClick={(e) => { e.stopPropagation(); handleDateFilter(f.value); setShowFilterMenu(false); }}
+                    onClick={(e) => { e.stopPropagation(); handleDateFilter(f.value); setShowFilterMenu(false); setShowDatePicker(false); }}
                     className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-accent transition-colors text-left gap-4"
                     style={dateFilter === f.value && !customDate ? { color: IG } : { color: 'hsl(var(--foreground))' }}>
                     <span className="font-medium">{f.label}</span>
@@ -332,17 +328,94 @@ export default function NewsPage() {
                     {dateFilter === f.value && !customDate && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: IG }} />}
                   </button>
                 ))}
+
+                {/* Divider */}
+                <div className="border-t border-border" />
+
+                {/* Custom date toggle */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowDatePicker(prev => !prev); }}
+                  className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-accent transition-colors"
+                  style={customDate ? { color: IG } : { color: 'hsl(var(--foreground))' }}>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium">{customDate ? filterLabel : 'Pick a Date'}</span>
+                  </div>
+                  {customDate && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: IG }} />}
+                </button>
+
+                {/* Inline calendar */}
+                {showDatePicker && (
+                  <div className="px-4 pb-4 pt-2 space-y-3" onClick={e => e.stopPropagation()}>
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Day */}
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Day</p>
+                        <select
+                          value={pickerDay}
+                          onChange={e => setPickerDay(e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none">
+                          <option value="">DD</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                            <option key={d} value={String(d).padStart(2, '0')}>{String(d).padStart(2, '0')}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {/* Month */}
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Month</p>
+                        <select
+                          value={pickerMonth}
+                          onChange={e => setPickerMonth(e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none">
+                          <option value="">MM</option>
+                          {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
+                            <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {/* Year */}
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Year</p>
+                        <select
+                          value={pickerYear}
+                          onChange={e => setPickerYear(e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none">
+                          <option value="">YYYY</option>
+                          {[2025, 2026].map(y => (
+                            <option key={y} value={String(y)}>{y}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setCustomDate(null); setPickerDay(''); setPickerMonth(''); setPickerYear(''); setDateFilter('today'); setShowDatePicker(false); setShowFilterMenu(false); fetchNews('today', query || undefined, trendingFilter); }}
+                        className="flex-1 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        Reset
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!pickerDay || !pickerMonth || !pickerYear) return;
+                          const dateStr = `${pickerYear}-${pickerMonth}-${pickerDay}`;
+                          setCustomDate(dateStr);
+                          setDateFilter('custom');
+                          setShowDatePicker(false);
+                          setShowFilterMenu(false);
+                          setQuery(''); setSearchInput(''); setTrendingFilter(null);
+                          fetchNews('custom', undefined, null, dateStr);
+                        }}
+                        disabled={!pickerDay || !pickerMonth || !pickerYear}
+                        className="flex-1 py-2 rounded-lg text-white text-xs font-medium disabled:opacity-40 transition-all"
+                        style={{ background: IG_GRAD }}>
+                        Show News
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
-
-          {/* Customize button */}
-          <button
-            onClick={() => { setShowDatePicker(prev => !prev); setShowFilterMenu(false); }}
-            className="flex items-center gap-1.5 px-3 py-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-            style={customDate ? { borderColor: `${IG}50`, color: IG } : {}}>
-            <Calendar className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Trending filter */}
@@ -478,57 +551,6 @@ export default function NewsPage() {
           </div>
         )}
       </div>
-
-      {/* ── Date Picker Modal ── */}
-      <AnimatePresence>
-        {showDatePicker && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowDatePicker(false)}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              onClick={e => e.stopPropagation()}
-              className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm shadow-xl">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="font-bold text-foreground">Pick a Date</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Browse news from any date in the last 7 days</p>
-                </div>
-                <button onClick={() => setShowDatePicker(false)} className="text-muted-foreground hover:text-foreground">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <input
-                type="date"
-                max={new Date().toISOString().split('T')[0]}
-                min={new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                value={customDate || new Date().toISOString().split('T')[0]}
-                onChange={e => setCustomDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground outline-none text-sm mb-5 transition-all"
-                onFocus={e => e.target.style.borderColor = `${IG}60`}
-                onBlur={e => e.target.style.borderColor = ''} />
-
-              {customDate && (
-                <p className="text-xs text-center mb-4" style={{ color: IG }}>
-                  📅 {new Date(customDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                </p>
-              )}
-
-              <div className="flex gap-2">
-                <button onClick={() => { setCustomDate(null); setDateFilter('today'); setShowDatePicker(false); fetchNews('today', query || undefined, trendingFilter); }}
-                  className="flex-1 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Reset
-                </button>
-                <button onClick={handleCustomDate} disabled={!customDate}
-                  className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50"
-                  style={{ background: IG_GRAD }}>
-                  Show News
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Enhanced Summary Popup ── */}
       <AnimatePresence>
