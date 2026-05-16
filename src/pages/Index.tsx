@@ -26,10 +26,22 @@ const FLOATING_TAGS = [
 export default function Index() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [platform, setPlatform] = useState<"Instagram" | "YouTube">("Instagram");
+  const [platform, setPlatform] = useState<"Instagram" | "YouTube">(() => {
+    const saved = localStorage.getItem("platform");
+    return saved === "youtube" ? "YouTube" : "Instagram";
+  });
   const [search, setSearch] = useState("");
   const [wordIndex, setWordIndex] = useState(0);
   const chips = platform === "Instagram" ? IG_CHIPS : YT_CHIPS;
+
+  // Sync with sidebar
+  useEffect(() => {
+    const handleCustom = (e: any) => {
+      setPlatform(e.detail === "youtube" ? "YouTube" : "Instagram");
+    };
+    window.addEventListener("platformChanged", handleCustom);
+    return () => window.removeEventListener("platformChanged", handleCustom);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -118,7 +130,13 @@ export default function Index() {
           style={{ background: 'white', border: '1px solid #e1e3e4' }}>
           {(['Instagram', 'YouTube'] as const).map(tab => (
             <motion.button key={tab}
-              onClick={() => { setPlatform(tab); setSearch(''); }}
+              onClick={() => {
+                setPlatform(tab);
+                setSearch('');
+                const p = tab === "Instagram" ? "instagram" : "youtube";
+                localStorage.setItem("platform", p);
+                window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
+              }}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all"
               style={platform === tab
                 ? { background: PRIMARY_GRAD, color: '#fff' }
