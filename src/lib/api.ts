@@ -14,7 +14,6 @@ export const getNews = (topicId?: string) => {
   return apiFetch(url);
 };
 
-// ✅ Updated to accept object OR positional params
 export const generateScript = (
   params: string | {
     topic?: string;
@@ -25,20 +24,19 @@ export const generateScript = (
     voiceStyle?: string;
     duration?: number;
     platform?: string;
+    contentTypePrompt?: string;
+    contentType?: string;
   },
   niche?: string,
   language?: string,
   voiceStyle?: string,
   duration?: number
 ) => {
-  // ✅ Always read language from localStorage as the source of truth
   const savedLanguage = localStorage.getItem('userLanguage') || 'english';
   const savedStyle = localStorage.getItem('userStyle') || 'casual';
-
   let body: Record<string, any>;
 
   if (typeof params === 'string') {
-    // Old positional call: generateScript(topicId, niche, language, voiceStyle, duration)
     body = {
       topicId: params,
       niche,
@@ -47,7 +45,6 @@ export const generateScript = (
       duration,
     };
   } else {
-    // New object call: generateScript({ topic, niche, language, ... })
     body = {
       topicId: params.topic || params.topicId,
       niche: params.niche,
@@ -56,13 +53,13 @@ export const generateScript = (
       voiceStyle: params.voiceStyle,
       duration: params.duration,
       platform: params.platform,
+      contentTypePrompt: params.contentTypePrompt,
+      contentType: params.contentType,
     };
   }
 
-  // ✅ Force language from localStorage — never let it be undefined
   body.language = body.language || savedLanguage;
-
-  console.log('generateScript called with language:', body.language);
+  console.log('generateScript called with language:', body.language, 'contentType:', body.contentType);
 
   return apiFetch("/api/scripts/generate", {
     method: "POST",

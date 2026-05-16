@@ -7,11 +7,15 @@ import { useAuth } from "@/contexts/AuthContext";
 const IG_GRAD = "linear-gradient(135deg, #14BBA6, #0D9488)";
 const IG = "#14BBA6";
 
-const MODES = [
-  { id: "full", label: "Full Script", description: "Hook + Body + CTA" },
-  { id: "hook", label: "Hook Only", description: "Viral opening line" },
-  { id: "body", label: "Body Only", description: "Main script content" },
-  { id: "cta", label: "CTA Only", description: "Call to action" },
+const CONTENT_TYPES = [
+  { id: "educational", label: "🎓 Educational", description: "Teach something valuable", prompt: "Create an educational script that clearly explains the topic step by step, uses simple language, and ends with a key takeaway." },
+  { id: "storytelling", label: "📖 Storytelling", description: "Personal story or journey", prompt: "Create a storytelling script with a personal narrative arc — setup, conflict, resolution. Make it emotional and relatable." },
+  { id: "trending", label: "🔥 Trending React", description: "React to hot news/trend", prompt: "Create a reaction script to this trending topic. Start with the news, give a strong opinion, and ask audience what they think." },
+  { id: "tips", label: "💡 Tips & Tricks", description: "Quick actionable tips", prompt: "Create a tips and tricks script with numbered points. Each tip should be specific, actionable and immediately useful." },
+  { id: "comedy", label: "🎭 Comedy/Skit", description: "Funny or relatable content", prompt: "Create a funny, relatable comedy script with Indian humor. Use sarcasm, relatable situations, and a punchline ending." },
+  { id: "motivational", label: "💪 Motivational", description: "Inspire the audience", prompt: "Create a powerful motivational script that connects emotionally, uses a real story or example, and ends with a strong call to action." },
+  { id: "opinion", label: "📊 Opinion/Take", description: "Your honest take on a topic", prompt: "Create an opinion script with a strong controversial or unique take on the topic. Be bold, back it up with reasoning, and invite debate." },
+  { id: "review", label: "🛒 Product Review", description: "Review or recommend something", prompt: "Create an honest product or service review script covering pros, cons, who it's for, and a clear recommendation." },
 ];
 
 const DURATION_OPTIONS = [
@@ -214,7 +218,7 @@ export default function ScriptsPage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [topicInput, setTopicInput] = useState('');
-  const [mode, setMode] = useState('full');
+  const [contentType, setContentType] = useState('educational');
   const [duration, setDuration] = useState(60);
   const [history, setHistory] = useState<HistoryEntry[]>(() => JSON.parse(localStorage.getItem("ig_script_history") || "[]"));
   const [showDropdown, setShowDropdown] = useState(false);
@@ -258,16 +262,20 @@ export default function ScriptsPage() {
     setGenerating(true); setError(''); setSelectedTopic(topic);
     setTopicInput(topic); setShowDropdown(false); setShowSubCategories(false);
     try {
-      const result = await generateScript({ topic, niche: userNiche, language: userLanguage, voiceStyle: userVoiceStyle, duration });
-      let finalScript = result;
-      if (mode === 'hook') finalScript = { hook: result.hook };
-      else if (mode === 'body') finalScript = { body: result.body };
-      else if (mode === 'cta') finalScript = { cta: result.cta };
-      setScript(finalScript);
-      saveHistory({ topic, script: finalScript, mode, duration, language: userLanguage });
+      const selectedContentType = CONTENT_TYPES.find(c => c.id === contentType);
+      const result = await generateScript({
+        topic,
+        niche: userNiche,
+        language: userLanguage,
+        voiceStyle: userVoiceStyle,
+        duration,
+        contentTypePrompt: selectedContentType?.prompt || '',
+        contentType: selectedContentType?.label || '',
+      });
+      setScript(result);
+      saveHistory({ topic, script: result, mode: contentType, duration, language: userLanguage });
       const updatedHistory = JSON.parse(localStorage.getItem("ig_script_history") || "[]");
       setHistory(updatedHistory);
-      // ✅ Check if same topic searched 3+ times → suggest series
       const topicCount = updatedHistory.filter((h: HistoryEntry) =>
         h.topic.toLowerCase() === topic.toLowerCase()
       ).length;
@@ -571,16 +579,21 @@ export default function ScriptsPage() {
         {/* ── GENERATE VIEW ── */}
         {activeView === "generate" && (
           <>
-            {/* Mode selector */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {MODES.map((m) => (
-                <button key={m.id} onClick={() => { setMode(m.id); setScript(null); }}
-                  className="p-3 rounded-2xl border text-left transition-all"
-                  style={mode === m.id ? { background: IG_GRAD, borderColor: "transparent", color: "#fff" } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                  <p className="text-xs font-semibold">{m.label}</p>
-                  <p className="text-xs opacity-70 mt-0.5">{m.description}</p>
-                </button>
-              ))}
+            {/* Content Type Selector */}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">What kind of content do you want to post?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {CONTENT_TYPES.map((c) => (
+                  <button key={c.id} onClick={() => { setContentType(c.id); setScript(null); }}
+                    className="p-3 rounded-2xl border text-left transition-all"
+                    style={contentType === c.id
+                      ? { background: IG_GRAD, borderColor: "transparent", color: "#fff" }
+                      : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                    <p className="text-xs font-semibold">{c.label}</p>
+                    <p className="text-xs opacity-70 mt-0.5">{c.description}</p>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Duration */}
@@ -962,7 +975,7 @@ export default function ScriptsPage() {
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="font-semibold text-foreground text-sm">{MODES.find(m => m.id === mode)?.label} for <span style={{ color: IG }}>"{selectedTopic}"</span></h2>
+                    <h2 className="font-semibold text-foreground text-sm">{CONTENT_TYPES.find(c => c.id === contentType)?.label} for <span style={{ color: IG }}>"{selectedTopic}"</span></h2>
                     <p className="text-xs text-muted-foreground mt-0.5">Language: {localStorage.getItem('userLanguage') || 'english'}</p>
                   </div>
                   <button onClick={() => copyAll(script)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -1017,11 +1030,6 @@ export default function ScriptsPage() {
                     <X className="w-4 h-4" /> New
                   </button>
                 </div>
-                <button onClick={() => window.location.href = `/thumbnail?topic=${encodeURIComponent(selectedTopic || topicInput)}`}
-                  className="w-full py-2.5 rounded-2xl border text-sm font-medium flex items-center justify-center gap-2 transition-colors hover:opacity-80"
-                  style={{ borderColor: `${IG}40`, color: IG, background: `${IG}08` }}>
-                  🖼️ Generate Thumbnail for this Script
-                </button>
               </motion.div>
             )}
           </>
