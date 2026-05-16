@@ -250,10 +250,10 @@ export default function ScriptsPage() {
       </header>
 
       <div className="max-w-5xl mx-auto px-5 py-5 pb-28">
-        <div className="flex flex-col lg:flex-row gap-5">
+       <div className="max-w-2xl mx-auto flex flex-col gap-5">
 
           {/* ── Main Writing Area ── */}
-          <section className="flex-1 flex flex-col gap-4">
+          <section className="flex flex-col gap-4">
 
             {/* Content Type Selector */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
