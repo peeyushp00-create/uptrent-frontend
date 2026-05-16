@@ -74,11 +74,10 @@ export default function AppSidebar() {
     : user?.email?.[0].toUpperCase() || 'U';
 
   return (
-    <aside className={`flex flex-col h-screen border-r transition-all duration-300 relative ${collapsed ? "w-16" : "w-60"}`}
-      style={{ background: 'white', borderColor: '#e1e3e4' }}>
+    <aside className={`flex flex-col h-screen border-r border-border bg-card transition-all duration-300 relative ${collapsed ? "w-16" : "w-60"}`}>
 
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 h-16 border-b" style={{ borderColor: '#e1e3e4' }}>
+      <div className="flex items-center gap-2.5 px-4 h-16 border-b border-border">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: PRIMARY_GRAD }}>
           <img src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -89,7 +88,7 @@ export default function AppSidebar() {
           </span>
         )}
         <button onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto text-[#757684] hover:text-[#191c1d] transition-colors p-1 rounded-lg hover:bg-[#f3f4f5]">
+          className="ml-auto text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-accent">
           {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
       </div>
@@ -97,7 +96,7 @@ export default function AppSidebar() {
       {/* Platform toggle */}
       {!collapsed && (
         <div className="px-3 pt-4 pb-2">
-          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#f3f4f5' }}>
+          <div className="flex items-center gap-1 p-1 rounded-xl" >
             <button onClick={() => switchPlatform("instagram")}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
               style={effectivePlatform === "instagram"
@@ -149,7 +148,7 @@ export default function AppSidebar() {
               style={active
                 ? { background: PRIMARY_CONTAINER, color: PRIMARY }
                 : { color: '#454652' }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#f3f4f5'; }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}>
               <item.icon className="w-4 h-4 shrink-0" style={active ? { color: PRIMARY } : { color: '#757684' }} />
               {!collapsed && <span>{item.label}</span>}
@@ -162,27 +161,27 @@ export default function AppSidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div className="p-2 border-t space-y-1" style={{ borderColor: '#e1e3e4' }}>
+      <div className="p-2 border-t space-y-1" >
 
         {/* Theme toggle */}
         <button onClick={toggleTheme}
           title={collapsed ? (theme === "dark" ? "Light Mode" : "Dark Mode") : undefined}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-[#454652] transition-all"
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#f3f4f5'}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground/80 transition-all"
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
           {theme === "dark"
-            ? <Sun className="w-4 h-4 shrink-0 text-[#757684]" />
-            : <Moon className="w-4 h-4 shrink-0 text-[#757684]" />}
+            ? <Sun className="w-4 h-4 shrink-0 text-muted-foreground" />
+            : <Moon className="w-4 h-4 shrink-0 text-muted-foreground" />}
           {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
         </button>
 
         {/* Settings */}
         <button onClick={() => navigate('/settings')}
           title={collapsed ? "Settings" : undefined}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-[#454652] transition-all"
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#f3f4f5'}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground/80 transition-all"
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-          <Settings className="w-4 h-4 shrink-0 text-[#757684]" />
+          <Settings className="w-4 h-4 shrink-0 text-muted-foreground" />
           {!collapsed && <span>Settings</span>}
         </button>
 
@@ -191,31 +190,31 @@ export default function AppSidebar() {
           <button onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all"
             style={showProfileMenu ? { background: PRIMARY_CONTAINER } : {}}
-            onMouseEnter={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = '#f3f4f5'; }}
+            onMouseEnter={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
             onMouseLeave={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = ''; }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
               style={{ background: PRIMARY_GRAD }}>{avatarInitials}</div>
             {!collapsed && (
               <>
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-xs font-bold text-[#191c1d] truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
-                  <p className="text-[10px] text-[#757684] truncate">{user?.email}</p>
+                  <p className="text-xs font-bold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
                 </div>
-                <ChevronUp className={`w-4 h-4 text-[#757684] transition-transform ${showProfileMenu ? '' : 'rotate-180'}`} />
+                <ChevronUp className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileMenu ? '' : 'rotate-180'}`} />
               </>
             )}
           </button>
 
           {/* Profile popup */}
           {showProfileMenu && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-[#e1e3e4] rounded-2xl shadow-xl z-50 overflow-hidden">
-              <div className="p-3 border-b border-[#e1e3e4]">
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
+              <div className="p-3 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
                     style={{ background: PRIMARY_GRAD }}>{avatarInitials}</div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-[#191c1d] truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
-                    <p className="text-xs text-[#757684] truncate">{user?.email}</p>
+                    <p className="text-sm font-bold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>
                 </div>
               </div>
@@ -227,7 +226,7 @@ export default function AppSidebar() {
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
                   <Crown className="w-4 h-4" /> Upgrade to Pro
                 </button>
-                <div className="border-t border-[#e1e3e4] my-1" />
+                <div className="border-t border-border my-1" />
                 <button onClick={() => { handleLogout(); setShowProfileMenu(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-semibold text-red-500 transition-all"
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#fef2f2'}
