@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Sparkles, Copy, Check, Clock, RefreshCw, Mic, Search, X, ChevronRight, Trash2 } from "lucide-react";
+import { FileText, Sparkles, Copy, Check, Clock, RefreshCw, Mic, Search, X, ChevronRight, Trash2, Flame, TrendingUp, Newspaper } from "lucide-react";
 import { generateScript } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -348,6 +348,52 @@ export default function ScriptsPage() {
 
   const subCat = detectedNiche ? SUB_CATEGORIES[detectedNiche] : null;
 
+  // ── Get Ideas ──
+  const [showIdeas, setShowIdeas] = useState(false);
+  const [ideas, setIdeas] = useState<{ news: any[]; reelIdeas: string[] }>({ news: [], reelIdeas: [] });
+  const [loadingIdeas, setLoadingIdeas] = useState(false);
+  const ideasRef = useRef<HTMLDivElement>(null);
+
+  const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+  const fetchIdeas = async () => {
+    setLoadingIdeas(true);
+    const userNiches: string[] = user?.user_metadata?.niches || (userNiche ? [userNiche] : []);
+    const topicForIdeas = topicInput.trim() || userNiches[0] || 'Finance';
+    try {
+      const res = await fetch(`${BASE}/api/news?filter=today&topicId=${encodeURIComponent(topicForIdeas)}`);
+      const data = await res.json();
+      const newsList = Array.isArray(data) ? data.slice(0, 5) : [];
+      const reelIdeas = [
+        `🔥 React to: "${newsList[0]?.title?.slice(0, 50) || topicForIdeas + ' latest news'}"`,
+        `📊 Explain "${topicForIdeas}" in 60 seconds`,
+        `💡 Top 5 things about ${topicForIdeas} nobody knows`,
+        `⚡ ${topicForIdeas} mistake that costs people money/time`,
+        `🎯 My honest opinion on ${topicForIdeas} trend`,
+        `📈 Why ${topicForIdeas} is changing in 2026`,
+        `🚀 ${topicForIdeas} tips that actually work`,
+        `❌ Stop doing this in ${topicForIdeas}`,
+      ];
+      setIdeas({ news: newsList, reelIdeas });
+    } catch {
+      setIdeas({ news: [], reelIdeas: [
+        `🔥 Top 5 ${topicForIdeas} tips`,
+        `📊 ${topicForIdeas} explained in 60 seconds`,
+        `💡 ${topicForIdeas} secrets nobody tells you`,
+        `⚡ Biggest ${topicForIdeas} mistakes to avoid`,
+        `🎯 My ${topicForIdeas} journey`,
+      ]});
+    } finally { setLoadingIdeas(false); }
+  };
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ideasRef.current && !ideasRef.current.contains(e.target as Node)) setShowIdeas(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   const ScriptCard = ({ s, topic: t }: { s: any; topic: string }) => (
     <div className="space-y-3">
       {s.hook && (
@@ -570,6 +616,87 @@ export default function ScriptsPage() {
                     </button>
                   )}
                 </div>
+
+                {/* ── Get Ideas Button ── */}
+                <div className="relative" ref={ideasRef}>
+                  <button
+                    onClick={() => { if (!showIdeas) { fetchIdeas(); } setShowIdeas(prev => !prev); }}
+                    className="px-3 py-3 rounded-2xl border flex items-center gap-1.5 text-sm font-medium transition-all whitespace-nowrap"
+                    style={showIdeas ? { background: IG_GRAD, color: '#fff', borderColor: 'transparent' } : { borderColor: `${IG}40`, color: IG, background: `${IG}08` }}>
+                    <Flame className="w-4 h-4" />
+                    <span className="hidden sm:inline">Ideas</span>
+                  </button>
+
+                  {/* Ideas dropdown */}
+                  <AnimatePresence>
+                    {showIdeas && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                        className="absolute top-full right-0 mt-2 bg-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden"
+                        style={{ width: 320 }}>
+
+                        {loadingIdeas ? (
+                          <div className="flex items-center justify-center py-8 gap-2">
+                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                              <Sparkles className="w-4 h-4" style={{ color: IG }} />
+                            </motion.div>
+                            <span className="text-xs text-muted-foreground">Fetching hot ideas...</span>
+                          </div>
+                        ) : (
+                          <div className="max-h-96 overflow-y-auto">
+                            {/* Hot News */}
+                            {ideas.news.length > 0 && (
+                              <div className="p-3 border-b border-border">
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <Newspaper className="w-3.5 h-3.5" style={{ color: IG }} />
+                                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: IG }}>Hot News to React To</p>
+                                </div>
+                                <div className="space-y-1.5">
+                                  {ideas.news.map((n, i) => (
+                                    <button key={i}
+                                      onClick={() => { const title = n.title || n.headline || ''; setTopicInput(title.slice(0, 60)); setShowIdeas(false); }}
+                                      className="w-full text-left px-3 py-2 rounded-xl text-xs text-foreground hover:bg-accent transition-colors leading-snug flex items-start gap-2">
+                                      <TrendingUp className="w-3 h-3 shrink-0 mt-0.5" style={{ color: IG }} />
+                                      <span className="line-clamp-2">{n.title || n.headline}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Reel Ideas */}
+                            <div className="p-3">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <Flame className="w-3.5 h-3.5 text-orange-400" />
+                                <p className="text-xs font-bold uppercase tracking-wider text-orange-400">Reel Ideas</p>
+                              </div>
+                              <div className="space-y-1.5">
+                                {ideas.reelIdeas.map((idea, i) => (
+                                  <button key={i}
+                                    onClick={() => { setTopicInput(idea.replace(/^[🔥📊💡⚡🎯📈🚀❌]\s/, '')); setShowIdeas(false); }}
+                                    className="w-full text-left px-3 py-2 rounded-xl text-xs text-foreground hover:bg-accent transition-colors leading-snug">
+                                    {idea}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="px-3 pb-3">
+                              <button
+                                onClick={() => { fetchIdeas(); }}
+                                className="w-full py-2 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5">
+                                <RefreshCw className="w-3 h-3" /> Refresh Ideas
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
                 <button onClick={() => handleGenerate(topicInput)} disabled={generating}
                   className="px-5 py-3 rounded-2xl text-white flex items-center gap-2 disabled:opacity-60"
                   style={{ background: IG_GRAD }}>
@@ -889,7 +1016,12 @@ export default function ScriptsPage() {
                   <button onClick={handleClear} className="px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center gap-2">
                     <X className="w-4 h-4" /> New
                   </button>
-               </div>
+                </div>
+                <button onClick={() => window.location.href = `/thumbnail?topic=${encodeURIComponent(selectedTopic || topicInput)}`}
+                  className="w-full py-2.5 rounded-2xl border text-sm font-medium flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+                  style={{ borderColor: `${IG}40`, color: IG, background: `${IG}08` }}>
+                  🖼️ Generate Thumbnail for this Script
+                </button>
               </motion.div>
             )}
           </>
