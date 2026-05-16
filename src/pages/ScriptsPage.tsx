@@ -580,21 +580,21 @@ export default function ScriptsPage() {
         {activeView === "generate" && (
           <>
             {/* Content Type Selector */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">What kind of content do you want to post?</p>
-              <div className="grid grid-cols-2 gap-2">
-                {CONTENT_TYPES.map((c) => (
-                  <button key={c.id} onClick={() => { setContentType(c.id); setScript(null); }}
-                    className="p-3 rounded-2xl border text-left transition-all"
-                    style={contentType === c.id
-                      ? { background: IG_GRAD, borderColor: "transparent", color: "#fff" }
-                      : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    <p className="text-xs font-semibold">{c.label}</p>
-                    <p className="text-xs opacity-70 mt-0.5">{c.description}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+          
+<div className="space-y-1.5">
+  <p className="text-xs font-medium text-muted-foreground">Content type:</p>
+  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+    {CONTENT_TYPES.map((c) => (
+      <button key={c.id} onClick={() => { setContentType(c.id); setScript(null); }}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all whitespace-nowrap shrink-0"
+        style={contentType === c.id
+          ? { background: IG_GRAD, borderColor: "transparent", color: "#fff" }
+          : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+        {c.label}
+      </button>
+    ))}
+  </div>
+</div>
 
             {/* Duration */}
             <div>
