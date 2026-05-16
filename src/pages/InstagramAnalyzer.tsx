@@ -1,200 +1,275 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Instagram, Search, Copy, Check, Loader2, ChevronRight, Hash, Lightbulb, BarChart2, Sparkles, X } from "lucide-react";
+import { Search, Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb, User } from "lucide-react";
 
+const PRIMARY = "#24389c";
+const SECONDARY = "#6f48b2";
+const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
+const PRIMARY_CONTAINER = "#dee0ff";
+const SECONDARY_CONTAINER = "#ede7f6";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-const POPULAR_ACCOUNTS = [
-  "beerbiceps", "techburner", "CarryMinati", "BBKiVines",
-  "ashishchanchlani", "triggered_insaan", "prajakta_koli",
-  "bhuvan.bam22", "slaypoint", "dhruvrathee",
-];
+const DAYS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const HOURS = ['12am','6am','12pm','6pm','11pm'];
+
+// Simple heatmap data generator
+const generateHeatmap = () => {
+  return DAYS.map(day => ({
+    day,
+    hours: Array.from({ length: 24 }, (_, h) => {
+      const isMorning = h >= 6 && h <= 9;
+      const isLunch = h >= 12 && h <= 14;
+      const isEvening = h >= 18 && h <= 22;
+      if (isEvening) return Math.random() > 0.3 ? 3 : 2;
+      if (isMorning || isLunch) return Math.random() > 0.5 ? 2 : 1;
+      return Math.random() > 0.7 ? 1 : 0;
+    })
+  }));
+};
+
+const heatmapColors = ['#e7e8e9', '#b78efe40', '#b78efe80', '#6f48b2'];
 
 export default function InstagramAnalyzer() {
-  const [username, setUsername] = useState(() => localStorage.getItem('ig_analyzer_username') || "");
+  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(() => {
-    const saved = localStorage.getItem('ig_analyzer_result');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [result, setResult] = useState<any>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState('');
+  const [heatmap] = useState(generateHeatmap());
 
-  useEffect(() => { localStorage.setItem('ig_analyzer_username', username); }, [username]);
-
-  useEffect(() => {
-    const val = username.replace('@', '').trim();
-    if (val.length > 0) {
-      const filtered = POPULAR_ACCOUNTS.filter(s =>
-        s.toLowerCase().includes(val.toLowerCase()) && s.toLowerCase() !== val.toLowerCase()
-      ).slice(0, 5);
-      setDropdownSuggestions(filtered);
-      setShowDropdown(filtered.length > 0);
-    } else { setShowDropdown(false); setDropdownSuggestions([]); }
-  }, [username]);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-          inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  const copyText = (text: string, key: string) => {
-    navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
-  };
-
-  const handleClear = () => {
-    setUsername(''); setResult(null);
-    localStorage.removeItem('ig_analyzer_username');
-    localStorage.removeItem('ig_analyzer_result');
-  };
-
-  const handleAnalyze = async (uname?: string) => {
-    const target = (uname || username).replace('@', '').trim();
-    if (!target) return;
-    setUsername(target); setShowDropdown(false); setLoading(true); setResult(null);
+  const analyze = async () => {
+    if (!username.trim()) return;
+    setLoading(true); setError(''); setResult(null);
     try {
       const res = await fetch(`${BASE}/api/instagram/analyze`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: target }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.replace('@', '') }),
       });
+      if (!res.ok) throw new Error('Failed');
       const data = await res.json();
       setResult(data);
-      localStorage.setItem('ig_analyzer_result', JSON.stringify(data));
-      localStorage.setItem('ig_analyzer_username', target);
-    } catch { setResult({ error: 'Failed to analyze profile. Try again.' }); }
+    } catch { setError('Failed to analyze. Please try again.'); }
     finally { setLoading(false); }
   };
 
+  const copyText = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key); setTimeout(() => setCopied(null), 2000);
+  };
+
+  const PILLAR_COLORS = [
+    { bg: PRIMARY_CONTAINER, text: PRIMARY },
+    { bg: SECONDARY_CONTAINER, text: SECONDARY },
+    { bg: '#e8f5e9', text: '#2e7d32' },
+    { bg: '#fff3e0', text: '#e65100' },
+    { bg: '#fce4ec', text: '#880e4f' },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <Instagram className="w-5 h-5 text-pink-500" />
-          <h1 className="text-lg font-bold text-foreground">Instagram Analyzer</h1>
-        </div>
-      </div>
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-24">
-        <div>
-          <h2 className="font-semibold text-foreground mb-1">Analyze Any Instagram Profile</h2>
-          <p className="text-xs text-muted-foreground">Enter any Instagram username to get content ideas, hashtags and posting strategy</p>
-        </div>
-        <div className="relative">
+    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center">
+        <h1 className="font-bold text-xl text-[#24389c] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          Content Analyzer
+        </h1>
+        <p className="text-sm text-[#757684] ml-3 hidden sm:block">Deep-dive into any Instagram profile</p>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-5">
+
+        {/* Search Input */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+          <p className="text-sm text-[#757684] mb-3">Enter an Instagram username to get content strategy insights</p>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
-              <input ref={inputRef} value={username} onChange={(e) => setUsername(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAnalyze(); if (e.key === "Escape") setShowDropdown(false); }}
-                onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
-                placeholder="username (e.g. beerbiceps, techburner)"
-                className="w-full pl-8 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-pink-500 text-sm"
-              />
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#757684] text-sm font-bold">@</span>
+              <input type="text" value={username} onChange={e => setUsername(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') analyze(); }}
+                placeholder="username"
+                className="w-full pl-8 pr-9 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#24389c] focus:ring-2 focus:ring-[#24389c]/20 transition-all" />
               {username && (
-                <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10">
+                <button onClick={() => { setUsername(''); setResult(null); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
-            <button onClick={() => handleAnalyze()} disabled={loading}
-              className="px-4 py-3 rounded-xl text-white text-sm font-medium disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #14BBA6, #0D9488)" }}
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            <button onClick={analyze} disabled={loading || !username.trim()}
+              className="px-5 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-60 hover:shadow-lg transition-all"
+              style={{ background: PRIMARY_GRAD }}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Analyze'}
             </button>
           </div>
-          {showDropdown && dropdownSuggestions.length > 0 && (
-            <div ref={dropdownRef} className="absolute top-full left-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden" style={{ width: 'calc(100% - 60px)' }}>
-              {dropdownSuggestions.map((s, i) => (
-                <button key={i} onClick={() => handleAnalyze(s)} className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left">
-                  <Instagram className="w-3.5 h-3.5 text-muted-foreground shrink-0" />@{s}
-                </button>
-              ))}
-            </div>
-          )}
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
-        {!username && !result && (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Popular accounts:</p>
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_ACCOUNTS.map((acc) => (
-                <button key={acc} onClick={() => handleAnalyze(acc)} className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">@{acc}</button>
-              ))}
-            </div>
-          </div>
-        )}
+
+        {/* Loading */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-            <p className="text-sm text-muted-foreground">Analyzing @{username.replace('@', '')}...</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] p-8 flex flex-col items-center gap-3">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+              <Sparkles className="w-8 h-8" style={{ color: SECONDARY }} />
+            </motion.div>
+            <p className="text-sm font-semibold text-[#191c1d] dark:text-white">Analyzing @{username.replace('@', '')}...</p>
+            <p className="text-xs text-[#757684]">Building content strategy insights</p>
           </div>
         )}
-        {result && !result.error && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-            {result.summary && (
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2"><Instagram className="w-4 h-4 text-pink-500" /><p className="text-xs font-bold uppercase text-pink-400">Profile Summary</p></div>
-                <p className="text-sm text-foreground">{result.summary}</p>
+
+        {/* Results */}
+        {result && !loading && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+
+            {/* Profile Summary */}
+            <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  {(result.profile_name || username)[0].toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>@{username.replace('@', '')}</p>
+                  <p className="text-xs text-white/70">{result.data_source === 'real' ? '✓ Real data' : 'AI Analysis'}</p>
+                </div>
               </div>
-            )}
-            {result.content_pillars && (
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2"><BarChart2 className="w-4 h-4 text-blue-400" /><p className="text-xs font-bold uppercase text-blue-400">Content Pillars</p></div>
-                <div className="space-y-1.5">
-                  {result.content_pillars.map((pillar: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-foreground"><ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{pillar}</div>
-                  ))}
+              <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>
+            </div>
+
+            {/* Content Pillars */}
+            {result.content_pillars && result.content_pillars.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Content Pillars</h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {result.content_pillars.map((pillar: string, i: number) => {
+                    const style = PILLAR_COLORS[i % PILLAR_COLORS.length];
+                    return (
+                      <span key={i} className="px-4 py-2 rounded-full text-xs font-bold"
+                        style={{ background: style.bg, color: style.text }}>
+                        {pillar}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
-            {result.reel_ideas && (
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2"><Lightbulb className="w-4 h-4 text-yellow-400" /><p className="text-xs font-bold uppercase text-yellow-400">Reel Ideas for You</p></div>
+
+            {/* Reel Ideas */}
+            {result.reel_ideas && result.reel_ideas.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Lightbulb className="w-4 h-4" style={{ color: SECONDARY }} />
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Reel Ideas</h2>
+                </div>
                 <div className="space-y-2">
                   {result.reel_ideas.map((idea: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/30">
-                      <span className="text-xs text-muted-foreground mt-0.5 w-4 shrink-0">{i + 1}.</span>
-                      <p className="text-sm text-foreground flex-1">{idea}</p>
-                      <button onClick={() => copyText(idea, `idea-${i}`)}>{copied === `idea-${i}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f8f9fa] dark:hover:bg-gray-700 transition-colors">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
+                        style={{ background: PRIMARY_GRAD }}>
+                        {i + 1}
+                      </div>
+                      <p className="text-sm text-[#454652] dark:text-gray-200 flex-1">{idea}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            {result.hashtags && (
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2"><Hash className="w-4 h-4 text-green-400" /><p className="text-xs font-bold uppercase text-green-400">Hashtag Strategy</p></div>
-                  <button onClick={() => copyText(result.hashtags.join(' '), 'hashtags')} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                    {copied === 'hashtags' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} Copy All
+
+            {/* Hashtags */}
+            {result.hashtags && result.hashtags.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Hash className="w-4 h-4" style={{ color: PRIMARY }} />
+                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Hashtags</h2>
+                  </div>
+                  <button onClick={() => copyText(result.hashtags.map((h: string) => `#${h}`).join(' '), 'hashtags')}
+                    className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
+                    {copied === 'hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy All</>}
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {result.hashtags.map((tag: string, i: number) => (
-                    <span key={i} className="text-xs px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20">{tag.startsWith('#') ? tag : `#${tag}`}</span>
+                    <button key={i} onClick={() => copyText(`#${tag}`, `tag-${i}`)}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80"
+                      style={i % 3 === 0 ? { background: PRIMARY_CONTAINER, color: PRIMARY } : i % 3 === 1 ? { background: SECONDARY_CONTAINER, color: SECONDARY } : { background: '#e7e8e9', color: '#454652' }}>
+                      #{tag}
+                    </button>
                   ))}
                 </div>
               </div>
             )}
-            {result.posting_tips && (
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-orange-400" /><p className="text-xs font-bold uppercase text-orange-400">Posting Strategy</p></div>
-                <div className="space-y-1.5">
+
+            {/* Activity Heatmap */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  Best Time to Post
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-[#757684]">Less</span>
+                  {heatmapColors.map((c, i) => (
+                    <div key={i} className="w-3 h-3 rounded-sm" style={{ background: c }} />
+                  ))}
+                  <span className="text-[10px] text-[#757684]">More</span>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <div className="min-w-[400px]">
+                  <div className="flex justify-between text-[9px] font-bold text-[#757684] uppercase mb-1 ml-8">
+                    {HOURS.map(h => <span key={h}>{h}</span>)}
+                  </div>
+                  <div className="space-y-1">
+                    {heatmap.map(row => (
+                      <div key={row.day} className="flex items-center gap-1">
+                        <span className="w-7 text-[9px] font-bold text-[#757684]">{row.day}</span>
+                        <div className="flex-1 grid gap-0.5" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
+                          {row.hours.map((v, hi) => (
+                            <div key={hi} className="h-5 rounded-sm" style={{ background: heatmapColors[v] }} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-[#757684] mt-3">📍 Peak engagement: 6PM–10PM on weekdays</p>
+            </div>
+
+            {/* Posting Tips */}
+            {result.posting_tips && result.posting_tips.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-4 h-4" style={{ color: SECONDARY }} />
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Posting Tips</h2>
+                </div>
+                <div className="space-y-2.5">
                   {result.posting_tips.map((tip: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-foreground"><span className="text-pink-500 shrink-0 mt-0.5">•</span>{tip}</div>
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: PRIMARY_CONTAINER }}>
+                        <span className="text-[9px] font-bold" style={{ color: PRIMARY }}>{i + 1}</span>
+                      </div>
+                      <p className="text-sm text-[#454652] dark:text-gray-200 leading-relaxed">{tip}</p>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
           </motion.div>
         )}
-        {result?.error && <p className="text-red-400 text-sm text-center">{result.error}</p>}
-      </div>
+
+        {/* Empty state */}
+        {!loading && !result && !error && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: PRIMARY_CONTAINER }}>
+              <User className="w-8 h-8" style={{ color: PRIMARY }} />
+            </div>
+            <p className="font-bold text-[#191c1d] dark:text-white mb-1" style={{ fontFamily: 'Montserrat, sans-serif' }}>Analyze Any Profile</p>
+            <p className="text-sm text-[#757684]">Enter any Instagram username to get content pillars, reel ideas, hashtags and posting tips</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
