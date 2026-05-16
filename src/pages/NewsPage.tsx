@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Newspaper, ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Flame, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar } from "lucide-react";
+import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, Bookmark, Share2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge } from "@/components/ui/badge";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const IG = "#14BBA6";
-const IG_GRAD = "linear-gradient(135deg, #14BBA6, #0D9488)";
+const PRIMARY = "#24389c";
+const SECONDARY = "#6f48b2";
+const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
+const PRIMARY_CONTAINER = "#dee0ff";
+const SECONDARY_CONTAINER = "#b78efe";
 
 interface NewsArticle {
   id?: string;
@@ -62,16 +64,16 @@ const NICHE_TO_TOPIC: Record<string, string> = {
 
 const getCategoryImage = (headline: string) => {
   const h = headline.toLowerCase();
-  if (h.includes('cricket') || h.includes('ipl')) return 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400';
-  if (h.includes('fitness') || h.includes('workout')) return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400';
-  if (h.includes('ai') || h.includes('tech')) return 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400';
-  if (h.includes('bollywood') || h.includes('movie')) return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400';
-  if (h.includes('travel')) return 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400';
-  if (h.includes('food') || h.includes('recipe')) return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400';
-  if (h.includes('stock') || h.includes('finance') || h.includes('market')) return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400';
-  if (h.includes('crypto') || h.includes('bitcoin')) return 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=400';
-  if (h.includes('gaming') || h.includes('game')) return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400';
-  return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400';
+  if (h.includes('cricket') || h.includes('ipl')) return 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=600';
+  if (h.includes('fitness') || h.includes('workout')) return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600';
+  if (h.includes('ai') || h.includes('tech')) return 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600';
+  if (h.includes('bollywood') || h.includes('movie')) return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600';
+  if (h.includes('travel')) return 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600';
+  if (h.includes('food') || h.includes('recipe')) return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600';
+  if (h.includes('stock') || h.includes('finance') || h.includes('market')) return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600';
+  if (h.includes('crypto') || h.includes('bitcoin')) return 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=600';
+  if (h.includes('gaming') || h.includes('game')) return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600';
+  return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600';
 };
 
 const getTimeAgo = (dateStr: string) => {
@@ -106,12 +108,23 @@ const getImpact = (topic: string, summary: string): { level: 'high' | 'medium' |
     if (isHigh) return { level: 'high', text: 'Major tech development — explainer content will get high views' };
     return { level: 'medium', text: 'Tech update — your audience will appreciate a quick breakdown' };
   }
-  if (topic === 'Bollywood') {
-    if (isHigh) return { level: 'high', text: 'Trending Bollywood news — react immediately for maximum reach' };
-    return { level: 'low', text: 'Entertainment update — good for casual content' };
-  }
   if (isHigh) return { level: 'high', text: 'High impact story — create content around this now for maximum reach' };
   return { level: 'medium', text: 'Relevant update for your niche — good content opportunity' };
+};
+
+const getTagStyle = (topic: string) => {
+  const colors: Record<string, { bg: string; text: string }> = {
+    Finance: { bg: '#e8f5e9', text: '#2e7d32' },
+    Tech: { bg: '#e3f2fd', text: '#1565c0' },
+    Cricket: { bg: '#fff3e0', text: '#e65100' },
+    Bollywood: { bg: '#fce4ec', text: '#880e4f' },
+    Fitness: { bg: '#f3e5f5', text: '#6a1b9a' },
+    Gaming: { bg: '#e8eaf6', text: '#283593' },
+    Food: { bg: '#fff8e1', text: '#f57f17' },
+    Travel: { bg: '#e0f7fa', text: '#006064' },
+    Crypto: { bg: '#ede7f6', text: '#4527a0' },
+  };
+  return colors[topic] || { bg: '#ede7f6', text: '#4527a0' };
 };
 
 export default function NewsPage() {
@@ -138,14 +151,14 @@ export default function NewsPage() {
   const [pickerDay, setPickerDay] = useState('');
   const [pickerMonth, setPickerMonth] = useState('');
   const [pickerYear, setPickerYear] = useState('');
+  const [savedArticles, setSavedArticles] = useState<Set<string>>(new Set());
+  const [activeCategory, setActiveCategory] = useState('All News');
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const trendingTopics = useMemo<TrendingTopic[]>(() => {
     const counts: Record<string, number> = {};
-    allArticles.forEach(a => {
-      if (a.topic) counts[a.topic] = (counts[a.topic] || 0) + 1;
-    });
+    allArticles.forEach(a => { if (a.topic) counts[a.topic] = (counts[a.topic] || 0) + 1; });
     const userTopics = userNiches.map(n => NICHE_TO_TOPIC[n] || n).filter(Boolean);
     return Object.entries(counts)
       .filter(([topic]) => userTopics.length === 0 || userTopics.some(t => t.toLowerCase() === topic.toLowerCase()))
@@ -155,8 +168,7 @@ export default function NewsPage() {
   }, [allArticles, userNiches]);
 
   const fetchNews = async (filter: string, topicQuery?: string, trending?: string | null, date?: string) => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       let url = `${BASE}/api/news?filter=${filter}`;
       if (date) url += `&date=${date}`;
@@ -172,8 +184,6 @@ export default function NewsPage() {
       const res = await fetch(url);
       const data = await res.json();
       let list = Array.isArray(data) ? data : [];
-
-      // ✅ Filter by user's niches strictly only if no search/trending
       if (!activeQuery && userNiches.length > 0) {
         const userTopics = userNiches.map(n => NICHE_TO_TOPIC[n] || n).filter(Boolean);
         const nicheFiltered = list.filter((a: NewsArticle) =>
@@ -181,24 +191,18 @@ export default function NewsPage() {
         );
         if (nicheFiltered.length >= 3) list = nicheFiltered;
       }
-
       const sorted = list.sort((a: NewsArticle, b: NewsArticle) =>
         new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
       );
       setArticles(sorted);
       if (!activeQuery) setAllArticles(sorted);
-    } catch {
-      setError("Failed to load news");
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Failed to load news"); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
     fetch(`${BASE}/api/news?filter=today`)
-      .then(r => r.json())
-      .then(data => setAllArticles(Array.isArray(data) ? data : []))
-      .catch(() => {});
+      .then(r => r.json()).then(data => setAllArticles(Array.isArray(data) ? data : [])).catch(() => {});
   }, []);
 
   useEffect(() => { fetchNews(dateFilter, initialQuery || undefined, null); }, []);
@@ -249,6 +253,14 @@ export default function NewsPage() {
     setRefreshing(false);
   };
 
+  const toggleSave = (id: string) => {
+    setSavedArticles(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
   const impactData = selectedArticle ? getImpact(selectedArticle.topic || '', selectedArticle.summary || '') : null;
   const keyPoints = selectedArticle ? extractKeyPoints(selectedArticle.summary || '') : [];
 
@@ -256,158 +268,138 @@ export default function NewsPage() {
     ? new Date(customDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
     : DATE_FILTERS.find(f => f.value === dateFilter)?.label || 'Today';
 
+  const categories = ['All News', ...Array.from(new Set(trendingTopics.map(t => t.topic))).slice(0, 5)];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <Newspaper className="w-5 h-5" style={{ color: IG }} />
-          <h1 className="text-lg font-bold text-foreground">News Feed</h1>
+    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+
+      {/* ── Sticky Header ── */}
+      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="font-bold text-xl text-[#24389c] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            News Feed
+          </h1>
           {userNiches.length > 0 && !query && !trendingFilter && (
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${IG}15`, color: IG }}>
+            <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
+              style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
               For You
             </span>
           )}
-          <button onClick={handleRefresh} disabled={refreshing}
-            className="ml-auto text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40">
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
         </div>
-      </div>
+        <button onClick={handleRefresh} disabled={refreshing}
+          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] dark:hover:bg-gray-800 transition-colors disabled:opacity-40">
+          <RefreshCw className={`w-5 h-5 text-[#757684] ${refreshing ? 'animate-spin' : ''}`} />
+        </button>
+      </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 pb-24">
+      <main className="max-w-2xl mx-auto px-5 pt-4 pb-28 space-y-4">
 
-        {/* Search + Filter + Customize */}
+        {/* ── Search + Filter ── */}
         <div className="flex gap-2">
-          {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
             <input ref={inputRef} type="text" value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") handleSearch(searchInput); if (e.key === "Escape") setShowDropdown(false); }}
+              onKeyDown={e => { if (e.key === "Enter") handleSearch(searchInput); }}
               onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
-              placeholder="Search other niches..."
-              className="w-full pl-11 pr-9 py-3 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-              onFocus={e => { e.target.style.borderColor = `${IG}50`; }}
-              onBlur={e => { e.target.style.borderColor = ''; }} />
+              placeholder="Search topics..."
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#c5c5d4] bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white text-[#191c1d] placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#24389c] focus:ring-2 focus:ring-[#24389c]/20" />
             {searchInput && (
-              <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <button onClick={() => handleSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
                 <X className="w-4 h-4" />
               </button>
             )}
             {showDropdown && dropdownSuggestions.length > 0 && (
-              <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+              <div ref={dropdownRef}
+                className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-[#c5c5d4] dark:border-gray-600 rounded-xl shadow-lg z-50 overflow-hidden">
                 {dropdownSuggestions.map((s, i) => (
                   <button key={i} onClick={() => handleSearch(s)}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left">
-                    <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{s}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#191c1d] dark:text-white hover:bg-[#f3f4f5] dark:hover:bg-gray-700 text-left">
+                    <Search className="w-3.5 h-3.5 text-[#757684] shrink-0" />{s}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Filter button with calendar inside */}
+          {/* Filter button */}
           <div className="relative">
             <button onClick={() => setShowFilterMenu(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-              style={(dateFilter !== 'today' || customDate) ? { borderColor: `${IG}50`, color: IG } : {}}>
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-[#454652] dark:text-gray-300 hover:border-[#24389c] transition-colors whitespace-nowrap"
+              style={(dateFilter !== 'today' || customDate) ? { borderColor: PRIMARY, color: PRIMARY } : {}}>
               <SlidersHorizontal className="w-4 h-4" />
               {filterLabel}
             </button>
             {showFilterMenu && (
-              <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[220px]">
-                {/* Date filter options */}
+              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-[#c5c5d4] dark:border-gray-600 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]">
                 {DATE_FILTERS.map(f => (
                   <button key={f.value}
                     onClick={(e) => { e.stopPropagation(); handleDateFilter(f.value); setShowFilterMenu(false); setShowDatePicker(false); }}
-                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-accent transition-colors text-left gap-4"
-                    style={dateFilter === f.value && !customDate ? { color: IG } : { color: 'hsl(var(--foreground))' }}>
+                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-[#f3f4f5] dark:hover:bg-gray-700 text-left gap-4"
+                    style={dateFilter === f.value && !customDate ? { color: PRIMARY } : { color: 'hsl(var(--foreground))' }}>
                     <span className="font-medium">{f.label}</span>
-                    <span className="text-xs text-muted-foreground">{f.desc}</span>
-                    {dateFilter === f.value && !customDate && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: IG }} />}
+                    <span className="text-xs text-[#757684]">{f.desc}</span>
+                    {dateFilter === f.value && !customDate && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: PRIMARY }} />}
                   </button>
                 ))}
-
-                {/* Divider */}
-                <div className="border-t border-border" />
-
-                {/* Custom date toggle */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowDatePicker(prev => !prev); }}
-                  className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-accent transition-colors"
-                  style={customDate ? { color: IG } : { color: 'hsl(var(--foreground))' }}>
+                <div className="border-t border-[#e1e3e4] dark:border-gray-700" />
+                <button onClick={(e) => { e.stopPropagation(); setShowDatePicker(prev => !prev); }}
+                  className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-[#f3f4f5] dark:hover:bg-gray-700"
+                  style={customDate ? { color: PRIMARY } : { color: 'hsl(var(--foreground))' }}>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     <span className="font-medium">{customDate ? filterLabel : 'Pick a Date'}</span>
                   </div>
-                  {customDate && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: IG }} />}
+                  {customDate && <div className="w-1.5 h-1.5 rounded-full" style={{ background: PRIMARY }} />}
                 </button>
 
-                {/* Inline calendar */}
                 {showDatePicker && (
-                  <div className="px-4 pb-4 pt-2 space-y-3" onClick={e => e.stopPropagation()}>
+                  <div className="px-4 pb-4 pt-2 space-y-3 border-t border-[#e1e3e4] dark:border-gray-700" onClick={e => e.stopPropagation()}>
                     <div className="grid grid-cols-3 gap-2">
-                      {/* Day */}
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Day</p>
-                        <select
-                          value={pickerDay}
-                          onChange={e => setPickerDay(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none">
+                        <p className="text-xs text-[#757684] mb-1">Day</p>
+                        <select value={pickerDay} onChange={e => setPickerDay(e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-lg border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none">
                           <option value="">DD</option>
                           {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                             <option key={d} value={String(d).padStart(2, '0')}>{String(d).padStart(2, '0')}</option>
                           ))}
                         </select>
                       </div>
-                      {/* Month */}
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Month</p>
-                        <select
-                          value={pickerMonth}
-                          onChange={e => setPickerMonth(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none">
+                        <p className="text-xs text-[#757684] mb-1">Month</p>
+                        <select value={pickerMonth} onChange={e => setPickerMonth(e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-lg border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none">
                           <option value="">MM</option>
                           {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
                             <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
                           ))}
                         </select>
                       </div>
-                      {/* Year */}
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Year</p>
-                        <select
-                          value={pickerYear}
-                          onChange={e => setPickerYear(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm outline-none">
+                        <p className="text-xs text-[#757684] mb-1">Year</p>
+                        <select value={pickerYear} onChange={e => setPickerYear(e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-lg border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none">
                           <option value="">YYYY</option>
-                          {[2025, 2026].map(y => (
-                            <option key={y} value={String(y)}>{y}</option>
-                          ))}
+                          {[2025, 2026].map(y => <option key={y} value={String(y)}>{y}</option>)}
                         </select>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => { setCustomDate(null); setPickerDay(''); setPickerMonth(''); setPickerYear(''); setDateFilter('today'); setShowDatePicker(false); setShowFilterMenu(false); fetchNews('today', query || undefined, trendingFilter); }}
-                        className="flex-1 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <button onClick={() => { setCustomDate(null); setPickerDay(''); setPickerMonth(''); setPickerYear(''); setDateFilter('today'); setShowDatePicker(false); setShowFilterMenu(false); fetchNews('today', query || undefined, trendingFilter); }}
+                        className="flex-1 py-2 rounded-lg border border-[#c5c5d4] text-xs text-[#757684] hover:text-[#191c1d]">
                         Reset
                       </button>
-                      <button
-                        onClick={() => {
-                          if (!pickerDay || !pickerMonth || !pickerYear) return;
-                          const dateStr = `${pickerYear}-${pickerMonth}-${pickerDay}`;
-                          setCustomDate(dateStr);
-                          setDateFilter('custom');
-                          setShowDatePicker(false);
-                          setShowFilterMenu(false);
-                          setQuery(''); setSearchInput(''); setTrendingFilter(null);
-                          fetchNews('custom', undefined, null, dateStr);
-                        }}
-                        disabled={!pickerDay || !pickerMonth || !pickerYear}
-                        className="flex-1 py-2 rounded-lg text-white text-xs font-medium disabled:opacity-40 transition-all"
-                        style={{ background: IG_GRAD }}>
+                      <button onClick={() => {
+                        if (!pickerDay || !pickerMonth || !pickerYear) return;
+                        const dateStr = `${pickerYear}-${pickerMonth}-${pickerDay}`;
+                        setCustomDate(dateStr); setDateFilter('custom');
+                        setShowDatePicker(false); setShowFilterMenu(false);
+                        fetchNews('custom', undefined, null, dateStr);
+                      }} disabled={!pickerDay || !pickerMonth || !pickerYear}
+                        className="flex-1 py-2 rounded-lg text-white text-xs font-medium disabled:opacity-40"
+                        style={{ background: PRIMARY_GRAD }}>
                         Show News
                       </button>
                     </div>
@@ -418,162 +410,227 @@ export default function NewsPage() {
           </div>
         </div>
 
-        {/* Trending filter */}
-        {trendingTopics.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Flame className="w-3.5 h-3.5" style={{ color: IG }} />
-              <p className="text-xs font-semibold text-foreground">Trending in Your Niches</p>
-              {trendingFilter && (
-                <button onClick={() => { setTrendingFilter(null); fetchNews(dateFilter, undefined, null); }}
-                  className="ml-auto text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                  <X className="w-3 h-3" /> Clear
-                </button>
-              )}
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {trendingTopics.map((t, i) => (
-                <motion.button key={t.topic}
-                  initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
+        {/* ── Category chips ── */}
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          {trendingTopics.length > 0 ? (
+            <>
+              <button
+                onClick={() => { setTrendingFilter(null); setQuery(''); setSearchInput(''); fetchNews(dateFilter, undefined, null); }}
+                className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
+                style={!trendingFilter
+                  ? { background: PRIMARY, color: '#fff' }
+                  : { background: '#e7e8e9', color: '#454652' }}>
+                All News
+              </button>
+              {trendingTopics.map(t => (
+                <button key={t.topic}
                   onClick={() => handleTrendingFilter(t.topic)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all whitespace-nowrap shrink-0"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
                   style={trendingFilter === t.topic
-                    ? { background: IG_GRAD, color: '#fff', borderColor: 'transparent' }
-                    : { background: `${IG}08`, borderColor: `${IG}25`, color: IG }}>
-                  <span>{t.emoji}</span>
-                  <span>{t.topic}</span>
-                  <span className="px-1.5 py-0.5 rounded-full text-xs font-bold"
-                    style={{ background: trendingFilter === t.topic ? 'rgba(255,255,255,0.25)' : `${IG}20` }}>
-                    {t.count}
-                  </span>
-                </motion.button>
+                    ? { background: PRIMARY, color: '#fff' }
+                    : { background: '#e7e8e9', color: '#454652' }}>
+                  {t.emoji} {t.topic}
+                </button>
               ))}
-            </div>
-          </div>
-        )}
+            </>
+          ) : (
+            ['All News', 'Finance', 'Tech', 'Cricket', 'Bollywood', 'Fitness'].map(cat => (
+              <button key={cat}
+                onClick={() => { setActiveCategory(cat); if (cat !== 'All News') handleTrendingFilter(cat); else { setTrendingFilter(null); fetchNews(dateFilter, undefined, null); } }}
+                className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
+                style={activeCategory === cat
+                  ? { background: PRIMARY, color: '#fff' }
+                  : { background: '#e7e8e9', color: '#454652' }}>
+                {cat}
+              </button>
+            ))
+          )}
+        </div>
 
+        {/* ── Article count ── */}
         {!loading && (
-          <p className="text-xs text-muted-foreground">
-            <span style={{ color: IG, fontWeight: 600 }}>{articles.length}</span> articles
-            {(query || trendingFilter) && <span> for "<span style={{ color: IG }}>{trendingFilter || query}</span>"</span>}
-            {customDate && <span> on <span style={{ color: IG }}>{new Date(customDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span></span>}
-            {!query && !trendingFilter && !customDate && userNiches.length > 0 && <span> · personalized for your niches</span>}
-            {' · '}{filterLabel}
+          <p className="text-xs text-[#757684]">
+            <span className="font-semibold" style={{ color: PRIMARY }}>{articles.length}</span> articles
+            {(query || trendingFilter) && <span> for "<span style={{ color: PRIMARY }}>{trendingFilter || query}</span>"</span>}
+            {!query && !trendingFilter && userNiches.length > 0 && <span> · personalized</span>}
           </p>
         )}
 
+        {/* ── Loading ── */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Loader2 className="w-6 h-6 animate-spin" style={{ color: IG }} />
-            <p className="text-xs text-muted-foreground">Loading news...</p>
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: PRIMARY }} />
+            <p className="text-sm text-[#757684]">Loading news...</p>
           </div>
         )}
 
-        {error && <div className="text-center py-16 text-red-400">{error}</div>}
+        {error && <div className="text-center py-16 text-red-500 text-sm">{error}</div>}
 
         {!loading && !error && articles.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-            <Newspaper className="w-10 h-10 text-muted-foreground opacity-30" />
-            <p className="text-sm font-semibold text-foreground">No news found</p>
-            <p className="text-xs text-muted-foreground">
-              {customDate ? `No articles found for ${new Date(customDate).toLocaleDateString('en-IN')}` :
-               dateFilter === 'yesterday' ? "Yesterday's articles will appear here" : 'Fresh news will appear here soon'}
-            </p>
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ background: PRIMARY_CONTAINER }}>📰</div>
+            <p className="font-semibold text-[#191c1d] dark:text-white">No news found</p>
+            <p className="text-sm text-[#757684]">Fresh news will appear here soon</p>
             <button onClick={() => { setCustomDate(null); setTrendingFilter(null); handleDateFilter('all'); }}
-              className="text-xs px-4 py-2 rounded-xl text-white mt-1" style={{ background: IG_GRAD }}>
+              className="text-sm px-5 py-2.5 rounded-full text-white font-semibold mt-1"
+              style={{ background: PRIMARY_GRAD }}>
               Show All News
             </button>
           </div>
         )}
 
+        {/* ── Articles ── */}
         {!loading && !error && articles.length > 0 && (
-          <div className="space-y-3">
+          <div className="flex flex-col gap-4">
             {articles.map((item, i) => {
               const headline = item.title || item.headline || "Untitled";
-              const date = item.published_at || '';
-              const timeAgo = getTimeAgo(date);
+              const timeAgo = getTimeAgo(item.published_at || '');
               const topic = item.topic || '';
-              const thumbnail = item.image_url;
-              const isTrending = trendingTopics.slice(0, 3).some(t => t.topic === topic);
-              const isUserNiche = userNiches.some(n => (NICHE_TO_TOPIC[n] || n).toLowerCase() === topic.toLowerCase());
+              const tagStyle = getTagStyle(topic);
+              const isSaved = savedArticles.has(item.id || String(i));
+              const isFeatured = i === 0;
 
-              return (
-                <motion.div key={item.id || i}
-                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.02 }}
-                  className="bg-card border border-border rounded-2xl p-4 transition-all cursor-pointer"
-                  onClick={() => setSelectedArticle(item)}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${IG}30`; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}>
-                  <div className="flex items-start gap-3">
-                    <div className="relative shrink-0">
-                      <img src={thumbnail || getCategoryImage(headline)} alt={headline}
-                        className="w-20 h-16 rounded-xl object-cover"
+              if (isFeatured) {
+                // ── Featured card (large image) ──
+                return (
+                  <motion.article key={item.id || i}
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer transition-transform active:scale-[0.98]"
+                    onClick={() => setSelectedArticle(item)}>
+                    <div className="relative h-52 w-full">
+                      <img src={item.image_url || getCategoryImage(headline)} alt={headline}
+                        className="w-full h-full object-cover"
                         onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
-                      {isTrending && (
-                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
-                          style={{ background: IG_GRAD }}>
-                          <TrendingUp className="w-2.5 h-2.5 text-white" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                      {topic && (
+                        <div className="absolute top-4 left-4">
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase"
+                            style={{ background: SECONDARY_CONTAINER, color: '#491d8a' }}>
+                            {TOPIC_EMOJIS[topic] || '📰'} {topic}
+                          </span>
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <h3 className="font-medium text-foreground text-sm leading-snug line-clamp-2">{headline}</h3>
-                        <button onClick={e => { e.stopPropagation(); window.open(item.url, '_blank'); }}
-                          className="text-muted-foreground hover:text-foreground p-1 shrink-0">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </button>
+                    <div className="p-4 flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold" style={{ color: PRIMARY }}>{item.source}</span>
+                        <span className="text-[#757684] text-[10px]">• {timeAgo}</span>
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {item.source && <span className="text-xs text-muted-foreground">{item.source}</span>}
-                        {item.source && timeAgo && <span className="text-xs text-muted-foreground">·</span>}
-                        <span className="text-xs font-medium" style={{ color: IG }}>{timeAgo}</span>
+                      <h2 className="font-bold text-lg text-[#191c1d] dark:text-white leading-tight" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                        {headline}
+                      </h2>
+                      {item.summary && (
+                        <p className="text-sm text-[#454652] dark:text-gray-300 line-clamp-2">{item.summary}</p>
+                      )}
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center gap-3">
+                          {item.summary && (
+                            <span className="text-xs flex items-center gap-1 font-semibold" style={{ color: PRIMARY }}>
+                              <Sparkles className="w-3 h-3" /> View Insights
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                          <button onClick={() => toggleSave(item.id || String(i))}
+                            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
+                            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`}
+                              style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                          </button>
+                          {item.url && (
+                            <button onClick={() => window.open(item.url, '_blank')}
+                              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
+                              <ExternalLink className="w-4 h-4 text-[#757684]" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.article>
+                );
+              }
+
+              // ── Regular card (horizontal layout) ──
+              return (
+                <motion.article key={item.id || i}
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.02 }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer transition-transform active:scale-[0.98]"
+                  onClick={() => setSelectedArticle(item)}>
+                  <div className="flex gap-0 p-4">
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
                         {topic && (
-                          <Badge variant="secondary" className="text-xs cursor-pointer"
-                            style={{ background: isUserNiche ? `${IG}20` : `${IG}10`, color: IG, border: 'none' }}
-                            onClick={e => { e.stopPropagation(); handleTrendingFilter(topic); }}>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                            style={{ background: tagStyle.bg, color: tagStyle.text }}>
                             {TOPIC_EMOJIS[topic] || '📰'} {topic}
-                          </Badge>
-                        )}
-                        {item.summary && (
-                          <span className="text-xs flex items-center gap-1" style={{ color: IG }}>
-                            <Sparkles className="w-3 h-3" /> Insights
                           </span>
                         )}
                       </div>
+                      <h3 className="font-semibold text-sm text-[#191c1d] dark:text-white leading-snug line-clamp-2"
+                        style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                        {headline}
+                      </h3>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold" style={{ color: PRIMARY }}>{item.source}</span>
+                          <span className="text-[#757684] text-[10px]">• {timeAgo}</span>
+                        </div>
+                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                          <button onClick={() => toggleSave(item.id || String(i))}
+                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
+                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`}
+                              style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                          </button>
+                          {item.url && (
+                            <button onClick={() => window.open(item.url, '_blank')}
+                              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
+                              <ExternalLink className="w-3.5 h-3.5 text-[#757684]" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                    {(item.image_url || true) && (
+                      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 ml-3">
+                        <img src={item.image_url || getCategoryImage(headline)} alt=""
+                          className="w-full h-full object-cover"
+                          onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
+                      </div>
+                    )}
                   </div>
-                </motion.div>
+                </motion.article>
               );
             })}
           </div>
         )}
-      </div>
+      </main>
 
-      {/* ── Enhanced Summary Popup ── */}
+      {/* ── Article Detail Popup ── */}
       <AnimatePresence>
         {selectedArticle && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={() => setSelectedArticle(null)}>
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card border border-border rounded-2xl max-w-lg w-full shadow-xl overflow-hidden max-h-[85vh] overflow-y-auto">
+              className="bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
 
-              <div className="relative">
+              {/* Image */}
+              <div className="relative h-44">
                 <img src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '')}
-                  alt="" className="w-full h-40 object-cover"
-                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400'; }} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                  alt="" className="w-full h-full object-cover"
+                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600'; }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <button onClick={() => setSelectedArticle(null)}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70">
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60">
                   <X className="w-4 h-4" />
                 </button>
                 {selectedArticle.topic && (
-                  <div className="absolute bottom-3 left-3">
-                    <span className="text-xs px-2 py-1 rounded-full text-white font-medium" style={{ background: IG_GRAD }}>
+                  <div className="absolute bottom-4 left-4">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase text-white"
+                      style={{ background: SECONDARY }}>
                       {TOPIC_EMOJIS[selectedArticle.topic] || '📰'} {selectedArticle.topic}
                     </span>
                   </div>
@@ -581,66 +638,77 @@ export default function NewsPage() {
               </div>
 
               <div className="p-5 space-y-4">
-                <h2 className="font-bold text-foreground text-base leading-snug">
+                {/* Title */}
+                <h2 className="font-bold text-lg text-[#191c1d] dark:text-white leading-snug"
+                  style={{ fontFamily: 'Montserrat, sans-serif' }}>
                   {selectedArticle.title || selectedArticle.headline}
                 </h2>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  {selectedArticle.source && <span>{selectedArticle.source}</span>}
-                  {selectedArticle.published_at && (
-                    <span style={{ color: IG }}>{getTimeAgo(selectedArticle.published_at)}</span>
-                  )}
+
+                {/* Meta */}
+                <div className="flex items-center gap-3 text-xs text-[#757684]">
+                  {selectedArticle.source && <span className="font-semibold" style={{ color: PRIMARY }}>{selectedArticle.source}</span>}
+                  {selectedArticle.published_at && <span>{getTimeAgo(selectedArticle.published_at)}</span>}
                 </div>
 
                 {/* Key Highlights */}
                 {keyPoints.length > 0 && (
-                  <div className="rounded-xl p-4 space-y-2" style={{ background: `${IG}08`, border: `1px solid ${IG}25` }}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="w-4 h-4" style={{ color: IG }} />
-                      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: IG }}>Key Highlights</p>
+                  <div className="rounded-xl p-4 space-y-2.5" style={{ background: '#ede7f6' }}>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" style={{ color: SECONDARY }} />
+                      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Key Highlights</p>
                     </div>
                     {keyPoints.map((point, i) => (
                       <div key={i} className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: IG }} />
-                        <p className="text-sm text-foreground leading-relaxed">{point}.</p>
+                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: SECONDARY }} />
+                        <p className="text-sm text-[#191c1d] dark:text-gray-200 leading-relaxed">{point}.</p>
                       </div>
                     ))}
                   </div>
                 )}
 
                 {keyPoints.length === 0 && selectedArticle.summary && (
-                  <p className="text-muted-foreground text-sm leading-relaxed">{selectedArticle.summary}</p>
+                  <p className="text-sm text-[#454652] dark:text-gray-300 leading-relaxed">{selectedArticle.summary}</p>
                 )}
 
-                {/* Impact */}
+                {/* Creator Impact */}
                 {impactData && (
-                  <div className="rounded-xl p-4 space-y-2"
+                  <div className="rounded-xl p-4"
                     style={{
-                      background: impactData.level === 'high' ? 'rgba(239,68,68,0.08)' : impactData.level === 'medium' ? 'rgba(234,179,8,0.08)' : 'rgba(34,197,94,0.08)',
-                      border: `1px solid ${impactData.level === 'high' ? 'rgba(239,68,68,0.25)' : impactData.level === 'medium' ? 'rgba(234,179,8,0.25)' : 'rgba(34,197,94,0.25)'}`,
+                      background: impactData.level === 'high' ? '#fff3e0' : impactData.level === 'medium' ? '#e8f5e9' : '#f3e5f5',
+                      border: `1px solid ${impactData.level === 'high' ? '#ffcc80' : impactData.level === 'medium' ? '#a5d6a7' : '#ce93d8'}`,
                     }}>
-                    <div className="flex items-center gap-2">
-                      {impactData.level === 'high' ? <AlertTriangle className="w-4 h-4 text-red-400" />
-                        : impactData.level === 'medium' ? <ArrowUpRight className="w-4 h-4 text-yellow-400" />
-                        : <TrendingUp className="w-4 h-4 text-green-400" />}
+                    <div className="flex items-center gap-2 mb-1.5">
+                      {impactData.level === 'high' ? <AlertTriangle className="w-4 h-4 text-orange-500" />
+                        : impactData.level === 'medium' ? <TrendingUp className="w-4 h-4 text-green-600" />
+                        : <ArrowUpRight className="w-4 h-4 text-purple-600" />}
                       <p className="text-xs font-bold uppercase tracking-wider"
-                        style={{ color: impactData.level === 'high' ? '#f87171' : impactData.level === 'medium' ? '#facc15' : '#4ade80' }}>
-                        {impactData.level === 'high' ? '🔥 High Impact' : impactData.level === 'medium' ? '📊 Medium Impact' : '✅ Low Impact'} for Creators
+                        style={{ color: impactData.level === 'high' ? '#e65100' : impactData.level === 'medium' ? '#2e7d32' : '#6a1b9a' }}>
+                        {impactData.level === 'high' ? '🔥 High Impact' : impactData.level === 'medium' ? '📈 Medium Impact' : '✅ Low Impact'} for Creators
                       </p>
                     </div>
-                    <p className="text-sm leading-relaxed"
-                      style={{ color: impactData.level === 'high' ? '#fca5a5' : impactData.level === 'medium' ? '#fde68a' : '#86efac' }}>
+                    <p className="text-sm"
+                      style={{ color: impactData.level === 'high' ? '#bf360c' : impactData.level === 'medium' ? '#1b5e20' : '#4a148c' }}>
                       {impactData.text}
                     </p>
                   </div>
                 )}
 
-                {selectedArticle.url && (
-                  <button onClick={() => window.open(selectedArticle.url, '_blank')}
-                    className="w-full py-2.5 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2"
-                    style={{ background: IG_GRAD }}>
-                    Read Full Article <ExternalLink className="w-3.5 h-3.5" />
+                {/* Actions */}
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => toggleSave(selectedArticle.id || '')}
+                    className="flex-1 py-2.5 rounded-xl border border-[#c5c5d4] text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                    style={savedArticles.has(selectedArticle.id || '') ? { background: PRIMARY_CONTAINER, color: PRIMARY, borderColor: PRIMARY } : { color: '#454652' }}>
+                    <Bookmark className={`w-4 h-4 ${savedArticles.has(selectedArticle.id || '') ? 'fill-current' : ''}`} />
+                    {savedArticles.has(selectedArticle.id || '') ? 'Saved' : 'Save'}
                   </button>
-                )}
+                  {selectedArticle.url && (
+                    <button onClick={() => window.open(selectedArticle.url, '_blank')}
+                      className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2"
+                      style={{ background: PRIMARY_GRAD }}>
+                      Read Full <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
