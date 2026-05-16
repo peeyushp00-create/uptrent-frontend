@@ -549,14 +549,16 @@ export default function NewsPage() {
                 );
               }
 
-              // ── Regular card (horizontal layout) ──
+              // ── Regular card (horizontal layout with hover expand) ──
               return (
                 <motion.article key={item.id || i}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.02 }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer transition-transform active:scale-[0.98]"
+                  whileHover={{ scale: 1.02, boxShadow: '0 8px 32px rgba(36,56,156,0.12)' }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-[#e1e3e4] dark:border-gray-700 cursor-pointer transition-all duration-300 group"
                   onClick={() => setSelectedArticle(item)}>
-                  <div className="flex gap-0 p-4">
+                  {/* Collapsed: horizontal layout */}
+                  <div className="flex gap-0 p-4 group-hover:hidden">
                     <div className="flex-1 flex flex-col gap-1.5">
                       <div className="flex items-center gap-2">
                         {topic && (
@@ -590,13 +592,62 @@ export default function NewsPage() {
                         </div>
                       </div>
                     </div>
-                    {(item.image_url || true) && (
-                      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 ml-3">
-                        <img src={item.image_url || getCategoryImage(headline)} alt=""
-                          className="w-full h-full object-cover"
-                          onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
+                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 ml-3">
+                      <img src={item.image_url || getCategoryImage(headline)} alt=""
+                        className="w-full h-full object-cover"
+                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
+                    </div>
+                  </div>
+
+                  {/* Expanded: shown on hover */}
+                  <div className="hidden group-hover:block">
+                    <div className="relative h-40 w-full">
+                      <img src={item.image_url || getCategoryImage(headline)} alt={headline}
+                        className="w-full h-full object-cover"
+                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      {topic && (
+                        <div className="absolute top-3 left-3">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase"
+                            style={{ background: SECONDARY_CONTAINER, color: '#491d8a' }}>
+                            {TOPIC_EMOJIS[topic] || '📰'} {topic}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold" style={{ color: PRIMARY }}>{item.source}</span>
+                        <span className="text-[#757684] text-[10px]">• {timeAgo}</span>
                       </div>
-                    )}
+                      <h3 className="font-bold text-base text-[#191c1d] dark:text-white leading-snug"
+                        style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                        {headline}
+                      </h3>
+                      {item.summary && (
+                        <p className="text-sm text-[#454652] dark:text-gray-300 line-clamp-3 leading-relaxed">
+                          {item.summary}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs font-semibold flex items-center gap-1" style={{ color: PRIMARY }}>
+                          <Sparkles className="w-3 h-3" /> Tap for insights
+                        </span>
+                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                          <button onClick={() => toggleSave(item.id || String(i))}
+                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
+                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`}
+                              style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                          </button>
+                          {item.url && (
+                            <button onClick={() => window.open(item.url, '_blank')}
+                              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
+                              <ExternalLink className="w-3.5 h-3.5 text-[#757684]" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.article>
               );
