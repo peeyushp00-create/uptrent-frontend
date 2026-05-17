@@ -1,224 +1,589 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
-import { TrendingUp, FileText, Newspaper, BarChart2, Bell, ChevronRight, Sparkles, ArrowUpRight } from "lucide-react";
+'use client';
 
-const PRIMARY = "#24389c";
-const SECONDARY = "#6f48b2";
-const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
-const PRIMARY_CONTAINER = "#dee0ff";
-const SECONDARY_CONTAINER = "#ede7f6";
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { useEffect, useRef, useState } from 'react';
 
-const QUICK_ACTIONS = [
-  { icon: FileText, label: "Generate Script", path: "/scripts", color: PRIMARY, bg: PRIMARY_CONTAINER },
-  { icon: Newspaper, label: "News Feed", path: "/news", color: SECONDARY, bg: SECONDARY_CONTAINER },
-  { icon: TrendingUp, label: "Trending", path: "/trending", color: "#006928", bg: "#e8f5e9" },
-  { icon: BarChart2, label: "Analyzer", path: "/instagram/analyzer", color: "#e65100", bg: "#fff3e0" },
+/* ─────────────────────────────────────────
+   REEL DATA
+───────────────────────────────────────── */
+const REEL_DATA = [
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png', title: 'How I Got 100K Subs in 30 Days', handle: '@CreatorPro', views: '2.4M', dur: '0:58', type: 'Shorts' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_1b0948c90-1771909777566.png', title: 'Camera Settings for Perfect Reels', handle: '@FilmTips', views: '640K', dur: '0:55', type: 'Shorts' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_17343e164-1768026725793.png', title: 'Monetize Your Channel Fast in 2026', handle: '@MoneyCreator', views: '1.7M', dur: '0:58', type: 'Shorts' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_1521eb58e-1764644106046.png', title: 'Morning Routine That Changed My Life', handle: '@LifeWithAlex', views: '890K', dur: '0:30', type: 'Reels' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_159a50448-1767636094533.png', title: 'Fitness Transformation 30 Days', handle: '@FitLife', views: '4.3M', dur: '0:30', type: 'Reels' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_1ddab98dc-1773131998650.png', title: 'AI Tools Every Creator Needs in 2026', handle: '@TechCreator', views: '1.1M', dur: '0:45', type: 'Shorts' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_17b6062b2-1772483137359.png', title: 'Grow on YouTube with Zero Budget', handle: '@GrowthHacks', views: '920K', dur: '0:58', type: 'Shorts' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_13a6419a1-1772328360733.png', title: 'Script Writing Secrets for Viral Shorts', handle: '@ScriptMaster', views: '2.2M', dur: '0:55', type: 'Shorts' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_150de2b75-1772333562367.png', title: 'Aesthetic Room Tour 2026', handle: '@AestheticVibes', views: '1.2M', dur: '0:45', type: 'Reels' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_126d7e136-1768020582546.png', title: 'Top 10 Trending Niches Right Now', handle: '@NicheHunter', views: '3.1M', dur: '0:59', type: 'Shorts' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_15eaab260-1772956699125.png', title: 'Minimalist Home Makeover on Budget', handle: '@HomeVibes', views: '1.5M', dur: '0:45', type: 'Reels' },
+  { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_194b951ad-1772304624866.png', title: 'Skincare Routine for Glowing Skin', handle: '@GlowUp', views: '2.9M', dur: '0:30', type: 'Reels' },
 ];
 
-const TOPIC_EMOJIS: Record<string, string> = {
-  Finance: "📈", StockMarket: "📊", MutualFunds: "💰", Crypto: "🪙",
-  Tech: "💻", AINews: "🤖", Cricket: "🏏", IPL: "🏆", Bollywood: "🎬",
-  Business: "💼", Fitness: "💪", Travel: "✈️", Food: "🍳", Gaming: "🎮",
-  Education: "📚", Fashion: "👗", Motivation: "🚀", Skincare: "✨",
-};
+const FEATURES = [
+  { num: '01', title: 'Creator News Feed', desc: 'Curated industry news, platform updates, and creator economy signals — filtered for what actually matters to your niche.', tags: ['YouTube', 'Instagram', 'TikTok'] },
+  { num: '02', title: 'AI Script Generator', desc: 'Go from idea to full video script in 60 seconds. Trained on viral hooks, retention patterns, and your channel voice.', tags: ['Hook', 'Body', 'CTA', 'Hinglish'] },
+  { num: '03', title: 'Content Analyzer', desc: "Deep-dive analytics on your existing content. Identify what's working, what's losing viewers, and what to create next.", tags: ['Retention', 'Drop-off'] },
+  { num: '04', title: 'Trending Topics', desc: 'Real-time trend detection across YouTube and Instagram before they peak — publish first, win the algorithm.', tags: ['#AIVideoEditing ↑ 340%', '#CreatorEconomy ↑ 128%'] },
+  { num: '05', title: 'YouTube SEO', desc: 'Keyword research, title optimization, tag suggestions, and thumbnail analysis — everything to rank on page one.', tags: ['Keywords', 'Titles', 'Tags'] },
+];
 
-export default function Index() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Creator';
-  const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
+const STEPS = [
+  { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library — no manual uploads needed.', note: 'OAuth 2.0 secure. Read-only access. Revoke anytime.' },
+  { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: "Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience's watch patterns.", note: 'Processes 150+ content signals per channel per day.' },
+  { num: '03', title: 'Publish & Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark, distraction-free workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
+];
 
-  const [news, setNews] = useState<any[]>([]);
-  const [trending, setTrending] = useState<any[]>([]);
-  const [scripts, setScripts] = useState<any[]>(() => JSON.parse(localStorage.getItem("ig_script_history") || "[]"));
-  const [loadingNews, setLoadingNews] = useState(true);
+const STATS = [
+  { value: '5', label: 'Creator Tools' },
+  { value: '20+', label: 'Content Niches' },
+  { value: 'Free', label: 'Early Access Tier' },
+  { value: '100%', label: 'Made for India' },
+];
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+const TITLE = 'SocialRum';
+const PURPLE_END = 6;
 
+/* ─────────────────────────────────────────
+   INLINE STYLES (all CSS in JS)
+───────────────────────────────────────── */
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .sr-root *, .sr-root *::before, .sr-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .sr-root { background: #06060F; color: #F1F0F8; font-family: 'DM Sans', sans-serif; overflow-x: hidden; min-height: 100vh; }
+
+  /* Scrollbar */
+  .sr-root ::-webkit-scrollbar { width: 6px; }
+  .sr-root ::-webkit-scrollbar-track { background: #06060F; }
+  .sr-root ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.4); border-radius: 3px; }
+
+  /* Scroll reveal */
+  .sr-reveal { opacity: 0; transform: translateY(40px); transition: opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
+  .sr-reveal.on { opacity: 1; transform: translateY(0); }
+  .sr-reveal-l { opacity: 0; transform: translateX(-50px); transition: opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
+  .sr-reveal-l.on { opacity: 1; transform: translateX(0); }
+  .sr-reveal-r { opacity: 0; transform: translateX(50px); transition: opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
+  .sr-reveal-r.on { opacity: 1; transform: translateX(0); }
+  .sr-reveal-s { opacity: 0; transform: scale(.88); transition: opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
+  .sr-reveal-s.on { opacity: 1; transform: scale(1); }
+  .sr-d1 { transition-delay: .1s; } .sr-d2 { transition-delay: .2s; } .sr-d3 { transition-delay: .3s; } .sr-d4 { transition-delay: .4s; }
+
+  /* Keyframes */
+  @keyframes sr-navDown   { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes sr-badgeFade { from { opacity:0; transform:translateY(16px) scale(.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes sr-sFade     { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes sr-charUp    { from { opacity:0; transform:translateY(60px) rotateX(25deg); } to { opacity:1; transform:translateY(0) rotateX(0); } }
+  @keyframes sr-pulse     { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.4; transform:scale(.65); } }
+  @keyframes sr-glowP     { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+  @keyframes sr-orbFloat  { 0%,100% { transform:translate(0,0); } 50% { transform:translate(-15px,20px); } }
+  @keyframes sr-scrollUp  { from { transform:translateY(0); }    to { transform:translateY(-50%); } }
+  @keyframes sr-scrollDn  { from { transform:translateY(-50%); } to { transform:translateY(0); }    }
+
+  .sr-anim-nav   { animation: sr-navDown   .6s cubic-bezier(.16,1,.3,1) .2s  both; }
+  .sr-anim-badge { animation: sr-badgeFade .8s cubic-bezier(.16,1,.3,1) .4s  both; }
+  .sr-anim-sub   { animation: sr-sFade     .9s cubic-bezier(.16,1,.3,1) 1.1s both; }
+  .sr-anim-desc  { animation: sr-sFade     .9s cubic-bezier(.16,1,.3,1) 1.3s both; }
+  .sr-anim-btns  { animation: sr-sFade     .9s cubic-bezier(.16,1,.3,1) 1.5s both; }
+  .sr-anim-pulse { animation: sr-pulse 2s ease-in-out infinite; }
+  .sr-anim-glow  { animation: sr-glowP 4s ease-in-out infinite; }
+  .sr-anim-orb   { animation: sr-orbFloat 6s ease-in-out infinite; }
+  .sr-title-char { display:inline-block; animation: sr-charUp .7s cubic-bezier(.16,1,.3,1) both; }
+
+  /* Reel strip animations */
+  .sr-strip-up   { animation: sr-scrollUp  22s linear infinite; display:flex; flex-direction:column; gap:14px; }
+  .sr-strip-dn   { animation: sr-scrollDn  26s linear infinite; display:flex; flex-direction:column; gap:14px; }
+  .sr-col-1 .sr-strip-up, .sr-col-1 .sr-strip-dn { animation-delay: 0s;   }
+  .sr-col-2 .sr-strip-up, .sr-col-2 .sr-strip-dn { animation-delay: -4s;  }
+  .sr-col-3 .sr-strip-up, .sr-col-3 .sr-strip-dn { animation-delay: -8s;  }
+  .sr-col-4 .sr-strip-up, .sr-col-4 .sr-strip-dn { animation-delay: -2s;  }
+  .sr-col-5 .sr-strip-up, .sr-col-5 .sr-strip-dn { animation-delay: -11s; }
+  .sr-col-6 .sr-strip-up, .sr-col-6 .sr-strip-dn { animation-delay: -6s;  }
+  .sr-col-7 .sr-strip-up, .sr-col-7 .sr-strip-dn { animation-delay: -14s; }
+
+  /* Nav */
+  .sr-nav { position:fixed; top:0; left:0; right:0; z-index:200; display:flex; align-items:center; justify-content:space-between; padding:0 48px; height:68px; transition:background .4s, backdrop-filter .4s, border-color .4s; }
+  .sr-nav.scrolled { background:rgba(6,6,15,.85); backdrop-filter:blur(18px); border-bottom:.5px solid rgba(124,58,237,.2); }
+  .sr-nav-link { position:relative; color:rgba(241,240,248,.55); text-decoration:none; font-size:15px; transition:color .2s; }
+  .sr-nav-link::after { content:''; position:absolute; bottom:-2px; left:0; right:0; height:1px; background:#A78BFA; transform:scaleX(0); transform-origin:left; transition:transform .3s cubic-bezier(.16,1,.3,1); }
+  .sr-nav-link:hover { color:#F1F0F8; }
+  .sr-nav-link:hover::after { transform:scaleX(1); }
+
+  /* Logo */
+  .sr-logo-icon { transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s; }
+  .sr-logo-icon:hover { transform:rotate(12deg) scale(1.1); box-shadow:0 0 20px rgba(124,58,237,.35); }
+
+  /* Reel card */
+  .sr-reel-card { position:relative; border-radius:14px; overflow:hidden; aspect-ratio:9/16; flex-shrink:0; border:.5px solid rgba(124,58,237,.15); background:#1a1a2e; transition:transform .3s ease, border-color .3s; }
+  .sr-reel-card:hover { transform:scale(1.04); border-color:rgba(124,58,237,.45); }
+  .sr-reel-card img { width:100%; height:100%; object-fit:cover; display:block; opacity:.6; filter:saturate(.65); transition:opacity .3s, filter .3s; }
+  .sr-reel-card:hover img { opacity:.88; filter:saturate(1); }
+  .sr-reel-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:28px; height:28px; background:rgba(255,255,255,.2); border-radius:50%; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .2s; }
+  .sr-reel-card:hover .sr-reel-play { opacity:1; }
+
+  /* Feature card */
+  .sr-feature-item { position:relative; background:#0D0D1A; padding:36px 32px; transition:background .3s; cursor:default; overflow:hidden; }
+  .sr-feature-item::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 120% 80% at var(--mx,50%) var(--my,50%), rgba(124,58,237,.09), transparent 70%); opacity:0; transition:opacity .4s; pointer-events:none; }
+  .sr-feature-item:hover { background:#10102A; }
+  .sr-feature-item:hover::after { opacity:1; }
+  .sr-feature-icon { width:44px; height:44px; background:rgba(124,58,237,.12); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; border:.5px solid rgba(124,58,237,.25); transition:background .3s, border-color .3s, transform .4s cubic-bezier(.34,1.56,.64,1); }
+  .sr-feature-item:hover .sr-feature-icon { background:rgba(124,58,237,.22); border-color:rgba(124,58,237,.5); transform:scale(1.12) rotate(-6deg); }
+  .sr-feature-tag { font-size:11px; font-weight:500; color:#A78BFA; background:rgba(124,58,237,.1); padding:3px 10px; border-radius:50px; border:.5px solid rgba(124,58,237,.2); transition:background .2s, border-color .2s; }
+  .sr-feature-item:hover .sr-feature-tag { background:rgba(124,58,237,.2); border-color:rgba(124,58,237,.45); }
+
+  /* Step card */
+  .sr-step-card { position:relative; background:#0D0D1A; border:.5px solid rgba(124,58,237,.2); border-radius:20px; padding:36px 28px; overflow:hidden; transition:transform .4s cubic-bezier(.16,1,.3,1), border-color .3s, box-shadow .4s; }
+  .sr-step-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#7C3AED,transparent); transform:scaleX(0); transform-origin:left; transition:transform .5s cubic-bezier(.16,1,.3,1); }
+  .sr-step-card:hover { transform:translateY(-8px); border-color:rgba(124,58,237,.4); box-shadow:0 24px 60px rgba(124,58,237,.15); }
+  .sr-step-card:hover::before { transform:scaleX(1); }
+  .sr-step-num { font-family:'Syne',sans-serif; font-size:52px; font-weight:800; color:rgba(124,58,237,.12); line-height:1; margin-bottom:20px; letter-spacing:-.03em; transition:color .3s; }
+  .sr-step-card:hover .sr-step-num { color:rgba(124,58,237,.28); }
+
+  /* EA benefit */
+  .sr-ea-benefit { display:flex; align-items:center; gap:12px; font-size:15px; color:rgba(241,240,248,.55); transition:color .2s, transform .3s cubic-bezier(.16,1,.3,1); }
+  .sr-ea-benefit:hover { color:#F1F0F8; transform:translateX(6px); }
+  .sr-ea-check { flex-shrink:0; width:20px; height:20px; background:rgba(124,58,237,.15); border-radius:50%; display:flex; align-items:center; justify-content:center; border:.5px solid rgba(124,58,237,.3); transition:background .2s, border-color .2s; }
+  .sr-ea-benefit:hover .sr-ea-check { background:rgba(124,58,237,.28); border-color:rgba(124,58,237,.6); }
+
+  /* Buttons */
+  .sr-btn-primary { display:inline-flex; align-items:center; gap:8px; background:#7C3AED; color:white; padding:15px 30px; border-radius:50px; font-weight:600; font-size:16px; text-decoration:none; transition:background .2s, box-shadow .3s, transform .15s; box-shadow:0 0 40px rgba(124,58,237,.55); position:relative; overflow:hidden; }
+  .sr-btn-primary::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.15), transparent 60%); opacity:0; transition:opacity .3s; }
+  .sr-btn-primary:hover { background:#6D28D9; box-shadow:0 0 60px rgba(124,58,237,.7); }
+  .sr-btn-primary:hover::before { opacity:1; }
+  .sr-btn-secondary { display:inline-flex; align-items:center; gap:8px; background:transparent; color:#F1F0F8; padding:15px 30px; border-radius:50px; font-weight:500; font-size:16px; text-decoration:none; border:.5px solid rgba(241,240,248,.2); transition:border-color .2s, background .2s; }
+  .sr-btn-secondary:hover { border-color:rgba(241,240,248,.45); background:rgba(255,255,255,.04); }
+
+  /* Stat gradient text */
+  .sr-stat-val { font-family:'Syne',sans-serif; font-size:38px; font-weight:800; letter-spacing:-.03em; background:linear-gradient(135deg,#fff 30%,#A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+  /* Cursor glow */
+  .sr-cursor { position:fixed; pointer-events:none; z-index:9999; width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(124,58,237,.07) 0%,transparent 70%); transform:translate(-50%,-50%); mix-blend-mode:screen; }
+
+  /* EA form input focus */
+  .sr-input { width:100%; background:rgba(255,255,255,.04); border:.5px solid rgba(124,58,237,.2); border-radius:12px; padding:12px 16px; color:#F1F0F8; font-size:14px; font-family:'DM Sans',sans-serif; outline:none; transition:border-color .3s, background .3s, box-shadow .3s; }
+  .sr-input:focus { border-color:#7C3AED; background:rgba(124,58,237,.06); box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+  .sr-input::placeholder { color:rgba(241,240,248,.3); }
+  .sr-ea-btn { width:100%; background:#7C3AED; color:white; border:none; border-radius:12px; padding:14px; font-size:15px; font-weight:600; font-family:'DM Sans',sans-serif; cursor:pointer; transition:background .2s, transform .15s, box-shadow .3s; box-shadow:0 0 32px rgba(124,58,237,.4); margin-bottom:12px; }
+  .sr-ea-btn:hover { background:#6D28D9; transform:translateY(-2px); box-shadow:0 0 50px rgba(124,58,237,.6); }
+  .sr-ea-btn:active { transform:translateY(0); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sr-nav { padding:0 20px; }
+    .sr-nav-links { display:none; }
+    .sr-steps-grid { grid-template-columns:1fr !important; }
+    .sr-ea-grid { grid-template-columns:1fr !important; }
+  }
+`;
+
+/* ─────────────────────────────────────────
+   MAIN COMPONENT
+───────────────────────────────────────── */
+export default function LandingPage() {
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const cursorRef  = useRef<HTMLDivElement>(null);
+  const btnRef     = useRef<HTMLAnchorElement>(null);
+  const navRef     = useRef<HTMLElement>(null);
+  const rootRef    = useRef<HTMLDivElement>(null);
+  const inputRef   = useRef<HTMLInputElement>(null);
+  const [scrolled,   setScrolled]   = useState(false);
+  const [submitted,  setSubmitted]  = useState(false);
+  const [inputError, setInputError] = useState(false);
+
+  /* ── Scroll nav ── */
   useEffect(() => {
-    fetch(`${BASE}/api/news?filter=today`)
-      .then(r => r.json())
-      .then(data => {
-        const list = Array.isArray(data) ? data : [];
-        if (userNiches.length > 0) {
-          const filtered = list.filter((a: any) => userNiches.some(n => a.topic?.toLowerCase().includes(n.toLowerCase())));
-          setNews(filtered.slice(0, 3).length >= 2 ? filtered.slice(0, 3) : list.slice(0, 3));
-        } else {
-          setNews(list.slice(0, 3));
-        }
-        // Compute trending from news
-        const counts: Record<string, number> = {};
-        list.forEach((a: any) => { if (a.topic) counts[a.topic] = (counts[a.topic] || 0) + 1; });
-        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
-        setTrending(sorted.map(([topic, count]) => ({ topic, count })));
-      })
-      .catch(() => {})
-      .finally(() => setLoadingNews(false));
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const getTimeAgo = (dateStr: string) => {
-    if (!dateStr) return '';
-    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return 'Yesterday';
+  /* ── Particles canvas ── */
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+    let W = 0, H = 0, raf = 0;
+    interface P { x:number; y:number; vx:number; vy:number; r:number; a:number; life:number; }
+    let pts: P[] = [];
+    const rand = (a:number, b:number) => a + Math.random() * (b - a);
+    const resize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+    for (let i = 0; i < 60; i++) pts.push({ x:rand(0,W||1200), y:rand(0,H||800), vx:rand(-.2,.2), vy:rand(-.32,-.08), r:rand(.7,2.4), a:rand(.08,.45), life:rand(0,Math.PI*2) });
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+      for (const p of pts) {
+        p.life += .012; p.x += p.vx; p.y += p.vy;
+        if (p.y < -10) { p.y = H + 10; p.x = rand(0, W); }
+        if (p.x < -10) p.x = W + 10;
+        if (p.x > W + 10) p.x = -10;
+        const alpha = p.a * (0.6 + 0.4 * Math.sin(p.life));
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(167,139,250,${alpha.toFixed(2)})`; ctx.fill();
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(raf); };
+  }, []);
+
+  /* ── Cursor glow ── */
+  useEffect(() => {
+    const el = cursorRef.current; if (!el) return;
+    let cx = window.innerWidth/2, cy = window.innerHeight/2, tx = cx, ty = cy, raf = 0;
+    const onMove = (e: MouseEvent) => { tx = e.clientX; ty = e.clientY; };
+    document.addEventListener('mousemove', onMove);
+    const tick = () => { cx += (tx-cx)*.1; cy += (ty-cy)*.1; el.style.left = `${cx}px`; el.style.top = `${cy}px`; raf = requestAnimationFrame(tick); };
+    tick();
+    return () => { document.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf); };
+  }, []);
+
+  /* ── Primary btn shimmer ── */
+  useEffect(() => {
+    const btn = btnRef.current; if (!btn) return;
+    const fn = (e: MouseEvent) => {
+      const r = btn.getBoundingClientRect();
+      btn.style.setProperty('--mx', `${((e.clientX - r.left) / r.width * 100)}%`);
+      btn.style.setProperty('--my', `${((e.clientY - r.top)  / r.height * 100)}%`);
+    };
+    btn.addEventListener('mousemove', fn);
+    return () => btn.removeEventListener('mousemove', fn);
+  }, []);
+
+  /* ── Feature spotlight ── */
+  useEffect(() => {
+    const cards = rootRef.current?.querySelectorAll<HTMLDivElement>('.sr-feature-item');
+    if (!cards) return;
+    const handlers: [HTMLDivElement, (e:MouseEvent)=>void][] = [];
+    cards.forEach(card => {
+      const fn = (e: MouseEvent) => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${((e.clientX-r.left)/r.width*100).toFixed(1)}%`);
+        card.style.setProperty('--my', `${((e.clientY-r.top)/r.height*100).toFixed(1)}%`);
+      };
+      card.addEventListener('mousemove', fn);
+      handlers.push([card, fn]);
+    });
+    return () => handlers.forEach(([c, fn]) => c.removeEventListener('mousemove', fn));
+  }, []);
+
+  /* ── Scroll reveal ── */
+  useEffect(() => {
+    const targets = rootRef.current?.querySelectorAll('.sr-reveal, .sr-reveal-l, .sr-reveal-r, .sr-reveal-s');
+    if (!targets) return;
+    const obs = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); obs.unobserve(e.target); } }),
+      { threshold: 0.1, rootMargin: '0px 0px -36px 0px' }
+    );
+    targets.forEach(t => obs.observe(t));
+    return () => obs.disconnect();
+  }, []);
+
+  /* ── Form submit ── */
+  const handleSubmit = () => {
+    const val = inputRef.current?.value.trim();
+    if (!val) {
+      setInputError(true);
+      inputRef.current?.animate(
+        [{ transform:'translateX(-5px)' },{ transform:'translateX(5px)' },{ transform:'translateX(-3px)' },{ transform:'translateX(3px)' },{ transform:'translateX(0)' }],
+        { duration: 360 }
+      );
+      setTimeout(() => setInputError(false), 1800);
+      return;
+    }
+    setSubmitted(true);
   };
 
+  /* ── Build reel cols ── */
+  const NUM_COLS = 7;
+  const reelCols = Array.from({ length: NUM_COLS }, (_, i) => {
+    const shuffled = [...REEL_DATA].sort(() => Math.random() - 0.5);
+    return { cards: [...shuffled, ...shuffled], colIdx: i + 1, isEven: (i + 1) % 2 === 0 };
+  });
+
   return (
-    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+    <div ref={rootRef} className="sr-root" style={{ scrollBehavior: 'smooth' }}>
+      {/* Inject CSS */}
+      <style>{css}</style>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
-        <h1 className="font-bold text-xl text-[#24389c] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+      {/* Cursor glow */}
+      <div ref={cursorRef} className="sr-cursor" />
+
+      {/* Particles */}
+      <canvas ref={canvasRef} style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none' }} />
+
+      {/* ════════════════════════════
+          NAVBAR
+      ════════════════════════════ */}
+      <nav ref={navRef} className={`sr-nav sr-anim-nav${scrolled ? ' scrolled' : ''}`}>
+        <a href="#" style={{ display:'flex', alignItems:'center', gap:10, fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:700, color:'#F1F0F8', textDecoration:'none' }}>
+          <div className="sr-logo-icon" style={{ width:34, height:34, background:'#7C3AED', borderRadius:8, display:'grid', placeItems:'center' }}>
+            <svg viewBox="0 0 20 20" style={{ width:18, height:18, fill:'white' }}>
+              <circle cx="5" cy="5" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/>
+              <circle cx="5" cy="10" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="15" cy="10" r="2"/>
+              <circle cx="5" cy="15" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="15" cy="15" r="2"/>
+            </svg>
+          </div>
           SocialRum
-        </h1>
-        <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] dark:hover:bg-gray-800 transition-colors">
-          <Bell className="w-5 h-5 text-[#757684]" />
-        </button>
-      </header>
+        </a>
+        <ul className="sr-nav-links" style={{ display:'flex', gap:36, listStyle:'none' }}>
+          {['Features','How It Works','Early Access'].map((label, i) => (
+            <li key={label}><a href={`#${label.toLowerCase().replace(/ /g,'-')}`} className="sr-nav-link">{label}</a></li>
+          ))}
+        </ul>
+        <a href="#early-access" style={{ background:'#7C3AED', color:'white', padding:'10px 22px', borderRadius:50, fontWeight:600, fontSize:14, textDecoration:'none', transition:'background .2s, transform .15s' }}
+          onMouseEnter={e => { (e.target as HTMLElement).style.background='#6D28D9'; (e.target as HTMLElement).style.transform='translateY(-1px)'; }}
+          onMouseLeave={e => { (e.target as HTMLElement).style.background='#7C3AED'; (e.target as HTMLElement).style.transform='none'; }}
+        >
+          Be the First to Know
+        </a>
+      </nav>
 
-      <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-6">
+      {/* ════════════════════════════
+          HERO
+      ════════════════════════════ */}
+      <section style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
 
-        {/* Greeting */}
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h2 className="text-2xl font-bold text-[#24389c] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            {greeting}, {userName}! 👋
-          </h2>
-          <p className="text-sm text-[#757684] mt-1">
-            {userNiches.length > 0 ? `Your niches: ${userNiches.slice(0, 3).join(', ')}` : "Let's create some viral content today."}
-          </p>
-        </motion.section>
-
-        {/* Stats Row */}
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Scripts', value: scripts.length, icon: FileText, color: PRIMARY, bg: PRIMARY_CONTAINER },
-            { label: 'News Today', value: news.length, icon: Newspaper, color: SECONDARY, bg: SECONDARY_CONTAINER },
-            { label: 'Trending', value: trending.length, icon: TrendingUp, color: '#006928', bg: '#e8f5e9' },
-          ].map((stat, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: stat.bg }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+        {/* Reels background */}
+        <div style={{ position:'absolute', inset:0, display:'flex', gap:14, padding:'0 8px', overflow:'hidden', zIndex:1 }}>
+          {reelCols.map(col => (
+            <div key={col.colIdx} className={`sr-col-${col.colIdx}`} style={{ flex:1, display:'flex', flexDirection:'column', gap:14, minWidth:0 }}>
+              <div className={col.isEven ? 'sr-strip-dn' : 'sr-strip-up'}>
+                {col.cards.map((r, ci) => (
+                  <div key={`${col.colIdx}-${ci}`} className="sr-reel-card">
+                    <img src={r.img} alt={r.title} loading="lazy" onError={e => { (e.target as HTMLImageElement).style.background='#1e1e35'; }} />
+                    <div className="sr-reel-play">
+                      <svg viewBox="0 0 24 24" style={{ width:12, height:12, fill:'white', marginLeft:1 }}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </div>
+                    <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 8px 8px', background:'linear-gradient(transparent,rgba(0,0,0,0.85))' }}>
+                      <div>
+                        <span style={{ display:'inline-flex', alignItems:'center', background: r.type==='Reels' ? 'linear-gradient(135deg,#E1306C,#833AB4)' : '#FF0000', color:'white', fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:3, marginBottom:4, fontFamily:'DM Sans,sans-serif' }}>{r.type}</span>
+                        <span style={{ fontSize:9, color:'rgba(255,255,255,.8)', marginLeft:4 }}>{r.dur}</span>
+                      </div>
+                      <p style={{ fontSize:9, color:'rgba(255,255,255,.9)', fontWeight:500, lineHeight:1.3, fontFamily:'DM Sans,sans-serif' }}>{r.title}</p>
+                      <p style={{ fontSize:8, color:'rgba(255,255,255,.55)', marginTop:2 }}>{r.handle} · {r.views}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p className="text-2xl font-bold text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>{stat.value}</p>
-              <p className="text-xs text-[#757684] font-medium">{stat.label}</p>
             </div>
           ))}
-        </motion.section>
+        </div>
 
-        {/* Quick Actions */}
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <h3 className="font-bold text-base text-[#191c1d] dark:text-white mb-3" style={{ fontFamily: 'Montserrat, sans-serif' }}>Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {QUICK_ACTIONS.map((action, i) => (
-              <button key={i} onClick={() => navigate(action.path)}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3 hover:shadow-md transition-all active:scale-[0.98] text-left">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: action.bg }}>
-                  <action.icon className="w-5 h-5" style={{ color: action.color }} />
-                </div>
-                <span className="text-sm font-semibold text-[#191c1d] dark:text-white">{action.label}</span>
-              </button>
+        {/* Vignette */}
+        <div style={{ position:'absolute', inset:0, zIndex:2, background:[
+          'radial-gradient(ellipse 55% 75% at 50% 50%,rgba(6,6,15,.8) 0%,transparent 100%)',
+          'linear-gradient(to right,rgba(6,6,15,.95) 0%,rgba(6,6,15,.18) 28%,rgba(6,6,15,.18) 72%,rgba(6,6,15,.95) 100%)',
+          'linear-gradient(to bottom,rgba(6,6,15,.9) 0%,rgba(6,6,15,.05) 18%,rgba(6,6,15,.05) 82%,rgba(6,6,15,.9) 100%)',
+        ].join(',') }} />
+
+        {/* Glow line */}
+        <div className="sr-anim-glow" style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', width:800, height:3, background:'#7C3AED', boxShadow:'0 0 80px 40px rgba(124,58,237,.35), 0 0 220px 80px rgba(124,58,237,.1)', zIndex:3 }} />
+
+        {/* Hero content */}
+        <div style={{ position:'relative', zIndex:4, textAlign:'center', maxWidth:800, padding:'0 24px' }}>
+
+          {/* Badge */}
+          <div className="sr-anim-badge" style={{ display:'inline-flex', alignItems:'center', gap:8, border:'.5px solid rgba(124,58,237,.2)', borderRadius:50, padding:'6px 16px 6px 8px', fontSize:12, fontWeight:500, color:'#A78BFA', background:'rgba(124,58,237,.08)', marginBottom:32, letterSpacing:'.05em', textTransform:'uppercase' }}>
+            <span className="sr-anim-pulse" style={{ width:6, height:6, background:'#A78BFA', borderRadius:'50%' }} />
+            Now Accepting Early Access
+          </div>
+
+          {/* Title */}
+          <h1 aria-label={TITLE} style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(60px,9vw,108px)', fontWeight:800, lineHeight:1, letterSpacing:'-.03em', marginBottom:4, perspective:600 }}>
+            {[...TITLE].map((char, i) => (
+              <span key={i} className="sr-title-char" style={{ color: i < PURPLE_END ? '#A78BFA' : '#F1F0F8', animationDelay:`${(0.6 + i * 0.07).toFixed(2)}s` }}>{char}</span>
             ))}
+          </h1>
+
+          {/* Subtitle */}
+          <p className="sr-anim-sub" style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(20px,3.2vw,42px)', fontWeight:700, color:'#F1F0F8', letterSpacing:'-.02em', marginBottom:28, opacity:0 }}>
+            Create Content That Actually Gets Discovered
+          </p>
+
+          {/* Desc */}
+          <p className="sr-anim-desc" style={{ fontSize:17, color:'rgba(241,240,248,.55)', lineHeight:1.7, maxWidth:560, margin:'0 auto 40px', opacity:0 }}>
+            SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, content analysis, and SEO in one dark premium dashboard.
+          </p>
+
+          {/* Buttons */}
+          <div className="sr-anim-btns" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:16, flexWrap:'wrap', opacity:0 }}>
+            <a ref={btnRef} href="#early-access" className="sr-btn-primary">
+              <span style={{ position:'relative', zIndex:1 }}>Be the First to Know</span>
+              <span style={{ position:'relative', zIndex:1, display:'inline-block', transition:'transform .3s cubic-bezier(.34,1.56,.64,1)' }}>→</span>
+            </a>
+            <a href="#features" className="sr-btn-secondary">Explore Features ↓</a>
           </div>
-        </motion.section>
+        </div>
+      </section>
 
-        {/* Trending Topics */}
-        {trending.length > 0 && (
-          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Trending in Your Niches</h3>
-              <button onClick={() => navigate('/trending')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
-                View All <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-              {trending.map((t, i) => (
-                <button key={i} onClick={() => navigate('/news')}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-gray-800 border border-[#e1e3e4] dark:border-gray-700 text-xs font-semibold whitespace-nowrap hover:border-[#24389c] hover:text-[#24389c] transition-colors">
-                  <span>{TOPIC_EMOJIS[t.topic] || '📰'}</span>
-                  <span className="text-[#191c1d] dark:text-white">{t.topic}</span>
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{t.count}</span>
-                </button>
-              ))}
-            </div>
-          </motion.section>
-        )}
-
-        {/* Latest News */}
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Latest News</h3>
-            <button onClick={() => navigate('/news')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
-              View All <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+      {/* ════════════════════════════
+          STATS BAR
+      ════════════════════════════ */}
+      <div style={{ background:'#0D0D1A', borderTop:'.5px solid rgba(124,58,237,.2)', borderBottom:'.5px solid rgba(124,58,237,.2)', padding:'40px 32px', display:'flex', justifyContent:'center', gap:80, flexWrap:'wrap', position:'relative', zIndex:5 }}>
+        {STATS.map((s, i) => (
+          <div key={s.label} className={`sr-reveal sr-d${i+1}`} style={{ textAlign:'center' }}>
+            <div className="sr-stat-val">{s.value}</div>
+            <div style={{ fontSize:13, color:'rgba(241,240,248,.55)', marginTop:4 }}>{s.label}</div>
           </div>
-          {loadingNews ? (
-            <div className="space-y-3">
-              {[1,2,3].map(i => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] animate-pulse h-20" />
-              ))}
-            </div>
-          ) : news.length > 0 ? (
-            <div className="space-y-3">
-              {news.map((item, i) => (
-                <button key={i} onClick={() => navigate('/news')}
-                  className="w-full bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3 hover:shadow-md transition-all text-left active:scale-[0.98]">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      {item.topic && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: SECONDARY_CONTAINER, color: SECONDARY }}>
-                          {TOPIC_EMOJIS[item.topic] || '📰'} {item.topic}
-                        </span>
-                      )}
-                      <span className="text-[10px] text-[#757684]">{getTimeAgo(item.published_at)}</span>
-                    </div>
-                    <p className="text-sm font-semibold text-[#191c1d] dark:text-white line-clamp-2 leading-snug">
-                      {item.title || item.headline}
-                    </p>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 shrink-0 text-[#757684]" />
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-[#e1e3e4] text-center">
-              <p className="text-sm text-[#757684]">No news yet — check back soon!</p>
-            </div>
-          )}
-        </motion.section>
+        ))}
+      </div>
 
-        {/* Recent Scripts */}
-        {scripts.length > 0 && (
-          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Recent Scripts</h3>
-              <button onClick={() => navigate('/scripts')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
-                View All <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+      {/* ════════════════════════════
+          FEATURES
+      ════════════════════════════ */}
+      <section id="features" style={{ maxWidth:1100, margin:'0 auto', padding:'120px 32px 100px', position:'relative', zIndex:5 }}>
+        <div style={{ marginBottom:64 }}>
+          <p className="sr-reveal" style={{ fontSize:12, fontWeight:600, letterSpacing:'.12em', textTransform:'uppercase', color:'#A78BFA', marginBottom:16 }}>Platform Features</p>
+          <h2 className="sr-reveal sr-d1" style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(28px,4vw,44px)', fontWeight:700, lineHeight:1.15, letterSpacing:'-.02em', color:'#F1F0F8', marginBottom:16 }}>Every tool a serious creator needs.</h2>
+          <p className="sr-reveal sr-d2" style={{ fontSize:17, color:'rgba(241,240,248,.55)', lineHeight:1.7, maxWidth:540 }}>Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</p>
+        </div>
+
+        <div className="sr-reveal-s sr-d2" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:2, border:'.5px solid rgba(124,58,237,.2)', borderRadius:20, overflow:'hidden', background:'rgba(124,58,237,.2)' }}>
+          {FEATURES.map(f => (
+            <div key={f.num} className="sr-feature-item">
+              <p style={{ fontFamily:'Syne,sans-serif', fontSize:13, fontWeight:700, color:'#A78BFA', opacity:.5, letterSpacing:'.05em', marginBottom:16 }}>{f.num}</p>
+              <div className="sr-feature-icon">
+                {f.num === '01' && <svg viewBox="0 0 24 24" style={{ width:22, height:22, stroke:'#A78BFA', fill:'none', strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round' }}><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v8a2 2 0 01-2 2z"/><path d="M14 2v6h6M8 13h8M8 17h4"/></svg>}
+                {f.num === '02' && <svg viewBox="0 0 24 24" style={{ width:22, height:22, stroke:'#A78BFA', fill:'none', strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round' }}><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>}
+                {f.num === '03' && <svg viewBox="0 0 24 24" style={{ width:22, height:22, stroke:'#A78BFA', fill:'none', strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round' }}><path d="M18 20V10M12 20V4M6 20v-6"/></svg>}
+                {f.num === '04' && <svg viewBox="0 0 24 24" style={{ width:22, height:22, stroke:'#A78BFA', fill:'none', strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round' }}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>}
+                {f.num === '05' && <svg viewBox="0 0 24 24" style={{ width:22, height:22, stroke:'#A78BFA', fill:'none', strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round' }}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>}
+              </div>
+              <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'#F1F0F8', marginBottom:10 }}>{f.title}</h3>
+              <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', lineHeight:1.65 }}>{f.desc}</p>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:16 }}>
+                {f.tags.map(tag => <span key={tag} className="sr-feature-tag">{tag}</span>)}
+              </div>
             </div>
-            <div className="space-y-2">
-              {scripts.slice(0, 3).map((s, i) => (
-                <button key={i} onClick={() => navigate('/scripts')}
-                  className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3 hover:shadow-md transition-all text-left active:scale-[0.98]">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: PRIMARY_GRAD }}>
-                    {s.topic?.[0]?.toUpperCase() || 'S'}
+          ))}
+          {/* More coming */}
+          <div style={{ background:'rgba(124,58,237,.05)', display:'flex', alignItems:'center', justifyContent:'center', minHeight:240 }}>
+            <div style={{ textAlign:'center' }}>
+              <p style={{ fontFamily:'Syne,sans-serif', fontSize:36, fontWeight:800, color:'rgba(124,58,237,.18)', letterSpacing:'-.03em', marginBottom:8 }}>More coming</p>
+              <p style={{ fontSize:14, color:'rgba(241,240,248,.55)' }}>Platform is actively growing</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div style={{ height:'.5px', background:'rgba(124,58,237,.2)', margin:'0 32px', position:'relative', zIndex:5 }} />
+
+      {/* ════════════════════════════
+          HOW IT WORKS
+      ════════════════════════════ */}
+      <section id="how-it-works" style={{ maxWidth:1100, margin:'0 auto', padding:'100px 32px', position:'relative', zIndex:5 }}>
+        <p className="sr-reveal" style={{ fontSize:12, fontWeight:600, letterSpacing:'.12em', textTransform:'uppercase', color:'#A78BFA', marginBottom:16 }}>How It Works</p>
+        <h2 className="sr-reveal sr-d1" style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(28px,4vw,44px)', fontWeight:700, lineHeight:1.15, letterSpacing:'-.02em', color:'#F1F0F8', marginBottom:16 }}>From zero to algorithm-ready<br/>in one session.</h2>
+        <p className="sr-reveal sr-d2" style={{ fontSize:17, color:'rgba(241,240,248,.55)', lineHeight:1.7, maxWidth:540 }}>No complex setup. No learning curve. Connect your channels and SocialRum immediately starts surfacing what to create, how to optimize it, and how to rank it.</p>
+
+        <div className="sr-steps-grid" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:24, marginTop:64 }}>
+          {STEPS.map((s, i) => (
+            <div key={s.num} className={`sr-reveal sr-d${i+2} sr-step-card`}>
+              <div className="sr-step-num">{s.num}</div>
+              <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:700, color:'#F1F0F8', marginBottom:12 }}>{s.title}</h3>
+              <p style={{ fontSize:13, fontWeight:600, color:'#A78BFA', marginBottom:10 }}>{s.sub}</p>
+              <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', lineHeight:1.65 }}>{s.desc}</p>
+              <p style={{ marginTop:20, fontSize:12, color:'rgba(124,58,237,.6)', fontStyle:'italic' }}>{s.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div style={{ height:'.5px', background:'rgba(124,58,237,.2)', margin:'0 32px', position:'relative', zIndex:5 }} />
+
+      {/* ════════════════════════════
+          EARLY ACCESS
+      ════════════════════════════ */}
+      <div id="early-access" style={{ position:'relative', zIndex:5 }}>
+        <div className="sr-ea-grid" style={{ maxWidth:1100, margin:'0 auto', padding:'100px 32px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:64, alignItems:'center' }}>
+
+          {/* Left */}
+          <div className="sr-reveal-l">
+            <p style={{ fontSize:12, fontWeight:600, letterSpacing:'.12em', textTransform:'uppercase', color:'#A78BFA', marginBottom:16 }}>Limited Spots Remaining</p>
+            <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(28px,4vw,44px)', fontWeight:700, lineHeight:1.15, letterSpacing:'-.02em', color:'#F1F0F8', marginBottom:16 }}>Be the First to<br/>Know &amp; Create.</h2>
+            <p style={{ fontSize:17, color:'rgba(241,240,248,.55)', lineHeight:1.7 }}>Get early access and founding creator status when SocialRum launches.</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:16, marginTop:32 }}>
+              {['Beta Access — Use all 5 tools before public launch','Founding Creator Badge — Exclusive profile recognition','Free Early Access Tier — No credit card required','Priority support from the SocialRum team'].map(b => (
+                <div key={b} className="sr-ea-benefit">
+                  <div className="sr-ea-check">
+                    <svg viewBox="0 0 12 12" style={{ width:10, height:10 }} fill="none" strokeWidth={2.5} stroke="#A78BFA" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#191c1d] dark:text-white truncate">{s.topic}</p>
-                    <p className="text-xs text-[#757684]">{s.duration}s · {s.mode}</p>
-                  </div>
-                  <Sparkles className="w-4 h-4 shrink-0" style={{ color: SECONDARY }} />
-                </button>
+                  {b}
+                </div>
               ))}
             </div>
-          </motion.section>
-        )}
-      </main>
+          </div>
+
+          {/* Right — form */}
+          <div className="sr-reveal-r" style={{ background:'#0D0D1A', border:'.5px solid rgba(124,58,237,.2)', borderRadius:24, padding:'40px 36px', position:'relative', overflow:'hidden', transition:'border-color .3s, box-shadow .4s' }}
+            onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor='rgba(124,58,237,.4)'; el.style.boxShadow='0 0 80px rgba(124,58,237,.1)'; }}
+            onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor='rgba(124,58,237,.2)'; el.style.boxShadow='none'; }}
+          >
+            {/* Orb */}
+            <div className="sr-anim-orb" style={{ position:'absolute', top:-80, right:-80, width:220, height:220, background:'radial-gradient(circle,rgba(124,58,237,.15),transparent 70%)', borderRadius:'50%', pointerEvents:'none' }} />
+
+            <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:'#F1F0F8', marginBottom:6, position:'relative' }}>Free Early Access</h3>
+            <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', marginBottom:28, lineHeight:1.5, position:'relative' }}>Early members get exclusive benefits</p>
+
+            {/* Perks */}
+            <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:28, padding:18, background:'rgba(124,58,237,.05)', borderRadius:12, border:'.5px solid rgba(124,58,237,.12)', position:'relative' }}>
+              {['Beta Access to all creator tools','Founding Creator Badge','Free forever tier guaranteed'].map((p, i) => (
+                <div key={p} style={{ display:'flex', alignItems:'center', gap:10, fontSize:13, color:'rgba(241,240,248,.55)' }}>
+                  <span className="sr-anim-pulse" style={{ width:5, height:5, background:'#A78BFA', borderRadius:'50%', flexShrink:0, animationDelay:`${i*0.6}s` }} />
+                  {p}
+                </div>
+              ))}
+            </div>
+
+            {submitted ? (
+              <div style={{ textAlign:'center', padding:20, background:'rgba(124,58,237,.1)', borderRadius:12, border:'.5px solid rgba(124,58,237,.3)' }}>
+                <p style={{ color:'#A78BFA', fontWeight:600, marginBottom:4 }}>🎉 You're on the list!</p>
+                <small style={{ color:'rgba(241,240,248,.55)', fontSize:13 }}>We'll reach out with early access details soon.</small>
+              </div>
+            ) : (
+              <div style={{ position:'relative' }}>
+                <div style={{ marginBottom:12 }}>
+                  <input
+                    ref={inputRef}
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    className="sr-input"
+                    style={{ border: inputError ? '.5px solid #ef4444' : '.5px solid rgba(124,58,237,.2)', boxShadow: inputError ? '0 0 0 3px rgba(239,68,68,.15)' : 'none' }}
+                  />
+                </div>
+                <button onClick={handleSubmit} className="sr-ea-btn">Send OTP →</button>
+                <p style={{ fontSize:12, color:'rgba(241,240,248,.3)', textAlign:'center' }}>No spam. No credit card. Unsubscribe anytime.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ════════════════════════════
+          FOOTER
+      ════════════════════════════ */}
+      <footer style={{ background:'#0D0D1A', borderTop:'.5px solid rgba(124,58,237,.2)', padding:'40px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24, position:'relative', zIndex:5 }}>
+        <a href="#" style={{ display:'flex', alignItems:'center', gap:10, fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#F1F0F8', textDecoration:'none' }}>
+          <div style={{ width:30, height:30, background:'#7C3AED', borderRadius:7, display:'grid', placeItems:'center' }}>
+            <svg viewBox="0 0 20 20" style={{ width:16, height:16, fill:'white' }}>
+              <circle cx="5" cy="5" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/>
+              <circle cx="5" cy="10" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="15" cy="10" r="2"/>
+              <circle cx="5" cy="15" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="15" cy="15" r="2"/>
+            </svg>
+          </div>
+          SocialRum
+        </a>
+        <ul style={{ display:'flex', gap:28, listStyle:'none', flexWrap:'wrap' }}>
+          {[['Features','#features'],['How It Works','#how-it-works'],['Early Access','#early-access'],['Contact','mailto:hello@socialrum.com']].map(([label, href]) => (
+            <li key={label}><a href={href} style={{ color:'rgba(241,240,248,.55)', textDecoration:'none', fontSize:14, transition:'color .2s' }}
+              onMouseEnter={e => (e.target as HTMLElement).style.color='#F1F0F8'}
+              onMouseLeave={e => (e.target as HTMLElement).style.color='rgba(241,240,248,.55)'}
+            >{label}</a></li>
+          ))}
+        </ul>
+        <p style={{ fontSize:13, color:'rgba(241,240,248,.3)' }}>© 2026 SocialRum</p>
+      </footer>
     </div>
   );
 }
