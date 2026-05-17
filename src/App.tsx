@@ -9,7 +9,7 @@ import AppLayout from "@/layouts/AppLayout";
 import Index from "./pages/Index";
 import NewsPage from "./pages/NewsPage";
 import ScriptsPage from "./pages/ScriptsPage";
-import LandingPage from "./pages/LandingPage";
+
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import TrendingDashboard from "./pages/TrendingDashboard";
@@ -22,7 +22,6 @@ import YouTubeTrending from "./pages/YouTubeTrending";
 import InstagramAnalyzer from "./pages/InstagramAnalyzer";
 import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
-import ThumbnailPage from "./pages/ThumbnailPage";
 
 const queryClient = new QueryClient();
 
@@ -35,7 +34,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             {/* Public routes */}
-            <Route path="/landing" element={<LandingPage />} />
+
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
 
@@ -54,7 +53,6 @@ const App = () => (
               <Route path="/trending" element={<TrendingDashboard />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/thumbnail" element={<ThumbnailPage />} />
 
               {/* Instagram routes */}
               <Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
