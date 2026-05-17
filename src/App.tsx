@@ -22,7 +22,7 @@ import YouTubeTrending from "./pages/YouTubeTrending";
 import InstagramAnalyzer from "./pages/InstagramAnalyzer";
 import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
-
+import LandingPage from "./pages/LandingPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,7 +34,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             {/* Public routes */}
-
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
 
@@ -46,7 +46,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Index />} />
+              
+              <Route path="/dashboard" element={<Index />} />
               <Route path="/insight" element={<InsightPage />} />
               <Route path="/news" element={<NewsPage />} />
               <Route path="/scripts" element={<ScriptsPage />} />
