@@ -9,10 +9,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
-const PRIMARY = "#6f48b2";
-const SECONDARY = "#9c27b0";
-const PRIMARY_GRAD = "linear-gradient(135deg, #6f48b2, #9c27b0)";
-const PRIMARY_CONTAINER = "#ede7f6";
+const PRIMARY = "#7C3AED";
+const SECONDARY = "#6D28D9";
+const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
+const PRIMARY_CONTAINER = "#ede9fe";
 const YT_GRAD = "linear-gradient(135deg, #c62828, #e53935)";
 const YT_COLOR = "#c62828";
 const YT_CONTAINER = "#ffebee";

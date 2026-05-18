@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, TrendingUp, Sparkles, Instagram, Youtube } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const PRIMARY = "#24389c";
-const SECONDARY = "#6f48b2";
-const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
-const PRIMARY_CONTAINER = "#dee0ff";
+const PRIMARY = "#7C3AED";
+const SECONDARY = "#7C3AED";
+const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
+const PRIMARY_CONTAINER = "#ede9fe";
 
 const IG_CHIPS = ["Fitness", "Finance", "Cricket", "Bollywood", "Tech", "Food", "Travel", "Gaming", "Motivation", "Skincare", "Yoga", "Crypto"];
 const YT_CHIPS = ["YouTube SEO", "Shorts Strategy", "Thumbnails", "Tech Reviews", "Gaming", "Finance", "Vlogs", "Education", "Cooking", "Motivation", "Comedy", "Music"];
@@ -210,7 +210,7 @@ export default function Index() {
             { label: "📈 Trending", path: "/trending" },
           ].map((item, i) => (
             <button key={i} onClick={() => navigate(item.path)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold border border-[#e1e3e4] bg-white text-[#454652] hover:border-[#24389c] hover:text-[#24389c] transition-colors">
+              className="px-4 py-2 rounded-xl text-xs font-semibold border border-[#e1e3e4] bg-white text-[#454652] hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors">
               {item.label}
             </button>
           ))}

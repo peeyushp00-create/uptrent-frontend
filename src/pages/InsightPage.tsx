@@ -7,10 +7,10 @@ import {
   Play, Instagram, Youtube, ArrowRight, CheckCircle2, Zap, Award
 } from "lucide-react";
 
-const IG_GRAD = "linear-gradient(135deg, #6f48b2, #22D3EE)";
+const IG_GRAD = "linear-gradient(135deg, #7C3AED, #22D3EE)";
 const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
 
-const IG_COLOR = "#6f48b2";
+const IG_COLOR = "#7C3AED";
 const YT_COLOR = "#FF6B6B";
 
 export default function InsightPage() {
@@ -26,18 +26,18 @@ export default function InsightPage() {
   const ag = isIG ? IG_GRAD : YT_GRAD;
 
   const engagementStats = isIG ? [
-    { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#6f48b210" },
+    { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#7C3AED10" },
     { icon: Heart, label: "Likes", val: item.likes, color: "#F87171", bg: "#ef444410" },
     { icon: MessageCircle, label: "Comments", val: item.comments, color: "#A78BFA", bg: "#8b5cf610" },
     { icon: Share2, label: "Shares", val: item.shares, color: ac, bg: `${ac}15` },
     { icon: Clock, label: "Watch Time", val: item.watchTime || "N/A", color: "#34D399", bg: "#22c55e10" },
     { icon: Bookmark, label: "Save Rate", val: item.saveRate || "N/A", color: "#FBBF24", bg: "#f59e0b10" },
   ] : [
-    { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#6f48b210" },
+    { icon: Eye, label: "Views", val: item.views, color: "#60A5FA", bg: "#7C3AED10" },
     { icon: ThumbsUp, label: "Likes", val: item.likes, color: "#34D399", bg: "#22c55e10" },
     { icon: MessageCircle, label: "Comments", val: item.comments, color: "#A78BFA", bg: "#8b5cf610" },
     { icon: Share2, label: "Shares", val: item.shares, color: ac, bg: `${ac}15` },
-    { icon: MousePointerClick, label: "CTR", val: item.ctr || "N/A", color: "#60A5FA", bg: "#6f48b210" },
+    { icon: MousePointerClick, label: "CTR", val: item.ctr || "N/A", color: "#60A5FA", bg: "#7C3AED10" },
     { icon: TrendingUp, label: "Avg Viewed", val: item.avgView || "N/A", color: "#FBBF24", bg: "#f59e0b10" },
   ];
 
@@ -174,7 +174,7 @@ export default function InsightPage() {
             <p className="dm text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3" style={{ letterSpacing: ".12em" }}>Boost Status</p>
             <div className="flex items-center gap-2.5 mb-2">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: item.boosted ? "#6f48b212" : "#22c55e12" }}>
+                style={{ background: item.boosted ? "#7C3AED12" : "#22c55e12" }}>
                 {item.boosted ? <Megaphone className="w-4 h-4 text-blue-400" /> : <CheckCircle2 className="w-4 h-4 text-green-400" />}
               </div>
               <p className="dm font-semibold text-foreground text-sm">

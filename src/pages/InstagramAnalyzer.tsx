@@ -2,11 +2,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb, User } from "lucide-react";
 
-const PRIMARY = "#24389c";
-const SECONDARY = "#6f48b2";
-const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
-const PRIMARY_CONTAINER = "#dee0ff";
-const SECONDARY_CONTAINER = "#ede7f6";
+const PRIMARY = "#7C3AED";
+const SECONDARY = "#7C3AED";
+const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
+const PRIMARY_CONTAINER = "#ede9fe";
+const SECONDARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const DAYS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
@@ -27,7 +27,7 @@ const generateHeatmap = () => {
   }));
 };
 
-const heatmapColors = ['#e7e8e9', '#b78efe40', '#b78efe80', '#6f48b2'];
+const heatmapColors = ['#e7e8e9', '#b78efe40', '#b78efe80', '#7C3AED'];
 
 export default function InstagramAnalyzer() {
   const [username, setUsername] = useState('');
@@ -71,7 +71,7 @@ export default function InstagramAnalyzer() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center">
-        <h1 className="font-bold text-xl text-[#24389c] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+        <h1 className="font-bold text-xl text-[#7C3AED] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
           Content Analyzer
         </h1>
         <p className="text-sm text-[#757684] ml-3 hidden sm:block">Deep-dive into any Instagram profile</p>
@@ -88,7 +88,7 @@ export default function InstagramAnalyzer() {
               <input type="text" value={username} onChange={e => setUsername(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') analyze(); }}
                 placeholder="username"
-                className="w-full pl-8 pr-9 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#24389c] focus:ring-2 focus:ring-[#24389c]/20 transition-all" />
+                className="w-full pl-8 pr-9 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 transition-all" />
               {username && (
                 <button onClick={() => { setUsername(''); setResult(null); }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">

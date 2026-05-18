@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, TrendingUp, Newspaper, FileText, Settings, Youtube, Instagram, Tag, Search } from "lucide-react";
 
-const IG_GRAD = "linear-gradient(135deg, #6f48b2, #9c27b0)";
-const IG_COLOR = "#6f48b2";
+const IG_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
+const IG_COLOR = "#7C3AED";
 const YT_GRAD = "linear-gradient(135deg, #c62828, #e53935)";
 const YT_COLOR = "#c62828";
 
@@ -42,7 +42,7 @@ export default function BottomNav() {
   const navItems = effectivePlatform === "instagram" ? instagramNav : youtubeNav;
   const activeGrad = effectivePlatform === "instagram" ? IG_GRAD : YT_GRAD;
   const activeColor = effectivePlatform === "instagram" ? IG_COLOR : YT_COLOR;
-  const activeBg = effectivePlatform === "instagram" ? "#ede7f6" : "#ffebee";
+  const activeBg = effectivePlatform === "instagram" ? "#ede9fe" : "#ffebee";
 
   const switchPlatform = (p: "instagram" | "youtube") => {
     setPlatform(p);

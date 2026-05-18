@@ -10,8 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
-const IG_GRAD = "linear-gradient(135deg, #6f48b2, #22D3EE)";
-const IG = "#6f48b2";
+const IG_GRAD = "linear-gradient(135deg, #7C3AED, #22D3EE)";
+const IG = "#7C3AED";
 const GOLD_GRAD = "linear-gradient(135deg, #E8B84B, #C17D20)";
 const GOLD = "#E8B84B";
 
@@ -203,7 +203,7 @@ export default function PricingPage() {
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div animate={{ scale:[1,1.2,1],opacity:[0.05,0.1,0.05] }} transition={{ duration:10,repeat:Infinity }}
           className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full"
-          style={{ background:"radial-gradient(circle,#6f48b2,transparent 70%)",filter:"blur(80px)" }}/>
+          style={{ background:"radial-gradient(circle,#7C3AED,transparent 70%)",filter:"blur(80px)" }}/>
         <motion.div animate={{ scale:[1.1,1,1.1],opacity:[0.04,0.08,0.04] }} transition={{ duration:14,repeat:Infinity,delay:3 }}
           className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full"
           style={{ background:"radial-gradient(circle,#E8B84B,transparent 70%)",filter:"blur(80px)" }}/>

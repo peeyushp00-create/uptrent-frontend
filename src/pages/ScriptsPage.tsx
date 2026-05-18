@@ -4,11 +4,11 @@ import { Sparkles, Copy, Check, Clock, RefreshCw, Mic, Search, X, ChevronRight, 
 import { generateScript } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
-const PRIMARY = "#24389c";
-const SECONDARY = "#6f48b2";
-const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
-const PRIMARY_CONTAINER = "#dee0ff";
-const SECONDARY_CONTAINER = "#ede7f6";
+const PRIMARY = "#7C3AED";
+const SECONDARY = "#7C3AED";
+const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
+const PRIMARY_CONTAINER = "#ede9fe";
+const SECONDARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const CONTENT_TYPES = [
@@ -223,7 +223,7 @@ export default function ScriptsPage() {
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <FileText className="w-5 h-5" style={{ color: PRIMARY }} />
-          <h1 className="font-bold text-xl text-[#24389c] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          <h1 className="font-bold text-xl text-[#7C3AED] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
             Script Generator
           </h1>
           {userVoiceStyle && (
@@ -302,7 +302,7 @@ export default function ScriptsPage() {
                     onKeyDown={e => { if (e.key === "Enter") handleGenerate(topicInput); }}
                     onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
                     placeholder="Enter topic (e.g. Gaming, Finance, Cricket)..."
-                    className="w-full px-4 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#24389c] focus:ring-2 focus:ring-[#24389c]/20" />
+                    className="w-full px-4 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20" />
                   {topicInput && (
                     <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
                       <X className="w-4 h-4" />
@@ -417,7 +417,7 @@ export default function ScriptsPage() {
                   <div className="flex flex-wrap gap-1.5">
                     {SUGGESTIONS.slice(0, 10).map(s => (
                       <button key={s} onClick={() => setTopicInput(s)}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold border border-[#c5c5d4] text-[#454652] hover:border-[#24389c] hover:text-[#24389c] transition-colors">
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold border border-[#c5c5d4] text-[#454652] hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors">
                         {s}
                       </button>
                     ))}
@@ -465,7 +465,7 @@ export default function ScriptsPage() {
                 {/* Script sections */}
                 <div className="p-5 space-y-4">
                   {script.hook && (
-                    <div className="rounded-xl p-4" style={{ background: '#ede7f6', border: `1px solid ${SECONDARY}30` }}>
+                    <div className="rounded-xl p-4" style={{ background: '#ede9fe', border: `1px solid ${SECONDARY}30` }}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>🎯 Hook · 0:00–0:05</span>
                         <button onClick={() => copyText(script.hook, 'hook')}
@@ -506,7 +506,7 @@ export default function ScriptsPage() {
                 <div className="flex items-center justify-between px-5 py-3 border-t border-[#e1e3e4] dark:border-gray-700">
                   <div className="flex items-center gap-2">
                     <button onClick={() => handleGenerate(selectedTopic || topicInput)} disabled={generating}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#c5c5d4] text-xs font-semibold text-[#454652] hover:border-[#24389c] hover:text-[#24389c] transition-colors">
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#c5c5d4] text-xs font-semibold text-[#454652] hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors">
                       <RefreshCw className="w-3.5 h-3.5" /> Regenerate
                     </button>
                     <button onClick={handleClear}
@@ -537,7 +537,7 @@ export default function ScriptsPage() {
               {script ? (
                 <div className="space-y-3">
                   {/* Hook suggestion */}
-                  <div className="p-3 rounded-xl border border-[#c5c5d4] hover:border-[#6f48b2] cursor-pointer transition-colors"
+                  <div className="p-3 rounded-xl border border-[#c5c5d4] hover:border-[#7C3AED] cursor-pointer transition-colors"
                     onClick={() => handleGenerate(selectedTopic || topicInput)}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Hook Optimization</span>
@@ -561,7 +561,7 @@ export default function ScriptsPage() {
 
                   <button onClick={() => handleGenerate(selectedTopic || topicInput)} disabled={generating}
                     className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60 hover:shadow-lg transition-all"
-                    style={{ background: `linear-gradient(135deg, ${SECONDARY}, #9c27b0)` }}>
+                    style={{ background: `linear-gradient(135deg, ${SECONDARY}, #6D28D9)` }}>
                     <Sparkles className="w-4 h-4" /> Rewrite with AI
                   </button>
                 </div>

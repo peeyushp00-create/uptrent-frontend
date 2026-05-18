@@ -5,10 +5,10 @@ import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, Aler
 import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const PRIMARY = "#24389c";
-const SECONDARY = "#6f48b2";
-const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
-const PRIMARY_CONTAINER = "#dee0ff";
+const PRIMARY = "#7C3AED";
+const SECONDARY = "#7C3AED";
+const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
+const PRIMARY_CONTAINER = "#ede9fe";
 const SECONDARY_CONTAINER = "#b78efe";
 
 interface NewsArticle {
@@ -122,9 +122,9 @@ const getTagStyle = (topic: string) => {
     Gaming: { bg: '#e8eaf6', text: '#283593' },
     Food: { bg: '#fff8e1', text: '#f57f17' },
     Travel: { bg: '#e0f7fa', text: '#006064' },
-    Crypto: { bg: '#ede7f6', text: '#4527a0' },
+    Crypto: { bg: '#ede9fe', text: '#4527a0' },
   };
-  return colors[topic] || { bg: '#ede7f6', text: '#4527a0' };
+  return colors[topic] || { bg: '#ede9fe', text: '#4527a0' };
 };
 
 export default function NewsPage() {
@@ -276,7 +276,7 @@ export default function NewsPage() {
       {/* ── Sticky Header ── */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="font-bold text-xl text-[#24389c] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          <h1 className="font-bold text-xl text-[#7C3AED] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
             News Feed
           </h1>
           {userNiches.length > 0 && !query && !trendingFilter && (
@@ -303,7 +303,7 @@ export default function NewsPage() {
               onKeyDown={e => { if (e.key === "Enter") handleSearch(searchInput); }}
               onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
               placeholder="Search topics..."
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#c5c5d4] bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white text-[#191c1d] placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#24389c] focus:ring-2 focus:ring-[#24389c]/20" />
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#c5c5d4] bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white text-[#191c1d] placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20" />
             {searchInput && (
               <button onClick={() => handleSearch('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
@@ -326,7 +326,7 @@ export default function NewsPage() {
           {/* Filter button */}
           <div className="relative">
             <button onClick={() => setShowFilterMenu(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-[#454652] dark:text-gray-300 hover:border-[#24389c] transition-colors whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-[#454652] dark:text-gray-300 hover:border-[#7C3AED] transition-colors whitespace-nowrap"
               style={(dateFilter !== 'today' || customDate) ? { borderColor: PRIMARY, color: PRIMARY } : {}}>
               <SlidersHorizontal className="w-4 h-4" />
               {filterLabel}
@@ -703,7 +703,7 @@ export default function NewsPage() {
 
                 {/* Key Highlights */}
                 {keyPoints.length > 0 && (
-                  <div className="rounded-xl p-4 space-y-2.5" style={{ background: '#ede7f6' }}>
+                  <div className="rounded-xl p-4 space-y-2.5" style={{ background: '#ede9fe' }}>
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4" style={{ color: SECONDARY }} />
                       <p className="text-xs font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Key Highlights</p>

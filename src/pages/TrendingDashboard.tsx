@@ -4,11 +4,11 @@ import { motion } from "framer-motion";
 import { Search, TrendingUp, Flame, RefreshCw, ChevronRight, Sparkles, ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const PRIMARY = "#24389c";
-const SECONDARY = "#6f48b2";
-const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
-const PRIMARY_CONTAINER = "#dee0ff";
-const SECONDARY_CONTAINER = "#ede7f6";
+const PRIMARY = "#7C3AED";
+const SECONDARY = "#7C3AED";
+const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
+const PRIMARY_CONTAINER = "#ede9fe";
+const SECONDARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const TOPIC_EMOJIS: Record<string, string> = {
@@ -85,7 +85,7 @@ export default function TrendingDashboard() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
-        <h1 className="font-bold text-xl text-[#24389c] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+        <h1 className="font-bold text-xl text-[#7C3AED] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
           Discovery
         </h1>
         <button onClick={handleRefresh} disabled={refreshing}
@@ -101,7 +101,7 @@ export default function TrendingDashboard() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search trending topics..."
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#c5c5d4] bg-white dark:bg-gray-800 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#24389c] focus:ring-2 focus:ring-[#24389c]/20 transition-all" />
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#c5c5d4] bg-white dark:bg-gray-800 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 transition-all" />
         </div>
 
         {/* Filter chips */}
