@@ -9,10 +9,13 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
-const PRIMARY = "#24389c";
-const SECONDARY = "#6f48b2";
-const PRIMARY_GRAD = "linear-gradient(135deg, #24389c, #6f48b2)";
-const PRIMARY_CONTAINER = "#dee0ff";
+const PRIMARY = "#6f48b2";
+const SECONDARY = "#9c27b0";
+const PRIMARY_GRAD = "linear-gradient(135deg, #6f48b2, #9c27b0)";
+const PRIMARY_CONTAINER = "#ede7f6";
+const YT_GRAD = "linear-gradient(135deg, #c62828, #e53935)";
+const YT_COLOR = "#c62828";
+const YT_CONTAINER = "#ffebee";
 
 const instagramNav = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
@@ -68,6 +71,9 @@ export default function AppSidebar() {
   const isYoutubePath = location.pathname.startsWith("/youtube");
   const effectivePlatform = isYoutubePath ? "youtube" : platform;
   const navItems = effectivePlatform === "youtube" ? youtubeNav : instagramNav;
+  const ac = effectivePlatform === "youtube" ? YT_COLOR : PRIMARY;
+  const ag = effectivePlatform === "youtube" ? YT_GRAD : PRIMARY_GRAD;
+  const acContainer = effectivePlatform === "youtube" ? YT_CONTAINER : PRIMARY_CONTAINER;
 
   const avatarInitials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -146,14 +152,14 @@ export default function AppSidebar() {
               title={collapsed ? item.label : undefined}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={active
-                ? { background: PRIMARY_CONTAINER, color: PRIMARY }
+                ? { background: acContainer, color: ac }
                 : { color: '#454652' }}
               onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}>
-              <item.icon className="w-4 h-4 shrink-0" style={active ? { color: PRIMARY } : { color: '#757684' }} />
+              <item.icon className="w-4 h-4 shrink-0" style={active ? { color: ac } : { color: '#757684' }} />
               {!collapsed && <span>{item.label}</span>}
               {active && !collapsed && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: PRIMARY }} />
+                <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ag }} />
               )}
             </button>
           );
@@ -189,7 +195,7 @@ export default function AppSidebar() {
         <div className="relative">
           <button onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all"
-            style={showProfileMenu ? { background: PRIMARY_CONTAINER } : {}}
+            style={showProfileMenu ? { background: acContainer } : {}}
             onMouseEnter={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
             onMouseLeave={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = ''; }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
@@ -221,8 +227,8 @@ export default function AppSidebar() {
               <div className="p-1.5 space-y-0.5">
                 <button onClick={() => { navigate('/pricing'); setShowProfileMenu(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-bold transition-all"
-                  style={{ color: PRIMARY }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = PRIMARY_CONTAINER}
+                  style={{ color: ac }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = acContainer}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
                   <Crown className="w-4 h-4" /> Upgrade to Pro
                 </button>
