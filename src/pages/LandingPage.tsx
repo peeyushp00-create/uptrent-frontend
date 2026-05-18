@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
 
 const REEL_DATA = [
   { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png', title: 'How I Got 100K Subs in 30 Days', handle: '@CreatorPro', views: '2.4M', dur: '0:58', type: 'Shorts' },
@@ -283,8 +282,11 @@ export default function LandingPage() {
     return () => obs.disconnect();
   }, []);
 
+  const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
   const handleSendOTP = async () => {
     const email = emailRef.current?.value.trim() ?? '';
+    const name = (document.getElementById('sr-name-input') as HTMLInputElement)?.value.trim() ?? '';
     if (!email || !email.includes('@')) {
       setEmailErr(true);
       emailRef.current?.classList.add('sr-shake');
@@ -292,10 +294,18 @@ export default function LandingPage() {
       return;
     }
     setLoading(true); setErrorMsg('');
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-    setLoading(false);
-    if (error) { setErrorMsg(error.message); return; }
-    setUserEmail(email); setStep('otp');
+    try {
+      const res = await fetch(`${BASE}/api/waitlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name: name || email.split('@')[0] }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+      setUserEmail(email); setStep('otp');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Something went wrong. Please try again.');
+    } finally { setLoading(false); }
   };
 
   const handleVerifyOTP = async () => {
@@ -307,10 +317,18 @@ export default function LandingPage() {
       return;
     }
     setLoading(true); setErrorMsg('');
-    const { error } = await supabase.auth.verifyOtp({ email: userEmail, token, type: 'email' });
-    setLoading(false);
-    if (error) { setErrorMsg('Invalid code. Please try again.'); return; }
-    setStep('done');
+    try {
+      const res = await fetch(`${BASE}/api/waitlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, otp: token, action: 'verify' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Invalid OTP');
+      setStep('done');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Invalid code. Please try again.');
+    } finally { setLoading(false); }
   };
 
   const reelCols = Array.from({ length: 7 }, (_, i) => ({
@@ -573,6 +591,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <div style={{ marginBottom:12 }}>
+                  <input id="sr-name-input" type="text" placeholder="Your name (optional)" className="sr-input" style={{ marginBottom: 8 }} />
                   <input ref={emailRef} type="email" placeholder="you@example.com" className={`sr-input${emailErr ? ' error' : ''}`} onKeyDown={e => { if (e.key === 'Enter') handleSendOTP(); }} />
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
