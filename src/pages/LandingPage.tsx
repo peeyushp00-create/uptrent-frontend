@@ -65,11 +65,11 @@ const css = `
   @keyframes sr-shake     { 0%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} 100%{transform:translateX(0)} }
   @keyframes sr-fadeIn    { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
 
-  .sr-anim-nav   { animation:sr-navDown   .6s cubic-bezier(.16,1,.3,1) .2s  both }
-  .sr-anim-badge { animation:sr-badgeFade .8s cubic-bezier(.16,1,.3,1) .4s  both }
-  .sr-anim-sub   { animation:sr-sFade     .9s cubic-bezier(.16,1,.3,1) 1.1s both }
-  .sr-anim-desc  { animation:sr-sFade     .9s cubic-bezier(.16,1,.3,1) 1.3s both }
-  .sr-anim-btns  { animation:sr-sFade     .9s cubic-bezier(.16,1,.3,1) 1.5s both }
+  .sr-anim-nav   { animation:sr-navDown   .6s cubic-bezier(.16,1,.3,1) 0s   both }
+  .sr-anim-badge { animation:sr-badgeFade .8s cubic-bezier(.16,1,.3,1) .2s  both }
+  .sr-anim-sub   { animation:sr-sFade     .9s cubic-bezier(.16,1,.3,1) .8s  both }
+  .sr-anim-desc  { animation:sr-sFade     .9s cubic-bezier(.16,1,.3,1) 1.0s both }
+  .sr-anim-btns  { animation:sr-sFade     .9s cubic-bezier(.16,1,.3,1) 1.2s both }
   .sr-anim-pulse { animation:sr-pulse 2s ease-in-out infinite }
   .sr-anim-glow  { animation:sr-glowP 4s ease-in-out infinite }
   .sr-anim-orb   { animation:sr-orbFloat 6s ease-in-out infinite }
@@ -412,7 +412,7 @@ export default function LandingPage() {
             Now Accepting Early Access
           </div>
 
-          {/* ── Single line: "Social" purple small + "Rum" white big ── */}
+          {/* ── Single line: "Social" purple + "Rum" white — same size ── */}
           <div style={{ marginBottom: 4, perspective: 600 }} aria-label="SocialRum">
             {[...SOCIAL].map((char, i) => (
               <span key={`s${i}`} className="sr-title-char"
@@ -420,9 +420,9 @@ export default function LandingPage() {
                   fontFamily: 'Syne,sans-serif',
                   fontWeight: 800,
                   letterSpacing: '-.03em',
-                  fontSize: 'clamp(38px, 5.5vw, 68px)',
+                  fontSize: 'clamp(60px, 9vw, 108px)',
                   color: '#A78BFA',
-                  animationDelay: `${(0.6 + i * 0.06).toFixed(2)}s`,
+                  animationDelay: `${(0.3 + i * 0.05).toFixed(2)}s`,
                 }}>
                 {char}
               </span>
@@ -433,9 +433,9 @@ export default function LandingPage() {
                   fontFamily: 'Syne,sans-serif',
                   fontWeight: 800,
                   letterSpacing: '-.03em',
-                  fontSize: 'clamp(80px, 12vw, 140px)',
+                  fontSize: 'clamp(60px, 9vw, 108px)',
                   color: '#F1F0F8',
-                  animationDelay: `${(0.9 + i * 0.08).toFixed(2)}s`,
+                  animationDelay: `${(0.6 + i * 0.06).toFixed(2)}s`,
                 }}>
                 {char}
               </span>
