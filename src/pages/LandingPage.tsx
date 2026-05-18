@@ -282,7 +282,7 @@ export default function LandingPage() {
     return () => obs.disconnect();
   }, []);
 
-  const BASE = import.meta.env.VITE_API_URL || "https://uptrent-backend.onrender.com";
+  const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
   const handleSendOTP = async () => {
     const email = emailRef.current?.value.trim() ?? '';
@@ -352,7 +352,7 @@ export default function LandingPage() {
         {/* Logo — click goes to app */}
         <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
           <LogoIcon />
-          <span style={{ fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:700, color:'#F1F0F8' }}>SocialRum</span>
+          <span style={{ fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:700, color:'#F1F0F8', letterSpacing:'-.02em' }}>SocialRum</span>
         </a>
 
         <ul className="sr-nav-links" style={{ display:'flex', gap:36, listStyle:'none' }}>
@@ -412,7 +412,7 @@ export default function LandingPage() {
             Now Accepting Early Access
           </div>
 
-          {/* ── Single line: "Social" small + "Rum" big ── */}
+          {/* ── Single line: "Social" purple small + "Rum" white big ── */}
           <div style={{ marginBottom: 4, perspective: 600 }} aria-label="SocialRum">
             {[...SOCIAL].map((char, i) => (
               <span key={`s${i}`} className="sr-title-char"
@@ -420,7 +420,7 @@ export default function LandingPage() {
                   fontFamily: 'Syne,sans-serif',
                   fontWeight: 800,
                   letterSpacing: '-.03em',
-                  fontSize: 'clamp(40px, 5.5vw, 72px)',
+                  fontSize: 'clamp(38px, 5.5vw, 68px)',
                   color: '#A78BFA',
                   animationDelay: `${(0.6 + i * 0.06).toFixed(2)}s`,
                 }}>
@@ -434,7 +434,7 @@ export default function LandingPage() {
                   fontWeight: 800,
                   letterSpacing: '-.03em',
                   fontSize: 'clamp(80px, 12vw, 140px)',
-                  color: '#A78BFA',
+                  color: '#F1F0F8',
                   animationDelay: `${(0.9 + i * 0.08).toFixed(2)}s`,
                 }}>
                 {char}
@@ -445,7 +445,7 @@ export default function LandingPage() {
           <p className="sr-anim-sub" style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(20px,3.2vw,42px)', fontWeight:700, color:'#F1F0F8', letterSpacing:'-.02em', marginBottom:28, opacity:0 }}>
             Create Content That Actually Gets Discovered
           </p>
-          <p className="sr-anim-desc" style={{ fontSize:17, color:'rgba(241,240,248,.55)', lineHeight:1.7, maxWidth:560, margin:'0 auto 40px', opacity:0 }}>
+          <p className="sr-anim-desc" style={{ fontFamily:'DM Sans,sans-serif', fontSize:17, color:'rgba(241,240,248,.55)', lineHeight:1.7, maxWidth:560, margin:'0 auto 40px', opacity:0 }}>
             SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, content analysis, and SEO in one dark premium dashboard.
           </p>
           <div className="sr-anim-btns" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:16, flexWrap:'wrap', opacity:0 }}>
