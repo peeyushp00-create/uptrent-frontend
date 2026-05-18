@@ -33,17 +33,19 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Fully public — no layout */}
-            <Route path="/landing" element={<LandingPage />} />
+            {/* Landing page — shown at root for socialrum.com */}
+            <Route path="/" element={<LandingPage />} />
+
+            {/* Auth */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
 
-            {/* Public home with sidebar — no login needed */}
-            <Route path="/" element={<AppLayout />}>
+            {/* Main app — public home/dashboard */}
+            <Route path="/home" element={<AppLayout />}>
               <Route index element={<Index />} />
             </Route>
 
-            {/* Protected routes with sidebar */}
+            {/* Protected app routes */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/insight" element={<InsightPage />} />
               <Route path="/news" element={<NewsPage />} />

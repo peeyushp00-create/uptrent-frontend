@@ -332,10 +332,10 @@ export default function LandingPage() {
       {/* ══════ NAVBAR ══════ */}
       <nav className={`sr-nav sr-anim-nav${scrolled ? ' scrolled' : ''}`}>
         {/* Logo — click goes to app */}
-        <button className="sr-logo-btn" onClick={() => navigate('/')}>
+        <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
           <LogoIcon />
           <span style={{ fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:700, color:'#F1F0F8' }}>SocialRum</span>
-        </button>
+        </a>
 
         <ul className="sr-nav-links" style={{ display:'flex', gap:36, listStyle:'none' }}>
           {['Features','How It Works','Early Access'].map(l => (
@@ -394,26 +394,34 @@ export default function LandingPage() {
             Now Accepting Early Access
           </div>
 
-          {/* ── Two-line title: "Social" small top, "Rum" big below ── */}
-          <div className="sr-hero-title" aria-label="SocialRum">
-            {/* "Social" — smaller, faded */}
-            <div className="sr-hero-social">
-              {[...SOCIAL].map((char, i) => (
-                <span key={i} className="sr-title-char"
-                  style={{ color:'rgba(167,139,250,0.55)', animationDelay:`${(0.6 + i * 0.06).toFixed(2)}s` }}>
-                  {char}
-                </span>
-              ))}
-            </div>
-            {/* "Rum" — bigger, bright purple */}
-            <div className="sr-hero-rum">
-              {[...RUM].map((char, i) => (
-                <span key={i} className="sr-title-char"
-                  style={{ color:'#A78BFA', animationDelay:`${(0.9 + i * 0.08).toFixed(2)}s` }}>
-                  {char}
-                </span>
-              ))}
-            </div>
+          {/* ── Single line: "Social" small + "Rum" big ── */}
+          <div style={{ marginBottom: 4, perspective: 600 }} aria-label="SocialRum">
+            {[...SOCIAL].map((char, i) => (
+              <span key={`s${i}`} className="sr-title-char"
+                style={{
+                  fontFamily: 'Syne,sans-serif',
+                  fontWeight: 800,
+                  letterSpacing: '-.03em',
+                  fontSize: 'clamp(40px, 5.5vw, 72px)',
+                  color: '#A78BFA',
+                  animationDelay: `${(0.6 + i * 0.06).toFixed(2)}s`,
+                }}>
+                {char}
+              </span>
+            ))}
+            {[...RUM].map((char, i) => (
+              <span key={`r${i}`} className="sr-title-char"
+                style={{
+                  fontFamily: 'Syne,sans-serif',
+                  fontWeight: 800,
+                  letterSpacing: '-.03em',
+                  fontSize: 'clamp(80px, 12vw, 140px)',
+                  color: '#A78BFA',
+                  animationDelay: `${(0.9 + i * 0.08).toFixed(2)}s`,
+                }}>
+                {char}
+              </span>
+            ))}
           </div>
 
           <p className="sr-anim-sub" style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(20px,3.2vw,42px)', fontWeight:700, color:'#F1F0F8', letterSpacing:'-.02em', marginBottom:28, opacity:0 }}>
@@ -578,7 +586,7 @@ export default function LandingPage() {
 
       {/* ══════ FOOTER ══════ */}
       <footer style={{ background:'#0D0D1A', borderTop:'.5px solid rgba(124,58,237,.2)', padding:'40px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24, position:'relative', zIndex:5 }}>
-        <button className="sr-logo-btn" onClick={() => navigate('/')}>
+        <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
           <div style={{ width:30, height:30, background:'#7C3AED', borderRadius:7, display:'grid', placeItems:'center' }}>
             <svg viewBox="0 0 20 20" style={{ width:16, height:16, fill:'white' }}>
               <circle cx="5" cy="5" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/>
@@ -587,7 +595,7 @@ export default function LandingPage() {
             </svg>
           </div>
           <span style={{ fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#F1F0F8' }}>SocialRum</span>
-        </button>
+        </a>
         <ul style={{ display:'flex', gap:28, listStyle:'none', flexWrap:'wrap' }}>
           {[['Features','#features'],['How It Works','#how-it-works'],['Early Access','#early-access'],['Contact','mailto:hello@socialrum.com']].map(([label,href]) => (
             <li key={label}>

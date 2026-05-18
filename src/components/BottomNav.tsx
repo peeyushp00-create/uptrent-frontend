@@ -8,7 +8,7 @@ const YT_GRAD = "linear-gradient(135deg, #c62828, #e53935)";
 const YT_COLOR = "#c62828";
 
 const instagramNav = [
-  { icon: LayoutDashboard, label: "Home", path: "/" },
+  { icon: LayoutDashboard, label: "Home", path: "/home" },
   { icon: TrendingUp, label: "Trending", path: "/trending" },
   { icon: Newspaper, label: "News", path: "/news" },
   { icon: FileText, label: "Scripts", path: "/scripts" },
@@ -16,7 +16,7 @@ const instagramNav = [
 ];
 
 const youtubeNav = [
-  { icon: LayoutDashboard, label: "Home", path: "/" },
+  { icon: LayoutDashboard, label: "Home", path: "/home" },
   { icon: Tag, label: "SEO", path: "/youtube/seo" },
   { icon: FileText, label: "Script", path: "/youtube/script" },
   { icon: Search, label: "Analyzer", path: "/youtube/analyzer" },
@@ -48,7 +48,7 @@ export default function BottomNav() {
     setPlatform(p);
     localStorage.setItem("platform", p);
     window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-    navigate("/");
+    navigate("/home");
   };
 
   return (

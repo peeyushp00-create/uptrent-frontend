@@ -18,7 +18,7 @@ const YT_COLOR = "#c62828";
 const YT_CONTAINER = "#ffebee";
 
 const instagramNav = [
-  { icon: LayoutDashboard, label: "Home", path: "/" },
+  { icon: LayoutDashboard, label: "Home", path: "/home" },
   { icon: TrendingUp, label: "Trending", path: "/trending" },
   { icon: Newspaper, label: "News Feed", path: "/news" },
   { icon: FileText, label: "Scripts", path: "/scripts" },
@@ -26,7 +26,7 @@ const instagramNav = [
 ];
 
 const youtubeNav = [
-  { icon: LayoutDashboard, label: "Home", path: "/" },
+  { icon: LayoutDashboard, label: "Home", path: "/home" },
   { icon: Tag, label: "SEO", path: "/youtube/seo" },
   { icon: FileText, label: "Script", path: "/youtube/script" },
   { icon: Search, label: "Analyzer", path: "/youtube/analyzer" },
@@ -65,7 +65,7 @@ export default function AppSidebar() {
     setPlatform(p);
     localStorage.setItem("platform", p);
     window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-    navigate("/");
+     navigate("/home");
   };
 
   const isYoutubePath = location.pathname.startsWith("/youtube");
