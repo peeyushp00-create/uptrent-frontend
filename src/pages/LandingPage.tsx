@@ -77,15 +77,8 @@ const css = `
   .sr-shake      { animation:sr-shake .36s ease }
   .sr-fade-in    { animation:sr-fadeIn .5s cubic-bezier(.16,1,.3,1) both }
 
-  .sr-strip-up { animation:sr-scrollUp 22s linear infinite; display:flex; flex-direction:column; gap:14px; }
-  .sr-strip-dn { animation:sr-scrollDn 26s linear infinite; display:flex; flex-direction:column; gap:14px; }
-  .sr-col-1 .sr-strip-up,.sr-col-1 .sr-strip-dn{animation-delay:0s}
-  .sr-col-2 .sr-strip-up,.sr-col-2 .sr-strip-dn{animation-delay:-4s}
-  .sr-col-3 .sr-strip-up,.sr-col-3 .sr-strip-dn{animation-delay:-8s}
-  .sr-col-4 .sr-strip-up,.sr-col-4 .sr-strip-dn{animation-delay:-2s}
-  .sr-col-5 .sr-strip-up,.sr-col-5 .sr-strip-dn{animation-delay:-11s}
-  .sr-col-6 .sr-strip-up,.sr-col-6 .sr-strip-dn{animation-delay:-6s}
-  .sr-col-7 .sr-strip-up,.sr-col-7 .sr-strip-dn{animation-delay:-14s}
+  @keyframes sr-floatDown { from{transform:translate3d(0,-380px,0)} to{transform:translate3d(0,calc(100vh + 380px),0)} }
+  @keyframes sr-floatUp   { from{transform:translate3d(0,calc(100vh + 380px),0)} to{transform:translate3d(0,-380px,0)} }
 
   .sr-nav { position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:68px;transition:background .4s,backdrop-filter .4s,border-color .4s; }
   .sr-nav.scrolled { background:rgba(6,6,15,.85);backdrop-filter:blur(18px);border-bottom:.5px solid rgba(124,58,237,.2); }
@@ -200,9 +193,6 @@ export default function LandingPage() {
   const otpRef    = useRef<HTMLInputElement>(null);
 
   const [scrolled,   setScrolled]   = useState(false);
-  useEffect(() => {
-  window.scrollTo(0, 0);
-}, []);
   const [step,       setStep]       = useState<'email' | 'otp' | 'done'>('email');
   const [userEmail,  setUserEmail]  = useState('');
   const [loading,    setLoading]    = useState(false);
@@ -373,30 +363,84 @@ export default function LandingPage() {
 
       {/* ══════ HERO ══════ */}
       <section style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
-        {/* Reel bg */}
-        <div style={{ position:'absolute', inset:0, display:'flex', gap:14, padding:'0 8px', overflow:'hidden', zIndex:1 }}>
-          {reelCols.map(col => (
-            <div key={col.colIdx} className={`sr-col-${col.colIdx}`} style={{ flex:1, display:'flex', flexDirection:'column', gap:14, minWidth:0 }}>
-              <div className={col.isEven ? 'sr-strip-dn' : 'sr-strip-up'}>
-                {col.cards.map((r, ci) => (
-                  <div key={`${col.colIdx}-${ci}`} className="sr-reel-card">
-                    <img src={r.img} alt={r.title} loading="lazy" onError={e => { (e.target as HTMLImageElement).style.background = '#1e1e35'; }} />
-                    <div className="sr-reel-play">
-                      <svg viewBox="0 0 24 24" style={{ width:12, height:12, fill:'white', marginLeft:1 }}><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    </div>
-                    <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 8px 8px', background:'linear-gradient(transparent,rgba(0,0,0,0.85))' }}>
-                      <div>
-                        <span style={{ display:'inline-flex', background: r.type==='Reels' ? 'linear-gradient(135deg,#E1306C,#833AB4)' : '#FF0000', color:'white', fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:3, marginRight:4 }}>{r.type}</span>
-                        <span style={{ fontSize:9, color:'rgba(255,255,255,.8)' }}>{r.dur}</span>
+        {/* ── VideoBackground — exact socialrum-1 style ── */}
+        <div style={{ position:'absolute', inset:0, zIndex:1, overflow:'hidden', pointerEvents:'none' }} aria-hidden="true">
+          {[0,1,2,3,4,5].map(laneIndex => {
+            const laneCards = [
+              { id:1,  platform:'youtube',   title:'How I Got 100K Subs in 30 Days',          views:'2.4M', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png',  channel:'@CreatorPro',    lane:0, speed:18, startOffset:0   },
+              { id:2,  platform:'instagram', title:'Morning Routine That Changed My Life',     views:'890K', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1521eb58e-1764644106046.png',  channel:'@LifeWithAlex',  lane:1, speed:22, startOffset:-40 },
+              { id:3,  platform:'youtube',   title:'AI Tools Every Creator Needs in 2026',    views:'1.1M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1ddab98dc-1773131998650.png',  channel:'@TechCreator',   lane:2, speed:16, startOffset:-20 },
+              { id:4,  platform:'instagram', title:'Street Food Tour in Tokyo',               views:'3.7M', duration:'0:60', thumbnail:'https://images.unsplash.com/photo-1516822561562-a6762898eb60?w=200',                 channel:'@FoodieWorld',   lane:3, speed:20, startOffset:-10 },
+              { id:5,  platform:'youtube',   title:'Build a SaaS in 24 Hours Challenge',      views:'780K', duration:'0:59', thumbnail:'https://images.unsplash.com/photo-1564756296543-d61bebcd226a?w=200',                 channel:'@DevShorts',     lane:4, speed:19, startOffset:-50 },
+              { id:6,  platform:'instagram', title:'Minimalist Home Makeover on Budget',      views:'1.5M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_15eaab260-1772956699125.png',  channel:'@HomeVibes',     lane:5, speed:21, startOffset:-80 },
+              { id:7,  platform:'youtube',   title:'Camera Settings for Perfect Reels',       views:'640K', duration:'0:55', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1b0948c90-1771909777566.png',  channel:'@FilmTips',      lane:0, speed:17, startOffset:-70 },
+              { id:8,  platform:'instagram', title:'Fitness Transformation 30 Days',          views:'4.3M', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_159a50448-1767636094533.png',  channel:'@FitLife',       lane:1, speed:23, startOffset:-45 },
+              { id:9,  platform:'youtube',   title:'Grow on YouTube with Zero Budget',        views:'920K', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_17b6062b2-1772483137359.png',  channel:'@GrowthHacks',   lane:2, speed:19, startOffset:-90 },
+              { id:10, platform:'instagram', title:'Aesthetic Room Tour 2026',                views:'1.2M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_150de2b75-1772333562367.png',  channel:'@AestheticVibes',lane:3, speed:16, startOffset:-35 },
+              { id:11, platform:'youtube',   title:'Top 10 Trending Niches Right Now',        views:'3.1M', duration:'0:59', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_126d7e136-1768020582546.png',  channel:'@NicheHunter',   lane:4, speed:20, startOffset:-65 },
+              { id:12, platform:'instagram', title:'Skincare Routine for Glowing Skin',       views:'2.9M', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_194b951ad-1772304624866.png',  channel:'@GlowUp',        lane:5, speed:18, startOffset:-25 },
+              { id:13, platform:'youtube',   title:'Monetize Your Channel Fast in 2026',      views:'1.7M', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_17343e164-1768026725793.png',  channel:'@MoneyCreator',  lane:0, speed:22, startOffset:-75 },
+              { id:14, platform:'instagram', title:'Coffee Art That Will Blow Your Mind',     views:'980K', duration:'0:20', thumbnail:'https://images.unsplash.com/photo-1622651207311-f5af09666416?w=200',                 channel:'@CafeArt',       lane:1, speed:17, startOffset:-55 },
+              { id:15, platform:'youtube',   title:'Script Writing Secrets for Viral Shorts', views:'2.2M', duration:'0:55', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_13a6419a1-1772328360733.png',  channel:'@ScriptMaster',  lane:2, speed:21, startOffset:-85 },
+            ].filter(c => c.lane === laneIndex);
+            const isEvenLane = laneIndex % 2 === 0;
+            return (
+              <div key={laneIndex} style={{ position:'absolute', top:0, bottom:0, left:`${4 + laneIndex * 16}%`, width:140 }}>
+                {laneCards.map(card => {
+                  const isIG = card.platform === 'instagram';
+                  const platformGrad = isIG
+                    ? 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)'
+                    : 'linear-gradient(135deg,#FF0000,#CC0000)';
+                  const platformColor = isIG ? '#E1306C' : '#FF0000';
+                  const platformLabel = isIG ? 'Reels' : 'Shorts';
+                  return (
+                    <div key={card.id} style={{
+                      position:'absolute', width:130,
+                      top: isEvenLane ? -380 : '100%',
+                      animationName: isEvenLane ? 'sr-floatDown' : 'sr-floatUp',
+                      animationDuration: `${card.speed}s`,
+                      animationDelay: `${card.startOffset / 10}s`,
+                      animationTimingFunction: 'linear',
+                      animationIterationCount: 'infinite',
+                      willChange: 'transform',
+                      backfaceVisibility: 'hidden',
+                    }}>
+                      <div style={{ position:'relative', width:130, height:230, borderRadius:16, overflow:'hidden', background:'#1a1a2e', border:'1px solid rgba(124,58,237,0.2)', opacity:0.45 }}>
+                        {/* Thumbnail */}
+                        <img src={card.thumbnail} alt="" loading="lazy" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', opacity:0.7 }}
+                          onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+                        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.3) 50%,rgba(0,0,0,0.85) 100%)' }} />
+                        {/* Platform badge */}
+                        <div style={{ position:'absolute', top:8, left:8, display:'flex', alignItems:'center', gap:3, padding:'2px 6px', borderRadius:50, background:platformGrad, fontSize:9, fontWeight:700, color:'white' }}>
+                          {isIG
+                            ? <svg viewBox="0 0 24 24" fill="currentColor" style={{width:9,height:9}}><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            : <svg viewBox="0 0 24 24" fill="currentColor" style={{width:9,height:9}}><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                          }
+                          {platformLabel}
+                        </div>
+                        {/* Duration */}
+                        <div style={{ position:'absolute', top:8, right:8, padding:'2px 5px', borderRadius:4, background:'rgba(0,0,0,0.7)', fontSize:9, color:'white', fontWeight:600 }}>{card.duration}</div>
+                        {/* Play button */}
+                        <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          <div style={{ width:32, height:32, borderRadius:'50%', background:'rgba(255,255,255,0.15)', backdropFilter:'blur(4px)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <svg style={{ width:16, height:16, fill:'white', marginLeft:2 }} viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/></svg>
+                          </div>
+                        </div>
+                        {/* Info */}
+                        <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:8 }}>
+                          <p style={{ color:'white', fontWeight:600, fontSize:9, lineHeight:1.3, marginBottom:4, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{card.title}</p>
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                            <span style={{ color:'#d1d5db', fontSize:8 }}>{card.channel}</span>
+                            <span style={{ fontSize:8, fontWeight:700, color:platformColor }}>{card.views}</span>
+                          </div>
+                        </div>
                       </div>
-                      <p style={{ fontSize:9, color:'rgba(255,255,255,.9)', fontWeight:500, lineHeight:1.3 }}>{r.title}</p>
-                      <p style={{ fontSize:8, color:'rgba(255,255,255,.55)', marginTop:2 }}>{r.handle} · {r.views}</p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Vignette */}
@@ -420,11 +464,11 @@ export default function LandingPage() {
             {[...SOCIAL].map((char, i) => (
               <span key={`s${i}`} className="sr-title-char"
                 style={{
-                  fontFamily: 'Arial, Helvetica, sans-serif',
-fontWeight: 900,
-letterSpacing: '-.02em',
-fontSize: 'clamp(32px, 5vw, 60px)',
-color: '#A78BFA',
+                  fontFamily: 'Syne,sans-serif',
+                  fontWeight: 800,
+                  letterSpacing: '-.03em',
+                  fontSize: 'clamp(48px, 7vw, 88px)',
+                  color: '#A78BFA',
                   animationDelay: `${(0.3 + i * 0.05).toFixed(2)}s`,
                 }}>
                 {char}
@@ -434,10 +478,10 @@ color: '#A78BFA',
               <span key={`r${i}`} className="sr-title-char"
                 style={{
                   fontFamily: 'Arial, Helvetica, sans-serif',
-fontWeight: 900,
-letterSpacing: '-.02em',
-fontSize: 'clamp(32px, 5vw, 60px)',
-color: '#f31212',
+                  fontWeight: 900,
+                  letterSpacing: '-.02em',
+                  fontSize: 'clamp(48px, 7vw, 88px)',
+                  color: '#ff0000',
                   animationDelay: `${(0.6 + i * 0.06).toFixed(2)}s`,
                 }}>
                 {char}
