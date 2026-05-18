@@ -417,11 +417,11 @@ export default function LandingPage() {
             {[...SOCIAL].map((char, i) => (
               <span key={`s${i}`} className="sr-title-char"
                 style={{
-                  fontFamily: 'Syne,sans-serif',
-                  fontWeight: 800,
-                  letterSpacing: '-.03em',
-                  fontSize: 'clamp(60px, 9vw, 108px)',
-                  color: '#A78BFA',
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+fontWeight: 900,
+letterSpacing: '-.02em',
+fontSize: 'clamp(32px, 5vw, 60px)',
+color: '#A78BFA',
                   animationDelay: `${(0.3 + i * 0.05).toFixed(2)}s`,
                 }}>
                 {char}
@@ -430,11 +430,11 @@ export default function LandingPage() {
             {[...RUM].map((char, i) => (
               <span key={`r${i}`} className="sr-title-char"
                 style={{
-                  fontFamily: 'Syne,sans-serif',
-                  fontWeight: 800,
-                  letterSpacing: '-.03em',
-                  fontSize: 'clamp(60px, 9vw, 108px)',
-                  color: '#F1F0F8',
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+fontWeight: 900,
+letterSpacing: '-.02em',
+fontSize: 'clamp(32px, 5vw, 60px)',
+color: '#f31212',
                   animationDelay: `${(0.6 + i * 0.06).toFixed(2)}s`,
                 }}>
                 {char}
