@@ -6,7 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const PRIMARY = "#7C3AED";
 const SECONDARY = "#7C3AED";
-const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
+const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
+const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
 const PRIMARY_CONTAINER = "#ede9fe";
 
 const IG_CHIPS = ["Fitness", "Finance", "Cricket", "Bollywood", "Tech", "Food", "Travel", "Gaming", "Motivation", "Skincare", "Yoga", "Crypto"];
@@ -138,9 +139,9 @@ export default function Index() {
                 window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
               }}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all"
-              style={platform === tab
-                ? { background: PRIMARY_GRAD, color: '#fff' }
-                : { color: '#757684' }}
+           style={platform === tab
+  ? { background: tab === 'Instagram' ? PRIMARY_GRAD : YT_GRAD, color: '#fff' }
+  : { color: '#757684' }}
               whileTap={{ scale: 0.97 }}>
               {tab === 'Instagram'
                 ? <Instagram className="w-4 h-4" />
