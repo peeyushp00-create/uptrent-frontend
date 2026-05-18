@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { TrendingUp, Sparkles } from "lucide-react";
 
-const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
-const YT_COLOR = "#FF6B6B";
+const YT_GRAD = "linear-gradient(135deg, #c62828, #FFB86C)";
+const YT_COLOR = "#c62828";
 
 const TRENDING_TOPICS = [
   "AI tools for beginners India 2026",

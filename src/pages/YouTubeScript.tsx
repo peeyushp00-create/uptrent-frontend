@@ -4,8 +4,8 @@ import { FileText, Sparkles, Copy, Check, Loader2, Search, X, ChevronRight, Cloc
 import { useAuth } from "@/contexts/AuthContext";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const YT_GRAD = "linear-gradient(135deg, #FF6B6B, #FFB86C)";
-const YT_COLOR = "#FF6B6B";
+const YT_GRAD = "linear-gradient(135deg, #c62828, #FFB86C)";
+const YT_COLOR = "#c62828";
 
 const SCRIPT_SUGGESTIONS = [
   "5 Ways to Save Money India", "How to start investing India",

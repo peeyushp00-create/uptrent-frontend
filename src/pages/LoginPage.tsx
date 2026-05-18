@@ -3,8 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
-const IG_GRAD = "linear-gradient(135deg, #14BBA6, #0D9488)";
-const IG = "#14BBA6";
+const IG_GRAD = "linear-gradient(135deg, #6f48b2, #0D9488)";
+const IG = "#6f48b2";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

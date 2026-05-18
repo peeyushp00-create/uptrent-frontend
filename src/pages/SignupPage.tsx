@@ -22,8 +22,8 @@ const LANGUAGES = [
   { value: "manglish", label: "Manglish (Malayalam + English)" },
 ];
 
-const IG_GRAD = "linear-gradient(135deg, #14BBA6, #0D9488)";
-const IG = "#14BBA6";
+const IG_GRAD = "linear-gradient(135deg, #6f48b2, #0D9488)";
+const IG = "#6f48b2";
 
 const SAMPLE_TEXTS: Record<string, string> = {
   hindi: "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं। मैंने देखा है कि बहुत सारे क्रिएटर्स सही कंटेंट बनाने में struggle करते हैं। लेकिन असल में यह इतना मुश्किल नहीं है।",

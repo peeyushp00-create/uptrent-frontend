@@ -55,8 +55,8 @@ const FEEDBACK_CATEGORIES = [
   { id: "performance", label: "Performance", icon: Zap },
 ];
 
-const BLUE_GRADIENT = "linear-gradient(135deg, #14BBA6, #0D9488)";
-const BLUE = "#14BBA6";
+const BLUE_GRADIENT = "linear-gradient(135deg, #6f48b2, #0D9488)";
+const BLUE = "#6f48b2";
 
 const sampleText = {
   hindi: "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं।",
@@ -301,7 +301,7 @@ export default function SettingsPage() {
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Target className="w-4 h-4" style={{ color: BLUE }} /> Content Niches
-                {niches.length > 0 && <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ background: "#14BBA615", color: BLUE }}>{niches.length} selected</span>}
+                {niches.length > 0 && <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ background: "#6f48b215", color: BLUE }}>{niches.length} selected</span>}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {NICHES.map((n) => (
@@ -465,7 +465,7 @@ export default function SettingsPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium"
-                    style={{ background: "#14BBA615", border: "1px solid #14BBA630", color: BLUE }}>
+                    style={{ background: "#6f48b215", border: "1px solid #6f48b230", color: BLUE }}>
                     <ThumbsUp className="w-3.5 h-3.5" />
                     Saved to database + emailed to team ✅
                   </div>
@@ -485,7 +485,7 @@ export default function SettingsPage() {
                         <button key={cat.id} onClick={() => setFeedbackCategory(cat.id)}
                           className="flex items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-all text-left"
                           style={feedbackCategory === cat.id
-                            ? { background: "#14BBA615", borderColor: "#14BBA650", color: BLUE }
+                            ? { background: "#6f48b215", borderColor: "#6f48b250", color: BLUE }
                             : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
                           <cat.icon className="w-3.5 h-3.5 shrink-0" />{cat.label}
                         </button>
@@ -520,7 +520,7 @@ export default function SettingsPage() {
                       placeholder="Tell us what you think... What do you love? What can we improve?"
                       rows={4}
                       className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none text-sm resize-none transition-all"
-                      onFocus={e => { e.target.style.borderColor = "#14BBA650"; }}
+                      onFocus={e => { e.target.style.borderColor = "#6f48b250"; }}
                       onBlur={e => { e.target.style.borderColor = ""; }} />
                     <p className="text-xs text-muted-foreground text-right">{feedbackMessage.length}/500</p>
                   </div>
@@ -550,7 +550,7 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 border-t border-border pt-4">
                   <h3 className="font-semibold text-foreground text-sm">Recent Reviews</h3>
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#14BBA615", color: BLUE }}>3</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#6f48b215", color: BLUE }}>3</span>
                 </div>
                 {[
                   { name: "Rahul S.", rating: 5, text: "Amazing platform! The script generator saved me hours every week.", time: "2 days ago", niche: "Finance Creator" },
