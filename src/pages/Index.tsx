@@ -161,7 +161,7 @@ export default function Index() {
                 onKeyDown={e => e.key === "Enter" && handleSearch()}
                 placeholder={platform === "Instagram" ? "Search reels ideas (e.g. Fitness, Finance)..." : "Search YouTube topics (e.g. Tech review, Shorts)..."}
                 className="w-full pl-11 pr-10 py-4 rounded-2xl text-sm text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none transition-all"
-                style={{ background: 'white', border: `2px solid ${search ? PRIMARY : '#e1e3e4'}`, boxShadow: search ? `0 0 0 4px ${PRIMARY}15` : 'none' }} />
+                style={{ background: 'white', border: `2px solid ${search ? (platform === 'Instagram' ? PRIMARY : '#ff0000') : '#e1e3e4'}`, boxShadow: search ? `0 0 0 4px ${platform === 'Instagram' ? PRIMARY : '#ff0000'}15` : 'none' }} />
               {search && (
                 <button onClick={() => setSearch('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
@@ -171,7 +171,7 @@ export default function Index() {
             </div>
             <motion.button onClick={handleSearch} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
               className="px-6 py-4 rounded-2xl text-white font-bold text-sm flex items-center gap-2 hover:shadow-lg transition-all"
-              style={{ background: PRIMARY_GRAD }}>
+              style={{ background: platform === 'Instagram' ? PRIMARY_GRAD : YT_GRAD }}>
               <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">Discover</span>
             </motion.button>
