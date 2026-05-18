@@ -200,6 +200,9 @@ export default function LandingPage() {
   const otpRef    = useRef<HTMLInputElement>(null);
 
   const [scrolled,   setScrolled]   = useState(false);
+  useEffect(() => {
+  window.scrollTo(0, 0);
+}, []);
   const [step,       setStep]       = useState<'email' | 'otp' | 'done'>('email');
   const [userEmail,  setUserEmail]  = useState('');
   const [loading,    setLoading]    = useState(false);
