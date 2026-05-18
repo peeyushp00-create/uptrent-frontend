@@ -282,7 +282,7 @@ export default function LandingPage() {
     return () => obs.disconnect();
   }, []);
 
-  const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+  const BASE = import.meta.env.VITE_API_URL || "https://uptrent-backend.onrender.com";
 
   const handleSendOTP = async () => {
     const email = emailRef.current?.value.trim() ?? '';
