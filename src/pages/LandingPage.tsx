@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
-/* ─────────────────────────────────────────
-   DATA
-───────────────────────────────────────── */
 const REEL_DATA = [
   { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png', title: 'How I Got 100K Subs in 30 Days', handle: '@CreatorPro', views: '2.4M', dur: '0:58', type: 'Shorts' },
   { img: 'https://img.rocket.new/generatedImages/rocket_gen_img_1b0948c90-1771909777566.png', title: 'Camera Settings for Perfect Reels', handle: '@FilmTips', views: '640K', dur: '0:55', type: 'Shorts' },
@@ -40,12 +38,6 @@ const STATS = [
   { value: '100%', label: 'Made for India' },
 ];
 
-const TITLE    = 'SocialRum';
-const PURPLE_END = 6;
-
-/* ─────────────────────────────────────────
-   CSS (injected as <style> tag)
-───────────────────────────────────────── */
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
 
@@ -55,7 +47,6 @@ const css = `
   .sr-root ::-webkit-scrollbar-track { background: #06060F; }
   .sr-root ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.4); border-radius: 3px; }
 
-  /* Reveal */
   .sr-reveal   { opacity:0; transform:translateY(40px);  transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1); }
   .sr-reveal-l { opacity:0; transform:translateX(-50px); transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1); }
   .sr-reveal-r { opacity:0; transform:translateX(50px);  transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1); }
@@ -63,7 +54,6 @@ const css = `
   .sr-reveal.on,.sr-reveal-l.on,.sr-reveal-r.on,.sr-reveal-s.on { opacity:1; transform:none; }
   .sr-d1{transition-delay:.1s} .sr-d2{transition-delay:.2s} .sr-d3{transition-delay:.3s} .sr-d4{transition-delay:.4s}
 
-  /* Keyframes */
   @keyframes sr-navDown   { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
   @keyframes sr-badgeFade { from{opacity:0;transform:translateY(16px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
   @keyframes sr-sFade     { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
@@ -88,7 +78,6 @@ const css = `
   .sr-shake      { animation:sr-shake .36s ease }
   .sr-fade-in    { animation:sr-fadeIn .5s cubic-bezier(.16,1,.3,1) both }
 
-  /* Reel strips */
   .sr-strip-up { animation:sr-scrollUp 22s linear infinite; display:flex; flex-direction:column; gap:14px; }
   .sr-strip-dn { animation:sr-scrollDn 26s linear infinite; display:flex; flex-direction:column; gap:14px; }
   .sr-col-1 .sr-strip-up,.sr-col-1 .sr-strip-dn{animation-delay:0s}
@@ -99,17 +88,37 @@ const css = `
   .sr-col-6 .sr-strip-up,.sr-col-6 .sr-strip-dn{animation-delay:-6s}
   .sr-col-7 .sr-strip-up,.sr-col-7 .sr-strip-dn{animation-delay:-14s}
 
-  /* Nav */
   .sr-nav { position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:68px;transition:background .4s,backdrop-filter .4s,border-color .4s; }
   .sr-nav.scrolled { background:rgba(6,6,15,.85);backdrop-filter:blur(18px);border-bottom:.5px solid rgba(124,58,237,.2); }
   .sr-nav-link { position:relative;color:rgba(241,240,248,.55);text-decoration:none;font-size:15px;transition:color .2s; }
   .sr-nav-link::after { content:'';position:absolute;bottom:-2px;left:0;right:0;height:1px;background:#A78BFA;transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.16,1,.3,1); }
   .sr-nav-link:hover{color:#F1F0F8}
   .sr-nav-link:hover::after{transform:scaleX(1)}
+  .sr-logo-btn{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0;transition:opacity .2s}
+  .sr-logo-btn:hover{opacity:.85}
   .sr-logo-icon{transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s}
   .sr-logo-icon:hover{transform:rotate(12deg) scale(1.1);box-shadow:0 0 20px rgba(124,58,237,.35)}
 
-  /* Reel card */
+  /* ── Hero title two-line layout ── */
+  .sr-hero-title {
+    font-family:'Syne',sans-serif;
+    font-weight:800;
+    line-height:0.9;
+    letter-spacing:-.03em;
+    margin-bottom:4px;
+    perspective:600px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .sr-hero-social {
+    font-size: clamp(38px, 5.5vw, 68px);
+    opacity: 0.45;
+  }
+  .sr-hero-rum {
+    font-size: clamp(80px, 12vw, 140px);
+  }
+
   .sr-reel-card{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:9/16;flex-shrink:0;border:.5px solid rgba(124,58,237,.15);background:#1a1a2e;transition:transform .3s ease,border-color .3s}
   .sr-reel-card:hover{transform:scale(1.04);border-color:rgba(124,58,237,.45)}
   .sr-reel-card img{width:100%;height:100%;object-fit:cover;display:block;opacity:.6;filter:saturate(.65);transition:opacity .3s,filter .3s}
@@ -117,7 +126,6 @@ const css = `
   .sr-reel-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
   .sr-reel-card:hover .sr-reel-play{opacity:1}
 
-  /* Feature card */
   .sr-feature-item{position:relative;background:#0D0D1A;padding:36px 32px;transition:background .3s;cursor:default;overflow:hidden}
   .sr-feature-item::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 120% 80% at var(--mx,50%) var(--my,50%),rgba(124,58,237,.09),transparent 70%);opacity:0;transition:opacity .4s;pointer-events:none}
   .sr-feature-item:hover{background:#10102A}
@@ -127,7 +135,6 @@ const css = `
   .sr-feature-tag{font-size:11px;font-weight:500;color:#A78BFA;background:rgba(124,58,237,.1);padding:3px 10px;border-radius:50px;border:.5px solid rgba(124,58,237,.2);transition:background .2s,border-color .2s}
   .sr-feature-item:hover .sr-feature-tag{background:rgba(124,58,237,.2);border-color:rgba(124,58,237,.45)}
 
-  /* Step card */
   .sr-step-card{position:relative;background:#0D0D1A;border:.5px solid rgba(124,58,237,.2);border-radius:20px;padding:36px 28px;overflow:hidden;transition:transform .4s cubic-bezier(.16,1,.3,1),border-color .3s,box-shadow .4s}
   .sr-step-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#7C3AED,transparent);transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1)}
   .sr-step-card:hover{transform:translateY(-8px);border-color:rgba(124,58,237,.4);box-shadow:0 24px 60px rgba(124,58,237,.15)}
@@ -135,25 +142,20 @@ const css = `
   .sr-step-num{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;color:rgba(124,58,237,.12);line-height:1;margin-bottom:20px;letter-spacing:-.03em;transition:color .3s}
   .sr-step-card:hover .sr-step-num{color:rgba(124,58,237,.28)}
 
-  /* EA */
   .sr-ea-benefit{display:flex;align-items:center;gap:12px;font-size:15px;color:rgba(241,240,248,.55);transition:color .2s,transform .3s cubic-bezier(.16,1,.3,1)}
   .sr-ea-benefit:hover{color:#F1F0F8;transform:translateX(6px)}
   .sr-ea-check{flex-shrink:0;width:20px;height:20px;background:rgba(124,58,237,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;border:.5px solid rgba(124,58,237,.3);transition:background .2s,border-color .2s}
   .sr-ea-benefit:hover .sr-ea-check{background:rgba(124,58,237,.28);border-color:rgba(124,58,237,.6)}
 
-  /* Buttons */
   .sr-btn-primary{display:inline-flex;align-items:center;gap:8px;background:#7C3AED;color:white;padding:15px 30px;border-radius:50px;font-weight:600;font-size:16px;text-decoration:none;transition:background .2s,box-shadow .3s;box-shadow:0 0 40px rgba(124,58,237,.55)}
   .sr-btn-primary:hover{background:#6D28D9;box-shadow:0 0 60px rgba(124,58,237,.7)}
   .sr-btn-secondary{display:inline-flex;align-items:center;gap:8px;background:transparent;color:#F1F0F8;padding:15px 30px;border-radius:50px;font-weight:500;font-size:16px;text-decoration:none;border:.5px solid rgba(241,240,248,.2);transition:border-color .2s,background .2s}
   .sr-btn-secondary:hover{border-color:rgba(241,240,248,.45);background:rgba(255,255,255,.04)}
 
-  /* Stat gradient */
   .sr-stat-val{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,#fff 30%,#A78BFA);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
-  /* Cursor */
   .sr-cursor{position:fixed;pointer-events:none;z-index:9999;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.07) 0%,transparent 70%);transform:translate(-50%,-50%);mix-blend-mode:screen}
 
-  /* Inputs */
   .sr-input{width:100%;background:rgba(255,255,255,.04);border:.5px solid rgba(124,58,237,.2);border-radius:12px;padding:12px 16px;color:#F1F0F8;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .3s,background .3s,box-shadow .3s}
   .sr-input:focus{border-color:#7C3AED;background:rgba(124,58,237,.06);box-shadow:0 0 0 3px rgba(124,58,237,.12)}
   .sr-input::placeholder{color:rgba(241,240,248,.3)}
@@ -180,10 +182,18 @@ const css = `
   }
 `;
 
-/* ─────────────────────────────────────────
-   COMPONENT
-───────────────────────────────────────── */
+const LogoIcon = () => (
+  <div className="sr-logo-icon" style={{ width:34, height:34, background:'#7C3AED', borderRadius:8, display:'grid', placeItems:'center' }}>
+    <svg viewBox="0 0 20 20" style={{ width:18, height:18, fill:'white' }}>
+      <circle cx="5" cy="5" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/>
+      <circle cx="5" cy="10" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="15" cy="10" r="2"/>
+      <circle cx="5" cy="15" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="15" cy="15" r="2"/>
+    </svg>
+  </div>
+);
+
 export default function LandingPage() {
+  const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const rootRef   = useRef<HTMLDivElement>(null);
@@ -198,14 +208,12 @@ export default function LandingPage() {
   const [emailErr,   setEmailErr]   = useState(false);
   const [otpErr,     setOtpErr]     = useState(false);
 
-  /* ── Nav scroll ── */
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
-  /* ── Particles ── */
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
@@ -239,7 +247,6 @@ export default function LandingPage() {
     return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(raf); };
   }, []);
 
-  /* ── Cursor glow ── */
   useEffect(() => {
     const el = cursorRef.current; if (!el) return;
     let cx = innerWidth / 2, cy = innerHeight / 2, tx = cx, ty = cy, raf = 0;
@@ -250,7 +257,6 @@ export default function LandingPage() {
     return () => { document.removeEventListener('mousemove', mv); cancelAnimationFrame(raf); };
   }, []);
 
-  /* ── Feature spotlight ── */
   useEffect(() => {
     const cards = rootRef.current?.querySelectorAll<HTMLDivElement>('.sr-feature-item');
     if (!cards) return;
@@ -266,7 +272,6 @@ export default function LandingPage() {
     return () => hs.forEach(([c, fn]) => c.removeEventListener('mousemove', fn));
   }, []);
 
-  /* ── Scroll reveal ── */
   useEffect(() => {
     const els = rootRef.current?.querySelectorAll('.sr-reveal,.sr-reveal-l,.sr-reveal-r,.sr-reveal-s');
     if (!els) return;
@@ -278,7 +283,6 @@ export default function LandingPage() {
     return () => obs.disconnect();
   }, []);
 
-  /* ── Send OTP ── */
   const handleSendOTP = async () => {
     const email = emailRef.current?.value.trim() ?? '';
     if (!email || !email.includes('@')) {
@@ -287,19 +291,13 @@ export default function LandingPage() {
       setTimeout(() => { setEmailErr(false); emailRef.current?.classList.remove('sr-shake'); }, 800);
       return;
     }
-    setLoading(true);
-    setErrorMsg('');
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
-    });
+    setLoading(true); setErrorMsg('');
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
     setLoading(false);
     if (error) { setErrorMsg(error.message); return; }
-    setUserEmail(email);
-    setStep('otp');
+    setUserEmail(email); setStep('otp');
   };
 
-  /* ── Verify OTP ── */
   const handleVerifyOTP = async () => {
     const token = otpRef.current?.value.trim() ?? '';
     if (!token || token.length < 6) {
@@ -308,44 +306,37 @@ export default function LandingPage() {
       setTimeout(() => { setOtpErr(false); otpRef.current?.classList.remove('sr-shake'); }, 800);
       return;
     }
-    setLoading(true);
-    setErrorMsg('');
-    const { error } = await supabase.auth.verifyOtp({
-      email: userEmail,
-      token,
-      type: 'email',
-    });
+    setLoading(true); setErrorMsg('');
+    const { error } = await supabase.auth.verifyOtp({ email: userEmail, token, type: 'email' });
     setLoading(false);
     if (error) { setErrorMsg('Invalid code. Please try again.'); return; }
     setStep('done');
   };
 
-  /* ── Reel columns ── */
   const reelCols = Array.from({ length: 7 }, (_, i) => ({
     cards: [...[...REEL_DATA].sort(() => Math.random() - 0.5), ...[...REEL_DATA].sort(() => Math.random() - 0.5)],
     colIdx: i + 1,
     isEven: (i + 1) % 2 === 0,
   }));
 
-  /* ─────────── RENDER ─────────── */
+  // ── Title char animation: "Social" small + "Rum" big ──
+  const SOCIAL = 'Social';
+  const RUM    = 'Rum';
+
   return (
     <div ref={rootRef} className="sr-root">
       <style>{css}</style>
       <div ref={cursorRef} className="sr-cursor" />
       <canvas ref={canvasRef} style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none' }} />
 
-      {/* ══════════ NAVBAR ══════════ */}
+      {/* ══════ NAVBAR ══════ */}
       <nav className={`sr-nav sr-anim-nav${scrolled ? ' scrolled' : ''}`}>
-        <a href="#" style={{ display:'flex', alignItems:'center', gap:10, fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:700, color:'#F1F0F8', textDecoration:'none' }}>
-          <div className="sr-logo-icon" style={{ width:34, height:34, background:'#7C3AED', borderRadius:8, display:'grid', placeItems:'center' }}>
-            <svg viewBox="0 0 20 20" style={{ width:18, height:18, fill:'white' }}>
-              <circle cx="5" cy="5" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/>
-              <circle cx="5" cy="10" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="15" cy="10" r="2"/>
-              <circle cx="5" cy="15" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="15" cy="15" r="2"/>
-            </svg>
-          </div>
-          SocialRum
-        </a>
+        {/* Logo — click goes to app */}
+        <button className="sr-logo-btn" onClick={() => navigate('/')}>
+          <LogoIcon />
+          <span style={{ fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:700, color:'#F1F0F8' }}>SocialRum</span>
+        </button>
+
         <ul className="sr-nav-links" style={{ display:'flex', gap:36, listStyle:'none' }}>
           {['Features','How It Works','Early Access'].map(l => (
             <li key={l}><a href={`#${l.toLowerCase().replace(/ /g,'-')}`} className="sr-nav-link">{l}</a></li>
@@ -354,13 +345,14 @@ export default function LandingPage() {
         <a href="#early-access"
           style={{ background:'#7C3AED', color:'white', padding:'10px 22px', borderRadius:50, fontWeight:600, fontSize:14, textDecoration:'none', transition:'background .2s' }}
           onMouseEnter={e => (e.currentTarget.style.background = '#6D28D9')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#7C3AED')}
-        >Be the First to Know</a>
+          onMouseLeave={e => (e.currentTarget.style.background = '#7C3AED')}>
+          Be the First to Know
+        </a>
       </nav>
 
-      {/* ══════════ HERO ══════════ */}
+      {/* ══════ HERO ══════ */}
       <section style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
-        {/* Reels bg */}
+        {/* Reel bg */}
         <div style={{ position:'absolute', inset:0, display:'flex', gap:14, padding:'0 8px', overflow:'hidden', zIndex:1 }}>
           {reelCols.map(col => (
             <div key={col.colIdx} className={`sr-col-${col.colIdx}`} style={{ flex:1, display:'flex', flexDirection:'column', gap:14, minWidth:0 }}>
@@ -393,21 +385,36 @@ export default function LandingPage() {
           'linear-gradient(to bottom,rgba(6,6,15,.9) 0%,rgba(6,6,15,.05) 18%,rgba(6,6,15,.05) 82%,rgba(6,6,15,.9) 100%)',
         ].join(',') }} />
 
-        {/* Horizon glow */}
         <div className="sr-anim-glow" style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', width:800, height:3, background:'#7C3AED', boxShadow:'0 0 80px 40px rgba(124,58,237,.35),0 0 220px 80px rgba(124,58,237,.1)', zIndex:3 }} />
 
         {/* Hero content */}
-        <div style={{ position:'relative', zIndex:4, textAlign:'center', maxWidth:800, padding:'0 24px' }}>
+        <div style={{ position:'relative', zIndex:4, textAlign:'center', maxWidth:860, padding:'0 24px' }}>
           <div className="sr-anim-badge" style={{ display:'inline-flex', alignItems:'center', gap:8, border:'.5px solid rgba(124,58,237,.2)', borderRadius:50, padding:'6px 16px 6px 8px', fontSize:12, fontWeight:500, color:'#A78BFA', background:'rgba(124,58,237,.08)', marginBottom:32, letterSpacing:'.05em', textTransform:'uppercase' }}>
             <span className="sr-anim-pulse" style={{ width:6, height:6, background:'#A78BFA', borderRadius:'50%' }} />
             Now Accepting Early Access
           </div>
 
-          <h1 aria-label={TITLE} style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(60px,9vw,108px)', fontWeight:800, lineHeight:1, letterSpacing:'-.03em', marginBottom:4, perspective:600 }}>
-            {[...TITLE].map((char, i) => (
-              <span key={i} className="sr-title-char" style={{ color: i < PURPLE_END ? '#A78BFA' : '#F1F0F8', animationDelay:`${(0.6 + i * 0.07).toFixed(2)}s` }}>{char}</span>
-            ))}
-          </h1>
+          {/* ── Two-line title: "Social" small top, "Rum" big below ── */}
+          <div className="sr-hero-title" aria-label="SocialRum">
+            {/* "Social" — smaller, faded */}
+            <div className="sr-hero-social">
+              {[...SOCIAL].map((char, i) => (
+                <span key={i} className="sr-title-char"
+                  style={{ color:'rgba(167,139,250,0.55)', animationDelay:`${(0.6 + i * 0.06).toFixed(2)}s` }}>
+                  {char}
+                </span>
+              ))}
+            </div>
+            {/* "Rum" — bigger, bright purple */}
+            <div className="sr-hero-rum">
+              {[...RUM].map((char, i) => (
+                <span key={i} className="sr-title-char"
+                  style={{ color:'#A78BFA', animationDelay:`${(0.9 + i * 0.08).toFixed(2)}s` }}>
+                  {char}
+                </span>
+              ))}
+            </div>
+          </div>
 
           <p className="sr-anim-sub" style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(20px,3.2vw,42px)', fontWeight:700, color:'#F1F0F8', letterSpacing:'-.02em', marginBottom:28, opacity:0 }}>
             Create Content That Actually Gets Discovered
@@ -422,7 +429,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════ STATS ══════════ */}
+      {/* ══════ STATS ══════ */}
       <div style={{ background:'#0D0D1A', borderTop:'.5px solid rgba(124,58,237,.2)', borderBottom:'.5px solid rgba(124,58,237,.2)', padding:'40px 32px', display:'flex', justifyContent:'center', gap:80, flexWrap:'wrap', position:'relative', zIndex:5 }}>
         {STATS.map((s, i) => (
           <div key={s.label} className={`sr-reveal sr-d${i+1}`} style={{ textAlign:'center' }}>
@@ -432,7 +439,7 @@ export default function LandingPage() {
         ))}
       </div>
 
-      {/* ══════════ FEATURES ══════════ */}
+      {/* ══════ FEATURES ══════ */}
       <section id="features" style={{ maxWidth:1100, margin:'0 auto', padding:'120px 32px 100px', position:'relative', zIndex:5 }}>
         <div style={{ marginBottom:64 }}>
           <p className="sr-reveal" style={{ fontSize:12, fontWeight:600, letterSpacing:'.12em', textTransform:'uppercase', color:'#A78BFA', marginBottom:16 }}>Platform Features</p>
@@ -468,7 +475,7 @@ export default function LandingPage() {
 
       <div style={{ height:'.5px', background:'rgba(124,58,237,.2)', margin:'0 32px', position:'relative', zIndex:5 }} />
 
-      {/* ══════════ HOW IT WORKS ══════════ */}
+      {/* ══════ HOW IT WORKS ══════ */}
       <section id="how-it-works" style={{ maxWidth:1100, margin:'0 auto', padding:'100px 32px', position:'relative', zIndex:5 }}>
         <p className="sr-reveal" style={{ fontSize:12, fontWeight:600, letterSpacing:'.12em', textTransform:'uppercase', color:'#A78BFA', marginBottom:16 }}>How It Works</p>
         <h2 className="sr-reveal sr-d1" style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(28px,4vw,44px)', fontWeight:700, lineHeight:1.15, letterSpacing:'-.02em', color:'#F1F0F8', marginBottom:16 }}>From zero to algorithm-ready<br/>in one session.</h2>
@@ -488,11 +495,9 @@ export default function LandingPage() {
 
       <div style={{ height:'.5px', background:'rgba(124,58,237,.2)', margin:'0 32px', position:'relative', zIndex:5 }} />
 
-      {/* ══════════ EARLY ACCESS ══════════ */}
+      {/* ══════ EARLY ACCESS ══════ */}
       <div id="early-access" style={{ position:'relative', zIndex:5 }}>
         <div className="sr-ea-grid" style={{ maxWidth:1100, margin:'0 auto', padding:'100px 32px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:64, alignItems:'center' }}>
-
-          {/* Left */}
           <div className="sr-reveal-l">
             <p style={{ fontSize:12, fontWeight:600, letterSpacing:'.12em', textTransform:'uppercase', color:'#A78BFA', marginBottom:16 }}>Limited Spots Remaining</p>
             <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(28px,4vw,44px)', fontWeight:700, lineHeight:1.15, letterSpacing:'-.02em', color:'#F1F0F8', marginBottom:16 }}>Be the First to<br/>Know &amp; Create.</h2>
@@ -501,9 +506,7 @@ export default function LandingPage() {
               {['Beta Access — Use all 5 tools before public launch','Founding Creator Badge — Exclusive profile recognition','Free Early Access Tier — No credit card required','Priority support from the SocialRum team'].map(b => (
                 <div key={b} className="sr-ea-benefit">
                   <div className="sr-ea-check">
-                    <svg viewBox="0 0 12 12" style={{ width:10, height:10 }} fill="none" strokeWidth={2.5} stroke="#A78BFA" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="2,6 5,9 10,3"/>
-                    </svg>
+                    <svg viewBox="0 0 12 12" style={{ width:10, height:10 }} fill="none" strokeWidth={2.5} stroke="#A78BFA" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
                   </div>
                   {b}
                 </div>
@@ -511,123 +514,71 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right — form card */}
           <div className="sr-reveal-r" style={{ position:'relative', background:'#0D0D1A', border:'.5px solid rgba(124,58,237,.2)', borderRadius:24, padding:'40px 36px', overflow:'hidden', transition:'border-color .3s,box-shadow .4s' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(124,58,237,.4)'; e.currentTarget.style.boxShadow='0 0 80px rgba(124,58,237,.1)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(124,58,237,.2)'; e.currentTarget.style.boxShadow='none'; }}
-          >
-            {/* Floating orb */}
+            onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(124,58,237,.2)'; e.currentTarget.style.boxShadow='none'; }}>
             <div className="sr-anim-orb" style={{ position:'absolute', top:-80, right:-80, width:220, height:220, background:'radial-gradient(circle,rgba(124,58,237,.15),transparent 70%)', borderRadius:'50%', pointerEvents:'none' }} />
 
-            {/* ── DONE ── */}
             {step === 'done' && (
               <div className="sr-fade-in" style={{ textAlign:'center', padding:'20px 0' }}>
                 <div style={{ width:64, height:64, background:'linear-gradient(135deg,#7C3AED,#A78BFA)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
                   <svg viewBox="0 0 24 24" style={{ width:30, height:30, fill:'none', stroke:'white', strokeWidth:2.5, strokeLinecap:'round', strokeLinejoin:'round' }}><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
                 <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:'#F1F0F8', marginBottom:8 }}>You're In! 🎉</h3>
-                <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', lineHeight:1.6, marginBottom:20 }}>
-                  Welcome to SocialRum early access.<br/>We'll notify you the moment we launch.
-                </p>
+                <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', lineHeight:1.6, marginBottom:20 }}>Welcome to SocialRum early access.<br/>We'll notify you the moment we launch.</p>
                 <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(124,58,237,.1)', border:'.5px solid rgba(124,58,237,.3)', borderRadius:50, padding:'8px 18px', fontSize:13, color:'#A78BFA', fontWeight:500 }}>
                   ✅ Verified — {userEmail}
                 </div>
               </div>
             )}
 
-            {/* ── OTP STEP ── */}
             {step === 'otp' && (
               <div className="sr-fade-in">
                 <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:'#F1F0F8', marginBottom:6, position:'relative' }}>Check your email</h3>
-                <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', marginBottom:6, lineHeight:1.5, position:'relative' }}>
-                  We sent a 6-digit code to
-                </p>
+                <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', marginBottom:6, lineHeight:1.5, position:'relative' }}>We sent a 6-digit code to</p>
                 <p style={{ fontSize:14, color:'#A78BFA', fontWeight:600, marginBottom:28 }}>{userEmail}</p>
-
-                {/* Perks */}
                 <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:28, padding:18, background:'rgba(124,58,237,.05)', borderRadius:12, border:'.5px solid rgba(124,58,237,.12)', position:'relative' }}>
                   {['Beta Access to all creator tools','Founding Creator Badge','Free forever tier guaranteed'].map((p, i) => (
                     <div key={p} style={{ display:'flex', alignItems:'center', gap:10, fontSize:13, color:'rgba(241,240,248,.55)' }}>
-                      <span className="sr-anim-pulse" style={{ width:5, height:5, background:'#A78BFA', borderRadius:'50%', flexShrink:0, animationDelay:`${i*0.6}s` }} />
-                      {p}
+                      <span className="sr-anim-pulse" style={{ width:5, height:5, background:'#A78BFA', borderRadius:'50%', flexShrink:0, animationDelay:`${i*0.6}s` }} />{p}
                     </div>
                   ))}
                 </div>
-
                 <div style={{ marginBottom:12 }}>
-                  <input
-                    ref={otpRef}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="Enter 6-digit code"
-                    className={`sr-otp-input${otpErr ? ' error' : ''}`}
-                    onKeyDown={e => { if (e.key === 'Enter') handleVerifyOTP(); }}
-                  />
+                  <input ref={otpRef} type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit code" className={`sr-otp-input${otpErr ? ' error' : ''}`} onKeyDown={e => { if (e.key === 'Enter') handleVerifyOTP(); }} />
                 </div>
-
-                {errorMsg && (
-                  <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>
-                )}
-
-                <button onClick={handleVerifyOTP} disabled={loading} className="sr-ea-btn">
-                  {loading ? 'Verifying...' : 'Verify & Get Access →'}
-                </button>
-
-                <button onClick={() => { setStep('email'); setErrorMsg(''); }} className="sr-back-btn">
-                  ← Use a different email
-                </button>
+                {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
+                <button onClick={handleVerifyOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Verifying...' : 'Verify & Get Access →'}</button>
+                <button onClick={() => { setStep('email'); setErrorMsg(''); }} className="sr-back-btn">← Use a different email</button>
               </div>
             )}
 
-            {/* ── EMAIL STEP ── */}
             {step === 'email' && (
               <div>
                 <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:'#F1F0F8', marginBottom:6, position:'relative' }}>Free Early Access</h3>
-                <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', marginBottom:28, lineHeight:1.5, position:'relative' }}>
-                  Enter your email — we'll send you a verification code.
-                </p>
-
-                {/* Perks */}
+                <p style={{ fontSize:14, color:'rgba(241,240,248,.55)', marginBottom:28, lineHeight:1.5, position:'relative' }}>Enter your email — we'll send you a verification code.</p>
                 <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:28, padding:18, background:'rgba(124,58,237,.05)', borderRadius:12, border:'.5px solid rgba(124,58,237,.12)', position:'relative' }}>
                   {['Beta Access to all creator tools','Founding Creator Badge','Free forever tier guaranteed'].map((p, i) => (
                     <div key={p} style={{ display:'flex', alignItems:'center', gap:10, fontSize:13, color:'rgba(241,240,248,.55)' }}>
-                      <span className="sr-anim-pulse" style={{ width:5, height:5, background:'#A78BFA', borderRadius:'50%', flexShrink:0, animationDelay:`${i*0.6}s` }} />
-                      {p}
+                      <span className="sr-anim-pulse" style={{ width:5, height:5, background:'#A78BFA', borderRadius:'50%', flexShrink:0, animationDelay:`${i*0.6}s` }} />{p}
                     </div>
                   ))}
                 </div>
-
                 <div style={{ marginBottom:12 }}>
-                  <input
-                    ref={emailRef}
-                    type="email"
-                    placeholder="you@example.com"
-                    className={`sr-input${emailErr ? ' error' : ''}`}
-                    onKeyDown={e => { if (e.key === 'Enter') handleSendOTP(); }}
-                  />
+                  <input ref={emailRef} type="email" placeholder="you@example.com" className={`sr-input${emailErr ? ' error' : ''}`} onKeyDown={e => { if (e.key === 'Enter') handleSendOTP(); }} />
                 </div>
-
-                {errorMsg && (
-                  <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>
-                )}
-
-                <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">
-                  {loading ? 'Sending code...' : 'Get Early Access →'}
-                </button>
-
-                <p style={{ fontSize:12, color:'rgba(241,240,248,.3)', textAlign:'center' }}>
-                  No spam. No credit card. Unsubscribe anytime.
-                </p>
+                {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
+                <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Sending code...' : 'Get Early Access →'}</button>
+                <p style={{ fontSize:12, color:'rgba(241,240,248,.3)', textAlign:'center' }}>No spam. No credit card. Unsubscribe anytime.</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ══════════ FOOTER ══════════ */}
+      {/* ══════ FOOTER ══════ */}
       <footer style={{ background:'#0D0D1A', borderTop:'.5px solid rgba(124,58,237,.2)', padding:'40px 48px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24, position:'relative', zIndex:5 }}>
-        <a href="#" style={{ display:'flex', alignItems:'center', gap:10, fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#F1F0F8', textDecoration:'none' }}>
+        <button className="sr-logo-btn" onClick={() => navigate('/')}>
           <div style={{ width:30, height:30, background:'#7C3AED', borderRadius:7, display:'grid', placeItems:'center' }}>
             <svg viewBox="0 0 20 20" style={{ width:16, height:16, fill:'white' }}>
               <circle cx="5" cy="5" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/>
@@ -635,15 +586,14 @@ export default function LandingPage() {
               <circle cx="5" cy="15" r="2"/><circle cx="10" cy="15" r="2"/><circle cx="15" cy="15" r="2"/>
             </svg>
           </div>
-          SocialRum
-        </a>
+          <span style={{ fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#F1F0F8' }}>SocialRum</span>
+        </button>
         <ul style={{ display:'flex', gap:28, listStyle:'none', flexWrap:'wrap' }}>
           {[['Features','#features'],['How It Works','#how-it-works'],['Early Access','#early-access'],['Contact','mailto:hello@socialrum.com']].map(([label,href]) => (
             <li key={label}>
               <a href={href} style={{ color:'rgba(241,240,248,.55)', textDecoration:'none', fontSize:14, transition:'color .2s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#F1F0F8')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(241,240,248,.55)')}
-              >{label}</a>
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(241,240,248,.55)')}>{label}</a>
             </li>
           ))}
         </ul>
