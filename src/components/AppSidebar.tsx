@@ -10,7 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
 const PRIMARY = "#7C3AED";
-const SECONDARY = "#6D28D9";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
 const PRIMARY_CONTAINER = "#ede9fe";
 const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
@@ -44,7 +43,6 @@ export default function AppSidebar() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  // Listen for platform changes from Index page
   useEffect(() => {
     const handleCustom = (e: any) => setPlatform(e.detail);
     const handleStorage = () => {
@@ -65,7 +63,7 @@ export default function AppSidebar() {
     setPlatform(p);
     localStorage.setItem("platform", p);
     window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-     navigate("/home");
+    navigate("/home");
   };
 
   const isYoutubePath = location.pathname.startsWith("/youtube");
@@ -84,12 +82,12 @@ export default function AppSidebar() {
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 h-16 border-b border-border">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: PRIMARY_GRAD }}>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: ag }}>
           <img src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
         {!collapsed && (
-          <span className="font-bold text-lg tracking-tight" style={{ fontFamily: 'Montserrat, sans-serif', color: PRIMARY }}>
+          <span className="font-bold text-lg tracking-tight" style={{ fontFamily: 'Montserrat, sans-serif', color: ac }}>
             SocialRum
           </span>
         )}
@@ -102,20 +100,22 @@ export default function AppSidebar() {
       {/* Platform toggle */}
       {!collapsed && (
         <div className="px-3 pt-4 pb-2">
-          <div className="flex items-center gap-1 p-1 rounded-xl" >
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-muted">
+            {/* Instagram button — always violet when active */}
             <button onClick={() => switchPlatform("instagram")}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
               style={effectivePlatform === "instagram"
-                ? { background: PRIMARY_GRAD, color: '#fff', boxShadow: '0 2px 8px rgba(36,56,156,0.3)' }
-                : { color: '#757684' }}>
+                ? { background: PRIMARY_GRAD, color: '#fff', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }
+                : { color: 'hsl(var(--muted-foreground))' }}>
               <Instagram className="w-3.5 h-3.5" />
               Instagram
             </button>
+            {/* YouTube button — always red when active */}
             <button onClick={() => switchPlatform("youtube")}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
               style={effectivePlatform === "youtube"
-                ? { background: PRIMARY_GRAD, color: '#fff', boxShadow: '0 2px 8px rgba(36,56,156,0.3)' }
-                : { color: '#757684' }}>
+                ? { background: YT_GRAD, color: '#fff', boxShadow: '0 2px 8px rgba(255,0,0,0.35)' }
+                : { color: 'hsl(var(--muted-foreground))' }}>
               <Youtube className="w-3.5 h-3.5" />
               YouTube
             </button>
@@ -128,7 +128,7 @@ export default function AppSidebar() {
         <div className="flex justify-center pt-3 pb-1">
           <button onClick={() => switchPlatform(effectivePlatform === "instagram" ? "youtube" : "instagram")}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-            style={{ background: PRIMARY_GRAD }}>
+            style={{ background: ag }}>
             {effectivePlatform === "instagram"
               ? <Instagram className="w-4 h-4 text-white" />
               : <Youtube className="w-4 h-4 text-white" />}
@@ -138,7 +138,7 @@ export default function AppSidebar() {
 
       {/* Section label */}
       {!collapsed && (
-        <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#c5c5d4' }}>
+        <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
           {effectivePlatform === "instagram" ? "Instagram" : "YouTube"}
         </p>
       )}
@@ -153,13 +153,13 @@ export default function AppSidebar() {
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={active
                 ? { background: acContainer, color: ac }
-                : { color: '#454652' }}
+                : { color: 'hsl(var(--foreground)/0.7)' }}
               onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}>
-              <item.icon className="w-4 h-4 shrink-0" style={active ? { color: ac } : { color: '#757684' }} />
+              <item.icon className="w-4 h-4 shrink-0" style={active ? { color: ac } : { color: 'hsl(var(--muted-foreground))' }} />
               {!collapsed && <span>{item.label}</span>}
               {active && !collapsed && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ag }} />
+                <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ac }} />
               )}
             </button>
           );
@@ -167,7 +167,7 @@ export default function AppSidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div className="p-2 border-t space-y-1" >
+      <div className="p-2 border-t border-border space-y-1">
 
         {/* Theme toggle */}
         <button onClick={toggleTheme}
@@ -199,7 +199,7 @@ export default function AppSidebar() {
             onMouseEnter={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
             onMouseLeave={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = ''; }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-              style={{ background: PRIMARY_GRAD }}>{avatarInitials}</div>
+              style={{ background: ag }}>{avatarInitials}</div>
             {!collapsed && (
               <>
                 <div className="flex-1 min-w-0 text-left">
@@ -217,7 +217,7 @@ export default function AppSidebar() {
               <div className="p-3 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: PRIMARY_GRAD }}>{avatarInitials}</div>
+                    style={{ background: ag }}>{avatarInitials}</div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
