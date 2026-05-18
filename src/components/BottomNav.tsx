@@ -4,8 +4,8 @@ import { LayoutDashboard, TrendingUp, Newspaper, FileText, Settings, Youtube, In
 
 const IG_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
 const IG_COLOR = "#7C3AED";
-const YT_GRAD = "linear-gradient(135deg, #c62828, #e53935)";
-const YT_COLOR = "#c62828";
+const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
+const YT_COLOR = "#ff0000";
 
 const instagramNav = [
   { icon: LayoutDashboard, label: "Home", path: "/home" },

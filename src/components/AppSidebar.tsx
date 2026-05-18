@@ -13,8 +13,8 @@ const PRIMARY = "#7C3AED";
 const SECONDARY = "#6D28D9";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
 const PRIMARY_CONTAINER = "#ede9fe";
-const YT_GRAD = "linear-gradient(135deg, #c62828, #e53935)";
-const YT_COLOR = "#c62828";
+const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
+const YT_COLOR = "#ff0000";
 const YT_CONTAINER = "#ffebee";
 
 const instagramNav = [
