@@ -152,8 +152,8 @@ const HeroTitle = () => {
           style={{ position:'absolute', inset:0, borderRadius:50, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)' }} />
         {/* Scanning highlight */}
         <motion.div
-          animate={{ x:['-100%','200%'] }}
-          transition={{ duration:2.5, repeat:Infinity, repeatDelay:1, ease:'easeInOut' }}
+         animate={{ x:['-100%','200%'] }}
+transition={{ duration:1.8, repeat:Infinity, repeatDelay:0, ease:'linear' }}
           style={{ position:'absolute', top:0, bottom:0, width:'30%', borderRadius:50, background:'linear-gradient(to right,transparent,rgba(255,255,255,0.8),transparent)' }} />
       </motion.div>
     </div>
