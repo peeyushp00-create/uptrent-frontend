@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 
 const FEATURES = [
   { num: '01', title: 'Creator News Feed', desc: 'Curated industry news, platform updates, and creator economy signals — filtered for what actually matters to your niche.', tags: ['YouTube', 'Instagram', 'TikTok'] },
@@ -62,17 +62,39 @@ const TRENDING_NICHES = [
   { name: 'Fitness', growth: '+18%', color: '#34d399' },
 ];
 
-const useMouseSpotlight = () => {
-  const ref = useRef<HTMLElement>(null);
+const useMouseSpotlight = (ref: React.RefObject<HTMLElement>) => {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
-    const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
-    ref.current.style.setProperty('--mx', `${x}%`);
-    ref.current.style.setProperty('--my', `${y}%`);
+    ref.current.style.setProperty('--mx', `${((e.clientX - rect.left) / rect.width * 100).toFixed(1)}%`);
+    ref.current.style.setProperty('--my', `${((e.clientY - rect.top) / rect.height * 100).toFixed(1)}%`);
   };
-  return { ref, onMouseMove: handleMouseMove };
+  return handleMouseMove;
+};
+
+// Tilt card component
+const TiltCard = ({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-0.5, 0.5], [8, -8]);
+  const rotateY = useTransform(x, [-0.5, 0.5], [-8, 8]);
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top) / rect.height - 0.5);
+    ref.current.style.setProperty('--mx', `${((e.clientX - rect.left) / rect.width * 100).toFixed(1)}%`);
+    ref.current.style.setProperty('--my', `${((e.clientY - rect.top) / rect.height * 100).toFixed(1)}%`);
+  };
+  const handleMouseLeave = () => { x.set(0); y.set(0); };
+  return (
+    <motion.div ref={ref} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+      style={{ rotateX, rotateY, transformStyle:'preserve-3d', transformPerspective:800, ...style }}
+      className={className}>
+      {children}
+    </motion.div>
+  );
 };
 
 const css = `
@@ -222,7 +244,7 @@ export default function LandingPage() {
             style={{ display:'flex', flexDirection:'column', gap:12 }}>
 
             {/* Top creators card */}
-            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 20px 40px rgba(0,0,0,0.5)' }}>
+            <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 20px 40px rgba(0,0,0,0.5)', cursor:'default' }} className="sr-spotlight">
               <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>Top Creator Niches</p>
               {TRENDING_NICHES.map((niche, i) => (
                 <div key={niche.name} style={{ marginBottom:12 }}>
@@ -236,10 +258,10 @@ export default function LandingPage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </TiltCard>
 
             {/* Trending niches */}
-            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)' }}>
+            <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', cursor:'default' }} className="sr-spotlight">
               <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>Trending Niches</p>
               {TRENDING_NICHES.map((niche, i) => (
                 <motion.div key={niche.name}
@@ -257,10 +279,10 @@ export default function LandingPage() {
                   <span style={{ fontSize:12, fontWeight:700, color: niche.color }}>{niche.growth}</span>
                 </motion.div>
               ))}
-            </div>
+            </TiltCard>
 
             {/* AI Ideas card */}
-            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:20, padding:18, backdropFilter:'blur(20px)' }}>
+            <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:20, padding:18, backdropFilter:'blur(20px)', cursor:'default' }} className="sr-spotlight">
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
                 <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em' }}>AI Script Ideas</p>
                 <motion.div animate={{ rotate:360 }} transition={{ duration:4, repeat:Infinity, ease:'linear' }}
@@ -275,7 +297,7 @@ export default function LandingPage() {
                   <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)', fontFamily:'DM Sans,sans-serif', lineHeight:1.3 }}>{idea}</span>
                 </motion.div>
               ))}
-            </div>
+            </TiltCard>
           </motion.div>
 
           {/* ── CENTER: Hero text ── */}
@@ -373,7 +395,7 @@ export default function LandingPage() {
 
           {/* ── RIGHT: Dashboard card ── */}
           <motion.div initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.2 }}>
-            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:28, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 30px 60px rgba(0,0,0,0.6)', position:'relative', overflow:'hidden' }}>
+            <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:28, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 30px 60px rgba(0,0,0,0.6)', position:'relative', overflow:'hidden', cursor:'default' }} className="sr-spotlight">
               <div style={{ position:'absolute', top:-30, right:-30, width:96, height:96, background:'rgba(139,92,246,0.12)', filter:'blur(20px)', borderRadius:'50%', pointerEvents:'none' }} />
               <div style={{ display:'flex', alignItems:'center', gap:8, color:'#a78bfa', fontSize:12, fontWeight:700, marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>
                 <motion.div animate={{ opacity:[1,0.3,1] }} transition={{ duration:1.5, repeat:Infinity }}
@@ -421,7 +443,7 @@ export default function LandingPage() {
                   <span>Low</span><span style={{ color:'#a78bfa', fontWeight:600 }}>85/100</span><span>High</span>
                 </div>
               </div>
-            </div>
+            </TiltCard>
           </motion.div>
 
         </div>
@@ -443,12 +465,15 @@ export default function LandingPage() {
         <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(24px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>Every tool a serious creator needs.</motion.h2>
         <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</motion.p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:16 }}>
-          {FEATURES.map((f, i) => {
-            const spotlight = useMouseSpotlight();
-            return (
+          {FEATURES.map((f, i) => (
             <motion.div key={f.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.08 }}
-              ref={spotlight.ref as any} onMouseMove={spotlight.onMouseMove}
-              className="sr-feature-item sr-spotlight">
+              className="sr-feature-item sr-spotlight"
+              onMouseMove={(e) => {
+                const el = e.currentTarget;
+                const r = el.getBoundingClientRect();
+                el.style.setProperty('--mx', `${((e.clientX-r.left)/r.width*100).toFixed(1)}%`);
+                el.style.setProperty('--my', `${((e.clientY-r.top)/r.height*100).toFixed(1)}%`);
+              }}>
               <div style={{ width:40, height:40, borderRadius:12, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16, fontSize:11, fontWeight:700, color:'#a78bfa', position:'relative', zIndex:1 }}>{f.num}</div>
               <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:10, position:'relative', zIndex:1 }}>{f.title}</h3>
               <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:16, fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{f.desc}</p>
@@ -456,8 +481,7 @@ export default function LandingPage() {
                 {f.tags.map(tag => <span key={tag} className="sr-feature-tag">{tag}</span>)}
               </div>
             </motion.div>
-            );
-          })}
+          ))}
           <div style={{ border:'1px solid rgba(255,255,255,0.05)', background:'rgba(255,255,255,0.01)', borderRadius:24, display:'flex', alignItems:'center', justifyContent:'center', minHeight:200, textAlign:'center' }}>
             <div>
               <p style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'rgba(255,255,255,0.2)', marginBottom:8 }}>More coming</p>
@@ -473,20 +497,22 @@ export default function LandingPage() {
         <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(24px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>From zero to algorithm-ready in one session.</motion.h2>
         <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>No complex setup. No learning curve. Connect your channels and SocialRum immediately starts surfacing what to create, how to optimize it, and how to rank it.</motion.p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:20 }}>
-          {STEPS.map((s, i) => {
-            const spotlight = useMouseSpotlight();
-            return (
+          {STEPS.map((s, i) => (
             <motion.div key={s.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.1 }}
-              ref={spotlight.ref as any} onMouseMove={spotlight.onMouseMove}
-              className="sr-step-card sr-spotlight">
+              className="sr-step-card sr-spotlight"
+              onMouseMove={(e) => {
+                const el = e.currentTarget;
+                const r = el.getBoundingClientRect();
+                el.style.setProperty('--mx', `${((e.clientX-r.left)/r.width*100).toFixed(1)}%`);
+                el.style.setProperty('--my', `${((e.clientY-r.top)/r.height*100).toFixed(1)}%`);
+              }}>
               <div className="sr-step-num">{s.num}</div>
               <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:8, position:'relative', zIndex:1 }}>{s.title}</h3>
               <p style={{ fontSize:12, fontWeight:600, color:'#8b5cf6', marginBottom:12, fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{s.sub}</p>
               <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{s.desc}</p>
               <p style={{ marginTop:16, fontSize:11, color:'rgba(139,92,246,0.5)', fontStyle:'italic', fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{s.note}</p>
             </motion.div>
-            );
-          })}
+          ))}
         </div>
       </section>
 
