@@ -55,16 +55,6 @@ const TypingScript = () => {
 };
 
 // Left analytics card data
-const ANALYTICS_BARS = [
-  { label: 'Mon', value: 45, color: '#6d28d9' },
-  { label: 'Tue', value: 72, color: '#7c3aed' },
-  { label: 'Wed', value: 58, color: '#6d28d9' },
-  { label: 'Thu', value: 90, color: '#8b5cf6' },
-  { label: 'Fri', value: 65, color: '#7c3aed' },
-  { label: 'Sat', value: 82, color: '#a855f7' },
-  { label: 'Sun', value: 77, color: '#7c3aed' },
-];
-
 const TRENDING_NICHES = [
   { name: 'Finance', growth: '+34%', color: '#a78bfa' },
   { name: 'AI & Tech', growth: '+28%', color: '#818cf8' },
@@ -214,26 +204,21 @@ export default function LandingPage() {
           <motion.div initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.3 }}
             style={{ display:'flex', flexDirection:'column', gap:12 }}>
 
-            {/* Views chart card */}
+            {/* Top creators card */}
             <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 20px 40px rgba(0,0,0,0.5)' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-                <div>
-                  <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>Weekly Views</p>
-                  <motion.p animate={{ opacity:[1,0.6,1] }} transition={{ duration:3, repeat:Infinity }}
-                    style={{ fontFamily:'Syne,sans-serif', fontSize:26, fontWeight:800, color:'#fff' }}>2.4M</motion.p>
+              <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>Top Creator Niches</p>
+              {TRENDING_NICHES.map((niche, i) => (
+                <div key={niche.name} style={{ marginBottom:12 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
+                    <span style={{ fontSize:12, color:'#fff', fontFamily:'DM Sans,sans-serif' }}>{niche.name}</span>
+                    <span style={{ fontSize:11, fontWeight:700, color: niche.color }}>{niche.growth}</span>
+                  </div>
+                  <div style={{ width:'100%', height:4, borderRadius:50, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
+                    <motion.div initial={{ width:0 }} whileInView={{ width: `${[82,74,65,58][i]}%` }} viewport={{ once:true }} transition={{ duration:1, delay: i*0.15, ease:'easeOut' }}
+                      style={{ height:'100%', borderRadius:50, background: niche.color, boxShadow:`0 0 8px ${niche.color}60` }} />
+                  </div>
                 </div>
-                <div style={{ background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.2)', borderRadius:50, padding:'4px 10px', fontSize:11, color:'#34d399', fontWeight:600 }}>↑ 18.3%</div>
-              </div>
-              {/* Bar chart */}
-              <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:60 }}>
-                {ANALYTICS_BARS.map((bar, i) => (
-                  <motion.div key={bar.label} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                    <motion.div initial={{ height:0 }} animate={{ height: bar.value * 0.55 }} transition={{ duration:1, delay: i * 0.1, ease:'easeOut' }}
-                      style={{ width:'100%', background: i === 3 ? 'linear-gradient(to top,#7c3aed,#a855f7)' : 'rgba(139,92,246,0.3)', borderRadius:'4px 4px 0 0', boxShadow: i === 3 ? '0 0 12px rgba(139,92,246,0.5)' : 'none' }} />
-                    <span style={{ fontSize:8, color:'rgba(255,255,255,0.3)', fontFamily:'DM Sans,sans-serif' }}>{bar.label}</span>
-                  </motion.div>
-                ))}
-              </div>
+              ))}
             </div>
 
             {/* Trending niches */}
@@ -257,17 +242,22 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Live indicator */}
-            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:20, padding:'14px 18px', backdropFilter:'blur(20px)', display:'flex', alignItems:'center', gap:12 }}>
-              <div style={{ position:'relative', width:10, height:10, flexShrink:0 }}>
-                <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:'#34d399', opacity:0.4 }} className="sr-ping" />
-                <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:'#34d399' }} />
+            {/* AI Ideas card */}
+            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:20, padding:18, backdropFilter:'blur(20px)' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em' }}>AI Script Ideas</p>
+                <motion.div animate={{ rotate:360 }} transition={{ duration:4, repeat:Infinity, ease:'linear' }}
+                  style={{ width:16, height:16, borderRadius:'50%', border:'2px solid transparent', borderTopColor:'#8b5cf6', borderRightColor:'#8b5cf6' }} />
               </div>
-              <div>
-                <p style={{ fontSize:12, fontWeight:600, color:'#fff', fontFamily:'DM Sans,sans-serif' }}>Live trend updates</p>
-                <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)', fontFamily:'DM Sans,sans-serif' }}>Every 15 minutes</p>
-              </div>
-              <div style={{ marginLeft:'auto', fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:'DM Sans,sans-serif' }}>247 creators</div>
+              {['Top 5 Finance Tips for 2026', 'React to Latest IPL News', 'AI Tools Every Creator Needs'].map((idea, i) => (
+                <motion.div key={idea} initial={{ opacity:0, x:-10 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ delay: i*0.15 }}
+                  style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                  <div style={{ width:18, height:18, borderRadius:6, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.25)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <span style={{ fontSize:9, color:'#a78bfa', fontWeight:700 }}>{i+1}</span>
+                  </div>
+                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)', fontFamily:'DM Sans,sans-serif', lineHeight:1.3 }}>{idea}</span>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
 
@@ -280,7 +270,7 @@ export default function LandingPage() {
 
             <motion.div initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.1 }} style={{ position:'relative', marginBottom:8 }}>
               <h1 style={{ margin:0, lineHeight:1 }}>
-                <span style={{ fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', color:'#a78bfa' }}>Social</span>
+                <span style={{ fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', color:'#5b21b6' }}>Social</span>
                 <span style={{ fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Rum</span>
               </h1>
               <div style={{ width:'85%', height:2, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)', margin:'8px auto 0', borderRadius:50, boxShadow:'0 0 20px rgba(139,92,246,0.7)' }} />
