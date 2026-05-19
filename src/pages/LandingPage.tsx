@@ -263,41 +263,95 @@ export default function LandingPage() {
 
           {/* ── CENTER: Hero text ── */}
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center' }}>
-            <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={{ duration:0.6 }}
-              style={{ border:'1px solid rgba(139,92,246,0.3)', background:'rgba(139,92,246,0.06)', color:'#c4b5fd', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'6px 16px', borderRadius:50, fontWeight:600, marginBottom:24, fontFamily:'DM Sans,sans-serif' }}>
-              • Now Accepting Early Access
+
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity:0, y:-20, scale:0.85 }}
+              animate={{ opacity:1, y:0, scale:1 }}
+              transition={{ duration:0.7, ease:[0.16,1,0.3,1] }}
+              style={{ border:'1px solid rgba(139,92,246,0.3)', background:'rgba(139,92,246,0.06)', color:'#c4b5fd', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'6px 16px', borderRadius:50, fontWeight:600, marginBottom:24, fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', gap:8 }}>
+              <motion.div animate={{ opacity:[1,0.2,1] }} transition={{ duration:1.5, repeat:Infinity }}
+                style={{ width:6, height:6, borderRadius:'50%', background:'#8b5cf6' }} />
+              Now Accepting Early Access
             </motion.div>
 
-            <motion.div initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.1 }} style={{ position:'relative', marginBottom:8 }}>
-              <h1 style={{ margin:0, lineHeight:1 }}>
-                <span style={{ fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', color:'#5b21b6' }}>Social</span>
-                <span style={{ fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Rum</span>
-              </h1>
-              <div style={{ width:'85%', height:2, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)', margin:'8px auto 0', borderRadius:50, boxShadow:'0 0 20px rgba(139,92,246,0.7)' }} />
-            </motion.div>
+            {/* Title with per-char animation */}
+            <div style={{ position:'relative', marginBottom:8 }}>
+              <motion.h1 style={{ margin:0, lineHeight:1, perspective:600 }}>
+                {'Social'.split('').map((char, i) => (
+                  <motion.span key={`s${i}`}
+                    initial={{ opacity:0, y:60, rotateX:25 }}
+                    animate={{ opacity:1, y:0, rotateX:0 }}
+                    transition={{ duration:0.7, delay: 0.2 + i * 0.06, ease:[0.16,1,0.3,1] }}
+                    style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', color:'#5b21b6' }}>
+                    {char}
+                  </motion.span>
+                ))}
+                {'Rum'.split('').map((char, i) => (
+                  <motion.span key={`r${i}`}
+                    initial={{ opacity:0, y:60, rotateX:25 }}
+                    animate={{ opacity:1, y:0, rotateX:0 }}
+                    transition={{ duration:0.7, delay: 0.55 + i * 0.07, ease:[0.16,1,0.3,1] }}
+                    style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+                    {char}
+                  </motion.span>
+                ))}
+              </motion.h1>
+              {/* Animated underline */}
+              <motion.div
+                initial={{ scaleX:0, opacity:0 }}
+                animate={{ scaleX:1, opacity:1 }}
+                transition={{ duration:0.8, delay:0.9, ease:[0.16,1,0.3,1] }}
+                style={{ width:'85%', height:2, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)', margin:'8px auto 0', borderRadius:50, boxShadow:'0 0 20px rgba(139,92,246,0.7)', transformOrigin:'center' }} />
+            </div>
 
-            <motion.h2 initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.2 }}
+            {/* Subtitle */}
+            <motion.h2
+              initial={{ opacity:0, y:20, filter:'blur(8px)' }}
+              animate={{ opacity:1, y:0, filter:'blur(0px)' }}
+              transition={{ duration:0.8, delay:0.8, ease:[0.16,1,0.3,1] }}
               style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(18px,2.5vw,32px)', fontWeight:700, color:'#fff', marginBottom:16, lineHeight:1.3 }}>
-              Create Content <span style={{ color:'#8b5cf6' }}>That Actually</span><br/>Gets Discovered
+              Create Content <motion.span
+                animate={{ color:['#8b5cf6','#a78bfa','#8b5cf6'] }}
+                transition={{ duration:3, repeat:Infinity }}>
+                That Actually
+              </motion.span><br/>Gets Discovered
             </motion.h2>
 
-            <motion.p initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.3 }}
+            {/* Description */}
+            <motion.p
+              initial={{ opacity:0, y:15 }}
+              animate={{ opacity:1, y:0 }}
+              transition={{ duration:0.8, delay:1.0, ease:[0.16,1,0.3,1] }}
               style={{ fontFamily:'DM Sans,sans-serif', fontSize:14, color:'rgba(255,255,255,0.5)', maxWidth:380, lineHeight:1.8, marginBottom:32 }}>
               SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, content analysis, and SEO in one dark premium dashboard.
             </motion.p>
 
-            <motion.div initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.4 }}
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity:0, y:20 }}
+              animate={{ opacity:1, y:0 }}
+              transition={{ duration:0.8, delay:1.2, ease:[0.16,1,0.3,1] }}
               style={{ display:'flex', alignItems:'center', gap:24, flexWrap:'wrap', justifyContent:'center' }}>
-              <a href="#early-access" style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', color:'#fff', fontWeight:600, fontSize:14, padding:'14px 32px', borderRadius:50, textDecoration:'none', boxShadow:'0 0 30px rgba(124,58,237,0.5)', transition:'transform .2s,box-shadow .3s' }}
-                onMouseEnter={e => { e.currentTarget.style.transform='scale(1.05)'; e.currentTarget.style.boxShadow='0 0 50px rgba(124,58,237,0.7)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 0 30px rgba(124,58,237,0.5)'; }}>
-                Be the First to Know →
-              </a>
-              <a href="#features" style={{ fontSize:14, color:'rgba(255,255,255,0.5)', textDecoration:'none', fontFamily:'DM Sans,sans-serif', transition:'color .2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}>
-                Explore Features ▼
-              </a>
+              <motion.a href="#early-access"
+                whileHover={{ scale:1.06 }} whileTap={{ scale:0.97 }}
+                style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', color:'#fff', fontWeight:600, fontSize:14, padding:'14px 32px', borderRadius:50, textDecoration:'none', boxShadow:'0 0 30px rgba(124,58,237,0.5)', display:'inline-flex', alignItems:'center', gap:8 }}>
+                Be the First to Know
+                <motion.span animate={{ x:[0,4,0] }} transition={{ duration:1.2, repeat:Infinity }}>→</motion.span>
+              </motion.a>
+              <motion.a href="#features"
+                whileHover={{ color:'#fff' }}
+                style={{ fontSize:14, color:'rgba(255,255,255,0.5)', textDecoration:'none', fontFamily:'DM Sans,sans-serif', display:'inline-flex', alignItems:'center', gap:6 }}>
+                Explore Features
+                <motion.span animate={{ y:[0,3,0] }} transition={{ duration:1.2, repeat:Infinity }}>▼</motion.span>
+              </motion.a>
             </motion.div>
+
+            {/* Floating glow orbs behind title */}
+            <motion.div
+              animate={{ scale:[1,1.2,1], opacity:[0.15,0.25,0.15] }}
+              transition={{ duration:4, repeat:Infinity }}
+              style={{ position:'absolute', width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle,rgba(124,58,237,0.3),transparent 70%)', pointerEvents:'none', zIndex:-1, top:'30%', left:'50%', transform:'translateX(-50%)' }} />
           </div>
 
           {/* ── RIGHT: Dashboard card ── */}
