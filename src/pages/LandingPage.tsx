@@ -62,9 +62,26 @@ const TRENDING_NICHES = [
   { name: 'Fitness', growth: '+18%', color: '#34d399' },
 ];
 
+const useMouseSpotlight = () => {
+  const ref = useRef<HTMLElement>(null);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+    const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+    ref.current.style.setProperty('--mx', `${x}%`);
+    ref.current.style.setProperty('--my', `${y}%`);
+  };
+  return { ref, onMouseMove: handleMouseMove };
+};
+
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-  .sr-feature-item{background:rgba(139,92,246,0.03);border:1px solid rgba(139,92,246,0.1);border-radius:24px;padding:28px;transition:background .3s,border-color .3s,transform .3s;cursor:default}
+  .sr-spotlight{position:relative}
+  .sr-spotlight::before{content:'';position:absolute;inset:0;background:radial-gradient(400px circle at var(--mx,50%) var(--my,50%),rgba(124,58,237,0.07),transparent 70%);pointer-events:none;z-index:0;border-radius:inherit;transition:opacity .3s}
+  .sr-spotlight:hover::before{opacity:1}
+  .sr-feature-item::before{content:'';position:absolute;inset:0;background:radial-gradient(300px circle at var(--mx,50%) var(--my,50%),rgba(124,58,237,0.1),transparent 70%);pointer-events:none;z-index:0;border-radius:inherit;opacity:0;transition:opacity .3s}
+  .sr-feature-item:hover::before{opacity:1}
   .sr-feature-item:hover{background:rgba(139,92,246,0.07);border-color:rgba(139,92,246,0.25);transform:translateY(-4px)}
   .sr-feature-tag{font-size:11px;font-weight:500;color:#a78bfa;background:rgba(139,92,246,0.1);padding:3px 10px;border-radius:50px;border:1px solid rgba(139,92,246,0.2)}
   .sr-step-card{background:rgba(139,92,246,0.03);border:1px solid rgba(139,92,246,0.12);border-radius:24px;padding:32px;transition:transform .4s,border-color .3s,box-shadow .4s}
@@ -277,13 +294,13 @@ export default function LandingPage() {
 
             {/* Title with per-char animation */}
             <div style={{ position:'relative', marginBottom:8 }}>
-              <motion.h1 style={{ margin:0, lineHeight:1, perspective:600 }}>
+              <motion.h1 style={{ margin:0, lineHeight:1, perspective:600, display:'flex', alignItems:'baseline', justifyContent:'center', flexWrap:'nowrap' }}>
                 {'Social'.split('').map((char, i) => (
                   <motion.span key={`s${i}`}
                     initial={{ opacity:0, y:60, rotateX:25 }}
                     animate={{ opacity:1, y:0, rotateX:0 }}
                     transition={{ duration:0.7, delay: 0.2 + i * 0.06, ease:[0.16,1,0.3,1] }}
-                    style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', color:'#5b21b6' }}>
+                    style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.02em', color:'#5b21b6', verticalAlign:'baseline', lineHeight:1 }}>
                     {char}
                   </motion.span>
                 ))}
@@ -292,7 +309,7 @@ export default function LandingPage() {
                     initial={{ opacity:0, y:60, rotateX:25 }}
                     animate={{ opacity:1, y:0, rotateX:0 }}
                     transition={{ duration:0.7, delay: 0.55 + i * 0.07, ease:[0.16,1,0.3,1] }}
-                    style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+                    style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.02em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', verticalAlign:'baseline', lineHeight:1 }}>
                     {char}
                   </motion.span>
                 ))}
@@ -426,16 +443,21 @@ export default function LandingPage() {
         <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(24px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>Every tool a serious creator needs.</motion.h2>
         <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</motion.p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:16 }}>
-          {FEATURES.map((f, i) => (
-            <motion.div key={f.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.08 }} className="sr-feature-item">
-              <div style={{ width:40, height:40, borderRadius:12, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16, fontSize:11, fontWeight:700, color:'#a78bfa' }}>{f.num}</div>
-              <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:10 }}>{f.title}</h3>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>{f.desc}</p>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+          {FEATURES.map((f, i) => {
+            const spotlight = useMouseSpotlight();
+            return (
+            <motion.div key={f.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.08 }}
+              ref={spotlight.ref as any} onMouseMove={spotlight.onMouseMove}
+              className="sr-feature-item sr-spotlight">
+              <div style={{ width:40, height:40, borderRadius:12, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16, fontSize:11, fontWeight:700, color:'#a78bfa', position:'relative', zIndex:1 }}>{f.num}</div>
+              <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:10, position:'relative', zIndex:1 }}>{f.title}</h3>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:16, fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{f.desc}</p>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', position:'relative', zIndex:1 }}>
                 {f.tags.map(tag => <span key={tag} className="sr-feature-tag">{tag}</span>)}
               </div>
             </motion.div>
-          ))}
+            );
+          })}
           <div style={{ border:'1px solid rgba(255,255,255,0.05)', background:'rgba(255,255,255,0.01)', borderRadius:24, display:'flex', alignItems:'center', justifyContent:'center', minHeight:200, textAlign:'center' }}>
             <div>
               <p style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'rgba(255,255,255,0.2)', marginBottom:8 }}>More coming</p>
@@ -451,15 +473,20 @@ export default function LandingPage() {
         <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(24px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>From zero to algorithm-ready in one session.</motion.h2>
         <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>No complex setup. No learning curve. Connect your channels and SocialRum immediately starts surfacing what to create, how to optimize it, and how to rank it.</motion.p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:20 }}>
-          {STEPS.map((s, i) => (
-            <motion.div key={s.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.1 }} className="sr-step-card">
+          {STEPS.map((s, i) => {
+            const spotlight = useMouseSpotlight();
+            return (
+            <motion.div key={s.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.1 }}
+              ref={spotlight.ref as any} onMouseMove={spotlight.onMouseMove}
+              className="sr-step-card sr-spotlight">
               <div className="sr-step-num">{s.num}</div>
-              <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:8 }}>{s.title}</h3>
-              <p style={{ fontSize:12, fontWeight:600, color:'#8b5cf6', marginBottom:12, fontFamily:'DM Sans,sans-serif' }}>{s.sub}</p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>{s.desc}</p>
-              <p style={{ marginTop:16, fontSize:11, color:'rgba(139,92,246,0.5)', fontStyle:'italic', fontFamily:'DM Sans,sans-serif' }}>{s.note}</p>
+              <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:8, position:'relative', zIndex:1 }}>{s.title}</h3>
+              <p style={{ fontSize:12, fontWeight:600, color:'#8b5cf6', marginBottom:12, fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{s.sub}</p>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{s.desc}</p>
+              <p style={{ marginTop:16, fontSize:11, color:'rgba(139,92,246,0.5)', fontStyle:'italic', fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{s.note}</p>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
