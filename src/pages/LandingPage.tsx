@@ -46,16 +46,13 @@ const TypingScript = () => {
 };
 
 export default function LandingPage() {
- const rootRef = useRef<HTMLDivElement>(null);
-const emailRef = useRef<HTMLInputElement>(null);
-const otpRef = useRef<HTMLInputElement>(null);
+const rootRef = useRef<HTMLDivElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   const [scrolled, setScrolled] = useState(false);
   const [step, setStep] = useState('email');
   const [userEmail, setUserEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-
+  
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
