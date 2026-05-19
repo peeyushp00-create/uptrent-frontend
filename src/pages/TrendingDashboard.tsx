@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, TrendingUp, Flame, RefreshCw, ChevronRight, Sparkles, ExternalLink, X } from "lucide-react";
+import { Search, TrendingUp, RefreshCw, ChevronRight, Sparkles, ExternalLink, X, Flame, ArrowUpRight, Zap, BarChart2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PRIMARY = "#7C3AED";
@@ -17,16 +17,6 @@ const TOPIC_EMOJIS: Record<string, string> = {
   Yoga: "🧘", Comedy: "😂", RealEstate: "🏠",
 };
 
-const HASHTAG_COLORS = [
-  { bg: PRIMARY_CONTAINER, text: PRIMARY },
-  { bg: '#e8f5e9', text: '#2e7d32' },
-  { bg: '#fff3e0', text: '#e65100' },
-  { bg: '#fce4ec', text: '#880e4f' },
-  { bg: '#e3f2fd', text: '#1565c0' },
-  { bg: '#f3e5f5', text: '#6a1b9a' },
-];
-
-// Micro niches for each main niche
 const MICRO_NICHES: Record<string, { name: string; hashtag: string; hot: boolean }[]> = {
   finance: [
     { name: 'Mutual Funds', hashtag: '#MutualFunds', hot: true },
@@ -130,7 +120,6 @@ const MICRO_NICHES: Record<string, { name: string; hashtag: string; hot: boolean
   ],
 };
 
-// Find micro niches for search query
 const findMicroNiches = (query: string) => {
   const q = query.toLowerCase().trim();
   for (const [key, niches] of Object.entries(MICRO_NICHES)) {
@@ -140,6 +129,21 @@ const findMicroNiches = (query: string) => {
     }
   }
   return null;
+};
+
+const StrengthBadge = ({ strength }: { strength: string }) => {
+  const config: Record<string, { color: string; bg: string; icon: string }> = {
+    Viral:  { color: '#dc2626', bg: '#fee2e2', icon: '🔥' },
+    Rising: { color: '#7C3AED', bg: '#ede9fe', icon: '📈' },
+    Steady: { color: '#059669', bg: '#d1fae5', icon: '✅' },
+    Fading: { color: '#757684', bg: '#f3f4f5', icon: '📉' },
+  };
+  const c = config[strength] || config.Steady;
+  return (
+    <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: c.bg, color: c.color }}>
+      {c.icon} {strength}
+    </span>
+  );
 };
 
 export default function TrendingDashboard() {
@@ -154,9 +158,37 @@ export default function TrendingDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-  const [microResult, setMicroResult] = useState<{ niche: string; niches: { name: string; hashtag: string; hot: boolean }[] } | null>(null);
+  const [microResult, setMicroResult] = useState<any>(null);
   const [trendAnalysis, setTrendAnalysis] = useState<any>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [instagramTopics, setInstagramTopics] = useState<any[]>([]);
+
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${BASE}/api/news?filter=today`);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      const counts: Record<string, number> = {};
+      list.forEach((a: any) => { if (a.topic) counts[a.topic] = (counts[a.topic] || 0) + 1; });
+      const sorted = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([topic, count], i) => ({ topic, count, emoji: TOPIC_EMOJIS[topic] || '📰', rank: i + 1 }));
+      setTrending(sorted);
+      setNews(list.slice(0, 6));
+      const topTopics = sorted.slice(0, 4);
+      const generatedIdeas = topTopics.flatMap(t => [
+        { title: `Top 5 ${t.topic} tips for 2026`, tag: 'EDUCATIONAL', topic: t.topic },
+        { title: `React to: Latest ${t.topic} news`, tag: 'TRENDING', topic: t.topic },
+      ]);
+      setIdeas(generatedIdeas.slice(0, 6));
+      const topicsRes = await fetch(`${BASE}/api/topics?type=instagram`);
+      const topicsData = await topicsRes.json();
+      if (Array.isArray(topicsData)) setInstagramTopics(topicsData);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); setRefreshing(false); }
+  };
+
+  useEffect(() => { fetchData(); }, []);
 
   const fetchTrendAnalysis = async (topic: string) => {
     setAnalysisLoading(true);
@@ -170,60 +202,16 @@ export default function TrendingDashboard() {
       const data = await res.json();
       if (!data.error) {
         setTrendAnalysis(data);
-        // Use AI micro niches if available
-        if (data.micro_niches?.length > 0) {
-          setMicroResult({ niche: topic.toLowerCase(), niches: data.micro_niches });
-        }
+        if (data.micro_niches?.length > 0) setMicroResult({ niche: topic, niches: data.micro_niches });
       }
     } catch (e) { console.error(e); }
     finally { setAnalysisLoading(false); }
   };
 
-  const [instagramTopics, setInstagramTopics] = useState<any[]>([]);
-
-  const fetchData = async () => {
-    try {
-      // Fetch news-based trending
-      const res = await fetch(`${BASE}/api/news?filter=today`);
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : [];
-
-      const counts: Record<string, number> = {};
-      list.forEach((a: any) => { if (a.topic) counts[a.topic] = (counts[a.topic] || 0) + 1; });
-      const sorted = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([topic, count], i) => ({ topic, count, emoji: TOPIC_EMOJIS[topic] || '📰', rank: i + 1 }));
-
-      setTrending(sorted);
-      setNews(list.slice(0, 6));
-
-      const topTopics = sorted.slice(0, 4);
-      const generatedIdeas = topTopics.flatMap(t => [
-        { title: `Top 5 ${t.topic} tips for 2026`, tag: 'EDUCATIONAL', tagColor: PRIMARY_CONTAINER, tagText: PRIMARY, topic: t.topic },
-        { title: `React to: Latest ${t.topic} news`, tag: 'TRENDING', tagColor: '#fff3e0', tagText: '#e65100', topic: t.topic },
-      ]);
-      setIdeas(generatedIdeas.slice(0, 6));
-
-      // Fetch Instagram topics from Supabase
-      const topicsRes = await fetch(`${BASE}/api/topics?type=instagram`);
-      const topicsData = await topicsRes.json();
-      if (Array.isArray(topicsData)) setInstagramTopics(topicsData);
-
-    } catch (e) {
-      console.error(e);
-    } finally { setLoading(false); setRefreshing(false); }
-  };
-
-  useEffect(() => { fetchData(); }, []);
-
-  const handleRefresh = () => { setRefreshing(true); fetchData(); };
-
-  // Handle search
   useEffect(() => {
     if (search.trim().length >= 2) {
       const result = findMicroNiches(search);
       setMicroResult(result);
-      // Always fetch AI analysis for any search
       fetchTrendAnalysis(search.trim());
     } else {
       setMicroResult(null);
@@ -231,11 +219,11 @@ export default function TrendingDashboard() {
     }
   }, [search]);
 
+  const handleRefresh = () => { setRefreshing(true); fetchData(); };
   const filteredTrending = trending.filter(t =>
     (activeFilter === 'All' || t.topic === activeFilter) &&
     (search === '' || t.topic.toLowerCase().includes(search.toLowerCase()))
   );
-
   const filters = ['All', ...userNiches.slice(0, 5)];
 
   return (
@@ -243,299 +231,313 @@ export default function TrendingDashboard() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
-        <h1 className="font-bold text-xl dark:text-white" style={{ color: PRIMARY }}>
-          Discovery
-        </h1>
+        <div className="flex items-center gap-2">
+          <Flame className="w-5 h-5" style={{ color: PRIMARY }} />
+          <h1 className="font-bold text-xl dark:text-white" style={{ color: PRIMARY, fontFamily:'Roboto,sans-serif' }}>Discovery</h1>
+        </div>
         <button onClick={handleRefresh} disabled={refreshing}
           className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors disabled:opacity-40">
           <RefreshCw className={`w-5 h-5 text-[#757684] ${refreshing ? 'animate-spin' : ''}`} />
         </button>
       </header>
 
-      <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-6">
+      <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-5">
 
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search a niche (e.g. Finance, Cricket, Fitness)..."
-            className="w-full pl-10 pr-10 py-3 rounded-xl border border-[#c5c5d4] bg-white dark:bg-gray-800 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all"
-            style={{ borderColor: search ? PRIMARY : undefined, boxShadow: search ? `0 0 0 3px ${PRIMARY}15` : undefined }} />
+            placeholder="Search any niche — Finance, Cricket, Fitness..."
+            className="w-full pl-10 pr-10 py-3.5 rounded-2xl border bg-white dark:bg-gray-800 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all"
+            style={{ borderColor: search ? PRIMARY : '#e1e3e4', boxShadow: search ? `0 0 0 3px ${PRIMARY}15` : 'none', fontFamily:'Roboto,sans-serif' }} />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]">
               <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {/* ── MICRO NICHES VIEW (when searching) ── */}
         <AnimatePresence mode="wait">
-          {microResult ? (
-            <motion.div key="micro" initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-10 }}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg" style={{ background: PRIMARY_CONTAINER }}>
-                  {TOPIC_EMOJIS[microResult.niche.charAt(0).toUpperCase() + microResult.niche.slice(1)] || '🔍'}
-                </div>
+          {/* ── SEARCH RESULTS VIEW ── */}
+          {search.trim().length >= 2 ? (
+            <motion.div key="search" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} className="space-y-4">
+
+              {/* Header */}
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-sm text-[#191c1d] dark:text-white capitalize">{microResult.niche} — Micro Niches</p>
-                  <p className="text-xs text-[#757684]">Tap any to generate a script</p>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white capitalize" style={{ fontFamily:'Roboto,sans-serif' }}>
+                    "{search}" Analysis
+                  </h2>
+                  <p className="text-xs text-[#757684]">AI-powered trend intelligence</p>
                 </div>
+                {trendAnalysis && <StrengthBadge strength={trendAnalysis.trend_strength} />}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {microResult.niches.map((niche, i) => (
-                  <motion.button key={niche.name}
-                    initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => navigate('/scripts', { state: { topic: niche.name } })}
-                    className="bg-white dark:bg-gray-800 rounded-2xl p-4 border text-left hover:shadow-md transition-all active:scale-[0.98] relative overflow-hidden"
-                    style={{ borderColor: niche.hot ? `${PRIMARY}40` : '#e1e3e4' }}>
-                    {niche.hot && (
-                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
-                        style={{ background: 'linear-gradient(135deg, #ff6b35, #f7c59f)', color: '#7c2d12' }}>
-                        🔥 HOT
+              {/* Loading skeleton */}
+              {analysisLoading && (
+                <div className="space-y-3">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] animate-pulse">
+                      <div className="h-3 bg-[#e7e8e9] rounded w-1/3 mb-3" />
+                      <div className="h-4 bg-[#e7e8e9] rounded w-full mb-2" />
+                      <div className="h-4 bg-[#e7e8e9] rounded w-2/3" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {trendAnalysis && !analysisLoading && (
+                <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} className="space-y-3">
+
+                  {/* Why trending — hero card */}
+                  <div className="rounded-2xl p-4 text-white" style={{ background: PRIMARY_GRAD }}>
+                    <p className="text-xs font-bold uppercase tracking-wider opacity-80 mb-2">📣 Why It's Trending</p>
+                    <p className="text-sm leading-relaxed font-medium">{trendAnalysis.why_trending}</p>
+                    {trendAnalysis.trend_origin && (
+                      <div className="mt-3 pt-3 border-t border-white/20 flex items-center gap-2">
+                        <span className="text-xs opacity-70">📌 Started by:</span>
+                        <span className="text-xs font-bold">{trendAnalysis.trend_origin}</span>
                       </div>
                     )}
-                    <p className="font-bold text-sm text-[#191c1d] dark:text-white mb-1">{niche.name}</p>
-                    <p className="text-xs font-medium" style={{ color: PRIMARY }}>{niche.hashtag}</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      {niche.hot ? (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
-                          📈 Trending
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f3f4f5] text-[#757684]">
-                          Stable
-                        </span>
-                      )}
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-
-              {/* Quick script button */}
-              <motion.button initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.4 }}
-                onClick={() => navigate('/scripts', { state: { topic: microResult.niche } })}
-                className="w-full mt-4 py-3 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2"
-                style={{ background: PRIMARY_GRAD }}>
-                <Sparkles className="w-4 h-4" />
-                Generate Script for {microResult.niche.charAt(0).toUpperCase() + microResult.niche.slice(1)}
-              </motion.button>
-
-              {/* ── Trend Analysis ── */}
-              <div className="mt-4">
-                <h3 className="font-bold text-sm text-[#191c1d] dark:text-white mb-3 flex items-center gap-2">
-                  <span>🔍</span> Trend Analysis
-                  {analysisLoading && <span className="text-xs text-[#757684] font-normal animate-pulse">Analyzing...</span>}
-                </h3>
-
-                {analysisLoading && (
-                  <div className="space-y-3">
-                    {[1,2,3].map(i => <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] animate-pulse h-20" />)}
                   </div>
-                )}
 
-                {trendAnalysis && !analysisLoading && (
-                  <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} className="space-y-3">
+                  {/* Stats row */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-[#e1e3e4] text-center">
+                      <p className="text-xs text-[#757684] mb-1">Opportunity</p>
+                      <p className="font-bold text-lg" style={{ color: PRIMARY }}>{trendAnalysis.content_opportunity}<span className="text-xs text-[#757684]">/10</span></p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-[#e1e3e4] text-center">
+                      <p className="text-xs text-[#757684] mb-1">Peak Time</p>
+                      <p className="font-bold text-xs text-[#191c1d] dark:text-white leading-tight">{trendAnalysis.peak_time?.split(' ').slice(0,3).join(' ')}</p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-[#e1e3e4] text-center">
+                      <p className="text-xs text-[#757684] mb-1">Audience</p>
+                      <p className="font-bold text-xs text-[#191c1d] dark:text-white leading-tight line-clamp-2">{trendAnalysis.target_audience?.split(' ').slice(0,3).join(' ')}</p>
+                    </div>
+                  </div>
 
-                    {/* Why trending */}
+                  {/* Best angle */}
+                  {trendAnalysis.script_angle && (
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-base">📣</span>
-                        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: PRIMARY }}>Why It's Trending</p>
-                      </div>
-                      <p className="text-sm text-[#454652] dark:text-gray-300 leading-relaxed">{trendAnalysis.why_trending}</p>
-                      {trendAnalysis.trend_origin && (
-                        <p className="text-xs text-[#757684] mt-2">📌 Origin: <span className="font-semibold text-[#191c1d] dark:text-white">{trendAnalysis.trend_origin}</span></p>
-                      )}
+                      <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: PRIMARY }}>🎯 Best Content Angle</p>
+                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white leading-relaxed">{trendAnalysis.script_angle}</p>
+                      <button onClick={() => navigate('/scripts', { state: { topic: search } })}
+                        className="mt-3 flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full text-white"
+                        style={{ background: PRIMARY_GRAD }}>
+                        <Sparkles className="w-3.5 h-3.5" /> Write Script on This
+                      </button>
                     </div>
+                  )}
 
-                    {/* Trend strength + peak */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-                        <p className="text-xs text-[#757684] mb-1">Trend Strength</p>
-                        <p className="font-bold text-sm" style={{ color:
-                          trendAnalysis.trend_strength === 'Viral' ? '#dc2626' :
-                          trendAnalysis.trend_strength === 'Rising' ? '#7C3AED' :
-                          trendAnalysis.trend_strength === 'Steady' ? '#059669' : '#757684'
-                        }}>
-                          {trendAnalysis.trend_strength === 'Viral' ? '🔥' :
-                           trendAnalysis.trend_strength === 'Rising' ? '📈' :
-                           trendAnalysis.trend_strength === 'Steady' ? '✅' : '📉'} {trendAnalysis.trend_strength}
-                        </p>
-                      </div>
-                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-                        <p className="text-xs text-[#757684] mb-1">Opportunity Score</p>
-                        <div className="flex items-center gap-1">
-                          <p className="font-bold text-sm" style={{ color: PRIMARY }}>{trendAnalysis.content_opportunity}/10</p>
-                          <div className="flex-1 h-1.5 rounded-full bg-[#e7e8e9] overflow-hidden ml-1">
-                            <div className="h-full rounded-full" style={{ width: `${(trendAnalysis.content_opportunity / 10) * 100}%`, background: PRIMARY_GRAD }} />
-                          </div>
-                        </div>
+                  {/* Micro niches — horizontal scroll pills */}
+                  {microResult?.niches?.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                      <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: PRIMARY }}>🔍 Micro Niches</p>
+                      <div className="space-y-2">
+                        {microResult.niches.map((niche: any, i: number) => (
+                          <motion.button key={niche.name}
+                            initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
+                            transition={{ delay: i * 0.04 }}
+                            onClick={() => navigate('/scripts', { state: { topic: niche.name } })}
+                            className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl transition-all hover:shadow-sm"
+                            style={{ background: niche.hot ? PRIMARY_CONTAINER : '#f8f9fa' }}>
+                            <div className="flex items-center gap-2">
+                              {niche.hot && <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />}
+                              <span className="text-sm font-semibold text-[#191c1d] dark:text-white">{niche.name}</span>
+                              <span className="text-xs text-[#757684]">{niche.hashtag}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                style={niche.hot ? { background: '#ff6b3520', color: '#ea580c' } : { background: '#e7e8e9', color: '#757684' }}>
+                                {niche.hot ? 'Trending' : 'Stable'}
+                              </span>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-[#757684]" />
+                            </div>
+                          </motion.button>
+                        ))}
                       </div>
                     </div>
+                  )}
 
-                    {/* Peak time + audience */}
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700 space-y-2">
-                      {trendAnalysis.peak_time && (
-                        <div className="flex items-start gap-2">
-                          <span className="text-sm">⏰</span>
-                          <div>
-                            <p className="text-xs font-bold text-[#191c1d] dark:text-white">Best Time to Post</p>
-                            <p className="text-xs text-[#757684]">{trendAnalysis.peak_time}</p>
-                          </div>
-                        </div>
-                      )}
-                      {trendAnalysis.target_audience && (
-                        <div className="flex items-start gap-2">
-                          <span className="text-sm">👥</span>
-                          <div>
-                            <p className="text-xs font-bold text-[#191c1d] dark:text-white">Target Audience</p>
-                            <p className="text-xs text-[#757684]">{trendAnalysis.target_audience}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Script angle */}
-                    {trendAnalysis.script_angle && (
-                      <div className="rounded-2xl p-4 border" style={{ background: PRIMARY_CONTAINER, borderColor: `${PRIMARY}30` }}>
-                        <p className="text-xs font-bold mb-1" style={{ color: PRIMARY }}>🎯 Best Content Angle</p>
-                        <p className="text-sm font-semibold text-[#191c1d]">{trendAnalysis.script_angle}</p>
-                      </div>
-                    )}
-
-                    {/* Best content types */}
+                  {/* Content types + hashtags side by side */}
+                  <div className="grid grid-cols-2 gap-3">
                     {trendAnalysis.best_content_types?.length > 0 && (
-                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-                        <p className="text-xs font-bold text-[#191c1d] dark:text-white mb-2">🎬 Best Content Types</p>
-                        <div className="flex flex-wrap gap-2">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-[#e1e3e4] dark:border-gray-700">
+                        <p className="text-xs font-bold mb-2 text-[#191c1d] dark:text-white">🎬 Content Types</p>
+                        <div className="space-y-1">
                           {trendAnalysis.best_content_types.map((t: string) => (
-                            <span key={t} className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{t}</span>
+                            <div key={t} className="flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: PRIMARY }} />
+                              <span className="text-xs text-[#454652] dark:text-gray-300">{t}</span>
+                            </div>
                           ))}
                         </div>
                       </div>
                     )}
-
-                    {/* Top creators */}
-                    {trendAnalysis.top_creators?.length > 0 && (
-                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-                        <p className="text-xs font-bold text-[#191c1d] dark:text-white mb-2">⭐ Top Creators in This Niche</p>
-                        <div className="flex flex-wrap gap-2">
-                          {trendAnalysis.top_creators.map((c: string) => (
-                            <span key={c} className="px-3 py-1 rounded-full text-xs font-semibold bg-[#f3f4f5] text-[#454652]">{c}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Key hashtags */}
                     {trendAnalysis.key_hashtags?.length > 0 && (
-                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-                        <p className="text-xs font-bold text-[#191c1d] dark:text-white mb-2">🏷️ Key Hashtags</p>
-                        <div className="flex flex-wrap gap-2">
-                          {trendAnalysis.key_hashtags.map((h: string) => (
-                            <span key={h} className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{h}</span>
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-[#e1e3e4] dark:border-gray-700">
+                        <p className="text-xs font-bold mb-2 text-[#191c1d] dark:text-white">🏷️ Hashtags</p>
+                        <div className="space-y-1">
+                          {trendAnalysis.key_hashtags.slice(0,5).map((h: string) => (
+                            <div key={h} className="text-xs font-medium" style={{ color: PRIMARY }}>{h}</div>
                           ))}
                         </div>
                       </div>
                     )}
+                  </div>
 
-                    {/* What to avoid */}
-                    {trendAnalysis.avoid && (
-                      <div className="rounded-2xl p-4 border border-red-100 bg-red-50 dark:bg-red-900/10 dark:border-red-900/20">
-                        <p className="text-xs font-bold text-red-600 mb-1">⚠️ What to Avoid</p>
-                        <p className="text-xs text-red-700 dark:text-red-400">{trendAnalysis.avoid}</p>
+                  {/* Top creators */}
+                  {trendAnalysis.top_creators?.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                      <p className="text-xs font-bold uppercase tracking-wider mb-3 text-[#191c1d] dark:text-white">⭐ Top Creators</p>
+                      <div className="flex flex-wrap gap-2">
+                        {trendAnalysis.top_creators.map((c: string) => (
+                          <span key={c} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#f3f4f5] dark:bg-gray-700 text-[#454652] dark:text-gray-300">
+                            <div className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold shrink-0" style={{ background: PRIMARY_GRAD }}>
+                              {c.replace('@','')[0]?.toUpperCase()}
+                            </div>
+                            {c}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                  </motion.div>
-                )}
-              </div>
+                    </div>
+                  )}
+
+                  {/* What to avoid */}
+                  {trendAnalysis.avoid && (
+                    <div className="rounded-2xl p-4 border border-red-100 dark:border-red-900/20 bg-red-50 dark:bg-red-900/10">
+                      <p className="text-xs font-bold text-red-600 mb-1.5">⚠️ What to Avoid</p>
+                      <p className="text-sm text-red-700 dark:text-red-400 leading-relaxed">{trendAnalysis.avoid}</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </motion.div>
 
           ) : (
-            <motion.div key="trending" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} className="space-y-6">
+            /* ── DEFAULT VIEW ── */
+            <motion.div key="default" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} className="space-y-5">
 
               {/* Filter chips */}
               {filters.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth:'none' }}>
                   {filters.map(f => (
                     <button key={f} onClick={() => setActiveFilter(f)}
                       className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all"
-                      style={activeFilter === f ? { background: PRIMARY_GRAD, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+                      style={activeFilter === f ? { background: PRIMARY_GRAD, color:'#fff' } : { background:'#e7e8e9', color:'#454652' }}>
                       {f}
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* Viral Topics */}
+              {/* Trending topics — list style */}
               <section>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white">
-                    🔥 Trending Right Now
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
+                    <Flame className="w-4 h-4 text-orange-500" /> Trending Right Now
                   </h2>
                   <span className="text-xs font-bold" style={{ color: PRIMARY }}>{filteredTrending.length} topics</span>
                 </div>
 
                 {loading ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {[1,2,3,4].map(i => <div key={i} className="bg-white rounded-2xl p-4 border border-[#e1e3e4] animate-pulse h-24" />)}
-                  </div>
-                ) : filteredTrending.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {filteredTrending.slice(0, 8).map((t, i) => {
-                      const colorStyle = HASHTAG_COLORS[i % HASHTAG_COLORS.length];
-                      return (
-                        <motion.button key={t.topic}
-                          initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-                          transition={{ delay: i * 0.04 }}
-                          onClick={() => setSearch(t.topic)}
-                          className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700 text-left hover:shadow-md transition-all active:scale-[0.98]">
-                          <div className="flex items-start justify-between mb-2">
-                            <span className="text-2xl">{t.emoji}</span>
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: colorStyle.bg, color: colorStyle.text }}>
-                              #{t.rank}
-                            </span>
-                          </div>
-                          <p className="font-bold text-sm text-[#191c1d] dark:text-white">{t.topic}</p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <TrendingUp className="w-3 h-3" style={{ color: colorStyle.text }} />
-                            <span className="text-xs font-semibold" style={{ color: colorStyle.text }}>{t.count} articles</span>
-                          </div>
-                          <p className="text-[10px] text-[#757684] mt-1.5">Tap to see micro niches →</p>
-                        </motion.button>
-                      );
-                    })}
+                  <div className="space-y-2">
+                    {[1,2,3,4,5].map(i => <div key={i} className="bg-white rounded-2xl p-4 border border-[#e1e3e4] animate-pulse h-16" />)}
                   </div>
                 ) : (
-                  <div className="text-center py-10 text-[#757684] text-sm">No trending topics found</div>
+                  <div className="space-y-2">
+                    {filteredTrending.slice(0, 10).map((t, i) => (
+                      <motion.button key={t.topic}
+                        initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
+                        transition={{ delay: i * 0.04 }}
+                        onClick={() => setSearch(t.topic)}
+                        className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3 hover:shadow-md transition-all text-left hover:border-[#7C3AED]/30">
+                        {/* Rank */}
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm"
+                          style={{ background: i < 3 ? PRIMARY_GRAD : '#f3f4f5', color: i < 3 ? '#fff' : '#757684' }}>
+                          {i + 1}
+                        </div>
+                        {/* Emoji + name */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{t.emoji}</span>
+                            <span className="font-bold text-sm text-[#191c1d] dark:text-white">{t.topic}</span>
+                            {i < 3 && <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />}
+                          </div>
+                          <p className="text-xs text-[#757684] mt-0.5">{t.count} articles today · tap to analyze →</p>
+                        </div>
+                        {/* Bar */}
+                        <div className="w-16 shrink-0">
+                          <div className="h-1.5 rounded-full bg-[#e7e8e9] overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (t.count / (trending[0]?.count || 1)) * 100)}%`, background: PRIMARY_GRAD }} />
+                          </div>
+                        </div>
+                        <TrendingUp className="w-4 h-4 shrink-0" style={{ color: PRIMARY }} />
+                      </motion.button>
+                    ))}
+                  </div>
                 )}
               </section>
 
-              {/* Content Ideas */}
+              {/* Instagram trending from Supabase */}
+              {instagramTopics.length > 0 && (
+                <section>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white mb-3 flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
+                    <span>📸</span> Instagram Trending
+                  </h2>
+                  <div className="space-y-2">
+                    {instagramTopics.slice(0, 5).map((t, i) => (
+                      <motion.div key={t.id}
+                        initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-sm text-[#191c1d] dark:text-white">{t.name}</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize"
+                              style={{ background: t.momentum === 'rising' ? PRIMARY_CONTAINER : '#f3f4f5', color: t.momentum === 'rising' ? PRIMARY : '#757684' }}>
+                              {t.momentum === 'rising' ? '📈' : t.momentum === 'stable' ? '➡️' : '📉'} {t.momentum}
+                            </span>
+                          </div>
+                          <div className="flex gap-1 flex-wrap">
+                            {t.hashtags?.slice(0,3).map((h: string) => (
+                              <span key={h} className="text-[10px] font-medium" style={{ color: PRIMARY }}>{h}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold text-[#757684]">{t.volume} posts</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Content ideas */}
               {ideas.length > 0 && (
                 <section>
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white mb-3">💡 Content Ideas For You</h2>
-                  <div className="space-y-3">
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white mb-3 flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
+                    <Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /> Content Ideas
+                  </h2>
+                  <div className="space-y-2">
                     {ideas.map((idea, i) => (
                       <motion.div key={i}
-                        initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-4 hover:shadow-md transition-all">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-xl" style={{ background: PRIMARY_CONTAINER }}>
+                        initial={{ opacity:0, y:5 }} animate={{ opacity:1, y:0 }}
+                        transition={{ delay: i * 0.04 }}
+                        className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0" style={{ background: PRIMARY_CONTAINER }}>
                           {TOPIC_EMOJIS[idea.topic] || '💡'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block mb-1.5" style={{ background: idea.tagColor, color: idea.tagText }}>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded inline-block mb-1"
+                            style={{ background: idea.tag === 'TRENDING' ? '#fff3e0' : PRIMARY_CONTAINER, color: idea.tag === 'TRENDING' ? '#e65100' : PRIMARY }}>
                             {idea.tag}
                           </span>
-                          <p className="font-semibold text-sm text-[#191c1d] dark:text-white leading-snug">{idea.title}</p>
+                          <p className="text-sm font-semibold text-[#191c1d] dark:text-white leading-snug">{idea.title}</p>
                         </div>
                         <button onClick={() => navigate('/scripts')}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 hover:opacity-80 transition-all"
-                          style={{ background: PRIMARY_GRAD }}>
-                          <Sparkles className="w-4 h-4 text-white" />
+                          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: PRIMARY_GRAD }}>
+                          <Sparkles className="w-3.5 h-3.5 text-white" />
                         </button>
                       </motion.div>
                     ))}
@@ -547,18 +549,21 @@ export default function TrendingDashboard() {
               {news.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white">Trending News</h2>
+                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
+                      <span>📰</span> Trending News
+                    </h2>
                     <button onClick={() => navigate('/news')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
                       View All <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {news.slice(0, 4).map((item, i) => (
                       <button key={i} onClick={() => navigate('/news')}
-                        className="w-full bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3 hover:shadow-md transition-all text-left active:scale-[0.98]">
+                        className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3 hover:shadow-md transition-all text-left">
                         <div className="flex-1 min-w-0">
                           {item.topic && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded mb-1.5 inline-block" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded mb-1 inline-block"
+                              style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
                               {TOPIC_EMOJIS[item.topic] || '📰'} {item.topic}
                             </span>
                           )}
