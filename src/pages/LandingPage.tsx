@@ -97,6 +97,69 @@ const TiltCard = ({ children, style, className }: { children: React.ReactNode; s
   );
 };
 
+// HeroTitle — parallax on mouse + glowing underline
+const HeroTitle = () => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-0.5, 0.5], [6, -6]);
+  const rotateY = useTransform(x, [-0.5, 0.5], [-6, 6]);
+  const translateX = useTransform(x, [-0.5, 0.5], [-8, 8]);
+  const translateY = useTransform(y, [-0.5, 0.5], [-6, 6]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+  const handleMouseLeave = () => { x.set(0); y.set(0); };
+
+  return (
+    <div style={{ position:'relative', marginBottom:8 }}
+      onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+      <motion.h1
+        style={{ margin:0, lineHeight:1, perspective:800, display:'flex', alignItems:'baseline', justifyContent:'center', flexWrap:'nowrap', rotateX, rotateY, translateX, translateY, transformStyle:'preserve-3d' }}>
+        {'Social'.split('').map((char, i) => (
+          <motion.span key={`s${i}`}
+            initial={{ opacity:0, y:60, rotateX:25 }}
+            animate={{ opacity:1, y:0, rotateX:0 }}
+            transition={{ duration:0.7, delay: 0.2 + i * 0.06, ease:[0.16,1,0.3,1] }}
+            style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.02em', color:'#5b21b6', verticalAlign:'baseline', lineHeight:1 }}>
+            {char}
+          </motion.span>
+        ))}
+        {'Rum'.split('').map((char, i) => (
+          <motion.span key={`r${i}`}
+            initial={{ opacity:0, y:60, rotateX:25 }}
+            animate={{ opacity:1, y:0, rotateX:0 }}
+            transition={{ duration:0.7, delay: 0.55 + i * 0.07, ease:[0.16,1,0.3,1] }}
+            style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.02em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', verticalAlign:'baseline', lineHeight:1 }}>
+            {char}
+          </motion.span>
+        ))}
+      </motion.h1>
+      {/* Glowing underline — pulses and scans */}
+      <motion.div
+        initial={{ scaleX:0, opacity:0 }}
+        animate={{ scaleX:1, opacity:1 }}
+        transition={{ duration:0.8, delay:0.9, ease:[0.16,1,0.3,1] }}
+        style={{ position:'relative', width:'85%', margin:'10px auto 0', height:3, transformOrigin:'center' }}>
+        {/* Base line */}
+        <div style={{ position:'absolute', inset:0, borderRadius:50, background:'linear-gradient(to right,transparent,rgba(139,92,246,0.4),transparent)' }} />
+        {/* Glowing pulse */}
+        <motion.div
+          animate={{ opacity:[0.6,1,0.6], boxShadow:['0 0 12px 2px rgba(139,92,246,0.4)','0 0 30px 6px rgba(139,92,246,0.8)','0 0 12px 2px rgba(139,92,246,0.4)'] }}
+          transition={{ duration:2, repeat:Infinity, ease:'easeInOut' }}
+          style={{ position:'absolute', inset:0, borderRadius:50, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)' }} />
+        {/* Scanning highlight */}
+        <motion.div
+          animate={{ x:['-100%','200%'] }}
+          transition={{ duration:2.5, repeat:Infinity, repeatDelay:1, ease:'easeInOut' }}
+          style={{ position:'absolute', top:0, bottom:0, width:'30%', borderRadius:50, background:'linear-gradient(to right,transparent,rgba(255,255,255,0.8),transparent)' }} />
+      </motion.div>
+    </div>
+  );
+};
+
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
   .sr-spotlight{position:relative}
@@ -314,35 +377,8 @@ export default function LandingPage() {
               Now Accepting Early Access
             </motion.div>
 
-            {/* Title with per-char animation */}
-            <div style={{ position:'relative', marginBottom:8 }}>
-              <motion.h1 style={{ margin:0, lineHeight:1, perspective:600, display:'flex', alignItems:'baseline', justifyContent:'center', flexWrap:'nowrap' }}>
-                {'Social'.split('').map((char, i) => (
-                  <motion.span key={`s${i}`}
-                    initial={{ opacity:0, y:60, rotateX:25 }}
-                    animate={{ opacity:1, y:0, rotateX:0 }}
-                    transition={{ duration:0.7, delay: 0.2 + i * 0.06, ease:[0.16,1,0.3,1] }}
-                    style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.02em', color:'#5b21b6', verticalAlign:'baseline', lineHeight:1 }}>
-                    {char}
-                  </motion.span>
-                ))}
-                {'Rum'.split('').map((char, i) => (
-                  <motion.span key={`r${i}`}
-                    initial={{ opacity:0, y:60, rotateX:25 }}
-                    animate={{ opacity:1, y:0, rotateX:0 }}
-                    transition={{ duration:0.7, delay: 0.55 + i * 0.07, ease:[0.16,1,0.3,1] }}
-                    style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.02em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', verticalAlign:'baseline', lineHeight:1 }}>
-                    {char}
-                  </motion.span>
-                ))}
-              </motion.h1>
-              {/* Animated underline */}
-              <motion.div
-                initial={{ scaleX:0, opacity:0 }}
-                animate={{ scaleX:1, opacity:1 }}
-                transition={{ duration:0.8, delay:0.9, ease:[0.16,1,0.3,1] }}
-                style={{ width:'85%', height:2, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)', margin:'8px auto 0', borderRadius:50, boxShadow:'0 0 20px rgba(139,92,246,0.7)', transformOrigin:'center' }} />
-            </div>
+            {/* Title — parallax + glowing underline */}
+            <HeroTitle />
 
             {/* Subtitle */}
             <motion.h2
