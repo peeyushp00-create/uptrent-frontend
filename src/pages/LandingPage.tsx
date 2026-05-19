@@ -46,9 +46,9 @@ const TypingScript = () => {
 };
 
 export default function LandingPage() {
-  const rootRef = useRef(null);
-  const emailRef = useRef(null);
-  const otpRef = useRef(null);
+ const rootRef = useRef<HTMLDivElement>(null);
+const emailRef = useRef<HTMLInputElement>(null);
+const otpRef = useRef<HTMLInputElement>(null);
 
   const [scrolled, setScrolled] = useState(false);
   const [step, setStep] = useState('email');
