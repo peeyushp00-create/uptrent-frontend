@@ -2,8 +2,11 @@ const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const apiFetch = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(`${BASE}${path}`, init);
-  if (!response.ok) throw new Error(`API request failed: ${response.status}`);
-  return response.json();
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(data?.error || `API request failed: ${response.status}`);
+  }
+  return data;
 };
 
 export const getTopics = (period = "7d") =>
@@ -98,4 +101,11 @@ export const analyzeVoiceStyle = (transcript: string) =>
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ transcript }),
+  });
+
+export const submitWaitlist = (email: string) =>
+  apiFetch<{ success: boolean; message: string }>("/api/waitlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
   });
