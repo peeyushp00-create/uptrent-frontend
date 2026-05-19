@@ -161,7 +161,7 @@ transition={{ duration:3.5, repeat:Infinity, repeatDelay:0, ease:'linear' }}
 };
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Roboto:wght@300;400;500;600;700&display=swap');
   .sr-spotlight{position:relative}
   .sr-spotlight::before{content:'';position:absolute;inset:0;background:radial-gradient(400px circle at var(--mx,50%) var(--my,50%),rgba(124,58,237,0.07),transparent 70%);pointer-events:none;z-index:0;border-radius:inherit;transition:opacity .3s}
   .sr-spotlight:hover::before{opacity:1}
@@ -240,7 +240,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#03000a] text-white font-sans overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily:"'Roboto', sans-serif" }}>
       <style>{css}</style>
 
       {/* Animated bg glow */}
