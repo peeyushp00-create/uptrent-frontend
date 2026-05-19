@@ -155,9 +155,35 @@ export default function TrendingDashboard() {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [microResult, setMicroResult] = useState<{ niche: string; niches: { name: string; hashtag: string; hot: boolean }[] } | null>(null);
+  const [trendAnalysis, setTrendAnalysis] = useState<any>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+
+  const fetchTrendAnalysis = async (topic: string) => {
+    setAnalysisLoading(true);
+    setTrendAnalysis(null);
+    try {
+      const res = await fetch(`${BASE}/api/topics/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic }),
+      });
+      const data = await res.json();
+      if (!data.error) {
+        setTrendAnalysis(data);
+        // Use AI micro niches if available
+        if (data.micro_niches?.length > 0) {
+          setMicroResult({ niche: topic.toLowerCase(), niches: data.micro_niches });
+        }
+      }
+    } catch (e) { console.error(e); }
+    finally { setAnalysisLoading(false); }
+  };
+
+  const [instagramTopics, setInstagramTopics] = useState<any[]>([]);
 
   const fetchData = async () => {
     try {
+      // Fetch news-based trending
       const res = await fetch(`${BASE}/api/news?filter=today`);
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
@@ -177,6 +203,12 @@ export default function TrendingDashboard() {
         { title: `React to: Latest ${t.topic} news`, tag: 'TRENDING', tagColor: '#fff3e0', tagText: '#e65100', topic: t.topic },
       ]);
       setIdeas(generatedIdeas.slice(0, 6));
+
+      // Fetch Instagram topics from Supabase
+      const topicsRes = await fetch(`${BASE}/api/topics?type=instagram`);
+      const topicsData = await topicsRes.json();
+      if (Array.isArray(topicsData)) setInstagramTopics(topicsData);
+
     } catch (e) {
       console.error(e);
     } finally { setLoading(false); setRefreshing(false); }
@@ -191,8 +223,11 @@ export default function TrendingDashboard() {
     if (search.trim().length >= 2) {
       const result = findMicroNiches(search);
       setMicroResult(result);
+      // Always fetch AI analysis for any search
+      fetchTrendAnalysis(search.trim());
     } else {
       setMicroResult(null);
+      setTrendAnalysis(null);
     }
   }, [search]);
 
@@ -286,6 +321,136 @@ export default function TrendingDashboard() {
                 <Sparkles className="w-4 h-4" />
                 Generate Script for {microResult.niche.charAt(0).toUpperCase() + microResult.niche.slice(1)}
               </motion.button>
+
+              {/* ── Trend Analysis ── */}
+              <div className="mt-4">
+                <h3 className="font-bold text-sm text-[#191c1d] dark:text-white mb-3 flex items-center gap-2">
+                  <span>🔍</span> Trend Analysis
+                  {analysisLoading && <span className="text-xs text-[#757684] font-normal animate-pulse">Analyzing...</span>}
+                </h3>
+
+                {analysisLoading && (
+                  <div className="space-y-3">
+                    {[1,2,3].map(i => <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] animate-pulse h-20" />)}
+                  </div>
+                )}
+
+                {trendAnalysis && !analysisLoading && (
+                  <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} className="space-y-3">
+
+                    {/* Why trending */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-base">📣</span>
+                        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: PRIMARY }}>Why It's Trending</p>
+                      </div>
+                      <p className="text-sm text-[#454652] dark:text-gray-300 leading-relaxed">{trendAnalysis.why_trending}</p>
+                      {trendAnalysis.trend_origin && (
+                        <p className="text-xs text-[#757684] mt-2">📌 Origin: <span className="font-semibold text-[#191c1d] dark:text-white">{trendAnalysis.trend_origin}</span></p>
+                      )}
+                    </div>
+
+                    {/* Trend strength + peak */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                        <p className="text-xs text-[#757684] mb-1">Trend Strength</p>
+                        <p className="font-bold text-sm" style={{ color:
+                          trendAnalysis.trend_strength === 'Viral' ? '#dc2626' :
+                          trendAnalysis.trend_strength === 'Rising' ? '#7C3AED' :
+                          trendAnalysis.trend_strength === 'Steady' ? '#059669' : '#757684'
+                        }}>
+                          {trendAnalysis.trend_strength === 'Viral' ? '🔥' :
+                           trendAnalysis.trend_strength === 'Rising' ? '📈' :
+                           trendAnalysis.trend_strength === 'Steady' ? '✅' : '📉'} {trendAnalysis.trend_strength}
+                        </p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                        <p className="text-xs text-[#757684] mb-1">Opportunity Score</p>
+                        <div className="flex items-center gap-1">
+                          <p className="font-bold text-sm" style={{ color: PRIMARY }}>{trendAnalysis.content_opportunity}/10</p>
+                          <div className="flex-1 h-1.5 rounded-full bg-[#e7e8e9] overflow-hidden ml-1">
+                            <div className="h-full rounded-full" style={{ width: `${(trendAnalysis.content_opportunity / 10) * 100}%`, background: PRIMARY_GRAD }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Peak time + audience */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700 space-y-2">
+                      {trendAnalysis.peak_time && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-sm">⏰</span>
+                          <div>
+                            <p className="text-xs font-bold text-[#191c1d] dark:text-white">Best Time to Post</p>
+                            <p className="text-xs text-[#757684]">{trendAnalysis.peak_time}</p>
+                          </div>
+                        </div>
+                      )}
+                      {trendAnalysis.target_audience && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-sm">👥</span>
+                          <div>
+                            <p className="text-xs font-bold text-[#191c1d] dark:text-white">Target Audience</p>
+                            <p className="text-xs text-[#757684]">{trendAnalysis.target_audience}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Script angle */}
+                    {trendAnalysis.script_angle && (
+                      <div className="rounded-2xl p-4 border" style={{ background: PRIMARY_CONTAINER, borderColor: `${PRIMARY}30` }}>
+                        <p className="text-xs font-bold mb-1" style={{ color: PRIMARY }}>🎯 Best Content Angle</p>
+                        <p className="text-sm font-semibold text-[#191c1d]">{trendAnalysis.script_angle}</p>
+                      </div>
+                    )}
+
+                    {/* Best content types */}
+                    {trendAnalysis.best_content_types?.length > 0 && (
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                        <p className="text-xs font-bold text-[#191c1d] dark:text-white mb-2">🎬 Best Content Types</p>
+                        <div className="flex flex-wrap gap-2">
+                          {trendAnalysis.best_content_types.map((t: string) => (
+                            <span key={t} className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Top creators */}
+                    {trendAnalysis.top_creators?.length > 0 && (
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                        <p className="text-xs font-bold text-[#191c1d] dark:text-white mb-2">⭐ Top Creators in This Niche</p>
+                        <div className="flex flex-wrap gap-2">
+                          {trendAnalysis.top_creators.map((c: string) => (
+                            <span key={c} className="px-3 py-1 rounded-full text-xs font-semibold bg-[#f3f4f5] text-[#454652]">{c}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Key hashtags */}
+                    {trendAnalysis.key_hashtags?.length > 0 && (
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                        <p className="text-xs font-bold text-[#191c1d] dark:text-white mb-2">🏷️ Key Hashtags</p>
+                        <div className="flex flex-wrap gap-2">
+                          {trendAnalysis.key_hashtags.map((h: string) => (
+                            <span key={h} className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{h}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* What to avoid */}
+                    {trendAnalysis.avoid && (
+                      <div className="rounded-2xl p-4 border border-red-100 bg-red-50 dark:bg-red-900/10 dark:border-red-900/20">
+                        <p className="text-xs font-bold text-red-600 mb-1">⚠️ What to Avoid</p>
+                        <p className="text-xs text-red-700 dark:text-red-400">{trendAnalysis.avoid}</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
             </motion.div>
 
           ) : (
