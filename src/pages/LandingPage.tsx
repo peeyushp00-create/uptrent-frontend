@@ -10,9 +10,9 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library — no manual uploads needed.', note: 'OAuth 2.0 secure. Read-only access. Revoke anytime.' },
-  { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: "Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience's watch patterns.", note: 'Processes 150+ content signals per channel per day.' },
-  { num: '03', title: 'Publish & Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark, distraction-free workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
+  { num: '01', title: 'Connect Your Channels', sub: 'YouTube &amp; Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library — no manual uploads needed.', note: 'OAuth 2.0 secure. Read-only access. Revoke anytime.' },
+  { num: '02', title: 'Let AI Analyze &amp; Generate', sub: 'Scripts, trends, and SEO — automated', desc: "Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience's watch patterns.", note: 'Processes 150+ content signals per channel per day.' },
+  { num: '03', title: 'Publish &amp; Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark, distraction-free workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
 ];
 
 const STATS = [
@@ -22,7 +22,6 @@ const STATS = [
   { value: '100%', label: 'Made for India' },
 ];
 
-// Minimalist gradient blocks instead of images for the background
 const ABSTRACT_CARDS = [
   { id: 1, bg: 'bg-gradient-to-br from-purple-600/20 to-black/40', border: 'border-purple-500/10' },
   { id: 2, bg: 'bg-gradient-to-tr from-indigo-600/20 to-black/40', border: 'border-indigo-500/10' },
@@ -46,13 +45,13 @@ const TypingScript = () => {
 };
 
 export default function LandingPage() {
-const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
   const [scrolled, setScrolled] = useState(false);
-  const [step, setStep] = useState('email');
+  const [step, setStep] = useState<'email' | 'done'>('email');
   const [userEmail, setUserEmail] = useState('');
-  
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -74,7 +73,6 @@ const rootRef = useRef<HTMLDivElement>(null);
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 2 }}
           className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-indigo-800/20 blur-[140px]"
         />
-        {/* Subtle Grid overlay */}
         <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(rgba(255,255,255,1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,1)_1px,transparent_1px)] bg-[size:60px_60px]" />
       </div>
 
@@ -101,36 +99,31 @@ const rootRef = useRef<HTMLDivElement>(null);
       {/* HERO SECTION */}
       <section className="relative min-h-screen flex items-center justify-center px-6 lg:px-16 z-10 pt-20 overflow-hidden">
         
-        {/* 2. THE BACKGROUND REELS (Abstract Minimalist Stream) */}
+        {/* 2. THE BACKGROUND REELS */}
         <div className="absolute left-[-20%] md:left-[-10%] top-[-20%] w-[120%] h-[140%] z-0 pointer-events-none opacity-30 md:opacity-40 rotate-[-12deg] blur-[1px]">
           <div className="flex gap-4 lg:gap-8 h-full">
-            {/* Abstract Lane 1 */}
             <motion.div animate={{ y: [0, -1000] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="flex flex-col gap-6 w-1/3 pt-[200px]">
               {[...ABSTRACT_CARDS, ...ABSTRACT_CARDS, ...ABSTRACT_CARDS].map((card, i) => (
                 <div key={`bg1-${i}`} className={`w-full aspect-[9/16] rounded-3xl border ${card.border} ${card.bg} backdrop-blur-sm`} />
               ))}
             </motion.div>
-            {/* Abstract Lane 2 */}
             <motion.div animate={{ y: [-1000, 0] }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} className="flex flex-col gap-6 w-1/3">
               {[...ABSTRACT_CARDS, ...ABSTRACT_CARDS, ...ABSTRACT_CARDS].reverse().map((card, i) => (
                 <div key={`bg2-${i}`} className={`w-full aspect-[9/16] rounded-3xl border ${card.border} ${card.bg} backdrop-blur-sm`} />
               ))}
             </motion.div>
-            {/* Abstract Lane 3 */}
             <motion.div animate={{ y: [0, -1000] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="flex flex-col gap-6 w-1/3 pt-[400px]">
               {[...ABSTRACT_CARDS, ...ABSTRACT_CARDS, ...ABSTRACT_CARDS].map((card, i) => (
                 <div key={`bg3-${i}`} className={`w-full aspect-[9/16] rounded-3xl border ${card.border} ${card.bg} backdrop-blur-sm`} />
               ))}
             </motion.div>
           </div>
-          {/* Edge Fading Mask */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,#03000a_70%)]" />
         </div>
 
         {/* 3. FOREGROUND MAIN CONTENT GRID */}
         <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-16 items-center z-10 relative">
           
-          {/* TEXT CONTENT */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="border border-purple-500/20 bg-purple-500/10 text-purple-300 text-[10px] tracking-widest uppercase px-4 py-1.5 rounded-full font-semibold mb-6 backdrop-blur-md">
               • Priority Waitlist Open
@@ -158,16 +151,8 @@ const rootRef = useRef<HTMLDivElement>(null);
             </motion.div>
           </div>
 
-          {/* DASHBOARD WIDGET INTERFACE */}
-          <motion.div 
-            initial={{ opacity: 0, x: 40 }} 
-            animate={{ opacity: 1, x: 0 }} 
-            transition={{ duration: 1, delay: 0.3, type: "spring", stiffness: 50 }} 
-            className="w-full max-w-[500px] mx-auto lg:mx-0 lg:ml-auto"
-          >
-            {/* Floating Animation Wrapper */}
+          <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.3, type: "spring", stiffness: 50 }} className="w-full max-w-[500px] mx-auto lg:mx-0 lg:ml-auto">
             <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} className="bg-[#0b0616]/60 border border-white/10 rounded-[32px] p-6 lg:p-8 backdrop-blur-2xl shadow-[0_40px_80px_rgba(0,0,0,0.6)] relative overflow-hidden">
-              {/* Internal Dashboard Glow */}
               <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/20 blur-[60px] rounded-full pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-500/20 blur-[60px] rounded-full pointer-events-none" />
               
@@ -175,7 +160,6 @@ const rootRef = useRef<HTMLDivElement>(null);
                 <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shadow-[0_0_10px_#a855f7]" /> Dashboard Active
               </div>
 
-              {/* Dashboard Modules */}
               <div className="space-y-4 relative z-10">
                 <div className="bg-black/40 border border-white/5 rounded-2xl p-4 hover:bg-black/60 transition-colors duration-300">
                   <p className="text-[10px] text-gray-500 tracking-widest uppercase mb-3 font-semibold">Trending Now</p>
@@ -246,13 +230,6 @@ const rootRef = useRef<HTMLDivElement>(null);
               </div>
             </motion.div>
           ))}
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.5 }} className="border border-dashed border-white/10 bg-transparent rounded-3xl flex items-center justify-center p-8 text-center min-h-[250px]">
-            <div>
-              <div className="w-10 h-10 border-2 border-t-purple-500 border-r-purple-500 border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="font-bold text-gray-300 mb-1">More Modules Loading</p>
-              <p className="text-xs text-gray-600">The platform is actively expanding.</p>
-            </div>
-          </motion.div>
         </div>
       </section>
 
@@ -265,7 +242,6 @@ const rootRef = useRef<HTMLDivElement>(null);
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          {/* Connecting Line (Desktop) */}
           <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-[1px] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
 
           {STEPS.map((s, i) => (
@@ -312,7 +288,7 @@ const rootRef = useRef<HTMLDivElement>(null);
                   <svg viewBox="0 0 24 24" className="w-8 h-8 fill-none stroke-white" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-white">Workspace Reserved!</h3>
-                <p className="text-sm text-gray-400 mb-6">We'll notify <strong className="text-white font-medium">{userEmail}</strong> when your terminal is active.</p>
+                <p className="text-sm text-gray-400 mb-6">We&apos;ll notify <strong className="text-white font-medium">{userEmail}</strong> when your terminal is active.</p>
               </motion.div>
             ) : (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -329,7 +305,7 @@ const rootRef = useRef<HTMLDivElement>(null);
             )}
           </div>
 
-        </div>
+        </motion.div>
       </section>
 
       {/* FOOTER */}
