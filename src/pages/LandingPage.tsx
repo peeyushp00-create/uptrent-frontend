@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const FEATURES = [
   { num: '01', title: 'Creator News Feed', desc: 'Curated industry news, platform updates, and creator economy signals — filtered for what actually matters to your niche.', tags: ['YouTube', 'Instagram', 'TikTok'] },
@@ -22,420 +22,298 @@ const STATS = [
   { value: '100%', label: 'Made for India' },
 ];
 
-const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+const VIDEO_CARDS = [
+  { id: 1, platform: 'youtube', title: 'How I Got 100K Subs in 30 Days', views: '2.4M', duration: '0:58', thumbnail: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=300&q=80', channel: '@CreatorPro' },
+  { id: 2, platform: 'instagram', title: 'Morning Routine That Changed My Life', views: '890K', duration: '0:30', thumbnail: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&q=80', channel: '@LifeWithAlex' },
+  { id: 3, platform: 'youtube', title: 'AI Tools Every Creator Needs in 2026', views: '1.1M', duration: '0:45', thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80', channel: '@TechCreator' },
+  { id: 4, platform: 'instagram', title: 'Street Food Tour in Tokyo', views: '3.7M', duration: '0:60', thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=300&q=80', channel: '@FoodieWorld' },
+];
 
-  .sr-root*,.sr-root *::before,.sr-root *::after{box-sizing:border-box;margin:0;padding:0}
-  .sr-root{background:#03000a;color:#fff;font-family:'Inter',sans-serif;overflow-x:hidden;min-height:100vh}
-  .sr-root ::-webkit-scrollbar{width:6px}
-  .sr-root ::-webkit-scrollbar-track{background:#03000a}
-  .sr-root ::-webkit-scrollbar-thumb{background:rgba(124,58,237,.3);border-radius:3px}
-
-  /* Reveal Animations */
-  .sr-reveal{opacity:0;transform:translateY(30px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
-  .sr-reveal-l{opacity:0;transform:translateX(-30px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
-  .sr-reveal-r{opacity:0;transform:translateX(30px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
-  .sr-reveal-s{opacity:0;transform:scale(.95);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
-  .sr-reveal.on,.sr-reveal-l.on,.sr-reveal-r.on,.sr-reveal-s.on{opacity:1;transform:none}
-  .sr-d1{transition-delay:.1s}.sr-d2{transition-delay:.2s}.sr-d3{transition-delay:.3s}
-
-  @keyframes sr-navDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes sr-shake{0%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}100%{transform:translateX(0)}}
-  @keyframes sr-fadeIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
-  
-  .sr-anim-nav{animation:sr-navDown .5s cubic-bezier(.16,1,.3,1) 0s both}
-  .sr-shake{animation:sr-shake .3s ease}
-  .sr-fade-in{animation:sr-fadeIn .4s cubic-bezier(.16,1,.3,1) both}
-
-  /* Nav Grid System */
-  .sr-nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 64px;height:80px;transition:all .3s ease}
-  .sr-nav.scrolled{background:rgba(3,0,10,.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(124,58,237,.12)}
-  .sr-nav-link{color:rgba(255,255,255,.6);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
-  .sr-nav-link:hover{color:#fff}
-
-  /* Feature items */
-  .sr-feature-item{position:relative;background:rgba(124,58,237,.03);border:1px solid rgba(124,58,237,.08);border-radius:24px;padding:36px;transition:all .3s ease;overflow:hidden}
-  .sr-feature-item::after{content:'';position:absolute;inset:0;background:radial-gradient(circle 120px at var(--mx,50%) var(--my,50%),rgba(124,58,237,.08),transparent 70%);opacity:0;transition:opacity .3s;pointer-events:none}
-  .sr-feature-item:hover{background:rgba(124,58,237,.06);border-color:rgba(124,58,237,.25);transform:translateY(-2px)}
-  .sr-feature-item:hover::after{opacity:1}
-  .sr-feature-tag{font-size:11px;font-weight:500;color:#c084fc;background:rgba(124,58,237,.1);padding:4px 12px;border-radius:50px;border:1px solid rgba(124,58,237,.15)}
-
-  /* Step cards */
-  .sr-step-card{position:relative;background:rgba(124,58,237,.02);border:1px solid rgba(124,58,237,.08);border-radius:24px;padding:40px 32px;transition:all .4s ease}
-  .sr-step-card:hover{transform:translateY(-6px);border-color:rgba(124,58,237,.3);box-shadow:0 20px 40px rgba(124,58,237,.08)}
-  .sr-step-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:48px;font-weight:800;color:rgba(124,58,237,.1);line-height:1;margin-bottom:16px}
-
-  /* Main Action Button UI mimicking Image Glow */
-  .sr-btn-glow {
-    background: #6d28d9;
-    color: #fff;
-    padding: 14px 28px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 15px;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 0 25px rgba(124,58,237,0.45);
-    transition: all .2s ease;
-  }
-  .sr-btn-glow:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 0 35px rgba(124,58,237,0.65);
-    background: #7c3aed;
-  }
-
-  /* Glassmorphism Inputs */
-  .sr-input{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(124,58,237,.15);border-radius:14px;padding:14px 18px;color:#fff;font-size:14px;outline:none;transition:all .2s ease}
-  .sr-input:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,.15)}
-  .sr-input.error{border-color:#ef4444}
-  .sr-ea-btn{width:100%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 20px rgba(124,58,237,.3)}
-  .sr-ea-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 25px rgba(124,58,237,.5)}
-
-  @media(max-width:1024px){
-    .sr-nav{padding:0 24px;height:72px}
-    .sr-nav-links{display:none!important}
-    .sr-hero-grid{grid-template-columns:1fr!important;padding-top:100px!important;text-align:center}
-    .sr-left-mockups, .sr-right-dashboard{display:none!important}
-    .sr-steps-grid, .sr-ea-grid{grid-template-columns:1fr!important;gap:32px!important}
-  }
-`;
+const TypingScript = () => {
+  const hooks = ["Generating viral hook...", "Analyzing retention metrics...", "Structuring body layout...", "Optimizing keyword vectors..."];
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setIndex((prev) => (prev + 1) % hooks.length), 3000);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <motion.span key={index} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.3 }}>
+      {hooks[index]}
+    </motion.span>
+  );
+};
 
 export default function LandingPage() {
-  const navigate = useNavigate();
-  const rootRef   = useRef(null);
-  const emailRef  = useRef(null);
-  const otpRef    = useRef(null);
+  const rootRef = useRef(null);
+  const emailRef = useRef(null);
+  const otpRef = useRef(null);
 
-  const [scrolled,  setScrolled]  = useState(false);
-  const [step,      setStep]      = useState('email');
+  const [scrolled, setScrolled] = useState(false);
+  const [step, setStep] = useState('email');
   const [userEmail, setUserEmail] = useState('');
-  const [loading,   setLoading]   = useState(false);
-  const [errorMsg,  setErrorMsg]  = useState('');
-  const [emailErr,  setEmailErr]  = useState(false);
-  const [otpErr,    setOtpErr]    = useState(false);
-
-  const BASE = import.meta.env.VITE_API_URL || 'https://uptrent-backend.onrender.com';
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', fn, { passive: true });
-    return () => window.removeEventListener('scroll', fn);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    const cards = rootRef.current?.querySelectorAll('.sr-feature-item');
-    if (!cards) return;
-    const handlers = [];
-    cards.forEach(c => {
-      const fn = (e) => {
-        const r = c.getBoundingClientRect();
-        c.style.setProperty('--mx', `${((e.clientX - r.left) / r.width * 100).toFixed(1)}%`);
-        c.style.setProperty('--my', `${((e.clientY - r.top) / r.height * 100).toFixed(1)}%`);
-      };
-      c.addEventListener('mousemove', fn);
-      handlers.push({ card: c, fn });
-    });
-    return () => handlers.forEach(h => h.card.removeEventListener('mousemove', h.fn));
-  }, []);
-
-  useEffect(() => {
-    const els = rootRef.current?.querySelectorAll('.sr-reveal,.sr-reveal-l,.sr-reveal-r,.sr-reveal-s');
-    if (!els) return;
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('on');
-          obs.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.05 });
-    els.forEach(el => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-
-  const handleSendOTP = async () => {
-    const email = emailRef.current?.value.trim() ?? '';
-    const name  = document.getElementById('sr-name-input')?.value.trim() ?? '';
-    if (!email || !email.includes('@')) {
-      setEmailErr(true); emailRef.current?.classList.add('sr-shake');
-      setTimeout(() => { setEmailErr(false); emailRef.current?.classList.remove('sr-shake'); }, 600); return;
-    }
-    setLoading(true); setErrorMsg('');
-    try {
-      const res  = await fetch(`${BASE}/api/waitlist`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, name: name || email.split('@')[0] }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
-      setUserEmail(email); setStep('otp');
-    } catch (err) { setErrorMsg(err.message || 'Something went wrong.'); }
-    finally { setLoading(false); }
-  };
-
-  const handleVerifyOTP = async () => {
-    const token = otpRef.current?.value.trim() ?? '';
-    if (!token || token.length < 6) {
-      setOtpErr(true); otpRef.current?.classList.add('sr-shake');
-      setTimeout(() => { setOtpErr(false); otpRef.current?.classList.remove('sr-shake'); }, 600); return;
-    }
-    setLoading(true); setErrorMsg('');
-    try {
-      const res  = await fetch(`${BASE}/api/waitlist`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: userEmail, otp: token, action:'verify' }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Invalid OTP');
-      setStep('done');
-    } catch (err) { setErrorMsg(err.message || 'Invalid code. Please try again.'); }
-    finally { setLoading(false); }
-  };
 
   return (
-    <div ref={rootRef} className="sr-root">
-      <style>{css}</style>
+    <div ref={rootRef} className="relative min-h-screen bg-[#03000a] text-white font-sans overflow-x-hidden selection:bg-purple-500/30">
       
-      {/* GLOBAL BACKGROUND SYSTEM */}
-      <div style={{ position:'fixed', inset:0, zIndex:1, pointerEvents:'none', background:'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.07) 0%, transparent 70%)' }} />
-      <div style={{ position:'fixed', inset:0, zIndex:1, pointerEvents:'none', opacity:0.02, backgroundImage:'linear-gradient(rgba(255,255,255,0.3) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.3) 1px,transparent 1px)', backgroundSize:'50px 50px' }} />
+      {/* MOTION GRAPHIC BACKGROUND */}
+      <motion.div 
+        animate={{ scale: [1, 1.05, 1], rotate: [0, 2, 0] }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.09) 0%, transparent 65%)' }} 
+      />
+      
+      <motion.div 
+        animate={{ y: [0, -15, 0], x: [0, 10, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        style={{ position: 'fixed', inset: -20, zIndex: 1, pointerEvents: 'none', opacity: 0.025, backgroundImage: 'linear-gradient(rgba(255,255,255,0.2) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.2) 1px,transparent 1px)', backgroundSize: '60px 60px' }} 
+      />
 
-      {/* ══════ NAVBAR ══════ */}
-      <nav className={`sr-nav sr-anim-nav${scrolled ? ' scrolled' : ''}`}>
-        <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', display:'grid', placeItems:'center' }}>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2.5 }}>
-              {Array.from({length:9}).map((_,i) => (
-                <div key={i} style={{ width:5, height:5, borderRadius:1.5, background: i === 4 ? '#fff' : 'linear-gradient(135deg,#c084fc,#7c3aed)' }} />
-              ))}
-            </div>
+      {/* NAVBAR */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 md:px-16 h-20 transition-all duration-300 ${scrolled ? 'bg-[#03000a]/80 backdrop-blur-md border-b border-purple-500/10 shadow-lg' : 'bg-transparent'}`}>
+        <div className="flex items-center gap-2.5 cursor-pointer">
+          <div className="w-8 h-8 rounded-lg bg-purple-600/10 border border-purple-500/20 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-sm bg-purple-500 shadow-[0_0_10px_#a855f7]" />
           </div>
-          <span style={{ fontFamily:'Plus Jakarta Sans', fontSize:20, fontWeight:700, color:'#fff', letterSpacing:'-0.02em' }}>SocialRum</span>
-        </a>
-
-        <ul className="sr-nav-links" style={{ display:'flex', gap:40, listStyle:'none' }}>
-          {['Features','How It Works','Early Access'].map(l => (
-            <li key={l}><a href={`#${l.toLowerCase().replace(/ /g,'-')}`} className="sr-nav-link">{l}</a></li>
+          <span className="font-semibold tracking-tight text-lg">SocialRum</span>
+        </div>
+        <ul className="hidden lg:flex items-center gap-10 list-none text-sm text-gray-400 font-medium">
+          {['Features', 'How It Works', 'Early Access'].map(item => (
+            <li key={item}><a href={`#${item.toLowerCase().replace(/ /g, '-')}`} className="hover:text-white transition-colors">{item}</a></li>
           ))}
         </ul>
-
-        <a href="#early-access" className="sr-btn-glow" style={{ padding:'10px 20px', fontSize:'13px', boxShadow:'none', background:'rgba(124,58,237,0.2)', border:'1px solid rgba(124,58,237,0.3)' }}>
+        <button className="bg-purple-600/20 border border-purple-500/30 px-4 py-2 rounded-full text-xs font-semibold hover:bg-purple-600 transition-all duration-200 shadow-[0_0_15px_rgba(124,58,237,0.2)]">
           Be the First to Know
-        </a>
+        </button>
       </nav>
 
-      {/* ══════ HERO COMPONENT (EXACT DESIGN ARCHITECTURE MATCH) ══════ */}
-      <section style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 24px', zIndex:10 }}>
-        
-        {/* CENTER CENTRAL BACKDROP LENS FLARE */}
-        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%, -50%)', width:'400px', height:'180px', background:'rgba(147,51,234,0.18)', filter:'blur(100px)', borderRadius:'50%', pointerEvents:'none', zIndex:1 }} />
-
-        <div className="sr-hero-grid" style={{ width:'100%', maxWidth:'1280px', display:'grid', gridTemplateColumns:'2.5fr 7fr 2.5fr', gap:24, alignItems:'center', position:'relative', zIndex:5, paddingTop:'60px' }}>
+      {/* HERO HERO SECTION */}
+      <section className="relative min-h-screen flex items-center justify-center px-6 lg:px-16 z-10 pt-20">
+        <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          {/* LEFT CONTAINER: STAGGERED REELS/SHORTS COMPOSITIONS */}
-          <div className="sr-left-mockups" style={{ display:'flex', flexDirection:'column', gap:28, alignItems:'flex-start' }}>
-            {/* Card 1: Angled Left */}
-            <div style={{ width:'140px', background:'rgba(10,5,22,0.6)', borderRadius:24, padding:8, border:'1px solid rgba(255,255,255,0.04)', boxShadow:'0 20px 40px rgba(0,0,0,0.4)', transform:'rotate(-5deg)' }}>
-              <div style={{ position:'relative', aspectRatio:'9/16', borderRadius:18, overflow:'hidden', background:'#120c24' }}>
-                <span style={{ position:'absolute', top:8, left:8, bg:'#ff0000', fontSize:8, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'#ff0000' }}>Shorts</span>
-                <span style={{ position:'absolute', top:8, right:8, fontSize:8, color:'rgba(255,255,255,0.6)' }}>0:58</span>
-                <div style={{ position:'absolute', bottom:8, left:8, right:8, fontSize:9, lineHeight:1.2 }}>
-                  <p style={{ fontWeight:600, color:'#fff' }}>Micro Habits That Changed My Life</p>
-                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:8, marginTop:2 }}>@productivedude</p>
+          {/* LEFT COLUMN: ACTIVE INFINITE ROLLING REELS MODULE */}
+          <div className="lg:col-span-3 hidden lg:flex gap-4 h-[520px] overflow-hidden relative group">
+            {/* Soft Overlay Shadows for Fade Effect Top/Bottom */}
+            <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#03000a] to-transparent z-20 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#03000a] to-transparent z-20 pointer-events-none" />
+
+            {/* Reel Lane 1 */}
+            <motion.div 
+              animate={{ y: [0, -560] }} 
+              transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+              className="flex flex-col gap-4 w-1/2"
+            >
+              {[...VIDEO_CARDS, ...VIDEO_CARDS].map((card, idx) => (
+                <div key={`${card.id}-lane1-${idx}`} className="bg-white/[0.02] border border-white/5 rounded-2xl p-2 shadow-2xl backdrop-blur-md">
+                  <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-purple-950/20">
+                    <img src={card.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+                    <span className="absolute top-2 left-2 text-[8px] font-bold bg-red-600 px-1.5 py-0.5 rounded">Shorts</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 flex flex-col justify-end p-2.5">
+                      <p className="text-[10px] font-semibold tracking-tight line-clamp-2 leading-tight">{card.title}</p>
+                      <div className="flex justify-between items-center text-[8px] text-gray-400 mt-1">
+                        <span>{card.channel}</span>
+                        <span className="text-purple-400 font-bold">{card.views}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            {/* Card 2: Shifted Right */}
-            <div style={{ width:'140px', background:'rgba(10,5,22,0.6)', borderRadius:24, padding:8, border:'1px solid rgba(255,255,255,0.04)', boxShadow:'0 20px 40px rgba(0,0,0,0.4)', transform:'rotate(3deg)', marginLeft:'36px' }}>
-              <div style={{ position:'relative', aspectRatio:'9/16', borderRadius:18, overflow:'hidden', background:'#120c24' }}>
-                <span style={{ position:'absolute', top:8, left:8, fontSize:8, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'#ff0000' }}>Shorts</span>
-                <span style={{ position:'absolute', top:8, right:8, fontSize:8, color:'rgba(255,255,255,0.6)' }}>0:56</span>
-                <div style={{ position:'absolute', bottom:8, left:8, right:8, fontSize:9, lineHeight:1.2 }}>
-                  <p style={{ fontWeight:600, color:'#fff' }}>Camera Settings for Perfect Reels</p>
-                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:8, marginTop:2 }}>@FunctSpa</p>
+              ))}
+            </motion.div>
+
+            {/* Reel Lane 2 */}
+            <motion.div 
+              animate={{ y: [-560, 0] }} 
+              transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+              className="flex flex-col gap-4 w-1/2 mt-8"
+            >
+              {[...VIDEO_CARDS, ...VIDEO_CARDS].reverse().map((card, idx) => (
+                <div key={`${card.id}-lane2-${idx}`} className="bg-white/[0.02] border border-white/5 rounded-2xl p-2 shadow-2xl backdrop-blur-md">
+                  <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-purple-950/20">
+                    <img src={card.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+                    <span className="absolute top-2 left-2 text-[8px] font-bold bg-purple-600 px-1.5 py-0.5 rounded">Reels</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 flex flex-col justify-end p-2.5">
+                      <p className="text-[10px] font-semibold tracking-tight line-clamp-2 leading-tight">{card.title}</p>
+                      <div className="flex justify-between items-center text-[8px] text-gray-400 mt-1">
+                        <span>{card.channel}</span>
+                        <span className="text-purple-400 font-bold">{card.views}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              ))}
+            </motion.div>
           </div>
 
-          {/* MAIN HERO ACTION CENTER */}
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
-            {/* Upper Badge Info */}
-            <div style={{ border:'1px solid rgba(147,51,234,0.3)', borderRadius:50, padding:'6px 16px', fontSize:10, fontWeight:600, color:'#c084fc', background:'rgba(147,51,234,0.08)', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:20 }}>
+          {/* CENTER COLUMN: TEXT ENGINE HEADINGS */}
+          <div className="lg:col-span-6 flex flex-col items-center text-center">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="border border-purple-500/30 bg-purple-500/5 text-purple-300 text-[10px] tracking-widest uppercase px-4 py-1.5 rounded-full font-semibold mb-6">
               • Now Accepting Early Access
-            </div>
+            </motion.div>
 
-            {/* Huge Clean Typography Title Block */}
-            <h1 style={{ fontFamily:'Plus Jakarta Sans', fontSize:'clamp(54px, 7.5vw, 92px)', fontWeight:800, letterSpacing:'-0.03em', color:'#fff', lineHeight:1.0, position:'relative', margin:0 }}>
-              Social<span style={{ background:'linear-gradient(to bottom, #fff, #9333ea)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Rum</span>
-              {/* Reference Horizon Flare Bar Effect */}
-              <div style={{ width:'110%', height:'1px', background:'linear-gradient(to right, transparent, #a855f7, #fff, #a855f7, transparent)', position:'absolute', bottom:'-4px', left:'-5%', filter:'blur(0.5px)' }} />
-            </h1>
+            <motion.h1 initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="text-6xl md:text-8xl font-extrabold tracking-tighter m-0 relative select-none">
+              Social<span className="bg-gradient-to-b from-white via-white to-purple-500 bg-clip-text text-transparent">Rum</span>
+              <div className="absolute -bottom-1 left-[-5%] w-[110%] h-[1px] bg-gradient-to-r from-transparent via-purple-500 to-transparent blur-[0.5px]" />
+            </motion.h1>
 
-            {/* Action Dynamic Subtitle */}
-            <h2 style={{ fontFamily:'Plus Jakarta Sans', fontSize:'clamp(20px, 3.2vw, 34px)', fontWeight:700, color:'#fff', letterSpacing:'-0.02em', marginTop:28, textAlign:'center', lineHeight:1.2 }}>
-              Create Content <span style={{ color:'#a855f7' }}>That Actually</span><br />Gets Discovered
-            </h2>
+            <motion.h2 initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="text-2xl md:text-4xl font-bold tracking-tight text-white mt-8 leading-tight">
+              Create Content <span className="text-purple-400">That Actually</span><br />Gets Discovered
+            </motion.h2>
 
-            {/* Core Segment Subtext Description */}
-            <p style={{ fontSize:14, color:'rgba(255,255,255,0.5)', lineHeight:1.6, maxWidth:480, textAlign:'center', marginTop:16, fontFamily:'Inter' }}>
+            <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }} className="text-gray-400 text-sm max-w-md leading-relaxed mt-4">
               SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, content analysis, and SEO in one dark premium dashboard.
-            </p>
+            </motion.p>
 
-            {/* Interactive Functional CTA Blocks */}
-            <div style={{ display:'flex', alignItems:'center', gap:24, marginTop:32 }}>
-              <a href="#early-access" className="sr-btn-glow">
-                Be the First to Know <span style={{ fontSize:13 }}>→</span>
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.4 }} className="flex items-center gap-6 mt-8">
+              <a href="#early-access" className="bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm px-6 py-3 rounded-full transition-all shadow-[0_0_25px_rgba(124,58,237,0.4)] flex items-center gap-2">
+                Be the First to Know <span>→</span>
               </a>
-              <a href="#features" style={{ color:'rgba(255,255,255,0.7)', textDecoration:'none', fontSize:14, fontWeight:500, display:'flex', alignItems:'center', gap:6 }} onMouseEnter={e=>e.currentTarget.style.color='#fff'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.7)'}>
-                Explore Features <span style={{ fontSize:10 }}>▼</span>
+              <a href="#features" className="text-sm text-gray-400 hover:text-white font-medium flex items-center gap-1 transition-colors">
+                Explore Features <span className="text-xs">▼</span>
               </a>
-            </div>
+            </motion.div>
           </div>
 
-          {/* RIGHT CONTAINER: THE UI PREMIUM DASHBOARD PANEL */}
-          <div className="sr-right-dashboard" style={{ width:'100%', display:'flex', justifyContent:'flex-end' }}>
-            <div style={{ width:'250px', background:'rgba(10,6,22,0.65)', border:'1px solid rgba(255,255,255,0.04)', borderRadius:24, padding:20, backdropFilter:'blur(16px)', boxShadow:'0 30px 60px rgba(0,0,0,0.5)', position:'relative' }}>
+          {/* RIGHT COLUMN: INTERACTIVE LIVE DASHBOARD UI */}
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="lg:col-span-3 hidden lg:block">
+            <div className="bg-[#0b0616]/70 border border-white/5 rounded-3xl p-5 backdrop-blur-xl shadow-[0_30px_60px_rgba(0,0,0,0.6)] relative overflow-hidden">
+              <div className="absolute top-[-30px] right-[-30px] w-24 h-24 bg-purple-500/10 blur-xl rounded-full" />
               
-              {/* Glow absolute chip asset */}
-              <div style={{ position:'absolute', top:-10, right:12, background:'#0a0518', border:'1px solid rgba(147,51,234,0.4)', borderRadius:6, padding:'2px 8px', fontSize:8, color:'#c084fc', fontWeight:600, boxShadow:'0 0 12px rgba(147,51,234,0.3)' }}>
-                AI Powered For Creators
+              <div className="flex items-center gap-2 text-purple-400 text-xs font-bold mb-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" /> Dashboard
               </div>
 
-              <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'#a855f7', fontWeight:600, marginBottom:16 }}>
-                <div style={{ width:6, height:6, borderRadius:'50%', background:'#a855f7' }} /> Dashboard
+              {/* Widget 1 */}
+              <div className="bg-black/30 border border-white/[0.03] rounded-xl p-3 mb-3">
+                <p className="text-[9px] text-gray-500 tracking-wider uppercase mb-2">Trending Now</p>
+                {[['#AIVideoEditing', 'Trending'], ['#CreatorEconomy2026', 'Rising'], ['#YouTubeShorts', 'Hot']].map(([tag, status]) => (
+                  <div key={tag} className="flex justify-between text-xs py-1 text-gray-300">
+                    <span>{tag}</span> <span className="text-purple-400 text-[10px] font-medium">↑ {status}</span>
+                  </div>
+                ))}
               </div>
 
-              {/* Panel Block 1: Trends */}
-              <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:14, padding:12, marginBottom:12 }}>
-                <p style={{ fontSize:8, color:'rgba(255,255,255,0.4)', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:8 }}>Trending Now</p>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, marginBottom:4 }}>
-                  <span style={{ color:'rgba(255,255,255,0.8)' }}>#AIVideoEditing</span> <span style={{ color:'#a855f7' }}>↑ Trending</span>
-                </div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, marginBottom:4 }}>
-                  <span style={{ color:'rgba(255,255,255,0.8)' }}>#CreatorEconomy2026</span> <span style={{ color:'#a855f7' }}>↑ Rising</span>
-                </div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:10 }}>
-                  <span style={{ color:'rgba(255,255,255,0.8)' }}>#YouTubeShorts</span> <span style={{ color:'#a855f7' }}>↑ Hot</span>
-                </div>
-              </div>
-
-              {/* Panel Block 2: Scripting Input */}
-              <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:14, padding:12, marginBottom:12 }}>
-                <p style={{ fontSize:8, color:'rgba(255,255,255,0.4)', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:6 }}>Script Generator</p>
-                <div style={{ background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:8, padding:'6px 10px', fontSize:10, color:'rgba(255,255,255,0.3)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <span>Generating hook...</span>
-                  <div style={{ width:10, height:10, borderRadius:'50%', background:'#a855f7' }} />
+              {/* Widget 2 */}
+              <div className="bg-black/30 border border-white/[0.03] rounded-xl p-3 mb-3">
+                <p className="text-[9px] text-gray-500 tracking-wider uppercase mb-1.5">Script Generator</p>
+                <div className="bg-black/20 border border-white/5 rounded-lg p-2 text-xs text-gray-400 flex items-center justify-between min-h-[32px]">
+                  <AnimatePresence mode="wait">
+                    <TypingScript />
+                  </AnimatePresence>
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                 </div>
               </div>
 
-              {/* Panel Block 3: Metrics */}
-              <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:14, padding:12 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:8, marginBottom:6 }}>
-                  <span style={{ color:'rgba(255,255,255,0.4)', tracking:'0.05em', textTransform:'uppercase' }}>SEO Score</span>
-                  <span style={{ color:'#a855f7', fontWeight:600 }}>AI Ready</span>
+              {/* Widget 3 */}
+              <div className="bg-black/30 border border-white/[0.03] rounded-xl p-3">
+                <div className="flex justify-between items-center text-[9px] mb-1.5">
+                  <span className="text-gray-500 tracking-wider uppercase">SEO Score</span>
+                  <span className="text-purple-400 font-bold">AI Ready</span>
                 </div>
-                <div style={{ width:'100%', height:4, background:'rgba(255,255,255,0.1)', borderRadius:2, overflow:'hidden' }}>
-                  <div style={{ width:'85%', height:'100%', background:'#a855f7', boxShadow:'0 0 8px #a855f7' }} />
+                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div animate={{ width: ["0%", "85%"] }} transition={{ duration: 1.5, ease: "easeOut" }} className="h-full bg-purple-500 shadow-[0_0_8px_#a855f7]" />
                 </div>
               </div>
 
             </div>
-          </div>
+          </motion.div>
 
         </div>
-        
-        {/* Soft elegant baseline horizon lighting boundary */}
-        <div style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', width:'80%', height:'1px', background:'linear-gradient(to right, transparent, rgba(124,58,237,0.4), transparent)' }} />
       </section>
 
-      {/* ══════ STATS ══════ */}
-      <div style={{ background:'rgba(124,58,237,.01)', borderTop:'1px solid rgba(124,58,237,.08)', borderBottom:'1px solid rgba(124,58,237,.08)', padding:'48px 24px', display:'flex', justifyContent:'center', gap:'clamp(32px, 8vw, 96px)', flexWrap:'wrap', position:'relative', zIndex:5 }}>
+      {/* STATS SECTION */}
+      <div className="bg-purple-500/[0.01] border-y border-purple-500/10 py-12 px-6 flex justify-center gap-16 md:gap-24 flex-wrap relative z-20">
         {STATS.map((s, i) => (
-          <div key={s.label} className={`sr-reveal sr-d${i+1}`} style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'Plus Jakarta Sans', fontSize:'36px', fontWeight:800, background:'linear-gradient(to bottom, #fff, #c084fc)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>{s.value}</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,.4)', marginTop:4, fontWeight:500 }}>{s.label}</div>
+          <div key={s.label} className="text-center sr-reveal">
+            <div className="text-3xl md:text-4xl font-extrabold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent">{s.value}</div>
+            <div className="text-xs text-gray-500 font-medium mt-1">{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* ══════ FEATURES ══════ */}
-      <section id="features" style={{ maxWidth:1140, margin:'0 auto', padding:'120px 24px 80px', position:'relative', zIndex:5 }}>
-        <p className="sr-reveal" style={{ fontSize:11, fontWeight:600, letterSpacing:'.1em', textTransform:'uppercase', color:'#a855f7', marginBottom:12 }}>Platform Features</p>
-        <h2 className="sr-reveal sr-d1" style={{ fontFamily:'Plus Jakarta Sans', fontSize:'clamp(26px,4vw,38px)', fontWeight:800, tracking:'-0.02em', color:'#fff', marginBottom:14 }}>Every tool a serious creator needs.</h2>
-        <p className="sr-reveal sr-d2" style={{ fontSize:15, color:'rgba(255,255,255,.5)', lineHeight:1.6, maxWidth:500, marginBottom:56 }}>Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</p>
+      {/* FEATURES SECTION */}
+      <section id="features" className="max-w-6xl mx-auto px-6 py-28 relative z-20">
+        <p className="text-purple-500 text-xs font-bold tracking-widest uppercase mb-3 sr-reveal">Platform Features</p>
+        <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-4 sr-reveal sr-d1">Every tool a serious creator needs.</h2>
+        <p className="text-gray-500 text-sm md:text-base max-w-lg mb-16 sr-reveal sr-d2">Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</p>
         
-        <div className="sr-reveal-s sr-d2" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(320px,1fr))', gap:20 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sr-reveal-s sr-d2">
           {FEATURES.map(f => (
-            <div key={f.num} className="sr-feature-item">
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-                <div style={{ width:40, height:40, background:'rgba(124,58,237,.1)', borderRadius:12, display:'flex', alignItems:'center', justifyContext:'center', border:'1px solid rgba(124,58,237,.2)' }}>
-                  <span style={{ margin:'auto', fontSize:12, fontWeight:700, color:'#c084fc' }}>{f.num}</span>
-                </div>
+            <div key={f.num} className="sr-feature-item group">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                <span className="text-xs font-bold text-purple-400">{f.num}</span>
               </div>
-              <h3 style={{ fontFamily:'Plus Jakarta Sans', fontSize:18, fontWeight:700, color:'#fff', marginBottom:8 }}>{f.title}</h3>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,.5)', lineHeight:1.6, minHeight:64 }}>{f.desc}</p>
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop:20 }}>
+              <h3 className="text-lg font-bold text-white mb-2">{f.title}</h3>
+              <p className="text-xs md:text-sm text-gray-400 leading-relaxed mb-4 min-h-[60px]">{f.desc}</p>
+              <div className="flex gap-2 flex-wrap">
                 {f.tags.map(tag => <span key={tag} className="sr-feature-tag">{tag}</span>)}
               </div>
             </div>
           ))}
-          <div style={{ background:'rgba(124,58,237,.01)', border:'1px solid rgba(124,58,237,.05)', borderRadius:24, display:'flex', alignItems:'center', justifyContent:'center', minHeight:220, padding:24 }}>
-            <div style={{ textAlign:'center' }}>
-              <p style={{ fontFamily:'Plus Jakarta Sans', fontSize:22, fontWeight:700, color:'rgba(124,58,237,.2)', letterSpacing:'-0.01em', marginBottom:4 }}>More Coming Soon</p>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,.3)' }}>Platform workspace update actively in progress</p>
+          <div className="border border-white/5 bg-white/[0.01] rounded-3xl flex items-center justify-center p-6 text-center min-h-[200px]">
+            <div>
+              <p className="font-bold text-gray-400 mb-1">More Modules Loading</p>
+              <p className="text-xs text-gray-600">The ultimate AI creator platform is actively expanding.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ══════ HOW IT WORKS ══════ */}
-      <section id="how-it-works" style={{ maxWidth:1140, margin:'0 auto', padding:'80px 24px 100px', position:'relative', zIndex:5 }}>
-        <p className="sr-reveal" style={{ fontSize:11, fontWeight:600, letterSpacing:'.1em', textTransform:'uppercase', color:'#a855f7', marginBottom:12 }}>How It Works</p>
-        <h2 className="sr-reveal sr-d1" style={{ fontFamily:'Plus Jakarta Sans', fontSize:'clamp(26px,4vw,38px)', fontWeight:800, tracking:'-0.02em', color:'#fff', marginBottom:14 }}>From zero to algorithm-ready in one session.</h2>
-        <p className="sr-reveal sr-d2" style={{ fontSize:15, color:'rgba(255,255,255,.5)', lineHeight:1.6, maxWidth:520, marginBottom:56 }}>No complex setup. Connect your channels and SocialRum immediately starts surfacing actionable insights.</p>
+      {/* HOW IT WORKS SECTION */}
+      <section id="how-it-works" className="max-w-6xl mx-auto px-6 py-16 relative z-20">
+        <p className="text-purple-500 text-xs font-bold tracking-widest uppercase mb-3 sr-reveal">System Architecture</p>
+        <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-4 sr-reveal sr-d1">From zero to algorithm-ready in one session.</h2>
+        <p className="text-gray-500 text-sm max-w-lg mb-16 sr-reveal sr-d2">No complex configuration frameworks. Link your data points and let the engine process signals in the background.</p>
         
-        <div className="sr-steps-grid" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20 }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {STEPS.map((s, i) => (
-            <div key={s.num} className={`sr-reveal sr-d${i+1} sr-step-card`}>
+            <div key={s.num} className={`sr-step-card sr-reveal sr-d${i+1}`}>
               <div className="sr-step-num">{s.num}</div>
-              <h3 style={{ fontFamily:'Plus Jakarta Sans', fontSize:18, fontWeight:700, color:'#fff', marginBottom:6 }}>{s.title}</h3>
-              <p style={{ fontSize:12, fontWeight:600, color:'#a855f7', marginBottom:12 }}>{s.sub}</p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,.5)', lineHeight:1.6 }}>{s.desc}</p>
-              <p style={{ marginTop:16, fontSize:11, color:'rgba(168,85,247,.4)', fontStyle:'italic' }}>{s.note}</p>
+              <h3 className="text-lg font-bold text-white mb-1.5">{s.title}</h3>
+              <p className="text-purple-400 text-xs font-medium mb-4">{s.sub}</p>
+              <p className="text-xs md:text-sm text-gray-400 leading-relaxed">{s.desc}</p>
+              <p className="text-[11px] text-purple-400/40 italic mt-4">{s.note}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ══════ EARLY ACCESS FORM MODULE ══════ */}
-      <section id="early-access" style={{ maxW:'1140px', margin:'0 auto', padding:'80px 24px 120px', position:'relative', zIndex:5 }}>
-        <div className="sr-ea-grid" style={{ background:'rgba(124,58,237,0.02)', border:'1px solid rgba(124,58,237,0.1)', borderRadius:32, padding:'56px 48px', display:'grid', gridTemplateColumns:'1.1fr 0.9fr', gap:56, alignItems:'center', overflow:'hidden', position:'relative' }}>
+      {/* EARLY ACCESS MODULE */}
+      <section id="early-access" className="max-w-6xl mx-auto px-6 py-20 pb-32 relative z-20">
+        <div className="border border-purple-500/10 bg-purple-500/[0.01] rounded-[32px] p-8 md:p-14 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative overflow-hidden">
+          <div className="absolute top-[-40px] right-[-40px] w-48 h-48 bg-purple-500/5 blur-3xl rounded-full" />
           
-          <div style={{ position:'absolute', top:-60, right:-60, width:180, height:180, background:'radial-gradient(circle,rgba(124,58,237,.1),transparent 70%)', borderRadius:'50%', pointerEvents:'none' }} />
-
-          <div className="sr-reveal-l">
-            <p style={{ fontSize:11, fontWeight:600, letterSpacing:'.1em', textTransform:'uppercase', color:'#a855f7', marginBottom:12 }}>Limited Alpha Batches</p>
-            <h2 style={{ fontFamily:'Plus Jakarta Sans', fontSize:'clamp(26px,4vw,36px)', fontWeight:800, tracking:'-0.02em', color:'#fff', marginBottom:14 }}>Be the First to Know & Create.</h2>
-            <p style={{ fontSize:14, color:'rgba(255,255,255,.5)', lineHeight:1.6 }}>Get early access and founding creator tier status when SocialRum goes public.</p>
-            
-            <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:28 }}>
-              {['Beta Access — Use all 5 core modules before launch','Founding Creator Badge — Exclusive profile recognition','Free Early Access Tier — No credit card requirements'].map(b => (
-                <div key={b} style={{ display:'flex', alignItems:'center', gap:10, fontSize:13, color:'rgba(255,255,255,.6)' }}>
-                  <div style={{ width:16, height:16, borderRadius:'50%', background:'rgba(124,58,237,0.15)', border:'1px solid rgba(124,58,237,0.3)', display:'flex' }}>
-                    <svg viewBox="0 0 12 12" style={{ width:8, height:8, margin:'auto' }} fill="none" strokeWidth={3} stroke="#c084fc" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
+          <div className="lg:col-span-7 sr-reveal-l">
+            <p className="text-purple-500 text-xs font-bold tracking-widest uppercase mb-3">Priority Waitlist</p>
+            <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-white mb-4">Be the First to Know &amp; Create.</h2>
+            <p className="text-gray-400 text-sm leading-relaxed mb-8">Secure your creator terminal profile before public rollout deployment operations begin.</p>
+            <div className="flex flex-col gap-3.5">
+              {['Beta Access — Operate full pipeline parameters before launch', 'Founding Creator Badge — Strategic system profile identifier', 'Free Early Access Tier — Guarded workspace allocations'].map(item => (
+                <div key={item} className="flex items-center gap-3 text-xs md:text-sm text-gray-300">
+                  <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+                    <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none" strokeWidth={3} stroke="#c084fc"><polyline points="2,6 5,9 10,3"/></svg>
                   </div>
-                  {b}
+                  {item}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="sr-reveal-r" style={{ background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:24, padding:32 }}>
+          <div className="lg:col-span-5 bg-black/40 border border-white/5 p-6 md:p-8 rounded-2xl z-10 sr-reveal-r">
             {step === 'done' && (
-              <div className="sr-fade-in" style={{ textAlign:'center', padding:'16px 0' }}>
-                <div style={{ width:56, height:56, background:'linear-gradient(135deg,#7c3aed,#a855f7)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
-                  <svg viewBox="0 0 24 24" style={{ width:24, height:24, fill:'none', stroke:'white', strokeWidth:3, strokeLinecap:'round', strokeLinejoin:'round' }}><polyline points="20 6 9 17 4 12"/></svg>
+              <div className="text-center py-6 sr-fade-in">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-purple-400 flex items-center justify-center mx-auto mb-5 shadow-lg">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-white" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <h3 style={{ fontFamily:'Plus Jakarta Sans', fontSize:20, fontWeight:700, color:'#fff', marginBottom:8 }}>You're on the list! 🎉</h3>
-                <p style={{ fontSize:13, color:'rgba(255,255,255,.5)', lineHeight:1.5, marginBottom:20 }}>Welcome to early workspace access.</p>
-                <div style={{ display:'inline-block', background:'rgba(124,58,237,.1)', border:'1px solid rgba(124,58,237,.2)', borderRadius:50, padding:'8px 16px', fontSize:12, color:'#c084fc', fontWeight:500 }}>
+                <h3 className="text-xl font-bold mb-2">Workspace Reserved! 🎉</h3>
+                <p className="text-xs text-gray-500 mb-6">Your parameters have been logged successfully.</p>
+                <div className="inline-block bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs px-4 py-2 rounded-full font-medium">
                   Verified — {userEmail}
                 </div>
               </div>
@@ -443,39 +321,35 @@ export default function LandingPage() {
 
             {step === 'otp' && (
               <div className="sr-fade-in">
-                <h3 style={{ fontFamily:'Plus Jakarta Sans', fontSize:20, fontWeight:700, color:'#fff', marginBottom:6 }}>Verify Email Securely</h3>
-                <p style={{ fontSize:13, color:'rgba(255,255,255,.5)', marginBottom:20 }}>6-digit dynamic key code transmitted to <b style={{color:'#c084fc'}}>{userEmail}</b></p>
-                <div style={{ marginBottom:16 }}>
-                  <input ref={otpRef} type="text" inputMode="numeric" maxLength={6} placeholder="Verification Code" className="sr-input" style={{ textAlign:'center', fontSize:18, tracking:'0.2em' }} onKeyDown={e => { if (e.key==='Enter') handleVerifyOTP(); }} />
-                </div>
-                {errorMsg && <p style={{ fontSize:12, color:'#ef4444', textAlign:'center', marginBottom:12 }}>{errorMsg}</p>}
-                <button onClick={handleVerifyOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Validating...' : 'Confirm Registration →'}</button>
-                <button onClick={() => { setStep('email'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', fontSize:12, display:'block', width:'100%', marginTop:14, cursor:'pointer' }}>Change email address</button>
+                <h3 className="text-lg font-bold mb-1">Verify Identity Pass</h3>
+                <p className="text-xs text-gray-400 mb-6">Enter transmission key code processed to <span className="text-purple-400 font-medium">{userEmail}</span></p>
+                <input ref={otpRef} type="text" inputMode="numeric" maxLength={6} placeholder="000000" className="sr-input tracking-[0.3em] text-center text-lg font-bold" />
+                {errorMsg && <p className="text-xs text-red-400 text-center mt-3">{errorMsg}</p>}
+                <button onClick={() => setStep('done')} className="sr-ea-btn mt-4">Confirm Registration Code</button>
               </div>
             )}
 
             {step === 'email' && (
-              <div>
-                <h3 style={{ fontFamily:'Plus Jakarta Sans', fontSize:20, fontWeight:700, color:'#fff', marginBottom:6 }}>Request Access</h3>
-                <p style={{ fontSize:13, color:'rgba(255,255,255,.5)', marginBottom:24 }}>Submit credentials to receive verification clearance pass.</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
-                  <input id="sr-name-input" type="text" placeholder="Creator / Business Name" className="sr-input" />
-                  <input ref={emailRef} type="email" placeholder="contact@example.com" className={`sr-input${emailErr?' error':''}`} onKeyDown={e => { if (e.key==='Enter') handleSendOTP(); }} />
+              <div className="sr-fade-in">
+                <h3 className="text-lg font-bold mb-1">Request Terminal Allocation</h3>
+                <p className="text-xs text-gray-400 mb-6">Input creator email handle vectors below.</p>
+                <div className="flex flex-col gap-3">
+                  <input id="sr-name-input" type="text" placeholder="Creator Handle Name" className="sr-input" />
+                  <input ref={emailRef} type="email" placeholder="alias@domain.com" className="sr-input" />
                 </div>
-                {errorMsg && <p style={{ fontSize:12, color:'#ef4444', textAlign:'center', marginBottom:12 }}>{errorMsg}</p>}
-                <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Requesting...' : 'Get Access Pass →'}</button>
+                {errorMsg && <p className="text-xs text-red-400 text-center mt-3">{errorMsg}</p>}
+                <button onClick={() => { setUserEmail(emailRef.current?.value || ''); setStep('otp'); }} className="sr-ea-btn mt-4">Generate Token Key →</button>
               </div>
             )}
           </div>
+
         </div>
       </section>
 
-      {/* ══════ FOOTER ══════ */}
-      <footer style={{ borderTop:'1px solid rgba(124,58,237,.08)', padding:'40px 64px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24, position:'relative', zIndex:5 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontFamily:'Plus Jakarta Sans', fontSize:16, fontWeight:700, color:'#fff' }}>SocialRum</span>
-        </div>
-        <p style={{ fontSize:12, color:'rgba(255,255,255,.3)' }}>© 2026 SocialRum · Unified Analytics Platform</p>
+      {/* FOOTER */}
+      <footer className="border-t border-purple-500/10 px-8 md:px-16 py-10 flex flex-col md:flex-row items-center justify-between gap-6 relative z-20 bg-[#03000a]">
+        <span className="text-sm font-bold tracking-tight">SocialRum</span>
+        <span className="text-xs text-gray-600">© 2026 SocialRum · Made for High-Growth Creators</span>
       </footer>
     </div>
   );
