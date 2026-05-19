@@ -356,7 +356,54 @@ export default function LandingPage() {
         {/* Vignette */}
         <div style={{ position:'absolute', inset:0, zIndex:2, background:['radial-gradient(ellipse 60% 80% at 50% 50%,rgba(0,0,0,.75) 0%,transparent 100%)','linear-gradient(to right,rgba(0,0,0,.95) 0%,rgba(0,0,0,.15) 28%,rgba(0,0,0,.15) 72%,rgba(0,0,0,.95) 100%)','linear-gradient(to bottom,rgba(0,0,0,.9) 0%,rgba(0,0,0,.05) 18%,rgba(0,0,0,.05) 82%,rgba(0,0,0,.9) 100%)'].join(',') }} />
 
-        {/* Horizon glow */}
+        {/* Dashboard card — right side, desktop only */}
+        <div style={{ position:'absolute', right:32, top:'50%', transform:'translateY(-50%)', zIndex:10, width:280, borderRadius:36, border:'1px solid rgba(139,92,246,0.15)', background:'rgba(0,0,0,0.5)', backdropFilter:'blur(20px)', padding:24, boxShadow:'0 0 60px rgba(139,92,246,0.15)', display:'none' }} className="xl-dashboard-card">
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, color:'#fff', fontSize:16, fontWeight:500 }}>
+              <div style={{ width:10, height:10, borderRadius:'50%', background:'#8b5cf6' }} />
+              Dashboard
+            </div>
+            <div style={{ fontSize:11, color:'#a78bfa', background:'rgba(139,92,246,0.1)', padding:'6px 12px', borderRadius:14, border:'1px solid rgba(139,92,246,0.2)', textAlign:'right', lineHeight:1.4 }}>
+              AI Powered<br/>For Creators
+            </div>
+          </div>
+
+          {/* Trending */}
+          <div style={{ borderRadius:24, border:'1px solid rgba(255,255,255,0.05)', background:'rgba(0,0,0,0.3)', padding:18, marginBottom:14 }}>
+            <p style={{ color:'rgba(255,255,255,0.5)', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:16 }}>Trending Now</p>
+            {[['#AIVideoEditing','↑ Trending'],['#CreatorEconomy2026','↑ Rising'],['#YouTubeShorts','↑ Hot']].map(([tag, status]) => (
+              <div key={tag} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, fontSize:13, color:'#fff' }}>
+                <span>{tag}</span><span style={{ color:'#a78bfa' }}>{status}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Script Generator */}
+          <div style={{ borderRadius:24, border:'1px solid rgba(255,255,255,0.05)', background:'rgba(0,0,0,0.3)', padding:18, marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+              <p style={{ color:'rgba(255,255,255,0.6)', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase' }}>Script Generator</p>
+              <div style={{ width:32, height:32, borderRadius:10, background:'linear-gradient(135deg,#7c3aed,#6d28d9)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 0 20px rgba(139,92,246,0.6)' }}>
+                <div style={{ width:10, height:10, borderRadius:'50%', background:'#fff' }} />
+              </div>
+            </div>
+            <div style={{ height:44, borderRadius:16, border:'1px solid rgba(255,255,255,0.05)', background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', padding:'0 16px', color:'rgba(255,255,255,0.4)', fontSize:13 }}>
+              Generating hook...
+            </div>
+          </div>
+
+          {/* SEO Score */}
+          <div style={{ borderRadius:24, border:'1px solid rgba(255,255,255,0.05)', background:'rgba(0,0,0,0.3)', padding:18 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+              <p style={{ color:'rgba(255,255,255,0.5)', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase' }}>SEO Score</p>
+              <span style={{ color:'#a78bfa', fontSize:13 }}>AI Ready</span>
+            </div>
+            <div style={{ width:'100%', height:12, borderRadius:50, background:'rgba(255,255,255,0.1)', overflow:'hidden' }}>
+              <div style={{ width:'82%', height:'100%', borderRadius:50, background:'linear-gradient(90deg,#7c3aed,#a78bfa)', boxShadow:'0 0 20px rgba(139,92,246,0.7)' }} />
+            </div>
+          </div>
+        </div>
+
+        <style>{`.xl-dashboard-card { display: none !important; } @media (min-width: 1280px) { .xl-dashboard-card { display: block !important; } }`}</style>
         <div className="sr-anim-glow" style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', width:900, height:4, background:'#7c3aed', boxShadow:'0 0 80px 40px rgba(124,58,237,.4),0 0 220px 80px rgba(124,58,237,.12)', zIndex:3 }} />
 
         {/* Hero content */}
