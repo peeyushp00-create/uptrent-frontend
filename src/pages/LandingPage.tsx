@@ -11,9 +11,9 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library — no manual uploads needed.', note: 'OAuth 2.0 secure. Read-only access. Revoke anytime.' },
-  { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: "Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience's watch patterns.", note: 'Processes 150+ content signals per channel per day.' },
-  { num: '03', title: 'Publish & Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark, distraction-free workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
+  { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library.', note: 'OAuth 2.0 secure. Read-only access. Revoke anytime.' },
+  { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: "Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience.", note: 'Processes 150+ content signals per channel per day.' },
+  { num: '03', title: 'Publish & Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark premium workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
 ];
 
 const STATS = [
@@ -24,50 +24,63 @@ const STATS = [
 ];
 
 const VIDEO_CARDS = [
-  { id:1,  platform:'youtube',   title:'How I Got 100K Subs in 30 Days',          views:'2.4M', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png',  channel:'@CreatorPro',    lane:0, speed:18, startOffset:0   },
-  { id:2,  platform:'instagram', title:'Morning Routine That Changed My Life',     views:'890K', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1521eb58e-1764644106046.png',  channel:'@LifeWithAlex',  lane:1, speed:22, startOffset:-40 },
-  { id:3,  platform:'youtube',   title:'AI Tools Every Creator Needs in 2026',    views:'1.1M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1ddab98dc-1773131998650.png',  channel:'@TechCreator',   lane:2, speed:16, startOffset:-20 },
-  { id:4,  platform:'instagram', title:'Street Food Tour in Tokyo',               views:'3.7M', duration:'0:60', thumbnail:'https://images.unsplash.com/photo-1516822561562-a6762898eb60?w=200',                 channel:'@FoodieWorld',   lane:3, speed:20, startOffset:-10 },
-  { id:5,  platform:'youtube',   title:'Build a SaaS in 24 Hours Challenge',      views:'780K', duration:'0:59', thumbnail:'https://images.unsplash.com/photo-1564756296543-d61bebcd226a?w=200',                 channel:'@DevShorts',     lane:4, speed:19, startOffset:-50 },
-  { id:6,  platform:'instagram', title:'Minimalist Home Makeover on Budget',      views:'1.5M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_15eaab260-1772956699125.png',  channel:'@HomeVibes',     lane:5, speed:21, startOffset:-80 },
-  { id:7,  platform:'youtube',   title:'Camera Settings for Perfect Reels',       views:'640K', duration:'0:55', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1b0948c90-1771909777566.png',  channel:'@FilmTips',      lane:0, speed:17, startOffset:-70 },
-  { id:8,  platform:'instagram', title:'Fitness Transformation 30 Days',          views:'4.3M', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_159a50448-1767636094533.png',  channel:'@FitLife',       lane:1, speed:23, startOffset:-45 },
-  { id:9,  platform:'youtube',   title:'Grow on YouTube with Zero Budget',        views:'920K', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_17b6062b2-1772483137359.png',  channel:'@GrowthHacks',   lane:2, speed:19, startOffset:-90 },
-  { id:10, platform:'instagram', title:'Aesthetic Room Tour 2026',                views:'1.2M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_150de2b75-1772333562367.png',  channel:'@AestheticVibes',lane:3, speed:16, startOffset:-35 },
-  { id:11, platform:'youtube',   title:'Top 10 Trending Niches Right Now',        views:'3.1M', duration:'0:59', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_126d7e136-1768020582546.png',  channel:'@NicheHunter',   lane:4, speed:20, startOffset:-65 },
-  { id:12, platform:'instagram', title:'Skincare Routine for Glowing Skin',       views:'2.9M', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_194b951ad-1772304624866.png',  channel:'@GlowUp',        lane:5, speed:18, startOffset:-25 },
-  { id:13, platform:'youtube',   title:'Monetize Your Channel Fast in 2026',      views:'1.7M', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_17343e164-1768026725793.png',  channel:'@MoneyCreator',  lane:0, speed:22, startOffset:-75 },
-  { id:14, platform:'instagram', title:'Coffee Art That Will Blow Your Mind',     views:'980K', duration:'0:20', thumbnail:'https://images.unsplash.com/photo-1622651207311-f5af09666416?w=200',                 channel:'@CafeArt',       lane:1, speed:17, startOffset:-55 },
-  { id:15, platform:'youtube',   title:'Script Writing Secrets for Viral Shorts', views:'2.2M', duration:'0:55', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_13a6419a1-1772328360733.png',  channel:'@ScriptMaster',  lane:2, speed:21, startOffset:-85 },
+  { id:1,  platform:'youtube',   title:'How I Got 100K Subs in 30 Days',       views:'2.4M', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png',  channel:'@CreatorPro',    lane:0, speed:18, startOffset:0   },
+  { id:2,  platform:'instagram', title:'Morning Routine That Changed My Life',  views:'890K', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1521eb58e-1764644106046.png',  channel:'@LifeWithAlex',  lane:1, speed:22, startOffset:-40 },
+  { id:3,  platform:'youtube',   title:'AI Tools Every Creator Needs in 2026', views:'1.1M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1ddab98dc-1773131998650.png',  channel:'@TechCreator',   lane:2, speed:16, startOffset:-20 },
+  { id:4,  platform:'instagram', title:'Street Food Tour in Tokyo',            views:'3.7M', duration:'0:60', thumbnail:'https://images.unsplash.com/photo-1516822561562-a6762898eb60?w=200',                 channel:'@FoodieWorld',   lane:3, speed:20, startOffset:-10 },
+  { id:5,  platform:'youtube',   title:'Build a SaaS in 24 Hours Challenge',   views:'780K', duration:'0:59', thumbnail:'https://images.unsplash.com/photo-1564756296543-d61bebcd226a?w=200',                 channel:'@DevShorts',     lane:4, speed:19, startOffset:-50 },
+  { id:6,  platform:'instagram', title:'Minimalist Home Makeover on Budget',   views:'1.5M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_15eaab260-1772956699125.png',  channel:'@HomeVibes',     lane:5, speed:21, startOffset:-80 },
+  { id:7,  platform:'youtube',   title:'Camera Settings for Perfect Reels',    views:'640K', duration:'0:55', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1b0948c90-1771909777566.png',  channel:'@FilmTips',      lane:0, speed:17, startOffset:-70 },
+  { id:8,  platform:'instagram', title:'Fitness Transformation 30 Days',       views:'4.3M', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_159a50448-1767636094533.png',  channel:'@FitLife',       lane:1, speed:23, startOffset:-45 },
+  { id:9,  platform:'youtube',   title:'Grow on YouTube with Zero Budget',     views:'920K', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_17b6062b2-1772483137359.png',  channel:'@GrowthHacks',   lane:2, speed:19, startOffset:-90 },
+  { id:10, platform:'instagram', title:'Aesthetic Room Tour 2026',             views:'1.2M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_150de2b75-1772333562367.png',  channel:'@AestheticVibes',lane:3, speed:16, startOffset:-35 },
+  { id:11, platform:'youtube',   title:'Top 10 Trending Niches Right Now',     views:'3.1M', duration:'0:59', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_126d7e136-1768020582546.png',  channel:'@NicheHunter',   lane:4, speed:20, startOffset:-65 },
+  { id:12, platform:'instagram', title:'Skincare Routine for Glowing Skin',    views:'2.9M', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_194b951ad-1772304624866.png',  channel:'@GlowUp',        lane:5, speed:18, startOffset:-25 },
 ];
 
-const REEL_CARDS = VIDEO_CARDS.slice(0, 4);
-
 const TypingScript = () => {
-  const hooks = ["Generating viral hook...", "Analyzing retention metrics...", "Structuring body layout...", "Optimizing keyword vectors..."];
+  const hooks = ["Generating viral hook...", "Analyzing retention patterns...", "Structuring body layout...", "Optimizing SEO keywords..."];
   const [index, setIndex] = useState(0);
   useEffect(() => {
-    const interval = setInterval(() => setIndex(prev => (prev + 1) % hooks.length), 2500);
-    return () => clearInterval(interval);
+    const t = setInterval(() => setIndex(p => (p + 1) % hooks.length), 2500);
+    return () => clearInterval(t);
   }, []);
   return (
     <AnimatePresence mode="wait">
-      <motion.span key={index} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.3 }}>
+      <motion.span key={index} initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-4 }} transition={{ duration:0.3 }}>
         {hooks[index]}
       </motion.span>
     </AnimatePresence>
   );
 };
 
+// Left analytics card data
+const ANALYTICS_BARS = [
+  { label: 'Mon', value: 45, color: '#6d28d9' },
+  { label: 'Tue', value: 72, color: '#7c3aed' },
+  { label: 'Wed', value: 58, color: '#6d28d9' },
+  { label: 'Thu', value: 90, color: '#8b5cf6' },
+  { label: 'Fri', value: 65, color: '#7c3aed' },
+  { label: 'Sat', value: 82, color: '#a855f7' },
+  { label: 'Sun', value: 77, color: '#7c3aed' },
+];
+
+const TRENDING_NICHES = [
+  { name: 'Finance', growth: '+34%', color: '#a78bfa' },
+  { name: 'AI & Tech', growth: '+28%', color: '#818cf8' },
+  { name: 'Cricket', growth: '+22%', color: '#60a5fa' },
+  { name: 'Fitness', growth: '+18%', color: '#34d399' },
+];
+
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-  .sr-feature-item{background:rgba(139,92,246,0.03);border:1px solid rgba(139,92,246,0.1);border-radius:24px;padding:28px;transition:background .3s,border-color .3s;cursor:default;position:relative;overflow:hidden}
-  .sr-feature-item:hover{background:rgba(139,92,246,0.07);border-color:rgba(139,92,246,0.25)}
+  .sr-feature-item{background:rgba(139,92,246,0.03);border:1px solid rgba(139,92,246,0.1);border-radius:24px;padding:28px;transition:background .3s,border-color .3s,transform .3s;cursor:default}
+  .sr-feature-item:hover{background:rgba(139,92,246,0.07);border-color:rgba(139,92,246,0.25);transform:translateY(-4px)}
   .sr-feature-tag{font-size:11px;font-weight:500;color:#a78bfa;background:rgba(139,92,246,0.1);padding:3px 10px;border-radius:50px;border:1px solid rgba(139,92,246,0.2)}
-  .sr-step-card{background:rgba(139,92,246,0.03);border:1px solid rgba(139,92,246,0.12);border-radius:24px;padding:32px;transition:transform .4s,border-color .3s,box-shadow .4s;position:relative;overflow:hidden}
+  .sr-step-card{background:rgba(139,92,246,0.03);border:1px solid rgba(139,92,246,0.12);border-radius:24px;padding:32px;transition:transform .4s,border-color .3s,box-shadow .4s}
   .sr-step-card:hover{transform:translateY(-6px);border-color:rgba(139,92,246,0.35);box-shadow:0 20px 50px rgba(139,92,246,0.12)}
   .sr-step-num{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;color:rgba(139,92,246,0.12);line-height:1;margin-bottom:16px;letter-spacing:-.03em;transition:color .3s}
-  .sr-step-card:hover .sr-step-num{color:rgba(139,92,246,0.28)}
+  .sr-step-card:hover .sr-step-num{color:rgba(139,92,246,0.3)}
   .sr-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:12px 16px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .3s,box-shadow .3s}
   .sr-input:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,0.15)}
   .sr-input::placeholder{color:rgba(255,255,255,0.25)}
@@ -78,6 +91,9 @@ const css = `
   @keyframes srFadeIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
   @keyframes srFloatDown{from{transform:translate3d(0,-380px,0)}to{transform:translate3d(0,calc(100vh + 380px),0)}}
   @keyframes srFloatUp{from{transform:translate3d(0,calc(100vh + 380px),0)}to{transform:translate3d(0,-380px,0)}}
+  @keyframes srBarGrow{from{height:0}to{height:var(--h)}}
+  @keyframes srPing{0%{transform:scale(1);opacity:1}100%{transform:scale(1.8);opacity:0}}
+  .sr-ping{animation:srPing 1.5s ease-out infinite}
 `;
 
 export default function LandingPage() {
@@ -89,14 +105,19 @@ export default function LandingPage() {
   const [userEmail, setUserEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [activeNiche, setActiveNiche] = useState(0);
 
   const BASE = import.meta.env.VITE_API_URL || 'https://uptrent-backend.onrender.com';
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', fn, { passive: true });
+    window.addEventListener('scroll', fn, { passive:true });
     return () => window.removeEventListener('scroll', fn);
+  }, []);
+  useEffect(() => {
+    const t = setInterval(() => setActiveNiche(p => (p + 1) % TRENDING_NICHES.length), 2000);
+    return () => clearInterval(t);
   }, []);
 
   const handleSendOTP = async () => {
@@ -130,15 +151,15 @@ export default function LandingPage() {
     <div className="relative min-h-screen bg-[#03000a] text-white font-sans overflow-x-hidden">
       <style>{css}</style>
 
-      {/* Animated background glow */}
+      {/* Animated bg glow */}
       <motion.div animate={{ scale:[1,1.06,1], rotate:[0,2,0] }} transition={{ duration:15, repeat:Infinity, ease:'easeInOut' }}
         style={{ position:'fixed', inset:0, zIndex:1, pointerEvents:'none', background:'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.09), transparent 65%)' }} />
       {/* Animated grid */}
       <motion.div animate={{ y:[0,-15,0], x:[0,10,0] }} transition={{ duration:20, repeat:Infinity, ease:'linear' }}
         style={{ position:'fixed', inset:-20, zIndex:1, pointerEvents:'none', opacity:0.025, backgroundImage:'linear-gradient(rgba(255,255,255,0.2) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.2) 1px,transparent 1px)', backgroundSize:'60px 60px' }} />
 
-      {/* VideoBackground — floating cards */}
-      <div style={{ position:'fixed', inset:0, zIndex:2, overflow:'hidden', pointerEvents:'none' }} aria-hidden="true">
+      {/* VideoBackground floating cards */}
+      <div style={{ position:'fixed', inset:0, zIndex:2, overflow:'hidden', pointerEvents:'none' }}>
         {[0,1,2,3,4,5].map(laneIndex => {
           const laneCards = VIDEO_CARDS.filter(c => c.lane === laneIndex);
           const isEven = laneIndex % 2 === 0;
@@ -146,20 +167,15 @@ export default function LandingPage() {
             <div key={laneIndex} style={{ position:'absolute', top:0, bottom:0, left:`${4 + laneIndex * 16}%`, width:140 }}>
               {laneCards.map(card => {
                 const isIG = card.platform === 'instagram';
-                const platformGrad = isIG ? 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)' : 'linear-gradient(135deg,#FF0000,#CC0000)';
-                const platformColor = isIG ? '#E1306C' : '#FF0000';
                 return (
                   <div key={card.id} style={{ position:'absolute', width:130, top: isEven ? -380 : '100%', animationName: isEven ? 'srFloatDown' : 'srFloatUp', animationDuration:`${card.speed}s`, animationDelay:`${card.startOffset/10}s`, animationTimingFunction:'linear', animationIterationCount:'infinite', willChange:'transform' }}>
-                    <div style={{ position:'relative', width:130, height:230, borderRadius:16, overflow:'hidden', background:'rgba(139,92,246,0.05)', border:'1px solid rgba(139,92,246,0.15)', opacity:0.4 }}>
-                      <img src={card.thumbnail} alt="" loading="lazy" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', opacity:0.7 }} />
-                      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.1),rgba(0,0,0,0.8) 100%)' }} />
-                      <div style={{ position:'absolute', top:8, left:8, padding:'2px 6px', borderRadius:50, background:platformGrad, fontSize:8, fontWeight:700, color:'white' }}>{isIG ? 'Reels' : 'Shorts'}</div>
-                      <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:8 }}>
+                    <div style={{ position:'relative', width:130, height:230, borderRadius:16, overflow:'hidden', background:'rgba(139,92,246,0.05)', border:'1px solid rgba(139,92,246,0.12)', opacity:0.35 }}>
+                      <img src={card.thumbnail} alt="" loading="lazy" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', opacity:0.6 }} />
+                      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,transparent,rgba(0,0,0,0.85))' }} />
+                      <div style={{ position:'absolute', top:8, left:8, padding:'2px 6px', borderRadius:50, background: isIG ? 'linear-gradient(45deg,#f09433,#bc1888)' : '#FF0000', fontSize:8, fontWeight:700, color:'white' }}>{isIG ? 'Reels' : 'Shorts'}</div>
+                      <div style={{ position:'absolute', bottom:8, left:8, right:8 }}>
                         <p style={{ color:'white', fontWeight:600, fontSize:9, lineHeight:1.3, marginBottom:2 }}>{card.title}</p>
-                        <div style={{ display:'flex', justifyContent:'space-between' }}>
-                          <span style={{ color:'#d1d5db', fontSize:8 }}>{card.channel}</span>
-                          <span style={{ fontSize:8, fontWeight:700, color:platformColor }}>{card.views}</span>
-                        </div>
+                        <span style={{ fontSize:8, fontWeight:700, color: isIG ? '#E1306C' : '#FF0000' }}>{card.views}</span>
                       </div>
                     </div>
                   </div>
@@ -171,70 +187,91 @@ export default function LandingPage() {
       </div>
 
       {/* NAVBAR */}
-      <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 64px', height:72, transition:'all .3s', background: scrolled ? 'rgba(3,0,10,0.85)' : 'transparent', backdropFilter: scrolled ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(139,92,246,0.1)' : 'none' }}>
-        <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none', cursor:'pointer' }}>
+      <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 64px', height:72, transition:'all .3s', background: scrolled ? 'rgba(3,0,10,0.9)' : 'transparent', backdropFilter: scrolled ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(139,92,246,0.1)' : 'none' }}>
+        <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
           <div style={{ width:36, height:36, borderRadius:10, background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <div style={{ width:10, height:10, borderRadius:3, background:'#a855f7', boxShadow:'0 0 10px #a855f7' }} />
           </div>
           <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:18, color:'#fff', letterSpacing:'-.02em' }}>SocialRum</span>
         </a>
-        <ul style={{ display:'flex', gap:40, listStyle:'none', color:'rgba(255,255,255,0.6)', fontSize:14 }}>
+        <ul style={{ display:'flex', gap:40, listStyle:'none' }}>
           {['Features','How It Works','Early Access'].map(item => (
-            <li key={item}><a href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.6)', textDecoration:'none', transition:'color .2s', fontFamily:'DM Sans,sans-serif' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.6)')}>{item}</a></li>
+            <li key={item}><a href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'DM Sans,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
           ))}
         </ul>
-        <a href="#early-access" style={{ background:'rgba(124,58,237,0.2)', border:'1px solid rgba(139,92,246,0.3)', padding:'10px 22px', borderRadius:50, fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', transition:'all .2s', boxShadow:'0 0 15px rgba(124,58,237,0.2)' }}
+        <a href="#early-access" style={{ background:'rgba(124,58,237,0.15)', border:'1px solid rgba(139,92,246,0.3)', padding:'10px 22px', borderRadius:50, fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', transition:'all .2s' }}
           onMouseEnter={e => { e.currentTarget.style.background='#7c3aed'; e.currentTarget.style.boxShadow='0 0 30px rgba(124,58,237,0.5)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background='rgba(124,58,237,0.2)'; e.currentTarget.style.boxShadow='0 0 15px rgba(124,58,237,0.2)'; }}>
+          onMouseLeave={e => { e.currentTarget.style.background='rgba(124,58,237,0.15)'; e.currentTarget.style.boxShadow=''; }}>
           Be the First to Know
         </a>
       </nav>
 
       {/* HERO */}
       <section style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', padding:'0 64px', zIndex:10, paddingTop:80 }}>
-        <div style={{ width:'100%', maxWidth:1400, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 2fr 1fr', gap:48, alignItems:'center' }}>
+        <div style={{ width:'100%', maxWidth:1400, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1.4fr 1fr', gap:40, alignItems:'center' }}>
 
-          {/* Left — rolling reels */}
-          <div style={{ display:'flex', gap:12, height:520, overflow:'hidden', position:'relative' }}>
-            <div style={{ position:'absolute', top:0, left:0, right:0, height:64, background:'linear-gradient(to bottom,#03000a,transparent)', zIndex:10, pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:0, left:0, right:0, height:64, background:'linear-gradient(to top,#03000a,transparent)', zIndex:10, pointerEvents:'none' }} />
-            {/* Lane 1 — scroll down */}
-            <motion.div animate={{ y:[0,-560] }} transition={{ duration:18, repeat:Infinity, ease:'linear' }} style={{ display:'flex', flexDirection:'column', gap:12, width:'50%' }}>
-              {[...REEL_CARDS, ...REEL_CARDS].map((card, idx) => (
-                <div key={`l1-${idx}`} style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:16, padding:8, flexShrink:0 }}>
-                  <div style={{ position:'relative', aspectRatio:'9/16', borderRadius:10, overflow:'hidden', background:'rgba(124,58,237,0.1)' }}>
-                    <img src={card.thumbnail} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', opacity:0.8 }} />
-                    <span style={{ position:'absolute', top:6, left:6, background:'#FF0000', color:'white', fontSize:7, fontWeight:700, padding:'2px 5px', borderRadius:3 }}>Shorts</span>
-                    <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85),transparent 50%)', display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:8 }}>
-                      <p style={{ fontSize:9, fontWeight:600, lineHeight:1.3, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{card.title}</p>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:4, fontSize:8, color:'rgba(255,255,255,0.5)' }}>
-                        <span>{card.channel}</span><span style={{ color:'#a78bfa', fontWeight:700 }}>{card.views}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-            {/* Lane 2 — scroll up */}
-            <motion.div animate={{ y:[-560,0] }} transition={{ duration:22, repeat:Infinity, ease:'linear' }} style={{ display:'flex', flexDirection:'column', gap:12, width:'50%', marginTop:32 }}>
-              {[...REEL_CARDS, ...REEL_CARDS].reverse().map((card, idx) => (
-                <div key={`l2-${idx}`} style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:16, padding:8, flexShrink:0 }}>
-                  <div style={{ position:'relative', aspectRatio:'9/16', borderRadius:10, overflow:'hidden', background:'rgba(124,58,237,0.1)' }}>
-                    <img src={card.thumbnail} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', opacity:0.8 }} />
-                    <span style={{ position:'absolute', top:6, left:6, background:'linear-gradient(135deg,#7c3aed,#a855f7)', color:'white', fontSize:7, fontWeight:700, padding:'2px 5px', borderRadius:3 }}>Reels</span>
-                    <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85),transparent 50%)', display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:8 }}>
-                      <p style={{ fontSize:9, fontWeight:600, lineHeight:1.3, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{card.title}</p>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:4, fontSize:8, color:'rgba(255,255,255,0.5)' }}>
-                        <span>{card.channel}</span><span style={{ color:'#a78bfa', fontWeight:700 }}>{card.views}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          </div>
+          {/* ── LEFT: Analytics Dashboard ── */}
+          <motion.div initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.3 }}
+            style={{ display:'flex', flexDirection:'column', gap:12 }}>
 
-          {/* Center — hero text */}
+            {/* Views chart card */}
+            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 20px 40px rgba(0,0,0,0.5)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+                <div>
+                  <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>Weekly Views</p>
+                  <motion.p animate={{ opacity:[1,0.6,1] }} transition={{ duration:3, repeat:Infinity }}
+                    style={{ fontFamily:'Syne,sans-serif', fontSize:26, fontWeight:800, color:'#fff' }}>2.4M</motion.p>
+                </div>
+                <div style={{ background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.2)', borderRadius:50, padding:'4px 10px', fontSize:11, color:'#34d399', fontWeight:600 }}>↑ 18.3%</div>
+              </div>
+              {/* Bar chart */}
+              <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:60 }}>
+                {ANALYTICS_BARS.map((bar, i) => (
+                  <motion.div key={bar.label} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                    <motion.div initial={{ height:0 }} animate={{ height: bar.value * 0.55 }} transition={{ duration:1, delay: i * 0.1, ease:'easeOut' }}
+                      style={{ width:'100%', background: i === 3 ? 'linear-gradient(to top,#7c3aed,#a855f7)' : 'rgba(139,92,246,0.3)', borderRadius:'4px 4px 0 0', boxShadow: i === 3 ? '0 0 12px rgba(139,92,246,0.5)' : 'none' }} />
+                    <span style={{ fontSize:8, color:'rgba(255,255,255,0.3)', fontFamily:'DM Sans,sans-serif' }}>{bar.label}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Trending niches */}
+            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)' }}>
+              <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>Trending Niches</p>
+              {TRENDING_NICHES.map((niche, i) => (
+                <motion.div key={niche.name}
+                  animate={{ opacity: activeNiche === i ? 1 : 0.4, x: activeNiche === i ? 4 : 0 }}
+                  transition={{ duration:0.3 }}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    {activeNiche === i && (
+                      <motion.div animate={{ scale:[1,1.3,1] }} transition={{ duration:0.6, repeat:Infinity }}
+                        style={{ width:6, height:6, borderRadius:'50%', background: niche.color, flexShrink:0 }} />
+                    )}
+                    {activeNiche !== i && <div style={{ width:6, height:6, borderRadius:'50%', background:'rgba(255,255,255,0.15)', flexShrink:0 }} />}
+                    <span style={{ fontSize:13, color:'#fff', fontFamily:'DM Sans,sans-serif' }}>{niche.name}</span>
+                  </div>
+                  <span style={{ fontSize:12, fontWeight:700, color: niche.color }}>{niche.growth}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Live indicator */}
+            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:20, padding:'14px 18px', backdropFilter:'blur(20px)', display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ position:'relative', width:10, height:10, flexShrink:0 }}>
+                <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:'#34d399', opacity:0.4 }} className="sr-ping" />
+                <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:'#34d399' }} />
+              </div>
+              <div>
+                <p style={{ fontSize:12, fontWeight:600, color:'#fff', fontFamily:'DM Sans,sans-serif' }}>Live trend updates</p>
+                <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)', fontFamily:'DM Sans,sans-serif' }}>Every 15 minutes</p>
+              </div>
+              <div style={{ marginLeft:'auto', fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:'DM Sans,sans-serif' }}>247 creators</div>
+            </div>
+          </motion.div>
+
+          {/* ── CENTER: Hero text ── */}
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center' }}>
             <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={{ duration:0.6 }}
               style={{ border:'1px solid rgba(139,92,246,0.3)', background:'rgba(139,92,246,0.06)', color:'#c4b5fd', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'6px 16px', borderRadius:50, fontWeight:600, marginBottom:24, fontFamily:'DM Sans,sans-serif' }}>
@@ -242,9 +279,9 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.1 }} style={{ position:'relative', marginBottom:8 }}>
-              <h1 style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(52px,7vw,96px)', fontWeight:800, letterSpacing:'-.03em', margin:0, lineHeight:1 }}>
-                <span style={{ color:'#a78bfa', fontFamily:'Arial,Helvetica,sans-serif' }}>Social</span>
-                <span style={{ background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', fontFamily:'Arial,Helvetica,sans-serif' }}>Rum</span>
+              <h1 style={{ margin:0, lineHeight:1 }}>
+                <span style={{ fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', color:'#a78bfa' }}>Social</span>
+                <span style={{ fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(52px,7vw,96px)', letterSpacing:'-.03em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Rum</span>
               </h1>
               <div style={{ width:'85%', height:2, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)', margin:'8px auto 0', borderRadius:50, boxShadow:'0 0 20px rgba(139,92,246,0.7)' }} />
             </motion.div>
@@ -261,28 +298,29 @@ export default function LandingPage() {
 
             <motion.div initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.4 }}
               style={{ display:'flex', alignItems:'center', gap:24, flexWrap:'wrap', justifyContent:'center' }}>
-              <a href="#early-access" style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', color:'#fff', fontWeight:600, fontSize:14, padding:'14px 32px', borderRadius:50, textDecoration:'none', display:'flex', alignItems:'center', gap:8, boxShadow:'0 0 30px rgba(124,58,237,0.5)', transition:'transform .2s,box-shadow .3s' }}
+              <a href="#early-access" style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', color:'#fff', fontWeight:600, fontSize:14, padding:'14px 32px', borderRadius:50, textDecoration:'none', boxShadow:'0 0 30px rgba(124,58,237,0.5)', transition:'transform .2s,box-shadow .3s' }}
                 onMouseEnter={e => { e.currentTarget.style.transform='scale(1.05)'; e.currentTarget.style.boxShadow='0 0 50px rgba(124,58,237,0.7)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 0 30px rgba(124,58,237,0.5)'; }}>
                 Be the First to Know →
               </a>
-              <a href="#features" style={{ fontSize:14, color:'rgba(255,255,255,0.6)', textDecoration:'none', display:'flex', alignItems:'center', gap:6, transition:'color .2s', fontFamily:'DM Sans,sans-serif' }}
-                onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.6)')}>
+              <a href="#features" style={{ fontSize:14, color:'rgba(255,255,255,0.5)', textDecoration:'none', fontFamily:'DM Sans,sans-serif', transition:'color .2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}>
                 Explore Features ▼
               </a>
             </motion.div>
           </div>
 
-          {/* Right — dashboard card */}
-          <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.2 }}>
-            <div style={{ background:'rgba(11,6,22,0.8)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:28, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 30px 60px rgba(0,0,0,0.6)', position:'relative', overflow:'hidden' }}>
+          {/* ── RIGHT: Dashboard card ── */}
+          <motion.div initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.2 }}>
+            <div style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:28, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 30px 60px rgba(0,0,0,0.6)', position:'relative', overflow:'hidden' }}>
               <div style={{ position:'absolute', top:-30, right:-30, width:96, height:96, background:'rgba(139,92,246,0.12)', filter:'blur(20px)', borderRadius:'50%', pointerEvents:'none' }} />
               <div style={{ display:'flex', alignItems:'center', gap:8, color:'#a78bfa', fontSize:12, fontWeight:700, marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>
-                <div style={{ width:6, height:6, borderRadius:'50%', background:'#8b5cf6', animation:'pulse 2s infinite' }} />
+                <motion.div animate={{ opacity:[1,0.3,1] }} transition={{ duration:1.5, repeat:Infinity }}
+                  style={{ width:6, height:6, borderRadius:'50%', background:'#8b5cf6' }} />
                 Dashboard
               </div>
 
-              {/* Trending */}
+              {/* Trending widget */}
               <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14, marginBottom:12 }}>
                 <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12, fontFamily:'DM Sans,sans-serif' }}>Trending Now</p>
                 {[['#AIVideoEditing','Trending'],['#CreatorEconomy2026','Rising'],['#YouTubeShorts','Hot']].map(([tag, status]) => (
@@ -296,29 +334,35 @@ export default function LandingPage() {
               <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14, marginBottom:12 }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
                   <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'DM Sans,sans-serif' }}>Script Generator</p>
-                  <div style={{ width:24, height:24, borderRadius:8, background:'linear-gradient(135deg,#7c3aed,#6d28d9)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 0 15px rgba(124,58,237,0.5)' }}>
+                  <motion.div animate={{ rotate:360 }} transition={{ duration:3, repeat:Infinity, ease:'linear' }}
+                    style={{ width:20, height:20, borderRadius:6, background:'linear-gradient(135deg,#7c3aed,#a855f7)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <div style={{ width:6, height:6, borderRadius:'50%', background:'#fff' }} />
-                  </div>
+                  </motion.div>
                 </div>
-                <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:10, padding:'8px 12px', fontSize:12, color:'rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'space-between', fontFamily:'DM Sans,sans-serif' }}>
+                <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:10, padding:'8px 12px', fontSize:11, color:'rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'space-between', fontFamily:'DM Sans,sans-serif', minHeight:32 }}>
                   <TypingScript />
-                  <div style={{ width:6, height:6, borderRadius:'50%', background:'#8b5cf6', flexShrink:0, marginLeft:8 }} />
+                  <motion.div animate={{ opacity:[1,0,1] }} transition={{ duration:0.8, repeat:Infinity }}
+                    style={{ width:1, height:12, background:'#8b5cf6', flexShrink:0, marginLeft:4 }} />
                 </div>
               </div>
 
               {/* SEO Score */}
               <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, fontSize:9, fontFamily:'DM Sans,sans-serif' }}>
-                  <span style={{ color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', textTransform:'uppercase' }}>SEO Score</span>
-                  <span style={{ color:'#a78bfa', fontWeight:600, fontSize:11 }}>AI Ready</span>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'DM Sans,sans-serif' }}>SEO Score</p>
+                  <span style={{ color:'#a78bfa', fontWeight:600, fontSize:11, fontFamily:'DM Sans,sans-serif' }}>AI Ready</span>
                 </div>
-                <div style={{ width:'100%', height:6, borderRadius:50, background:'rgba(255,255,255,0.08)', overflow:'hidden' }}>
+                <div style={{ width:'100%', height:6, borderRadius:50, background:'rgba(255,255,255,0.08)', overflow:'hidden', marginBottom:8 }}>
                   <motion.div animate={{ width:['0%','85%'] }} transition={{ duration:1.5, ease:'easeOut', delay:1 }}
                     style={{ height:'100%', borderRadius:50, background:'linear-gradient(90deg,#7c3aed,#a855f7)', boxShadow:'0 0 10px rgba(139,92,246,0.6)' }} />
+                </div>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.3)', fontFamily:'DM Sans,sans-serif' }}>
+                  <span>Low</span><span style={{ color:'#a78bfa', fontWeight:600 }}>85/100</span><span>High</span>
                 </div>
               </div>
             </div>
           </motion.div>
+
         </div>
       </section>
 
@@ -340,7 +384,7 @@ export default function LandingPage() {
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:16 }}>
           {FEATURES.map((f, i) => (
             <motion.div key={f.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.08 }} className="sr-feature-item">
-              <div style={{ width:40, height:40, borderRadius:12, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16, fontSize:11, fontWeight:700, color:'#a78bfa', transition:'transform .3s' }}>{f.num}</div>
+              <div style={{ width:40, height:40, borderRadius:12, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16, fontSize:11, fontWeight:700, color:'#a78bfa' }}>{f.num}</div>
               <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:10 }}>{f.title}</h3>
               <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>{f.desc}</p>
               <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
@@ -348,10 +392,10 @@ export default function LandingPage() {
               </div>
             </motion.div>
           ))}
-          <div style={{ border:'1px solid rgba(255,255,255,0.05)', background:'rgba(255,255,255,0.01)', borderRadius:24, display:'flex', alignItems:'center', justifyContent:'center', minHeight:200, padding:24, textAlign:'center' }}>
+          <div style={{ border:'1px solid rgba(255,255,255,0.05)', background:'rgba(255,255,255,0.01)', borderRadius:24, display:'flex', alignItems:'center', justifyContent:'center', minHeight:200, textAlign:'center' }}>
             <div>
-              <p style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'rgba(255,255,255,0.25)', marginBottom:8 }}>More coming</p>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'DM Sans,sans-serif' }}>Platform is actively growing</p>
+              <p style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'rgba(255,255,255,0.2)', marginBottom:8 }}>More coming</p>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,0.15)', fontFamily:'DM Sans,sans-serif' }}>Platform is actively growing</p>
             </div>
           </div>
         </div>
@@ -380,7 +424,6 @@ export default function LandingPage() {
         <div style={{ border:'1px solid rgba(139,92,246,0.1)', background:'rgba(139,92,246,0.02)', borderRadius:32, padding:'64px 56px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:64, alignItems:'center', position:'relative', overflow:'hidden' }}>
           <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, background:'rgba(139,92,246,0.05)', filter:'blur(40px)', borderRadius:'50%', pointerEvents:'none' }} />
 
-          {/* Left */}
           <motion.div initial={{ opacity:0, x:-20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }}>
             <p style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>Limited Spots Remaining</p>
             <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(24px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:16, lineHeight:1.2 }}>Be the First to<br/>Know &amp; Create.</h2>
@@ -397,7 +440,6 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          {/* Right — form */}
           <motion.div initial={{ opacity:0, x:20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }}
             style={{ background:'rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:36, position:'relative', overflow:'hidden' }}>
             <div style={{ position:'absolute', top:-60, right:-60, width:160, height:160, background:'rgba(139,92,246,0.1)', filter:'blur(30px)', borderRadius:'50%', pointerEvents:'none' }} />
@@ -443,7 +485,7 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ borderTop:'1px solid rgba(139,92,246,0.1)', padding:'36px 64px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, position:'relative', zIndex:20, background:'rgba(3,0,10,1)' }}>
+      <footer style={{ borderTop:'1px solid rgba(139,92,246,0.1)', padding:'36px 64px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, position:'relative', zIndex:20, background:'#03000a' }}>
         <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
           <div style={{ width:28, height:28, borderRadius:8, background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <div style={{ width:8, height:8, borderRadius:2, background:'#a855f7' }} />
