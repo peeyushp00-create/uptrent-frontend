@@ -16,9 +16,8 @@ const YT_COLOR = "#FF6B6B";
 export default function InsightPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const item = state?.item;
-
-  if (!item) { navigate("/"); return null; }
+  const item = state?.item || state?.video;
+if (!item) { navigate("/home"); return null; }
 
   const platform = item.platform;
   const isIG = platform === "instagram";
@@ -56,7 +55,7 @@ export default function InsightPage() {
       <div className="sticky top-0 z-20 px-4 py-3"
         style={{ background: "hsl(var(--background)/0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid hsl(var(--border))" }}>
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate('/')}
+          <button onClick={() => navigate('/home')}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-accent"
             style={{ border: "1px solid hsl(var(--border))" }}>
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
