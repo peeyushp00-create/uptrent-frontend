@@ -486,27 +486,41 @@ export default function TrendingDashboard() {
                   <h2 className="font-bold text-base text-[#191c1d] dark:text-white mb-3 flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
                     <span>📸</span> Instagram Trending
                   </h2>
-                  <div className="space-y-2">
-                    {instagramTopics.slice(0, 5).map((t, i) => (
+                  <div className="space-y-3">
+                    {instagramTopics.slice(0, 8).map((t, i) => (
                       <motion.div key={t.id}
                         initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                        className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3.5 border border-[#e1e3e4] dark:border-gray-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {i < 3 && <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />}
                             <span className="font-bold text-sm text-[#191c1d] dark:text-white">{t.name}</span>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize"
                               style={{ background: t.momentum === 'rising' ? PRIMARY_CONTAINER : '#f3f4f5', color: t.momentum === 'rising' ? PRIMARY : '#757684' }}>
-                              {t.momentum === 'rising' ? '📈' : t.momentum === 'stable' ? '➡️' : '📉'} {t.momentum}
+                              {t.momentum === 'rising' ? '📈 Rising' : t.momentum === 'stable' ? '➡️ Stable' : '📉 Fading'}
                             </span>
                           </div>
-                          <div className="flex gap-1 flex-wrap">
-                            {t.hashtags?.slice(0,3).map((h: string) => (
-                              <span key={h} className="text-[10px] font-medium" style={{ color: PRIMARY }}>{h}</span>
-                            ))}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-[#757684]">{t.volume} posts</span>
+                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                              style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                              <BarChart2 className="w-3 h-3" />
+                              {t.trend_score}
+                            </div>
                           </div>
                         </div>
-                        <span className="text-xs font-bold text-[#757684]">{t.volume} posts</span>
+                        {/* Clickable hashtag chips */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {t.hashtags?.map((h: string) => (
+                            <button key={h}
+                              onClick={() => setSearch(h.replace('#', ''))}
+                              className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all hover:opacity-80"
+                              style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                              {h}
+                            </button>
+                          ))}
+                        </div>
                       </motion.div>
                     ))}
                   </div>
