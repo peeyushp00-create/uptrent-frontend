@@ -117,7 +117,7 @@ const HeroTitle = () => {
         ))}
       </motion.h1>
       <motion.div initial={{ scaleX:0, opacity:0 }} animate={{ scaleX:1, opacity:1 }} transition={{ duration:0.8, delay:0.9, ease:[0.16,1,0.3,1] }}
-        style={{ position:'relative', width:'85%', margin:'10px auto 0', height:3, transformOrigin:'center' }}>
+        style={{ position:'relative', width:'85%', margin:'10px auto 0', height:3, transformOrigin:'center', overflow:'hidden' }}>
         <div style={{ position:'absolute', inset:0, borderRadius:50, background:'linear-gradient(to right,transparent,rgba(139,92,246,0.4),transparent)' }} />
         <motion.div animate={{ opacity:[0.6,1,0.6], boxShadow:['0 0 12px 2px rgba(139,92,246,0.4)','0 0 30px 6px rgba(139,92,246,0.8)','0 0 12px 2px rgba(139,92,246,0.4)'] }}
           transition={{ duration:2, repeat:Infinity, ease:'easeInOut' }}
