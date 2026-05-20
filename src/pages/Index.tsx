@@ -125,31 +125,29 @@ export default function Index() {
           </motion.p>
         </div>
 
-        {/* Platform Toggle */}
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
-          className="flex gap-1 p-1.5 rounded-2xl shadow-sm"
-          style={{ background: 'white', border: '1px solid #e1e3e4' }}>
-          {(['Instagram', 'YouTube'] as const).map(tab => (
-            <motion.button key={tab}
-              onClick={() => {
-                setPlatform(tab);
-                setSearch('');
-                const p = tab === "Instagram" ? "instagram" : "youtube";
-                localStorage.setItem("platform", p);
-                window.dispatchEvent(new CustomEvent("platformChanged", { detail: p }));
-              }}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all"
-           style={platform === tab
-  ? { background: tab === 'Instagram' ? PRIMARY_GRAD : YT_GRAD, color: '#fff' }
-  : { color: '#757684' }}
-              whileTap={{ scale: 0.97 }}>
-              {tab === 'Instagram'
-                ? <Instagram className="w-4 h-4" />
-                : <Youtube className="w-4 h-4" />}
-              {tab}
-            </motion.button>
-          ))}
-        </motion.div>
+        {/* Connect Channel Buttons */}
+<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
+  className="flex flex-col items-center gap-3">
+  <div className="flex gap-3">
+    <motion.button
+      whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+      onClick={() => navigate('/settings')}
+      className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white"
+      style={{ background: 'linear-gradient(135deg, #7C3AED, #6D28D9)', boxShadow: '0 4px 20px #7C3AED40' }}>
+      <Instagram className="w-4 h-4" />
+      Connect Instagram
+    </motion.button>
+    <motion.button
+      whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+      onClick={() => navigate('/settings')}
+      className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white"
+      style={{ background: 'linear-gradient(135deg, #ff0000, #cc0000)', boxShadow: '0 4px 20px #ff000040' }}>
+      <Youtube className="w-4 h-4" />
+      Connect YouTube
+    </motion.button>
+  </div>
+  <p className="text-xs text-[#757684]">Connect your channel to get personalized content ideas</p>
+</motion.div>
 
         {/* Search Bar */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
