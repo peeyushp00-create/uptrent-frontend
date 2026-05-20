@@ -88,12 +88,22 @@ export default function InsightPage() {
           <div className="absolute inset-0" style={{ background:"linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.85))" }} />
 
           {/* Play button */}
-          {item.isVideo && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center"
-              style={{ background:"rgba(255,255,255,0.2)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.3)" }}>
-              <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-            </div>
-          )}
+          {/* Play button */}
+{item.isVideo && (
+  <button
+    onClick={() => {
+      if (item.youtubeUrl) {
+        const videoId = item.id;
+        window.open(`https://www.youtube.com/shorts/${videoId}`, '_blank');
+      } else if (item.instagramUrl) {
+        window.open(item.instagramUrl, '_blank');
+      }
+    }}
+    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+    style={{ background:"rgba(255,255,255,0.2)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.3)" }}>
+    <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+  </button>
+)}
 
           {/* Badges */}
           <div className="absolute top-4 left-4 flex gap-2">
