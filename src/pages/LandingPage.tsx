@@ -130,17 +130,17 @@ const HeroTitle = () => {
 };
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;900&display=swap');
   * { box-sizing: border-box; }
   .sr-feature-tag{font-size:11px;font-weight:500;color:#a78bfa;background:rgba(139,92,246,0.1);padding:3px 10px;border-radius:50px;border:1px solid rgba(139,92,246,0.2)}
   .sr-step-card{background:rgba(139,92,246,0.03);border:1px solid rgba(139,92,246,0.12);border-radius:24px;padding:32px;transition:transform .4s,border-color .3s,box-shadow .4s}
   .sr-step-card:hover{transform:translateY(-6px);border-color:rgba(139,92,246,0.35);box-shadow:0 20px 50px rgba(139,92,246,0.12)}
-  .sr-step-num{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;color:rgba(139,92,246,0.12);line-height:1;margin-bottom:16px;letter-spacing:-.03em;transition:color .3s}
+  .sr-step-num{font-family:'Roboto',sans-serif;font-size:48px;font-weight:800;color:rgba(139,92,246,0.12);line-height:1;margin-bottom:16px;letter-spacing:-.03em;transition:color .3s}
   .sr-step-card:hover .sr-step-num{color:rgba(139,92,246,0.3)}
-  .sr-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:12px 16px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .3s,box-shadow .3s}
+  .sr-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Roboto',sans-serif;outline:none;transition:border-color .3s,box-shadow .3s}
   .sr-input:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,0.15)}
   .sr-input::placeholder{color:rgba(255,255,255,0.25)}
-  .sr-ea-btn{width:100%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:transform .15s,box-shadow .3s;box-shadow:0 0 30px rgba(124,58,237,0.4);margin-bottom:10px}
+  .sr-ea-btn{width:100%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;font-family:'Roboto',sans-serif;cursor:pointer;transition:transform .15s,box-shadow .3s;box-shadow:0 0 30px rgba(124,58,237,0.4);margin-bottom:10px}
   .sr-ea-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 0 50px rgba(124,58,237,0.6)}
   .sr-ea-btn:disabled{opacity:.5;cursor:not-allowed}
   .sr-fade-in{animation:srFadeIn .4s ease both}
@@ -232,7 +232,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily:"'DM Sans',sans-serif" }}>
+    <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily:"'Roboto',sans-serif" }}>
       <style>{css}</style>
 
       {/* Mobile menu */}
@@ -286,13 +286,13 @@ export default function LandingPage() {
           <div style={{ width:36, height:36, borderRadius:10, background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <div style={{ width:10, height:10, borderRadius:3, background:'#a855f7', boxShadow:'0 0 10px #a855f7' }} />
           </div>
-          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:18, color:'#fff', letterSpacing:'-.02em' }}>SocialRum</span>
+          <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:18, color:'#fff', letterSpacing:'-.02em' }}>SocialRum</span>
         </a>
 
         {/* Desktop nav */}
         <ul className="sr-nav-links" style={{ display:'flex', gap:40, listStyle:'none' }}>
           {['Features','How It Works','Early Access'].map(item => (
-            <li key={item}><a href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'DM Sans,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
+            <li key={item}><a href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'Roboto,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
           ))}
         </ul>
 
@@ -319,14 +319,14 @@ export default function LandingPage() {
           <motion.div className="sr-side-cards" initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.3 }}
             style={{ display:'flex', flexDirection:'column', gap:12 }}>
             <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', cursor:'default' }}>
-              <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>Trending Niches</p>
+              <p style={{ fontFamily:'Roboto,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>Trending Niches</p>
               {TRENDING_NICHES.map((niche, i) => (
                 <motion.div key={niche.name} animate={{ opacity: activeNiche === i ? 1 : 0.4, x: activeNiche === i ? 4 : 0 }} transition={{ duration:0.3 }}
                   style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <motion.div animate={activeNiche === i ? { scale:[1,1.3,1] } : {}} transition={{ duration:0.6, repeat:Infinity }}
                       style={{ width:6, height:6, borderRadius:'50%', background: activeNiche === i ? niche.color : 'rgba(255,255,255,0.15)', flexShrink:0 }} />
-                    <span style={{ fontSize:13, color:'#fff', fontFamily:'DM Sans,sans-serif' }}>{niche.name}</span>
+                    <span style={{ fontSize:13, color:'#fff', fontFamily:'Roboto,sans-serif' }}>{niche.name}</span>
                   </div>
                   <span style={{ fontSize:12, fontWeight:700, color: niche.color }}>{niche.growth}</span>
                 </motion.div>
@@ -335,7 +335,7 @@ export default function LandingPage() {
 
             <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:20, padding:18, backdropFilter:'blur(20px)', cursor:'default' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                <p style={{ fontFamily:'DM Sans,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em' }}>AI Script Ideas</p>
+                <p style={{ fontFamily:'Roboto,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em' }}>AI Script Ideas</p>
                 <motion.div animate={{ rotate:360 }} transition={{ duration:4, repeat:Infinity, ease:'linear' }}
                   style={{ width:16, height:16, borderRadius:'50%', border:'2px solid transparent', borderTopColor:'#8b5cf6', borderRightColor:'#8b5cf6' }} />
               </div>
@@ -344,7 +344,7 @@ export default function LandingPage() {
                   <div style={{ width:18, height:18, borderRadius:6, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.25)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     <span style={{ fontSize:9, color:'#a78bfa', fontWeight:700 }}>{i+1}</span>
                   </div>
-                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)', fontFamily:'DM Sans,sans-serif', lineHeight:1.3 }}>{idea}</span>
+                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)', fontFamily:'Roboto,sans-serif', lineHeight:1.3 }}>{idea}</span>
                 </div>
               ))}
             </TiltCard>
@@ -353,7 +353,7 @@ export default function LandingPage() {
           {/* CENTER */}
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center' }}>
             <motion.div initial={{ opacity:0, y:-20, scale:0.85 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.7, ease:[0.16,1,0.3,1] }}
-              style={{ border:'1px solid rgba(139,92,246,0.3)', background:'rgba(139,92,246,0.06)', color:'#c4b5fd', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'6px 16px', borderRadius:50, fontWeight:600, marginBottom:24, fontFamily:'DM Sans,sans-serif', display:'inline-flex', alignItems:'center', gap:8 }}>
+              style={{ border:'1px solid rgba(139,92,246,0.3)', background:'rgba(139,92,246,0.06)', color:'#c4b5fd', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'6px 16px', borderRadius:50, fontWeight:600, marginBottom:24, fontFamily:'Roboto,sans-serif', display:'inline-flex', alignItems:'center', gap:8 }}>
               <motion.div animate={{ opacity:[1,0.2,1] }} transition={{ duration:1.5, repeat:Infinity }} style={{ width:6, height:6, borderRadius:'50%', background:'#8b5cf6' }} />
               Now Accepting Early Access
             </motion.div>
@@ -361,14 +361,14 @@ export default function LandingPage() {
             <HeroTitle />
 
             <motion.h2 initial={{ opacity:0, y:20, filter:'blur(8px)' }} animate={{ opacity:1, y:0, filter:'blur(0px)' }} transition={{ duration:0.8, delay:0.8, ease:[0.16,1,0.3,1] }}
-              style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(18px,4vw,32px)', fontWeight:700, color:'#fff', marginBottom:16, lineHeight:1.3 }}>
+              style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(18px,4vw,32px)', fontWeight:700, color:'#fff', marginBottom:16, lineHeight:1.3 }}>
               Create Content{' '}
               <motion.span animate={{ color:['#8b5cf6','#a78bfa','#8b5cf6'] }} transition={{ duration:3, repeat:Infinity }}>That Actually</motion.span>
               <br/>Gets Discovered
             </motion.h2>
 
             <motion.p initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, delay:1.0, ease:[0.16,1,0.3,1] }}
-              style={{ fontFamily:'DM Sans,sans-serif', fontSize:14, color:'rgba(255,255,255,0.5)', maxWidth:380, lineHeight:1.8, marginBottom:32, padding:'0 8px' }}>
+              style={{ fontFamily:'Roboto,sans-serif', fontSize:14, color:'rgba(255,255,255,0.5)', maxWidth:380, lineHeight:1.8, marginBottom:32, padding:'0 8px' }}>
               SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, content analysis, and SEO in one dark premium dashboard.
             </motion.p>
 
@@ -380,7 +380,7 @@ export default function LandingPage() {
                 <motion.span animate={{ x:[0,4,0] }} transition={{ duration:1.2, repeat:Infinity }}>→</motion.span>
               </motion.a>
               <motion.a href="#features" whileHover={{ color:'#fff' }}
-                style={{ fontSize:14, color:'rgba(255,255,255,0.5)', textDecoration:'none', fontFamily:'DM Sans,sans-serif', display:'inline-flex', alignItems:'center', gap:6 }}>
+                style={{ fontSize:14, color:'rgba(255,255,255,0.5)', textDecoration:'none', fontFamily:'Roboto,sans-serif', display:'inline-flex', alignItems:'center', gap:6 }}>
                 Explore Features
                 <motion.span animate={{ y:[0,3,0] }} transition={{ duration:1.2, repeat:Infinity }}>▼</motion.span>
               </motion.a>
@@ -391,41 +391,41 @@ export default function LandingPage() {
           <motion.div className="sr-side-cards" initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.2 }}>
             <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:28, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 30px 60px rgba(0,0,0,0.6)', position:'relative', overflow:'hidden', cursor:'default' }}>
               <div style={{ position:'absolute', top:-30, right:-30, width:96, height:96, background:'rgba(139,92,246,0.12)', filter:'blur(20px)', borderRadius:'50%', pointerEvents:'none' }} />
-              <div style={{ display:'flex', alignItems:'center', gap:8, color:'#a78bfa', fontSize:12, fontWeight:700, marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, color:'#a78bfa', fontSize:12, fontWeight:700, marginBottom:16, fontFamily:'Roboto,sans-serif' }}>
                 <motion.div animate={{ opacity:[1,0.3,1] }} transition={{ duration:1.5, repeat:Infinity }} style={{ width:6, height:6, borderRadius:'50%', background:'#8b5cf6' }} />
                 Dashboard
               </div>
               <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14, marginBottom:12 }}>
-                <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12, fontFamily:'DM Sans,sans-serif' }}>Trending Now</p>
+                <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>Trending Now</p>
                 {[['#AIVideoEditing','Trending'],['#CreatorEconomy2026','Rising'],['#YouTubeShorts','Hot']].map(([tag, status]) => (
-                  <div key={tag} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, fontSize:12, color:'#fff', fontFamily:'DM Sans,sans-serif' }}>
+                  <div key={tag} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, fontSize:12, color:'#fff', fontFamily:'Roboto,sans-serif' }}>
                     <span>{tag}</span><span style={{ color:'#a78bfa', fontSize:10, fontWeight:600 }}>↑ {status}</span>
                   </div>
                 ))}
               </div>
               <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14, marginBottom:12 }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'DM Sans,sans-serif' }}>Script Generator</p>
+                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'Roboto,sans-serif' }}>Script Generator</p>
                   <motion.div animate={{ rotate:360 }} transition={{ duration:3, repeat:Infinity, ease:'linear' }}
                     style={{ width:20, height:20, borderRadius:6, background:'linear-gradient(135deg,#7c3aed,#a855f7)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <div style={{ width:6, height:6, borderRadius:'50%', background:'#fff' }} />
                   </motion.div>
                 </div>
-                <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:10, padding:'8px 12px', fontSize:11, color:'rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'space-between', fontFamily:'DM Sans,sans-serif', minHeight:32 }}>
+                <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:10, padding:'8px 12px', fontSize:11, color:'rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'space-between', fontFamily:'Roboto,sans-serif', minHeight:32 }}>
                   <TypingScript />
                   <motion.div animate={{ opacity:[1,0,1] }} transition={{ duration:0.8, repeat:Infinity }} style={{ width:1, height:12, background:'#8b5cf6', flexShrink:0, marginLeft:4 }} />
                 </div>
               </div>
               <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'DM Sans,sans-serif' }}>SEO Score</p>
-                  <span style={{ color:'#a78bfa', fontWeight:600, fontSize:11, fontFamily:'DM Sans,sans-serif' }}>AI Ready</span>
+                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'Roboto,sans-serif' }}>SEO Score</p>
+                  <span style={{ color:'#a78bfa', fontWeight:600, fontSize:11, fontFamily:'Roboto,sans-serif' }}>AI Ready</span>
                 </div>
                 <div style={{ width:'100%', height:6, borderRadius:50, background:'rgba(255,255,255,0.08)', overflow:'hidden', marginBottom:8 }}>
                   <motion.div animate={{ width:['0%','85%'] }} transition={{ duration:1.5, ease:'easeOut', delay:1 }}
                     style={{ height:'100%', borderRadius:50, background:'linear-gradient(90deg,#7c3aed,#a855f7)', boxShadow:'0 0 10px rgba(139,92,246,0.6)' }} />
                 </div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.3)', fontFamily:'DM Sans,sans-serif' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.3)', fontFamily:'Roboto,sans-serif' }}>
                   <span>Low</span><span style={{ color:'#a78bfa', fontWeight:600 }}>85/100</span><span>High</span>
                 </div>
               </div>
@@ -439,23 +439,23 @@ export default function LandingPage() {
       <div className="sr-stats" style={{ background:'rgba(139,92,246,0.01)', borderTop:'1px solid rgba(139,92,246,0.08)', borderBottom:'1px solid rgba(139,92,246,0.08)', padding:'48px 32px', display:'flex', justifyContent:'center', gap:64, flexWrap:'wrap', position:'relative', zIndex:20 }}>
         {STATS.map((s, i) => (
           <motion.div key={s.label} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.1 }} style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'Syne,sans-serif', fontSize:38, fontWeight:800, letterSpacing:'-.03em', background:'linear-gradient(to bottom,#fff,#a78bfa)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>{s.value}</div>
-            <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:6, fontFamily:'DM Sans,sans-serif' }}>{s.label}</div>
+            <div style={{ fontFamily:'Roboto,sans-serif', fontSize:38, fontWeight:800, letterSpacing:'-.03em', background:'linear-gradient(to bottom,#fff,#a78bfa)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>{s.value}</div>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:6, fontFamily:'Roboto,sans-serif' }}>{s.label}</div>
           </motion.div>
         ))}
       </div>
 
       {/* FEATURES */}
       <section id="features" className="sr-section" style={{ maxWidth:1100, margin:'0 auto', padding:'100px 32px', position:'relative', zIndex:20 }}>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'DM Sans,sans-serif' }}>Platform Features</motion.p>
-        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>Every tool a serious creator needs.</motion.h2>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</motion.p>
+        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>Platform Features</motion.p>
+        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>Every tool a serious creator needs.</motion.h2>
+        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</motion.p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:16 }}>
           {FEATURES.map((f, i) => (
             <motion.div key={f.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.08 }} className="sr-step-card">
               <div className="sr-step-num">{f.num}</div>
-              <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:8, position:'relative', zIndex:1 }}>{f.title}</h3>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:14, fontFamily:'DM Sans,sans-serif', position:'relative', zIndex:1 }}>{f.desc}</p>
+              <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:8, position:'relative', zIndex:1 }}>{f.title}</h3>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:14, fontFamily:'Roboto,sans-serif', position:'relative', zIndex:1 }}>{f.desc}</p>
               <div style={{ display:'flex', gap:6, flexWrap:'wrap', position:'relative', zIndex:1 }}>
                 {f.tags.map(tag => <span key={tag} className="sr-feature-tag">{tag}</span>)}
               </div>
@@ -465,8 +465,8 @@ export default function LandingPage() {
             className="sr-step-card" style={{ display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center' }}>
             <div>
               <div className="sr-step-num" style={{ textAlign:'center' }}>+</div>
-              <p style={{ fontFamily:'Syne,sans-serif', fontSize:17, fontWeight:700, color:'rgba(255,255,255,0.2)', marginBottom:8 }}>More coming</p>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.15)', fontFamily:'DM Sans,sans-serif' }}>Platform is actively growing</p>
+              <p style={{ fontFamily:'Roboto,sans-serif', fontSize:17, fontWeight:700, color:'rgba(255,255,255,0.2)', marginBottom:8 }}>More coming</p>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,0.15)', fontFamily:'Roboto,sans-serif' }}>Platform is actively growing</p>
             </div>
           </motion.div>
         </div>
@@ -474,17 +474,17 @@ export default function LandingPage() {
 
       {/* HOW IT WORKS */}
       <section id="how-it-works" className="sr-section" style={{ maxWidth:1100, margin:'0 auto', padding:'80px 32px', position:'relative', zIndex:20 }}>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'DM Sans,sans-serif' }}>How It Works</motion.p>
-        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>From zero to algorithm-ready in one session.</motion.h2>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>No complex setup. No learning curve. Connect your channels and SocialRum immediately starts surfacing what to create, how to optimize it, and how to rank it.</motion.p>
+        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>How It Works</motion.p>
+        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>From zero to algorithm-ready in one session.</motion.h2>
+        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>No complex setup. No learning curve. Connect your channels and SocialRum immediately starts surfacing what to create, how to optimize it, and how to rank it.</motion.p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:20 }}>
           {STEPS.map((s, i) => (
             <motion.div key={s.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.1 }} className="sr-step-card">
               <div className="sr-step-num">{s.num}</div>
-              <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:8 }}>{s.title}</h3>
-              <p style={{ fontSize:12, fontWeight:600, color:'#8b5cf6', marginBottom:12, fontFamily:'DM Sans,sans-serif' }}>{s.sub}</p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>{s.desc}</p>
-              <p style={{ marginTop:14, fontSize:11, color:'rgba(139,92,246,0.5)', fontStyle:'italic', fontFamily:'DM Sans,sans-serif' }}>{s.note}</p>
+              <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:8 }}>{s.title}</h3>
+              <p style={{ fontSize:12, fontWeight:600, color:'#8b5cf6', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>{s.sub}</p>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>{s.desc}</p>
+              <p style={{ marginTop:14, fontSize:11, color:'rgba(139,92,246,0.5)', fontStyle:'italic', fontFamily:'Roboto,sans-serif' }}>{s.note}</p>
             </motion.div>
           ))}
         </div>
@@ -496,12 +496,12 @@ export default function LandingPage() {
           <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, background:'rgba(139,92,246,0.05)', filter:'blur(40px)', borderRadius:'50%', pointerEvents:'none' }} />
 
           <motion.div initial={{ opacity:0, x:-20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }}>
-            <p style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>Limited Spots Remaining</p>
-            <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:16, lineHeight:1.2 }}>Be the First to<br/>Know &amp; Create.</h2>
-            <p style={{ fontSize:15, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:32, fontFamily:'DM Sans,sans-serif' }}>Get early access and founding creator status when SocialRum launches.</p>
+            <p style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:16, fontFamily:'Roboto,sans-serif' }}>Limited Spots Remaining</p>
+            <h2 style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:16, lineHeight:1.2 }}>Be the First to<br/>Know &amp; Create.</h2>
+            <p style={{ fontSize:15, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:32, fontFamily:'Roboto,sans-serif' }}>Get early access and founding creator status when SocialRum launches.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               {['Beta Access — Use all 5 tools before public launch','Founding Creator Badge — Exclusive profile recognition','Free Early Access Tier — No credit card required','Priority support from the SocialRum team'].map(b => (
-                <div key={b} style={{ display:'flex', alignItems:'flex-start', gap:12, fontSize:14, color:'rgba(255,255,255,0.55)', fontFamily:'DM Sans,sans-serif' }}>
+                <div key={b} style={{ display:'flex', alignItems:'flex-start', gap:12, fontSize:14, color:'rgba(255,255,255,0.55)', fontFamily:'Roboto,sans-serif' }}>
                   <div style={{ width:20, height:20, borderRadius:'50%', background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2 }}>
                     <svg viewBox="0 0 12 12" style={{ width:10, height:10 }} fill="none" strokeWidth={2.5} stroke="#a78bfa" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
                   </div>
@@ -520,35 +520,35 @@ export default function LandingPage() {
                 <div style={{ width:64, height:64, background:'linear-gradient(135deg,#7c3aed,#a78bfa)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
                   <svg viewBox="0 0 24 24" style={{ width:32, height:32, fill:'none', stroke:'white', strokeWidth:2.5 }}><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>You're In! 🎉</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', lineHeight:1.6, marginBottom:20, fontFamily:'DM Sans,sans-serif' }}>Welcome to SocialRum early access.<br/>We'll notify you the moment we launch.</p>
+                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>You're In! 🎉</h3>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', lineHeight:1.6, marginBottom:20, fontFamily:'Roboto,sans-serif' }}>Welcome to SocialRum early access.<br/>We'll notify you the moment we launch.</p>
                 <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:50, padding:'10px 20px', fontSize:13, color:'#a78bfa', fontWeight:500 }}>✅ Verified — {userEmail}</div>
               </div>
             )}
 
             {step === 'otp' && (
               <div className="sr-fade-in">
-                <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Check your email</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>We sent a 6-digit code to</p>
+                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Check your email</h3>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:6, fontFamily:'Roboto,sans-serif' }}>We sent a 6-digit code to</p>
                 <p style={{ fontSize:15, color:'#a78bfa', fontWeight:600, marginBottom:24 }}>{userEmail}</p>
                 <input ref={otpRef} type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit code" className="sr-input" style={{ letterSpacing:'0.35em', textAlign:'center', fontSize:22, marginBottom:12 }} onKeyDown={e => { if (e.key==='Enter') handleVerifyOTP(); }} />
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
                 <button onClick={handleVerifyOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Verifying...' : 'Verify & Get Access →'}</button>
-                <button onClick={() => { setStep('email'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer', display:'block', width:'100%', textAlign:'center', padding:4, fontFamily:'DM Sans,sans-serif' }}>← Use a different email</button>
+                <button onClick={() => { setStep('email'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer', display:'block', width:'100%', textAlign:'center', padding:4, fontFamily:'Roboto,sans-serif' }}>← Use a different email</button>
               </div>
             )}
 
             {step === 'email' && (
               <div>
-                <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Free Early Access</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:24, fontFamily:'DM Sans,sans-serif' }}>Enter your email — we'll send you a verification code.</p>
+                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Free Early Access</h3>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:24, fontFamily:'Roboto,sans-serif' }}>Enter your email — we'll send you a verification code.</p>
                 <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:14 }}>
                   <input id="sr-name-input" type="text" placeholder="Your name (optional)" className="sr-input" />
                   <input ref={emailRef} type="email" placeholder="you@example.com" className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleSendOTP(); }} />
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
                 <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Sending code...' : 'Get Early Access →'}</button>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', textAlign:'center', fontFamily:'DM Sans,sans-serif' }}>No spam. No credit card. Unsubscribe anytime.</p>
+                <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', textAlign:'center', fontFamily:'Roboto,sans-serif' }}>No spam. No credit card. Unsubscribe anytime.</p>
               </div>
             )}
           </motion.div>
@@ -561,15 +561,15 @@ export default function LandingPage() {
           <div style={{ width:28, height:28, borderRadius:8, background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <div style={{ width:8, height:8, borderRadius:2, background:'#a855f7' }} />
           </div>
-          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:16, color:'#fff' }}>SocialRum</span>
+          <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:16, color:'#fff' }}>SocialRum</span>
         </a>
         <div className="sr-footer-links" style={{ display:'flex', gap:28, flexWrap:'wrap' }}>
           {[['Features','#features'],['How It Works','#how-it-works'],['Early Access','#early-access'],['Contact','mailto:hello@socialrum.com']].map(([label,href]) => (
-            <a key={label} href={href} style={{ color:'rgba(255,255,255,0.3)', textDecoration:'none', fontSize:13, fontFamily:'DM Sans,sans-serif', transition:'color .2s' }}
+            <a key={label} href={href} style={{ color:'rgba(255,255,255,0.3)', textDecoration:'none', fontSize:13, fontFamily:'Roboto,sans-serif', transition:'color .2s' }}
               onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.3)')}>{label}</a>
           ))}
         </div>
-        <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'DM Sans,sans-serif' }}>© 2026 SocialRum · Built for Indian Creators 🇮🇳</p>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif' }}>© 2026 SocialRum · Built for Indian Creators 🇮🇳</p>
       </footer>
     </div>
   );
