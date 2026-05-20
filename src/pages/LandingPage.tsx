@@ -338,22 +338,6 @@ export default function LandingPage() {
           {/* ── LEFT: Analytics Dashboard ── */}
           <motion.div initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.3 }}
             style={{ display:'flex', flexDirection:'column', gap:12 }}>
-            <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 20px 40px rgba(0,0,0,0.5)', cursor:'default' }} className="sr-spotlight">
-              <p style={{ fontFamily:'Roboto, sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14, textAlign: 'left' }}>Top Creator Niches</p>
-              {TRENDING_NICHES.map((niche, i) => (
-                <div key={niche.name} style={{ marginBottom:12 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-                    <span style={{ fontSize:12, color:'#fff', fontFamily:'Roboto, sans-serif' }}>{niche.name}</span>
-                    <span style={{ fontSize:11, fontWeight:700, color: niche.color }}>{niche.growth}</span>
-                  </div>
-                  <div style={{ width:'100%', height:4, borderRadius:50, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
-                    <motion.div initial={{ width:0 }} whileInView={{ width: `${[82,74,65,58][i]}%` }} viewport={{ once:true }} transition={{ duration:1, delay: i*0.15, ease:'easeOut' }}
-                      style={{ height:'100%', borderRadius:50, background: niche.color, boxShadow:`0 0 8px ${niche.color}60` }} />
-                  </div>
-                </div>
-              ))}
-            </TiltCard>
-
             <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', cursor:'default' }} className="sr-spotlight">
               <p style={{ fontFamily:'Roboto, sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14, textAlign: 'left' }}>Trending Niches</p>
               {TRENDING_NICHES.map((niche, i) => (
