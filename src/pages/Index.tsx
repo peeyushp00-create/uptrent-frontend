@@ -213,11 +213,10 @@ export default function Index() {
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {videos.slice(0, 9).map((video, i) => (
-                    <motion.a key={video.id}
+                    <motion.div key={video.id}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
-                      href={video.youtubeUrl || video.instagramUrl || '#'}
-                      target="_blank" rel="noopener noreferrer"
+                 onClick={() => navigate('/insight', { state: { query: search, video } })}
                       className="relative rounded-2xl overflow-hidden cursor-pointer group"
                       style={{ aspectRatio:'9/16', background:'#1a1a2e', display:'block' }}>
                       <img src={video.thumbnail} alt={video.caption}
@@ -254,7 +253,7 @@ export default function Index() {
                           </div>
                         </div>
                       </div>
-                    </motion.a>
+                    </motion.div>
                   ))}
                 </div>
               )}
