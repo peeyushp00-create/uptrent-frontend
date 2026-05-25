@@ -564,7 +564,7 @@ export default function LandingPage() {
           <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:16, color:'#fff' }}>SocialRum</span>
         </a>
         <div className="sr-footer-links" style={{ display:'flex', gap:28, flexWrap:'wrap' }}>
-          {[['Features','#features'],['How It Works','#how-it-works'],['Early Access','#early-access'],['Contact','mailto:hello@socialrum.com']].map(([label,href]) => (
+          {[['Features','#features'],['How It Works','#how-it-works'],['Early Access','#early-access'],['Blog','/blog'],['Contact','mailto:hello@socialrum.com']].map(([label,href]) => (
             <a key={label} href={href} style={{ color:'rgba(255,255,255,0.3)', textDecoration:'none', fontSize:13, fontFamily:'Roboto,sans-serif', transition:'color .2s' }}
               onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.3)')}>{label}</a>
           ))}

@@ -22,6 +22,8 @@ import InstagramAnalyzer from "./pages/InstagramAnalyzer";
 import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
 import LandingPage from "./pages/LandingPage";
+import BlogPage from "@/pages/BlogPage";
+import AdminBlogPage from "@/pages/AdminBlogPage";
 
 const queryClient = new QueryClient();
 
@@ -33,19 +35,20 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Landing page — shown at root for socialrum.com */}
-            <Route path="/" element={<LandingPage />} />
 
-            {/* Auth */}
+            {/* ── Public pages (no auth required) ── */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/admin/blog" element={<AdminBlogPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
 
-            {/* Main app — public home/dashboard */}
+            {/* ── Public home/dashboard ── */}
             <Route path="/home" element={<AppLayout />}>
               <Route index element={<Index />} />
             </Route>
 
-            {/* Protected app routes */}
+            {/* ── Protected app routes ── */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/insight" element={<InsightPage />} />
               <Route path="/news" element={<NewsPage />} />
@@ -61,6 +64,7 @@ const App = () => (
             </Route>
 
             <Route path="*" element={<NotFound />} />
+
           </Routes>
         </AuthProvider>
       </BrowserRouter>
