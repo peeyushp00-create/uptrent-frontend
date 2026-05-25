@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Eye, EyeOff, LogOut, Loader2, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, LogOut, Loader2, CheckCircle, Upload, X } from 'lucide-react';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -29,8 +29,11 @@ export default function AdminBlogPage() {
   const [saved, setSaved] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
   const [author, setAuthor] = useState('SocialRum Team');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogin = () => {
     if (email !== ADMIN_EMAIL) { setLoginError('Access denied. Admin only.'); return; }
@@ -50,19 +53,59 @@ export default function AdminBlogPage() {
 
   useEffect(() => { if (authed) fetchBlogs(); }, [authed]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/blog-images/${fileName}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': file.type,
+          'x-upsert': 'true',
+        },
+        body: file,
+      });
+      if (!res.ok) { console.error('Upload failed', await res.text()); return null; }
+      return `${SUPABASE_URL}/storage/v1/object/public/blog-images/${fileName}`;
+    } catch (e) { console.error(e); return null; }
+    finally { setUploading(false); }
+  };
+
   const handlePost = async () => {
     if (!title.trim() || !description.trim()) return;
     setSaving(true);
+
+    let image_url: string | null = null;
+    if (imageFile) {
+      image_url = await uploadImage(imageFile);
+    }
+
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const res = await fetch(`${SUPABASE_URL}/rest/v1/blogs`, {
       method: 'POST',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, description, image_url: imageUrl || null, author, published: true, slug }),
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({ title, description, image_url, author, published: true, slug }),
     });
+
     setSaving(false);
     if (res.ok) {
       setSaved(true); setTimeout(() => setSaved(false), 3000);
-      setTitle(''); setDescription(''); setImageUrl('');
+      setTitle(''); setDescription(''); setImageFile(null); setImagePreview(null);
       setShowForm(false); fetchBlogs();
     }
   };
@@ -85,6 +128,16 @@ export default function AdminBlogPage() {
     fetchBlogs();
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.2)',
+    borderRadius: 10, padding: '11px 14px', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box'
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block',
+    textTransform: 'uppercase', letterSpacing: '0.08em'
+  };
+
+  // ── Login ──
   if (!authed) return (
     <div style={{ minHeight: '100vh', background: '#03000a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');`}</style>
@@ -98,14 +151,12 @@ export default function AdminBlogPage() {
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>SocialRum Blog Admin</p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Admin email"
-            style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '11px 14px', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Admin email" style={inputStyle} />
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '11px 14px', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            onKeyDown={e => e.key === 'Enter' && handleLogin()} style={inputStyle} />
           {loginError && <p style={{ fontSize: 13, color: '#ef4444', textAlign: 'center' }}>{loginError}</p>}
           <button onClick={handleLogin}
-            style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
             Login
           </button>
         </div>
@@ -113,10 +164,12 @@ export default function AdminBlogPage() {
     </div>
   );
 
+  // ── Admin Dashboard ──
   return (
     <div style={{ minHeight: '100vh', background: '#03000a', fontFamily: "'DM Sans', sans-serif", color: '#fff' }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');`}</style>
 
+      {/* Header */}
       <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(3,0,10,0.95)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(139,92,246,0.1)', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#a855f7', boxShadow: '0 0 8px #a855f7' }} />
@@ -132,6 +185,8 @@ export default function AdminBlogPage() {
       </header>
 
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
+
+        {/* Top bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
             <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Blog Posts</h1>
@@ -143,6 +198,7 @@ export default function AdminBlogPage() {
           </button>
         </div>
 
+        {/* Success toast */}
         <AnimatePresence>
           {saved && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -152,41 +208,69 @@ export default function AdminBlogPage() {
           )}
         </AnimatePresence>
 
+        {/* New post form */}
         <AnimatePresence>
           {showForm && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               style={{ background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.15)', borderRadius: 20, padding: 28, marginBottom: 28 }}>
               <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 700, marginBottom: 20 }}>New Blog Post</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                {/* Title */}
                 <div>
-                  <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Title *</label>
-                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter blog title..."
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '11px 14px', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
+                  <label style={labelStyle}>Title *</label>
+                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter blog title..." style={inputStyle} />
                 </div>
+
+                {/* Image upload */}
                 <div>
-                  <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Image URL</label>
-                  <input type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="https://..."
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '11px 14px', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-                  {imageUrl && <img src={imageUrl} alt="preview" style={{ marginTop: 8, width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10 }} onError={e => (e.target as HTMLImageElement).style.display = 'none'} />}
+                  <label style={labelStyle}>Cover Image</label>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+
+                  {imagePreview ? (
+                    <div style={{ position: 'relative' }}>
+                      <img src={imagePreview} alt="preview"
+                        style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 12 }} />
+                      <button onClick={() => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                        style={{ position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => fileInputRef.current?.click()}
+                      style={{ width: '100%', height: 120, background: 'rgba(139,92,246,0.04)', border: '2px dashed rgba(139,92,246,0.25)', borderRadius: 12, color: 'rgba(255,255,255,0.4)', fontSize: 14, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all .2s' }}>
+                      <Upload size={24} style={{ color: '#a78bfa' }} />
+                      <span>Click to upload image</span>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>PNG, JPG, WEBP supported</span>
+                    </button>
+                  )}
                 </div>
+
+                {/* Content */}
                 <div>
-                  <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Content *</label>
-                  <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Write your blog post content here..." rows={10}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '11px 14px', color: '#fff', fontSize: 14, outline: 'none', resize: 'vertical', lineHeight: 1.7, boxSizing: 'border-box' }} />
+                  <label style={labelStyle}>Content *</label>
+                  <textarea value={description} onChange={e => setDescription(e.target.value)}
+                    placeholder="Write your blog post content here..." rows={10}
+                    style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.7 }} />
                 </div>
+
+                {/* Author */}
                 <div>
-                  <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Author</label>
-                  <input type="text" value={author} onChange={e => setAuthor(e.target.value)}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '11px 14px', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                  <label style={labelStyle}>Author</label>
+                  <input type="text" value={author} onChange={e => setAuthor(e.target.value)} style={inputStyle} />
                 </div>
+
+                {/* Buttons */}
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={() => setShowForm(false)}
+                  <button onClick={() => { setShowForm(false); setImageFile(null); setImagePreview(null); }}
                     style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px', color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer' }}>
                     Cancel
                   </button>
-                  <button onClick={handlePost} disabled={saving || !title.trim() || !description.trim()}
-                    style={{ flex: 2, background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', border: 'none', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: saving ? 0.7 : 1 }}>
-                    {saving ? <><Loader2 size={16} /> Publishing...</> : 'Publish Post'}
+                  <button onClick={handlePost} disabled={saving || uploading || !title.trim() || !description.trim()}
+                    style={{ flex: 2, background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', border: 'none', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: (saving || uploading) ? 0.7 : 1 }}>
+                    {uploading ? <><Loader2 size={16} /> Uploading image...</>
+                      : saving ? <><Loader2 size={16} /> Publishing...</>
+                      : 'Publish Post'}
                   </button>
                 </div>
               </div>
@@ -194,6 +278,7 @@ export default function AdminBlogPage() {
           )}
         </AnimatePresence>
 
+        {/* Blog list */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)' }}>Loading posts...</div>
         ) : blogs.length === 0 ? (
@@ -210,7 +295,9 @@ export default function AdminBlogPage() {
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blog.title}</p>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{new Date(blog.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {blog.author}</p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+                    {new Date(blog.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {blog.author}
+                  </p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 50, fontWeight: 600, background: blog.published ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.05)', color: blog.published ? '#4ade80' : 'rgba(255,255,255,0.3)', border: `1px solid ${blog.published ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.08)'}` }}>
