@@ -291,8 +291,8 @@ export default function LandingPage() {
 
         {/* Desktop nav */}
         <ul className="sr-nav-links" style={{ display:'flex', gap:40, listStyle:'none' }}>
-          {['Features','How It Works','Early Access'].map(item => (
-            <li key={item}><a href={`#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'Roboto,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
+          {['Features','How It Works','Blog','Early Access'].map(item => (
+            <li key={item}><a href={item === 'Blog' ? '/blog' : `#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'Roboto,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
           ))}
         </ul>
 
