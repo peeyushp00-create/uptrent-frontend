@@ -177,14 +177,14 @@ style={{ background: isIG ? PRIMARY_CONTAINER : '#ffebee', color: activeColor }}
             AI-powered content discovery
           </motion.div>
 <motion.h1 initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}
-  className="text-5xl md:text-6xl font-bold leading-tight overflow-hidden">
-            <AnimatePresence mode="wait">
-              <motion.span key={wordIndex}
-                initial={{ opacity:0, y:30, filter:'blur(8px)' }}
-                animate={{ opacity:1, y:0, filter:'blur(0px)' }}
-                exit={{ opacity:0, y:-30, filter:'blur(8px)' }}
-                transition={{ duration:0.5 }}
-                className="block"
+  className="text-5xl md:text-6xl font-bold leading-tight">
+  <AnimatePresence mode="wait">
+    <motion.span key={wordIndex}
+      initial={{ opacity:0, y:30, filter:'blur(8px)' }}
+      animate={{ opacity:1, y:0, filter:'blur(0px)' }}
+      exit={{ opacity:0, scale:0.95, filter:'blur(8px)' }}
+      transition={{ duration:0.3 }}
+      className="block overflow-hidden"
                 style={{ background:activeGrad, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
                 {WORDS[wordIndex]}
               </motion.span>
