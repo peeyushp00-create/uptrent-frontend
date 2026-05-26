@@ -176,9 +176,8 @@ style={{ background: isIG ? PRIMARY_CONTAINER : '#ffebee', color: activeColor }}
   className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: activeColor }} />
             AI-powered content discovery
           </motion.div>
-
-          <motion.h1 initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}
-            className="text-5xl md:text-6xl font-bold leading-tight">
+<motion.h1 initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}
+  className="text-5xl md:text-6xl font-bold leading-tight overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.span key={wordIndex}
                 initial={{ opacity:0, y:30, filter:'blur(8px)' }}
