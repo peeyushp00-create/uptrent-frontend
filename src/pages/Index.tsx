@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Sparkles, Instagram, Youtube, Play, Heart, Eye, ExternalLink, RefreshCw, Loader2 } from "lucide-react";
+import {
+  Search, X, Sparkles, Instagram, Youtube, Play, Heart, Eye,
+  ExternalLink, RefreshCw, Loader2, TrendingUp, FileText, Newspaper, Users
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PRIMARY = "#7C3AED";
@@ -21,6 +24,13 @@ const FLOATING_TAGS = [
   { text: "#AIContent", x: "10%", y: "80%", delay: 1.5 },
 ];
 
+function formatNum(n: number) {
+  if (!n) return '0';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return String(n);
+}
+
 export default function Index() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -37,6 +47,7 @@ export default function Index() {
   const [chips, setChips] = useState<string[]>([]);
   const [chipsLoading, setChipsLoading] = useState(false);
   const [ytConnecting, setYtConnecting] = useState(false);
+  const [platformStats, setPlatformStats] = useState({ news: 0, topics: 0 });
 
   const ytChannel = user?.user_metadata?.youtube_channel || null;
   const isIG = platform === "Instagram";
@@ -70,11 +81,29 @@ export default function Index() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch platform stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [newsRes, topicsRes] = await Promise.all([
+          fetch(`${BASE}/api/news?filter=today`),
+          fetch(`${BASE}/api/topics?type=instagram`),
+        ]);
+        const newsData = await newsRes.json();
+        const topicsData = await topicsRes.json();
+        setPlatformStats({
+          news: Array.isArray(newsData) ? newsData.length : 0,
+          topics: Array.isArray(topicsData) ? topicsData.length : 0,
+        });
+      } catch { }
+    };
+    fetchStats();
+  }, []);
+
   // Fetch AI suggestions
   const fetchSuggestions = async () => {
     setChipsLoading(true);
     const niches = user?.user_metadata?.niches?.join(',') || '';
-    // If YouTube connected, use channel name as context
     const channelContext = ytChannel?.channel_name ? `,${ytChannel.channel_name}` : '';
     const p = isIG ? 'instagram' : 'youtube';
     try {
@@ -101,7 +130,6 @@ export default function Index() {
     }, 600);
   }, [search, platform]);
 
-  // YouTube OAuth connect
   const handleYtConnect = async () => {
     if (!user?.id) { navigate('/login'); return; }
     setYtConnecting(true);
@@ -172,7 +200,7 @@ export default function Index() {
           <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.4 }}
             className="text-[#757684] text-base max-w-md mx-auto">
             {ytChannel && !isIG
-              ? `${Number(ytChannel.subscribers || 0).toLocaleString()} subscribers · ${Number(ytChannel.video_count || 0).toLocaleString()} videos · Let's grow your channel 🚀`
+              ? `${formatNum(Number(ytChannel.subscribers || 0))} subscribers · ${formatNum(Number(ytChannel.video_count || 0))} videos · Let's grow your channel 🚀`
               : 'Find viral ideas for Instagram Reels & YouTube Shorts — built for Indian creators'}
           </motion.p>
         </div>
@@ -192,7 +220,6 @@ export default function Index() {
                 <Instagram className="w-4 h-4" /> Connect Instagram
               </motion.button>
             ) : ytChannel ? (
-              // YouTube connected — show channel card
               <motion.div key="yt-connected"
                 initial={{ opacity:0, scale:0.9, y:8 }} animate={{ opacity:1, scale:1, y:0 }}
                 exit={{ opacity:0, scale:0.9, y:-8 }} transition={{ duration:0.3 }}
@@ -204,21 +231,18 @@ export default function Index() {
                 <div className="text-left">
                   <p className="text-sm font-bold text-red-600">{ytChannel.channel_name}</p>
                   <div className="flex gap-3">
-                    <span className="text-xs text-red-400">{Number(ytChannel.subscribers || 0).toLocaleString()} subs</span>
-                    <span className="text-xs text-red-400">{Number(ytChannel.video_count || 0).toLocaleString()} videos</span>
+                    <span className="text-xs text-red-400">{formatNum(Number(ytChannel.subscribers || 0))} subs</span>
+                    <span className="text-xs text-red-400">{formatNum(Number(ytChannel.video_count || 0))} videos</span>
                   </div>
                 </div>
-                <button onClick={() => navigate('/settings')}
-                  className="text-xs text-red-300 hover:text-red-500 ml-1 transition-colors">⚙️</button>
+                <button onClick={() => navigate('/settings')} className="text-xs text-red-300 hover:text-red-500 ml-1 transition-colors">⚙️</button>
               </motion.div>
             ) : (
-              // YouTube not connected
               <motion.button key="yt-connect"
                 initial={{ opacity:0, scale:0.9, y:8 }} animate={{ opacity:1, scale:1, y:0 }}
                 exit={{ opacity:0, scale:0.9, y:-8 }} transition={{ duration:0.3 }}
                 whileHover={{ scale:1.05 }} whileTap={{ scale:0.97 }}
-                onClick={handleYtConnect}
-                disabled={ytConnecting}
+                onClick={handleYtConnect} disabled={ytConnecting}
                 className="flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-sm font-bold text-white disabled:opacity-70"
                 style={{ background:YT_GRAD, boxShadow:'0 4px 20px #ff000040' }}>
                 {ytConnecting
@@ -228,9 +252,7 @@ export default function Index() {
             )}
           </AnimatePresence>
           <p className="text-xs text-[#757684]">
-            {!isIG && ytChannel
-              ? '✅ Channel connected · Content personalized for you'
-              : 'Connect your channel to get personalized content ideas'}
+            {!isIG && ytChannel ? '✅ Channel connected · Content personalized for you' : 'Connect your channel to get personalized content ideas'}
           </p>
         </motion.div>
 
@@ -249,8 +271,7 @@ export default function Index() {
                 </button>
               )}
             </div>
-            <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
-              onClick={() => setSearch('')}
+            <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }} onClick={() => setSearch('')}
               className="px-6 py-4 rounded-2xl text-white font-bold text-sm flex items-center gap-2 hover:shadow-lg transition-all"
               style={{ background:activeGrad }}>
               <Sparkles className="w-4 h-4" />
@@ -264,19 +285,14 @@ export default function Index() {
           {(videosLoading || videos.length > 0) && (
             <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }} className="w-full">
               <div className="flex items-center gap-2 mb-3">
-                {isIG
-                  ? <Instagram className="w-4 h-4" style={{ color:activeColor }} />
-                  : <Youtube className="w-4 h-4" style={{ color:activeColor }} />}
+                {isIG ? <Instagram className="w-4 h-4" style={{ color:activeColor }} /> : <Youtube className="w-4 h-4" style={{ color:activeColor }} />}
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color:activeColor }}>
                   {isIG ? 'Instagram Reels' : 'YouTube Shorts'} for "{search}"
                 </p>
               </div>
-
               {videosLoading ? (
                 <div className="grid grid-cols-3 gap-2">
-                  {[1,2,3,4,5,6].map(i => (
-                    <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl animate-pulse" style={{ aspectRatio:'9/16' }} />
-                  ))}
+                  {[1,2,3,4,5,6].map(i => <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl animate-pulse" style={{ aspectRatio:'9/16' }} />)}
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
@@ -296,8 +312,7 @@ export default function Index() {
                         {isIG ? 'Reels' : 'Shorts'}
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                          style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(4px)' }}>
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(4px)' }}>
                           <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
                         </div>
                       </div>
@@ -339,12 +354,9 @@ export default function Index() {
                 Refresh
               </button>
             </div>
-
             {chipsLoading ? (
               <div className="flex flex-wrap gap-2">
-                {[1,2,3,4,5,6,7,8].map(i => (
-                  <div key={i} className="h-8 w-24 rounded-full bg-white animate-pulse border border-[#e1e3e4]" />
-                ))}
+                {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="h-8 w-24 rounded-full bg-white animate-pulse border border-[#e1e3e4]" />)}
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -381,6 +393,74 @@ export default function Index() {
                 {item.label}
               </button>
             ))}
+          </motion.div>
+        )}
+
+        {/* ── Dashboard Stats ── */}
+        {!search && (
+          <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:1.0 }}
+            className="w-full space-y-3">
+
+            <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider">📊 Dashboard Stats</p>
+
+            {/* YouTube channel stats */}
+            {ytChannel && !isIG && (
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { icon: Users, label: 'Subscribers', val: formatNum(Number(ytChannel.subscribers || 0)), color: '#ff0000', bg: '#ffebee' },
+                  { icon: Eye, label: 'Total Views', val: formatNum(Number(ytChannel.total_views || 0)), color: '#ff6b35', bg: '#fff3e0' },
+                  { icon: FileText, label: 'Videos', val: formatNum(Number(ytChannel.video_count || 0)), color: '#ff9900', bg: '#fff8e1' },
+                ].map((stat, i) => (
+                  <motion.div key={i}
+                    initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
+                    transition={{ delay: 1.1 + i * 0.05 }}
+                    className="rounded-2xl p-3 text-center border"
+                    style={{ background: stat.bg, borderColor: `${stat.color}20` }}>
+                    <stat.icon className="w-4 h-4 mx-auto mb-1" style={{ color: stat.color }} />
+                    <p className="font-bold text-sm text-[#191c1d]">{stat.val}</p>
+                    <p className="text-[10px] text-[#757684]">{stat.label}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Platform stats */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { icon: Newspaper, label: "Today's News", val: platformStats.news, sublabel: 'articles', color: PRIMARY, bg: PRIMARY_CONTAINER, path: '/news' },
+                { icon: TrendingUp, label: 'Trending Topics', val: platformStats.topics, sublabel: 'topics', color: '#059669', bg: '#d1fae5', path: '/trending' },
+              ].map((stat, i) => (
+                <motion.button key={i}
+                  initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
+                  transition={{ delay: 1.2 + i * 0.05 }}
+                  onClick={() => navigate(stat.path)}
+                  className="rounded-2xl p-4 text-left border hover:shadow-md transition-all active:scale-[0.98]"
+                  style={{ background: stat.bg, borderColor: `${stat.color}20` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+                    <span className="text-[10px] font-semibold" style={{ color: stat.color }}>View →</span>
+                  </div>
+                  <p className="font-bold text-xl text-[#191c1d]">{stat.val}</p>
+                  <p className="text-xs text-[#757684]">{stat.sublabel} · {stat.label}</p>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* User niches */}
+            {user?.user_metadata?.niches?.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                <p className="text-xs font-semibold text-[#757684] mb-2">Your Niches</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {user.user_metadata.niches.map((niche: string) => (
+                    <span key={niche} onClick={() => setSearch(niche)}
+                      className="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity"
+                      style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                      {niche}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </div>
