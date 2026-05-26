@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, User, Target, Globe, Palette, Save, Loader2, Check,
-  Mic, MicOff, MessageSquare, Star, Send, ThumbsUp, Zap, Bug, Lightbulb
+  Mic, MicOff, MessageSquare, Star, Send, ThumbsUp, Zap, Bug, Lightbulb,
+  Youtube, Unlink, CheckCircle2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
@@ -78,8 +79,6 @@ export default function SettingsPage() {
     user?.user_metadata?.niches ||
     (user?.user_metadata?.niche ? [user.user_metadata.niche] : [])
   );
-
-  // ✅ Read from localStorage first, then user metadata, then default to english
   const [language, setLanguage] = useState(
     localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english'
   );
@@ -87,7 +86,6 @@ export default function SettingsPage() {
     localStorage.getItem('userStyle') || user?.user_metadata?.style || 'casual'
   );
   const [platform, setPlatform] = useState(user?.user_metadata?.platform || 'both');
-
   const [isRecording, setIsRecording] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState(user?.user_metadata?.voice_transcript || '');
   const [voiceStyle, setVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
@@ -96,7 +94,6 @@ export default function SettingsPage() {
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<any>(null);
   const autoSaveTimer = useRef<any>(null);
-
   const [feedbackCategory, setFeedbackCategory] = useState("general");
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -105,6 +102,50 @@ export default function SettingsPage() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState("");
   const [savingIndicator, setSavingIndicator] = useState(false);
+
+  // YouTube OAuth state
+  const [ytChannel, setYtChannel] = useState<any>(user?.user_metadata?.youtube_channel || null);
+  const [ytConnecting, setYtConnecting] = useState(false);
+  const [ytDisconnecting, setYtDisconnecting] = useState(false);
+
+  // Check OAuth redirect params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('youtube') === 'connected') {
+      window.history.replaceState({}, '', '/settings');
+      window.location.reload();
+    }
+    if (params.get('error')) {
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, []);
+
+  const handleYtConnect = async () => {
+    if (!user?.id) return;
+    setYtConnecting(true);
+    try {
+      const res = await fetch(`${BASE}/api/youtube/oauth/url?userId=${user.id}`);
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch (e) {
+      console.error(e);
+      setYtConnecting(false);
+    }
+  };
+
+  const handleYtDisconnect = async () => {
+    if (!user?.id) return;
+    setYtDisconnecting(true);
+    try {
+      await fetch(`${BASE}/api/youtube/oauth/disconnect`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      setYtChannel(null);
+    } catch (e) { console.error(e); }
+    finally { setYtDisconnecting(false); }
+  };
 
   const autoSave = useCallback(async (updates: Record<string, any>) => {
     clearTimeout(autoSaveTimer.current);
@@ -126,14 +167,12 @@ export default function SettingsPage() {
     autoSave({ full_name: name, niche: updated[0] || '', niches: updated, language, style, platform });
   };
 
-  // ✅ Save language to localStorage immediately + Supabase
   const handleLanguageChange = (val: string) => {
     setLanguage(val);
     localStorage.setItem('userLanguage', val);
     autoSave({ full_name: name, niche: niches[0] || '', niches, language: val, style, platform });
   };
 
-  // ✅ Save style to localStorage immediately + Supabase
   const handleStyleChange = (val: string) => {
     setStyle(val);
     localStorage.setItem('userStyle', val);
@@ -268,6 +307,8 @@ export default function SettingsPage() {
         {/* ── PROFILE TAB ── */}
         {activeTab === "profile" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+
+            {/* Profile card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <User className="w-4 h-4" style={{ color: BLUE }} /> Profile
@@ -298,6 +339,65 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* ── YouTube Connect Card ── */}
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+              <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
+                <Youtube className="w-4 h-4 text-red-500" /> YouTube Channel
+              </h2>
+
+              {ytChannel ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                    {ytChannel.channel_thumbnail && (
+                      <img src={ytChannel.channel_thumbnail} alt="" className="w-10 h-10 rounded-full shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                        <p className="font-semibold text-sm text-green-800 truncate">{ytChannel.channel_name}</p>
+                      </div>
+                      <div className="flex gap-3 mt-0.5 flex-wrap">
+                        <span className="text-xs text-green-600">{Number(ytChannel.subscribers || 0).toLocaleString()} subscribers</span>
+                        <span className="text-xs text-green-600">{Number(ytChannel.video_count || 0).toLocaleString()} videos</span>
+                        <span className="text-xs text-green-600">{Number(ytChannel.total_views || 0).toLocaleString()} views</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={handleYtDisconnect} disabled={ytDisconnecting}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 text-red-500 text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
+                    {ytDisconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
+                    Disconnect Channel
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Connect your YouTube channel to get personalized content ideas, analytics insights and SEO recommendations.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['Personalized content ideas', 'Channel analytics', 'SEO recommendations', 'Growth insights'].map(f => (
+                      <div key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={handleYtConnect} disabled={ytConnecting}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #ff0000, #cc0000)', boxShadow: '0 4px 14px #ff000030' }}>
+                    {ytConnecting
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Connecting...</>
+                      : <><Youtube className="w-4 h-4" /> Connect YouTube Channel</>}
+                  </button>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Read-only access · Revoke anytime in Google Account settings
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Niches card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Target className="w-4 h-4" style={{ color: BLUE }} /> Content Niches
@@ -321,8 +421,6 @@ export default function SettingsPage() {
         {/* ── PREFERENCES TAB ── */}
         {activeTab === "preferences" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-
-            {/* Current settings banner */}
             <div className="p-3 rounded-2xl flex items-center gap-3"
               style={{ background: `${BLUE}10`, border: `1px solid ${BLUE}25` }}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
@@ -460,9 +558,7 @@ export default function SettingsPage() {
                   </motion.div>
                   <div>
                     <h2 className="text-xl font-bold text-foreground mb-2">Thank You! 🎉</h2>
-                    <p className="text-muted-foreground text-sm max-w-sm">
-                      Your feedback has been saved and sent to our team. We'll review it and get back to you within 24 hours.
-                    </p>
+                    <p className="text-muted-foreground text-sm max-w-sm">Your feedback has been saved and sent to our team.</p>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium"
                     style={{ background: "#7C3AED15", border: "1px solid #7C3AED30", color: BLUE }}>
@@ -536,12 +632,6 @@ export default function SettingsPage() {
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
                       : <><Send className="w-4 h-4" /> Submit Feedback</>}
                   </motion.button>
-
-                  {(!feedbackMessage.trim() || feedbackRating === 0) && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      {feedbackRating === 0 ? "Please select a star rating" : "Please write your feedback"}
-                    </p>
-                  )}
                 </motion.div>
               )}
             </AnimatePresence>
