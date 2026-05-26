@@ -160,7 +160,7 @@ export default function Index() {
           animate={{ opacity:[0,0.6,0.6,0], y:[20,0,0,-20] }}
           transition={{ duration:4, delay:tag.delay, repeat:Infinity, repeatDelay:3 }}
           className="absolute hidden md:block text-xs font-bold px-3 py-1.5 rounded-full pointer-events-none"
-          style={{ left:tag.x, top:tag.y, background:PRIMARY_CONTAINER, color:PRIMARY }}>
+          style={{ left:tag.x, top:tag.y, background: isIG ? PRIMARY_CONTAINER : '#ffebee', color: activeColor }}>
           {tag.text}
         </motion.div>
       ))}
