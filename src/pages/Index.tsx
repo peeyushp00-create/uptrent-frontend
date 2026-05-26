@@ -170,10 +170,10 @@ export default function Index() {
         {/* Headline */}
         <div className="text-center space-y-3">
           <motion.div initial={{ opacity:0, y:-20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest"
-            style={{ background:PRIMARY_CONTAINER, color:PRIMARY }}>
-            <motion.span animate={{ opacity:[1,0.2,1] }} transition={{ duration:1.5, repeat:Infinity }}
-              className="w-1.5 h-1.5 rounded-full inline-block" style={{ background:PRIMARY }} />
+           className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest"
+style={{ background: isIG ? PRIMARY_CONTAINER : '#ffebee', color: activeColor }}>
+<motion.span animate={{ opacity:[1,0.2,1] }} transition={{ duration:1.5, repeat:Infinity }}
+  className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: activeColor }} />
             AI-powered content discovery
           </motion.div>
 
