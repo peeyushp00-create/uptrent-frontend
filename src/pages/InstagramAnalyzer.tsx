@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb, User } from "lucide-react";
+import { Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb, User, Users, Heart, MessageCircle, BarChart2, BadgeCheck } from "lucide-react";
 
 const PRIMARY = "#7C3AED";
-const SECONDARY = "#7C3AED";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
 const PRIMARY_CONTAINER = "#ede9fe";
 const SECONDARY_CONTAINER = "#ede9fe";
@@ -12,7 +11,6 @@ const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const DAYS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 const HOURS = ['12am','6am','12pm','6pm','11pm'];
 
-// Simple heatmap data generator
 const generateHeatmap = () => {
   return DAYS.map(day => ({
     day,
@@ -28,6 +26,13 @@ const generateHeatmap = () => {
 };
 
 const heatmapColors = ['#e7e8e9', '#b78efe40', '#b78efe80', '#7C3AED'];
+
+const formatNumber = (n: number) => {
+  if (!n) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return n.toString();
+};
 
 export default function InstagramAnalyzer() {
   const [username, setUsername] = useState('');
@@ -60,7 +65,7 @@ export default function InstagramAnalyzer() {
 
   const PILLAR_COLORS = [
     { bg: PRIMARY_CONTAINER, text: PRIMARY },
-    { bg: SECONDARY_CONTAINER, text: SECONDARY },
+    { bg: SECONDARY_CONTAINER, text: PRIMARY },
     { bg: '#e8f5e9', text: '#2e7d32' },
     { bg: '#fff3e0', text: '#e65100' },
     { bg: '#fce4ec', text: '#880e4f' },
@@ -109,10 +114,10 @@ export default function InstagramAnalyzer() {
         {loading && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] p-8 flex flex-col items-center gap-3">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-              <Sparkles className="w-8 h-8" style={{ color: SECONDARY }} />
+              <Sparkles className="w-8 h-8" style={{ color: PRIMARY }} />
             </motion.div>
             <p className="text-sm font-semibold text-[#191c1d] dark:text-white">Analyzing @{username.replace('@', '')}...</p>
-            <p className="text-xs text-[#757684]">Building content strategy insights</p>
+            <p className="text-xs text-[#757684]">Fetching real data & building insights</p>
           </div>
         )}
 
@@ -127,12 +132,78 @@ export default function InstagramAnalyzer() {
                   {(result.profile_name || username)[0].toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>@{username.replace('@', '')}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>@{username.replace('@', '')}</p>
+                    {result.stats?.is_verified && <BadgeCheck className="w-4 h-4 text-blue-300" />}
+                  </div>
                   <p className="text-xs text-white/70">{result.data_source === 'real' ? '✓ Real data' : 'AI Analysis'}</p>
                 </div>
               </div>
               <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>
             </div>
+
+            {/* Real Stats Card — only show if real data available */}
+            {result.stats && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Profile Stats</h2>
+                  <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Live Data</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Followers */}
+                  <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+                      <span className="text-xs text-[#757684]">Followers</span>
+                    </div>
+                    <p className="font-bold text-lg" style={{ color: PRIMARY, fontFamily: 'Montserrat, sans-serif' }}>
+                      {formatNumber(result.stats.followers)}
+                    </p>
+                  </div>
+
+                  {/* Engagement Rate */}
+                  <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="w-3.5 h-3.5 text-green-600" />
+                      <span className="text-xs text-[#757684]">Engagement</span>
+                    </div>
+                    <p className="font-bold text-lg text-green-700" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                      {result.stats.engagement_rate}%
+                    </p>
+                  </div>
+
+                  {/* Avg Likes */}
+                  <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Heart className="w-3.5 h-3.5 text-pink-600" />
+                      <span className="text-xs text-[#757684]">Avg Likes</span>
+                    </div>
+                    <p className="font-bold text-lg text-pink-700" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                      {formatNumber(result.stats.avg_likes)}
+                    </p>
+                  </div>
+
+                  {/* Avg Comments */}
+                  <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <MessageCircle className="w-3.5 h-3.5 text-orange-600" />
+                      <span className="text-xs text-[#757684]">Avg Comments</span>
+                    </div>
+                    <p className="font-bold text-lg text-orange-700" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                      {formatNumber(result.stats.avg_comments)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Total posts */}
+                {result.stats.total_posts && (
+                  <p className="text-xs text-[#757684] mt-3 text-center">
+                    Based on {result.stats.total_posts.toLocaleString()} total posts
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Content Pillars */}
             {result.content_pillars && result.content_pillars.length > 0 && (
@@ -159,7 +230,7 @@ export default function InstagramAnalyzer() {
             {result.reel_ideas && result.reel_ideas.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <Lightbulb className="w-4 h-4" style={{ color: SECONDARY }} />
+                  <Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} />
                   <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Reel Ideas</h2>
                 </div>
                 <div className="space-y-2">
@@ -193,7 +264,7 @@ export default function InstagramAnalyzer() {
                   {result.hashtags.map((tag: string, i: number) => (
                     <button key={i} onClick={() => copyText(`#${tag}`, `tag-${i}`)}
                       className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80"
-                      style={i % 3 === 0 ? { background: PRIMARY_CONTAINER, color: PRIMARY } : i % 3 === 1 ? { background: SECONDARY_CONTAINER, color: SECONDARY } : { background: '#e7e8e9', color: '#454652' }}>
+                      style={i % 3 === 0 ? { background: PRIMARY_CONTAINER, color: PRIMARY } : i % 3 === 1 ? { background: SECONDARY_CONTAINER, color: PRIMARY } : { background: '#e7e8e9', color: '#454652' }}>
                       #{tag}
                     </button>
                   ))}
@@ -241,7 +312,7 @@ export default function InstagramAnalyzer() {
             {result.posting_tips && result.posting_tips.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="w-4 h-4" style={{ color: SECONDARY }} />
+                  <Sparkles className="w-4 h-4" style={{ color: PRIMARY }} />
                   <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Posting Tips</h2>
                 </div>
                 <div className="space-y-2.5">
@@ -266,7 +337,7 @@ export default function InstagramAnalyzer() {
               <User className="w-8 h-8" style={{ color: PRIMARY }} />
             </div>
             <p className="font-bold text-[#191c1d] dark:text-white mb-1" style={{ fontFamily: 'Montserrat, sans-serif' }}>Analyze Any Profile</p>
-            <p className="text-sm text-[#757684]">Enter any Instagram username to get content pillars, reel ideas, hashtags and posting tips</p>
+            <p className="text-sm text-[#757684]">Enter any Instagram username to get real stats, content pillars, reel ideas, hashtags and posting tips</p>
           </div>
         )}
       </main>
