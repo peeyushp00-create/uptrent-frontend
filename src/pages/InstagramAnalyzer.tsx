@@ -41,10 +41,11 @@ export default function InstagramAnalyzer() {
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [heatmap] = useState(generateHeatmap());
+  const [imgError, setImgError] = useState(false);
 
   const analyze = async () => {
     if (!username.trim()) return;
-    setLoading(true); setError(''); setResult(null);
+    setLoading(true); setError(''); setResult(null); setImgError(false);
     try {
       const res = await fetch(`${BASE}/api/instagram/analyze`, {
         method: 'POST',
@@ -128,9 +129,19 @@ export default function InstagramAnalyzer() {
             {/* Profile Summary */}
             <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                  {(result.profile_name || username)[0].toUpperCase()}
-                </div>
+                {/* Profile pic */}
+                {result.stats?.profile_pic_url && !imgError ? (
+                  <img
+                    src={result.stats.profile_pic_url}
+                    alt={username}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
+                    onError={() => setImgError(true)}
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                    {(result.profile_name || username)[0].toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <div className="flex items-center gap-1.5">
                     <p className="font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>@{username.replace('@', '')}</p>
@@ -142,7 +153,7 @@ export default function InstagramAnalyzer() {
               <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>
             </div>
 
-            {/* Real Stats Card — only show if real data available */}
+            {/* Real Stats Card */}
             {result.stats && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4">
@@ -151,7 +162,6 @@ export default function InstagramAnalyzer() {
                   <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Live Data</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {/* Followers */}
                   <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
                     <div className="flex items-center gap-2 mb-1">
                       <Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
@@ -161,8 +171,6 @@ export default function InstagramAnalyzer() {
                       {formatNumber(result.stats.followers)}
                     </p>
                   </div>
-
-                  {/* Engagement Rate */}
                   <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
                     <div className="flex items-center gap-2 mb-1">
                       <TrendingUp className="w-3.5 h-3.5 text-green-600" />
@@ -172,8 +180,6 @@ export default function InstagramAnalyzer() {
                       {result.stats.engagement_rate}%
                     </p>
                   </div>
-
-                  {/* Avg Likes */}
                   <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
                     <div className="flex items-center gap-2 mb-1">
                       <Heart className="w-3.5 h-3.5 text-pink-600" />
@@ -183,8 +189,6 @@ export default function InstagramAnalyzer() {
                       {formatNumber(result.stats.avg_likes)}
                     </p>
                   </div>
-
-                  {/* Avg Comments */}
                   <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
                     <div className="flex items-center gap-2 mb-1">
                       <MessageCircle className="w-3.5 h-3.5 text-orange-600" />
@@ -195,8 +199,6 @@ export default function InstagramAnalyzer() {
                     </p>
                   </div>
                 </div>
-
-                {/* Total posts */}
                 {result.stats.total_posts && (
                   <p className="text-xs text-[#757684] mt-3 text-center">
                     Based on {result.stats.total_posts.toLocaleString()} total posts
