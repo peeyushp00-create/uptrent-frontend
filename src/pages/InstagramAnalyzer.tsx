@@ -64,9 +64,6 @@ export default function InstagramAnalyzer() {
     setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
 
-  const getProxiedPic = (url: string) =>
-    `${BASE}/api/instagram/proxy-image?url=${encodeURIComponent(url)}`;
-
   const PILLAR_COLORS = [
     { bg: PRIMARY_CONTAINER, text: PRIMARY },
     { bg: SECONDARY_CONTAINER, text: PRIMARY },
@@ -132,9 +129,9 @@ export default function InstagramAnalyzer() {
             {/* Profile Summary */}
             <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
               <div className="flex items-center gap-3 mb-3">
-                {result.stats?.profile_pic_url && !imgError ? (
+                {result.stats?.profile_pic_base64 && !imgError ? (
                   <img
-                    src={getProxiedPic(result.stats.profile_pic_url)}
+                    src={result.stats.profile_pic_base64}
                     alt={username}
                     className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
                     onError={() => setImgError(true)}
