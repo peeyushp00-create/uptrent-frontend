@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, TrendingUp, RefreshCw, ChevronRight, Sparkles, ExternalLink, X, Flame, ArrowUpRight, Zap, BarChart2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from 'react-i18next';
 
 const PRIMARY = "#7C3AED";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
@@ -149,6 +150,7 @@ const StrengthBadge = ({ strength }: { strength: string }) => {
 export default function TrendingDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
 
   const [trending, setTrending] = useState<any[]>([]);
@@ -176,9 +178,9 @@ export default function TrendingDashboard() {
       setTrending(sorted);
       setNews(list.slice(0, 6));
       const topTopics = sorted.slice(0, 4);
-      const generatedIdeas = topTopics.flatMap(t => [
-        { title: `Top 5 ${t.topic} tips for 2026`, tag: 'EDUCATIONAL', topic: t.topic },
-        { title: `React to: Latest ${t.topic} news`, tag: 'TRENDING', topic: t.topic },
+      const generatedIdeas = topTopics.flatMap(tt => [
+        { title: `Top 5 ${tt.topic} tips for 2026`, tag: 'EDUCATIONAL', topic: tt.topic },
+        { title: `React to: Latest ${tt.topic} news`, tag: 'TRENDING', topic: tt.topic },
       ]);
       setIdeas(generatedIdeas.slice(0, 6));
       const topicsRes = await fetch(`${BASE}/api/topics?type=instagram`);
@@ -220,9 +222,9 @@ export default function TrendingDashboard() {
   }, [search]);
 
   const handleRefresh = () => { setRefreshing(true); fetchData(); };
-  const filteredTrending = trending.filter(t =>
-    (activeFilter === 'All' || t.topic === activeFilter) &&
-    (search === '' || t.topic.toLowerCase().includes(search.toLowerCase()))
+  const filteredTrending = trending.filter(tt =>
+    (activeFilter === 'All' || tt.topic === activeFilter) &&
+    (search === '' || tt.topic.toLowerCase().includes(search.toLowerCase()))
   );
   const filters = ['All', ...userNiches.slice(0, 5)];
 
@@ -233,7 +235,9 @@ export default function TrendingDashboard() {
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Flame className="w-5 h-5" style={{ color: PRIMARY }} />
-          <h1 className="font-bold text-xl dark:text-white" style={{ color: PRIMARY, fontFamily:'Roboto,sans-serif' }}>Discovery</h1>
+          <h1 className="font-bold text-xl dark:text-white" style={{ color: PRIMARY, fontFamily: 'Roboto,sans-serif' }}>
+            {t('trending.title')}
+          </h1>
         </div>
         <button onClick={handleRefresh} disabled={refreshing}
           className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors disabled:opacity-40">
@@ -247,9 +251,9 @@ export default function TrendingDashboard() {
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search any niche — Finance, Cricket, Fitness..."
+            placeholder={t('trending.search_niche')}
             className="w-full pl-10 pr-10 py-3.5 rounded-2xl border bg-white dark:bg-gray-800 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all"
-            style={{ borderColor: search ? PRIMARY : '#e1e3e4', boxShadow: search ? `0 0 0 3px ${PRIMARY}15` : 'none', fontFamily:'Roboto,sans-serif' }} />
+            style={{ borderColor: search ? PRIMARY : '#e1e3e4', boxShadow: search ? `0 0 0 3px ${PRIMARY}15` : 'none', fontFamily: 'Roboto,sans-serif' }} />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]">
               <X className="w-4 h-4" />
@@ -258,22 +262,19 @@ export default function TrendingDashboard() {
         </div>
 
         <AnimatePresence mode="wait">
-          {/* ── SEARCH RESULTS VIEW ── */}
+          {/* SEARCH RESULTS VIEW */}
           {search.trim().length >= 2 ? (
-            <motion.div key="search" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} className="space-y-4">
-
-              {/* Header */}
+            <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white capitalize" style={{ fontFamily:'Roboto,sans-serif' }}>
-                    "{search}" Analysis
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white capitalize" style={{ fontFamily: 'Roboto,sans-serif' }}>
+                    "{search}" {t('trending.analyze')}
                   </h2>
                   <p className="text-xs text-[#757684]">AI-powered trend intelligence</p>
                 </div>
                 {trendAnalysis && <StrengthBadge strength={trendAnalysis.trend_strength} />}
               </div>
 
-              {/* Loading skeleton */}
               {analysisLoading && (
                 <div className="space-y-3">
                   {[1,2,3].map(i => (
@@ -287,9 +288,7 @@ export default function TrendingDashboard() {
               )}
 
               {trendAnalysis && !analysisLoading && (
-                <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} className="space-y-3">
-
-                  {/* Why trending — hero card */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                   <div className="rounded-2xl p-4 text-white" style={{ background: PRIMARY_GRAD }}>
                     <p className="text-xs font-bold uppercase tracking-wider opacity-80 mb-2">📣 Why It's Trending</p>
                     <p className="text-sm leading-relaxed font-medium">{trendAnalysis.why_trending}</p>
@@ -301,7 +300,6 @@ export default function TrendingDashboard() {
                     )}
                   </div>
 
-                  {/* Stats row */}
                   <div className="grid grid-cols-3 gap-2">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-[#e1e3e4] text-center">
                       <p className="text-xs text-[#757684] mb-1">Opportunity</p>
@@ -317,7 +315,6 @@ export default function TrendingDashboard() {
                     </div>
                   </div>
 
-                  {/* Best angle */}
                   {trendAnalysis.script_angle && (
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
                       <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: PRIMARY }}>🎯 Best Content Angle</p>
@@ -330,14 +327,13 @@ export default function TrendingDashboard() {
                     </div>
                   )}
 
-                  {/* Micro niches — horizontal scroll pills */}
                   {microResult?.niches?.length > 0 && (
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
                       <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: PRIMARY }}>🔍 Micro Niches</p>
                       <div className="space-y-2">
                         {microResult.niches.map((niche: any, i: number) => (
                           <motion.button key={niche.name}
-                            initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
+                            initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: i * 0.04 }}
                             onClick={() => navigate('/scripts', { state: { topic: niche.name } })}
                             className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl transition-all hover:shadow-sm"
@@ -350,7 +346,7 @@ export default function TrendingDashboard() {
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                                 style={niche.hot ? { background: '#ff6b3520', color: '#ea580c' } : { background: '#e7e8e9', color: '#757684' }}>
-                                {niche.hot ? 'Trending' : 'Stable'}
+                                {niche.hot ? t('trending.trending_badge') : t('trending.stable_badge')}
                               </span>
                               <ArrowUpRight className="w-3.5 h-3.5 text-[#757684]" />
                             </div>
@@ -360,16 +356,15 @@ export default function TrendingDashboard() {
                     </div>
                   )}
 
-                  {/* Content types + hashtags side by side */}
                   <div className="grid grid-cols-2 gap-3">
                     {trendAnalysis.best_content_types?.length > 0 && (
                       <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-[#e1e3e4] dark:border-gray-700">
                         <p className="text-xs font-bold mb-2 text-[#191c1d] dark:text-white">🎬 Content Types</p>
                         <div className="space-y-1">
-                          {trendAnalysis.best_content_types.map((t: string) => (
-                            <div key={t} className="flex items-center gap-1.5">
+                          {trendAnalysis.best_content_types.map((ct: string) => (
+                            <div key={ct} className="flex items-center gap-1.5">
                               <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: PRIMARY }} />
-                              <span className="text-xs text-[#454652] dark:text-gray-300">{t}</span>
+                              <span className="text-xs text-[#454652] dark:text-gray-300">{ct}</span>
                             </div>
                           ))}
                         </div>
@@ -387,27 +382,9 @@ export default function TrendingDashboard() {
                     )}
                   </div>
 
-                  {/* Top creators */}
-                  {trendAnalysis.top_creators?.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-                      <p className="text-xs font-bold uppercase tracking-wider mb-3 text-[#191c1d] dark:text-white">⭐ Top Creators</p>
-                      <div className="flex flex-wrap gap-2">
-                        {trendAnalysis.top_creators.map((c: string) => (
-                          <span key={c} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#f3f4f5] dark:bg-gray-700 text-[#454652] dark:text-gray-300">
-                            <div className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold shrink-0" style={{ background: PRIMARY_GRAD }}>
-                              {c.replace('@','')[0]?.toUpperCase()}
-                            </div>
-                            {c}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* What to avoid */}
                   {trendAnalysis.avoid && (
-                    <div className="rounded-2xl p-4 border border-red-100 dark:border-red-900/20 bg-red-50 dark:bg-red-900/10">
-                      <p className="text-xs font-bold text-red-600 mb-1.5">⚠️ What to Avoid</p>
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+                      <p className="text-xs font-bold uppercase tracking-wider mb-3 text-[#191c1d] dark:text-white">⚠ What to Avoid</p>
                       <p className="text-sm text-red-700 dark:text-red-400 leading-relaxed">{trendAnalysis.avoid}</p>
                     </div>
                   )}
@@ -416,29 +393,27 @@ export default function TrendingDashboard() {
             </motion.div>
 
           ) : (
-            /* ── DEFAULT VIEW ── */
-            <motion.div key="default" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} className="space-y-5">
+            /* DEFAULT VIEW */
+            <motion.div key="default" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
 
-              {/* Filter chips */}
               {filters.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth:'none' }}>
+                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                   {filters.map(f => (
                     <button key={f} onClick={() => setActiveFilter(f)}
                       className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all"
-                      style={activeFilter === f ? { background: PRIMARY_GRAD, color:'#fff' } : { background:'#e7e8e9', color:'#454652' }}>
+                      style={activeFilter === f ? { background: PRIMARY_GRAD, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
                       {f}
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* Trending topics — list style */}
               <section>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white flex items-center gap-2" style={{ fontFamily: 'Roboto,sans-serif' }}>
                     <Flame className="w-4 h-4 text-orange-500" /> Trending Right Now
                   </h2>
-                  <span className="text-xs font-bold" style={{ color: PRIMARY }}>{filteredTrending.length} topics</span>
+                  <span className="text-xs font-bold" style={{ color: PRIMARY }}>{filteredTrending.length} {t('trending.title')}</span>
                 </div>
 
                 {loading ? (
@@ -447,30 +422,27 @@ export default function TrendingDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {filteredTrending.slice(0, 10).map((t, i) => (
-                      <motion.button key={t.topic}
-                        initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
+                    {filteredTrending.slice(0, 10).map((tt, i) => (
+                      <motion.button key={tt.topic}
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.04 }}
-                        onClick={() => setSearch(t.topic)}
+                        onClick={() => setSearch(tt.topic)}
                         className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3 hover:shadow-md transition-all text-left hover:border-[#7C3AED]/30">
-                        {/* Rank */}
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm"
                           style={{ background: i < 3 ? PRIMARY_GRAD : '#f3f4f5', color: i < 3 ? '#fff' : '#757684' }}>
                           {i + 1}
                         </div>
-                        {/* Emoji + name */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">{t.emoji}</span>
-                            <span className="font-bold text-sm text-[#191c1d] dark:text-white">{t.topic}</span>
+                            <span className="text-lg">{tt.emoji}</span>
+                            <span className="font-bold text-sm text-[#191c1d] dark:text-white">{tt.topic}</span>
                             {i < 3 && <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />}
                           </div>
-                          <p className="text-xs text-[#757684] mt-0.5">{t.count} articles today · tap to analyze →</p>
+                          <p className="text-xs text-[#757684] mt-0.5">{tt.count} {t('home.articles')} · tap to analyze →</p>
                         </div>
-                        {/* Bar */}
                         <div className="w-16 shrink-0">
                           <div className="h-1.5 rounded-full bg-[#e7e8e9] overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (t.count / (trending[0]?.count || 1)) * 100)}%`, background: PRIMARY_GRAD }} />
+                            <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (tt.count / (trending[0]?.count || 1)) * 100)}%`, background: PRIMARY_GRAD }} />
                           </div>
                         </div>
                         <TrendingUp className="w-4 h-4 shrink-0" style={{ color: PRIMARY }} />
@@ -480,41 +452,37 @@ export default function TrendingDashboard() {
                 )}
               </section>
 
-              {/* Instagram trending from Supabase */}
               {instagramTopics.length > 0 && (
                 <section>
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white mb-3 flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white mb-3 flex items-center gap-2" style={{ fontFamily: 'Roboto,sans-serif' }}>
                     <span>📸</span> Instagram Trending
                   </h2>
                   <div className="space-y-3">
-                    {instagramTopics.slice(0, 8).map((t, i) => (
-                      <motion.div key={t.id}
-                        initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
+                    {instagramTopics.slice(0, 8).map((tt, i) => (
+                      <motion.div key={tt.id}
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
                         className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3.5 border border-[#e1e3e4] dark:border-gray-700">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             {i < 3 && <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />}
-                            <span className="font-bold text-sm text-[#191c1d] dark:text-white">{t.name}</span>
+                            <span className="font-bold text-sm text-[#191c1d] dark:text-white">{tt.name}</span>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize"
-                              style={{ background: t.momentum === 'rising' ? PRIMARY_CONTAINER : '#f3f4f5', color: t.momentum === 'rising' ? PRIMARY : '#757684' }}>
-                              {t.momentum === 'rising' ? '📈 Rising' : t.momentum === 'stable' ? '➡️ Stable' : '📉 Fading'}
+                              style={{ background: tt.momentum === 'rising' ? PRIMARY_CONTAINER : '#f3f4f5', color: tt.momentum === 'rising' ? PRIMARY : '#757684' }}>
+                              {tt.momentum === 'rising' ? '📈 Rising' : tt.momentum === 'stable' ? '➡️ Stable' : '📉 Fading'}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#757684]">{t.volume} posts</span>
-                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
-                              style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                            <span className="text-xs text-[#757684]">{tt.volume} posts</span>
+                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
                               <BarChart2 className="w-3 h-3" />
-                              {t.trend_score}
+                              {tt.trend_score}
                             </div>
                           </div>
                         </div>
-                        {/* Clickable hashtag chips */}
                         <div className="flex flex-wrap gap-1.5">
-                          {t.hashtags?.map((h: string) => (
-                            <button key={h}
-                              onClick={() => setSearch(h.replace('#', ''))}
+                          {tt.hashtags?.map((h: string) => (
+                            <button key={h} onClick={() => setSearch(h.replace('#', ''))}
                               className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all hover:opacity-80"
                               style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
                               {h}
@@ -527,16 +495,15 @@ export default function TrendingDashboard() {
                 </section>
               )}
 
-              {/* Content ideas */}
               {ideas.length > 0 && (
                 <section>
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white mb-3 flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white mb-3 flex items-center gap-2" style={{ fontFamily: 'Roboto,sans-serif' }}>
                     <Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /> Content Ideas
                   </h2>
                   <div className="space-y-2">
                     {ideas.map((idea, i) => (
                       <motion.div key={i}
-                        initial={{ opacity:0, y:5 }} animate={{ opacity:1, y:0 }}
+                        initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04 }}
                         className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 border border-[#e1e3e4] dark:border-gray-700 flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0" style={{ background: PRIMARY_CONTAINER }}>
@@ -559,11 +526,10 @@ export default function TrendingDashboard() {
                 </section>
               )}
 
-              {/* Trending News */}
               {news.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white flex items-center gap-2" style={{ fontFamily:'Roboto,sans-serif' }}>
+                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white flex items-center gap-2" style={{ fontFamily: 'Roboto,sans-serif' }}>
                       <span>📰</span> Trending News
                     </h2>
                     <button onClick={() => navigate('/news')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
