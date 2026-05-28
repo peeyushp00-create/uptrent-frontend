@@ -98,8 +98,11 @@ function formatTime(ts: number) {
 
 export default function ScriptsPage() {
   const { user } = useAuth();
-  const userNiche = user?.user_metadata?.niche || '';
-  const userVoiceStyle = user?.user_metadata?.voice_style || '';
+const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
+const userNiche = userNiches.join(', ') || '';
+const userVoiceStyle = user?.user_metadata?.voice_style || '';
+const ytChannel = user?.user_metadata?.youtube_channel || null;
+const ytContext = ytChannel ? `YouTube channel: ${ytChannel.channel_name} with ${ytChannel.subscribers} subscribers` : '';
 
   const [topicInput, setTopicInput] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -183,10 +186,15 @@ export default function ScriptsPage() {
     try {
       const selectedContentType = CONTENT_TYPES.find(c => c.id === contentType);
       const result = await generateScript({
-        topic, niche: userNiche, language: userLanguage, voiceStyle: userVoiceStyle, duration,
-        contentTypePrompt: selectedContentType?.prompt || '',
-        contentType: selectedContentType?.label || '',
-      });
+  topic,
+  niche: userNiche,
+  language: userLanguage,
+  voiceStyle: userVoiceStyle,
+  duration,
+  contentTypePrompt: selectedContentType?.prompt || '',
+  contentType: selectedContentType?.label || '',
+  ytContext,
+});
       setScript(result);
       saveHistory({ topic, script: result, mode: contentType, duration, language: userLanguage });
       setHistory(JSON.parse(localStorage.getItem("ig_script_history") || "[]"));
