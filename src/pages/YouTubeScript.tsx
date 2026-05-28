@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Sparkles, Copy, Check, Loader2, Search, X, ChevronRight, Clock, Trash2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from 'react-i18next';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const YT_GRAD = "linear-gradient(135deg, #ff0000, #FFB86C)";
@@ -19,41 +20,37 @@ const SCRIPT_SUGGESTIONS = [
 ];
 
 const SUB_CATEGORIES: Record<string, { label: string; suggestions: string[]; emoji: string }> = {
-  gaming: { emoji: "🎮", label: "Which game are you making a video about?", suggestions: ["BGMI Tips & Tricks", "Free Fire Highlights", "GTA 5 Gameplay", "Minecraft Survival", "Valorant Guide", "Call of Duty Mobile", "FIFA 26 Review", "Chess Strategy", "Roblox Tutorial", "PUBG PC Tips", "Fortnite Guide", "Among Us Gameplay", "Clash of Clans", "Mobile Legends", "Pokemon GO Guide"] },
-  fitness: { emoji: "💪", label: "What fitness topic do you want to cover?", suggestions: ["Home Workout Routine", "Weight Loss in 30 Days", "Muscle Building Guide", "Yoga for Beginners", "HIIT Workout", "Cardio Tips", "Indian Diet Plan", "6 Pack Abs Workout", "Stretching Routine", "Running for Beginners", "Gym Starter Guide", "Protein Foods India", "Body Transformation", "Calisthenics at Home", "Zumba Dance Workout"] },
-  finance: { emoji: "📈", label: "What finance topic do you want to cover?", suggestions: ["Stock Market Basics", "Mutual Funds for Beginners", "Crypto Guide India", "Budget Tips for Salary", "Tax Saving Guide", "Credit Card Hacks", "Passive Income Ideas", "IPO Investing Guide", "Real Estate Investment", "Forex Trading Basics", "Gold vs Stocks", "Personal Finance Rules", "Emergency Fund Setup", "Debt Free Journey", "Side Hustle Ideas India"] },
-  cricket: { emoji: "🏏", label: "What cricket topic do you want to cover?", suggestions: ["IPL 2026 Preview", "India vs Pakistan Analysis", "Virat Kohli Tribute", "Rohit Sharma Records", "Batting Technique Tips", "Bowling Variations", "Fantasy Cricket Strategy", "Test Cricket Explained", "T20 World Cup Analysis", "Women's Cricket Rise", "Young Cricketers to Watch", "Fielding Drills", "Cricket Fitness", "ICC Rankings Explained", "IPL Auction Strategy"] },
-  food: { emoji: "🍳", label: "What food topic do you want to cover?", suggestions: ["Biryani Recipe", "Quick Breakfast Ideas", "Street Food at Home", "Healthy Meal Prep", "Chocolate Dessert", "Vegan Indian Food", "Keto Diet India", "Indian Festival Sweets", "Budget Meal Ideas", "Weekly Meal Prep", "Egg Recipes", "Smoothie Bowl", "Air Fryer Recipes", "Kids Tiffin Ideas", "Restaurant Style Cooking"] },
-  tech: { emoji: "💻", label: "What tech topic do you want to cover?", suggestions: ["ChatGPT Complete Guide", "Best AI Tools 2026", "Budget Smartphone Review", "Laptop Buying Guide", "Python for Beginners", "Cybersecurity Tips", "Electric Vehicle Guide", "Smart Home Setup", "Camera Comparison", "Gaming PC Build", "iPhone vs Android", "Free AI Tools", "Best Apps 2026", "Tech Career Roadmap", "Web Development Basics"] },
-  travel: { emoji: "✈️", label: "Where are you making travel content about?", suggestions: ["Goa Complete Guide", "Manali Trip Plan", "Kerala Backwaters", "Rajasthan Royal Tour", "Dubai on Budget", "Thailand Travel Guide", "Bali Hidden Gems", "Europe Budget Trip", "Northeast India Hidden Places", "Andaman Islands", "Leh Ladakh Road Trip", "Rishikesh Adventure", "Coorg Weekend Trip", "Singapore Travel", "Visa Free Countries for Indians"] },
-  motivation: { emoji: "🔥", label: "What motivation topic do you want to cover?", suggestions: ["Morning Routine That Changed My Life", "Why You're Not Successful", "Discipline Over Motivation", "Study Tips for Students", "Overcoming Failure", "Self Improvement Habits", "Stoicism for Beginners", "Atomic Habits Summary", "Goal Setting System", "Building Confidence", "Time Management Tips", "Hustle Culture Reality", "Mental Health Tips", "Consistency Secrets", "Fear of Failure"] },
-  business: { emoji: "💼", label: "What business topic do you want to cover?", suggestions: ["Start Business with Zero Money", "Freelancing for Beginners", "Dropshipping India 2026", "Instagram Growth Strategy", "YouTube Monetization Guide", "Startup Ideas India", "Digital Marketing Basics", "LinkedIn Profile Tips", "Amazon Selling Guide", "10 Business Ideas India", "Common Business Mistakes", "How to Get First Client", "Personal Branding Tips", "Email Marketing Guide", "Content Creation Business"] },
-  bollywood: { emoji: "🎬", label: "What Bollywood topic do you want to cover?", suggestions: ["Movie Review", "Box Office Analysis", "Upcoming Movies 2026", "Best Actor Rankings", "Top Movies of 2026", "Web Series Review", "OTT Platform Guide", "Award Show Analysis", "Music Album Review", "Director Deep Dive", "Movie Comparison", "Best Villains Bollywood", "Romantic Movies List", "Action Movies India", "Flop vs Hit Analysis"] },
-  skincare: { emoji: "✨", label: "What skincare topic do you want to cover?", suggestions: ["Acne Treatment Guide", "Glass Skin Routine", "Anti Aging Tips", "Sunscreen Complete Guide", "Night Skincare Routine", "Morning Skincare Routine", "Budget Skincare India", "Korean Skincare Routine", "Dark Spots Treatment", "Oily Skin Tips", "Dry Skin Remedies", "Vitamin C Serum Guide", "Best Moisturizer India", "Face Wash Guide", "Natural Skincare Remedies"] },
-  education: { emoji: "📚", label: "What education topic do you want to cover?", suggestions: ["UPSC Preparation Guide", "JEE Strategy 2026", "NEET Study Plan", "CAT MBA Tips", "Study Motivation Tips", "Memory Techniques", "English Speaking Guide", "Current Affairs Daily", "Scholarship Guide India", "Board Exam Tips", "College Life Guide", "Career Guidance India", "Online Courses Worth It", "Speed Reading Technique", "Smart Note Taking"] },
-  comedy: { emoji: "😂", label: "What comedy style do you want?", suggestions: ["Indian Parents Roast", "Office Life Comedy", "Relationship Situations", "Student Exam Life", "POV Skit Ideas", "Festival Season Jokes", "Social Media Trolls", "Delhi vs Mumbai", "North India vs South India", "Cricket Fan Life", "Exam Tension Comedy", "Traffic India Comedy", "Arranged Marriage Jokes", "Best Friend Comedy", "Gen Z vs Millennial"] },
-  yoga: { emoji: "🧘", label: "What yoga topic do you want to cover?", suggestions: ["Beginner Yoga Routine", "Weight Loss Yoga", "Morning Yoga Flow", "Pranayama Guide", "Flexibility Training", "Stress Relief Yoga", "Meditation for Beginners", "Surya Namaskar Guide", "Yoga for Back Pain", "Advanced Yoga Poses", "Breathwork Techniques", "Evening Yoga Routine", "Kids Yoga", "Pregnancy Yoga Safe", "Office Desk Yoga"] },
-  crypto: { emoji: "🪙", label: "What crypto topic do you want to cover?", suggestions: ["Bitcoin Explained Simply", "Ethereum Guide India", "Web3 for Beginners", "DeFi Explained", "NFT Guide India", "Crypto for Beginners", "Best Altcoins 2026", "Crypto Tax India", "Blockchain Technology", "Crypto Wallet Setup", "Staking Guide", "Bull vs Bear Market", "Crypto Trading Tips", "Is Crypto Safe India", "Top Crypto Exchanges India"] },
+  gaming: { emoji: "🎮", label: "Which game are you making a video about?", suggestions: ["BGMI Tips & Tricks", "Free Fire Highlights", "GTA 5 Gameplay", "Minecraft Survival", "Valorant Guide", "Call of Duty Mobile", "FIFA 26 Review", "Chess Strategy", "Roblox Tutorial", "PUBG PC Tips"] },
+  fitness: { emoji: "💪", label: "What fitness topic do you want to cover?", suggestions: ["Home Workout Routine", "Weight Loss in 30 Days", "Muscle Building Guide", "Yoga for Beginners", "HIIT Workout", "Cardio Tips", "Indian Diet Plan", "6 Pack Abs Workout", "Stretching Routine", "Running for Beginners"] },
+  finance: { emoji: "📈", label: "What finance topic do you want to cover?", suggestions: ["Stock Market Basics", "Mutual Funds for Beginners", "Crypto Guide India", "Budget Tips for Salary", "Tax Saving Guide", "Credit Card Hacks", "Passive Income Ideas", "IPO Investing Guide", "Real Estate Investment", "Forex Trading Basics"] },
+  cricket: { emoji: "🏏", label: "What cricket topic do you want to cover?", suggestions: ["IPL 2026 Preview", "India vs Pakistan Analysis", "Virat Kohli Tribute", "Rohit Sharma Records", "Batting Technique Tips", "Bowling Variations", "Fantasy Cricket Strategy", "Test Cricket Explained", "T20 World Cup Analysis", "Women's Cricket Rise"] },
+  food: { emoji: "🍳", label: "What food topic do you want to cover?", suggestions: ["Biryani Recipe", "Quick Breakfast Ideas", "Street Food at Home", "Healthy Meal Prep", "Chocolate Dessert", "Vegan Indian Food", "Keto Diet India", "Indian Festival Sweets", "Budget Meal Ideas", "Weekly Meal Prep"] },
+  tech: { emoji: "💻", label: "What tech topic do you want to cover?", suggestions: ["ChatGPT Complete Guide", "Best AI Tools 2026", "Budget Smartphone Review", "Laptop Buying Guide", "Python for Beginners", "Cybersecurity Tips", "Electric Vehicle Guide", "Smart Home Setup", "Camera Comparison", "Gaming PC Build"] },
+  travel: { emoji: "✈️", label: "Where are you making travel content about?", suggestions: ["Goa Complete Guide", "Manali Trip Plan", "Kerala Backwaters", "Rajasthan Royal Tour", "Dubai on Budget", "Thailand Travel Guide", "Bali Hidden Gems", "Europe Budget Trip", "Northeast India Hidden Places", "Andaman Islands"] },
+  motivation: { emoji: "🔥", label: "What motivation topic do you want to cover?", suggestions: ["Morning Routine That Changed My Life", "Why You're Not Successful", "Discipline Over Motivation", "Study Tips for Students", "Overcoming Failure", "Self Improvement Habits", "Stoicism for Beginners", "Atomic Habits Summary", "Goal Setting System", "Building Confidence"] },
+  business: { emoji: "💼", label: "What business topic do you want to cover?", suggestions: ["Start Business with Zero Money", "Freelancing for Beginners", "Dropshipping India 2026", "Instagram Growth Strategy", "YouTube Monetization Guide", "Startup Ideas India", "Digital Marketing Basics", "LinkedIn Profile Tips", "Amazon Selling Guide", "10 Business Ideas India"] },
+  bollywood: { emoji: "🎬", label: "What Bollywood topic do you want to cover?", suggestions: ["Movie Review", "Box Office Analysis", "Upcoming Movies 2026", "Best Actor Rankings", "Top Movies of 2026", "Web Series Review", "OTT Platform Guide", "Award Show Analysis", "Music Album Review", "Director Deep Dive"] },
+  skincare: { emoji: "✨", label: "What skincare topic do you want to cover?", suggestions: ["Acne Treatment Guide", "Glass Skin Routine", "Anti Aging Tips", "Sunscreen Complete Guide", "Night Skincare Routine", "Morning Skincare Routine", "Budget Skincare India", "Korean Skincare Routine", "Dark Spots Treatment", "Oily Skin Tips"] },
+  yoga: { emoji: "🧘", label: "What yoga topic do you want to cover?", suggestions: ["Beginner Yoga Routine", "Weight Loss Yoga", "Morning Yoga Flow", "Pranayama Guide", "Flexibility Training", "Stress Relief Yoga", "Meditation for Beginners", "Surya Namaskar Guide", "Yoga for Back Pain", "Advanced Yoga Poses"] },
+  crypto: { emoji: "🪙", label: "What crypto topic do you want to cover?", suggestions: ["Bitcoin Explained Simply", "Ethereum Guide India", "Web3 for Beginners", "DeFi Explained", "NFT Guide India", "Crypto for Beginners", "Best Altcoins 2026", "Crypto Tax India", "Blockchain Technology", "Crypto Wallet Setup"] },
 };
 
 function detectNiche(input: string): string | null {
   const q = input.toLowerCase().trim();
   const keywords: Record<string, string[]> = {
-    gaming: ["gaming", "game", "bgmi", "free fire", "pubg", "gta", "minecraft", "valorant", "cod", "fifa", "esports", "gameplay", "gamer"],
-    fitness: ["fitness", "gym", "workout", "weight loss", "muscle", "yoga", "exercise", "training", "bodybuilding", "abs", "cardio"],
-    finance: ["finance", "money", "stock", "invest", "mutual fund", "sip", "trading", "budget", "saving", "wealth", "income", "tax"],
-    cricket: ["cricket", "ipl", "kohli", "rohit", "batting", "bowling", "t20", "test match", "bcci", "bumrah"],
-    food: ["food", "recipe", "cooking", "biryani", "meal", "diet", "eat", "restaurant", "snack", "dessert", "breakfast"],
-    tech: ["tech", "technology", "ai", "coding", "smartphone", "laptop", "software", "programming", "chatgpt", "gadget"],
-    travel: ["travel", "trip", "goa", "manali", "kerala", "dubai", "bali", "destination", "hotel", "visa", "vlog"],
-    motivation: ["motivation", "mindset", "discipline", "success", "habit", "routine", "stoic", "confidence", "goal", "hustle"],
-    business: ["business", "startup", "entrepreneur", "freelance", "marketing", "branding", "ecommerce", "revenue", "client"],
-    bollywood: ["bollywood", "movie", "film", "actor", "actress", "netflix", "ott", "celebrity", "web series", "review"],
-    skincare: ["skincare", "skin", "acne", "glow", "beauty", "moisturizer", "serum", "sunscreen", "face"],
-    education: ["education", "study", "exam", "upsc", "jee", "neet", "college", "school", "learn", "cat"],
-    comedy: ["comedy", "funny", "meme", "pov", "skit", "joke", "parody", "humour", "roast"],
-    yoga: ["yoga", "meditation", "pranayama", "asana", "breathwork", "mindfulness", "wellness"],
-    crypto: ["crypto", "bitcoin", "ethereum", "blockchain", "nft", "web3", "defi", "token", "coin"],
+    gaming: ["gaming", "game", "bgmi", "free fire", "pubg", "gta", "minecraft", "valorant"],
+    fitness: ["fitness", "gym", "workout", "weight loss", "muscle", "yoga", "exercise"],
+    finance: ["finance", "money", "stock", "invest", "mutual fund", "sip", "trading", "budget"],
+    cricket: ["cricket", "ipl", "kohli", "rohit", "batting", "bowling", "t20"],
+    food: ["food", "recipe", "cooking", "biryani", "meal", "diet", "eat"],
+    tech: ["tech", "technology", "ai", "coding", "smartphone", "laptop", "chatgpt"],
+    travel: ["travel", "trip", "goa", "manali", "kerala", "dubai", "bali"],
+    motivation: ["motivation", "mindset", "discipline", "success", "habit", "routine"],
+    business: ["business", "startup", "entrepreneur", "freelance", "marketing"],
+    bollywood: ["bollywood", "movie", "film", "actor", "actress", "netflix", "ott"],
+    skincare: ["skincare", "skin", "acne", "glow", "beauty", "moisturizer", "serum"],
+    yoga: ["yoga", "meditation", "pranayama", "asana", "breathwork"],
+    crypto: ["crypto", "bitcoin", "ethereum", "blockchain", "nft", "web3"],
   };
   for (const [niche, words] of Object.entries(keywords)) {
     if (words.some(w => q.includes(w))) return niche;
@@ -62,19 +59,13 @@ function detectNiche(input: string): string | null {
 }
 
 interface HistoryEntry {
-  id: string;
-  topic: string;
-  timestamp: number;
-  result: any;
-  duration: number;
-  language: string;
+  id: string; topic: string; timestamp: number; result: any; duration: number; language: string;
 }
 
 function saveHistory(entry: Omit<HistoryEntry, "id" | "timestamp">) {
   const existing: HistoryEntry[] = JSON.parse(localStorage.getItem("yt_script_history") || "[]");
   const newEntry = { ...entry, id: `${Date.now()}`, timestamp: Date.now() };
-  const updated = [newEntry, ...existing].slice(0, 20);
-  localStorage.setItem("yt_script_history", JSON.stringify(updated));
+  localStorage.setItem("yt_script_history", JSON.stringify([newEntry, ...existing].slice(0, 20)));
 }
 
 function formatTime(ts: number) {
@@ -88,7 +79,6 @@ function formatTime(ts: number) {
   return `${days}d ago`;
 }
 
-// ── Real Calendar Component ──
 function SeriesCalendar({ startDate, parts, frequency, accentColor, accentGrad }: {
   startDate: string; parts: number; frequency: string; accentColor: string; accentGrad: string;
 }) {
@@ -148,13 +138,8 @@ function SeriesCalendar({ startDate, parts, frequency, accentColor, accentGrad }
             return (
               <div key={dateStr} className="flex items-center justify-center">
                 <div className="w-8 h-8 rounded-lg flex flex-col items-center justify-center transition-all"
-                  style={{
-                    background: isScheduled ? accentGrad : isToday ? 'rgba(255,255,255,0.06)' : 'transparent',
-                    border: isToday && !isScheduled ? '1px solid rgba(255,255,255,0.15)' : 'none',
-                  }}>
-                  <span className="text-xs font-medium leading-none" style={{ color: isScheduled ? '#fff' : isToday ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))' }}>
-                    {day}
-                  </span>
+                  style={{ background: isScheduled ? accentGrad : isToday ? 'rgba(255,255,255,0.06)' : 'transparent', border: isToday && !isScheduled ? '1px solid rgba(255,255,255,0.15)' : 'none' }}>
+                  <span className="text-xs font-medium leading-none" style={{ color: isScheduled ? '#fff' : isToday ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))' }}>{day}</span>
                   {isScheduled && <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 8 }} className="leading-none mt-0.5">P{partNum}</span>}
                 </div>
               </div>
@@ -166,24 +151,16 @@ function SeriesCalendar({ startDate, parts, frequency, accentColor, accentGrad }
             <div className="w-4 h-4 rounded-md" style={{ background: accentGrad }} />
             <span className="text-xs text-muted-foreground">Upload day (P = Part #)</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded-md border" style={{ borderColor: 'rgba(255,255,255,0.15)' }} />
-            <span className="text-xs text-muted-foreground">Today</span>
-          </div>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground text-center">
-        {parts} videos scheduled · {Object.keys(scheduledDates).filter(d => {
-          const [y, m] = d.split('-').map(Number);
-          return y === year && m - 1 === month;
-        }).length} in {monthNames[month]}
-      </p>
+      <p className="text-xs text-muted-foreground text-center">{parts} videos scheduled</p>
     </div>
   );
 }
 
 export default function YouTubeScript() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [activeView, setActiveView] = useState<"generate" | "history" | "calendar">("generate");
   const [topic, setTopic] = useState(() => localStorage.getItem('yt_script_topic') || "");
   const [duration, setDuration] = useState(5);
@@ -249,8 +226,8 @@ export default function YouTubeScript() {
     localStorage.removeItem('yt_script_result'); localStorage.removeItem('yt_script_topic');
   };
 
-  const handleGenerate = async (t?: string) => {
-    const target = t || topic;
+  const handleGenerate = async (tp?: string) => {
+    const target = tp || topic;
     if (!target.trim()) return;
     setTopic(target); setShowDropdown(false); setShowSubCategories(false); setLoading(true); setResult(null);
     const savedLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
@@ -266,14 +243,8 @@ export default function YouTubeScript() {
       saveHistory({ topic: target, result: data, duration, language: savedLanguage });
       const updatedHistory = JSON.parse(localStorage.getItem("yt_script_history") || "[]");
       setHistory(updatedHistory);
-      // ✅ Check if same topic searched 3+ times → suggest series
-      const topicCount = updatedHistory.filter((h: HistoryEntry) =>
-        h.topic.toLowerCase() === target.toLowerCase()
-      ).length;
-      if (topicCount >= 3 && !showSeriesResult) {
-        setSeriesTopic(target);
-        setShowSeriesPrompt(true);
-      }
+      const topicCount = updatedHistory.filter((h: HistoryEntry) => h.topic.toLowerCase() === target.toLowerCase()).length;
+      if (topicCount >= 3 && !showSeriesResult) { setSeriesTopic(target); setShowSeriesPrompt(true); }
     } catch { setResult({ error: 'Failed to generate script. Try again.' }); }
     finally { setLoading(false); }
   };
@@ -291,28 +262,15 @@ export default function YouTubeScript() {
   };
 
   const generateSeries = async () => {
-    setGeneratingSeries(true);
-    setShowSeriesPrompt(false);
-    setSeriesStep('prompt');
-    setShowSeriesResult(true);
-    setSeriesScripts([]);
+    setGeneratingSeries(true); setShowSeriesPrompt(false); setSeriesStep('prompt'); setShowSeriesResult(true); setSeriesScripts([]);
     const savedLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
     const scheduleDates = getScheduleDates(seriesStartDate, seriesParts, seriesFrequency);
     const angleTemplates = [
-      `${seriesTopic} Complete Beginner Guide`,
-      `${seriesTopic} Top Mistakes to Avoid`,
-      `Advanced ${seriesTopic} Tips & Tricks`,
-      `${seriesTopic} Secrets Nobody Tells You`,
-      `${seriesTopic} Results After 30 Days`,
-      `${seriesTopic} Tools and Resources`,
-      `${seriesTopic} Case Study`,
-      `${seriesTopic} Myths Busted`,
-      `${seriesTopic} for Professionals`,
-      `${seriesTopic} Future Trends`,
+      `${seriesTopic} Complete Beginner Guide`, `${seriesTopic} Top Mistakes to Avoid`,
+      `Advanced ${seriesTopic} Tips & Tricks`, `${seriesTopic} Secrets Nobody Tells You`,
+      `${seriesTopic} Results After 30 Days`, `${seriesTopic} Tools and Resources`,
     ];
-    const angles = Array.from({ length: seriesParts }, (_, i) =>
-      `${angleTemplates[i % angleTemplates.length]} — Part ${i + 1}`
-    );
+    const angles = Array.from({ length: seriesParts }, (_, i) => `${angleTemplates[i % angleTemplates.length]} – Part ${i + 1}`);
     const results: any[] = [];
     for (let i = 0; i < angles.length; i++) {
       try {
@@ -333,8 +291,6 @@ export default function YouTubeScript() {
     localStorage.setItem("yt_script_history", JSON.stringify(updated));
     setHistory(updated);
   };
-
-  const clearAllHistory = () => { localStorage.removeItem("yt_script_history"); setHistory([]); };
 
   const subCat = detectedNiche ? SUB_CATEGORIES[detectedNiche] : null;
 
@@ -382,20 +338,15 @@ export default function YouTubeScript() {
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           <FileText className="w-5 h-5" style={{ color: YT_COLOR }} />
           <h1 className="text-lg font-bold text-foreground">YouTube Script</h1>
-          {/* History toggle */}
           <button onClick={() => setActiveView(activeView === "history" ? "generate" : "history")}
             className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={activeView === "history"
-              ? { background: YT_GRAD, color: "#fff" }
-              : { background: `${YT_COLOR}15`, color: YT_COLOR, border: `1px solid ${YT_COLOR}30` }}>
+            style={activeView === "history" ? { background: YT_GRAD, color: "#fff" } : { background: `${YT_COLOR}15`, color: YT_COLOR, border: `1px solid ${YT_COLOR}30` }}>
             <Clock className="w-3.5 h-3.5" />
-            History {history.length > 0 && <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-xs" style={{ background: "rgba(255,255,255,0.25)" }}>{history.length}</span>}
+            {t('scripts.history')} {history.length > 0 && <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-xs" style={{ background: "rgba(255,255,255,0.25)" }}>{history.length}</span>}
           </button>
           <button onClick={() => setActiveView(activeView === "calendar" ? "generate" : "calendar")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={activeView === "calendar"
-              ? { background: YT_GRAD, color: "#fff" }
-              : { background: `${YT_COLOR}15`, color: YT_COLOR, border: `1px solid ${YT_COLOR}30` }}>
+            style={activeView === "calendar" ? { background: YT_GRAD, color: "#fff" } : { background: `${YT_COLOR}15`, color: YT_COLOR, border: `1px solid ${YT_COLOR}30` }}>
             📅
           </button>
         </div>
@@ -403,50 +354,41 @@ export default function YouTubeScript() {
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-24">
 
-        {/* ── HISTORY VIEW ── */}
+        {/* HISTORY VIEW */}
         {activeView === "history" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-foreground">YouTube Script History</p>
+              <p className="text-sm font-semibold text-foreground">{t('scripts.script_history')}</p>
               {history.length > 0 && (
-                <button onClick={clearAllHistory} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" /> Clear All
+                <button onClick={() => { localStorage.removeItem("yt_script_history"); setHistory([]); }}
+                  className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300">
+                  <Trash2 className="w-3.5 h-3.5" /> {t('scripts.clear_all')}
                 </button>
               )}
             </div>
             {history.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Clock className="w-10 h-10 text-muted-foreground opacity-30" />
-                <p className="text-sm text-muted-foreground">No script history yet</p>
-                <button onClick={() => setActiveView("generate")}
-                  className="text-xs px-4 py-2 rounded-xl text-white" style={{ background: YT_GRAD }}>
-                  Generate your first script
+                <p className="text-sm text-muted-foreground">{t('scripts.no_history')}</p>
+                <button onClick={() => setActiveView("generate")} className="text-xs px-4 py-2 rounded-xl text-white" style={{ background: YT_GRAD }}>
+                  {t('scripts.generate')}
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
-                {history.map((entry) => (
+                {history.map(entry => (
                   <div key={entry.id} className="rounded-2xl border border-border bg-card overflow-hidden">
-                    <div className="flex items-center gap-3 p-4 cursor-pointer"
-                      onClick={() => setExpandedHistory(expandedHistory === entry.id ? null : entry.id)}>
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm"
-                        style={{ background: `${YT_COLOR}15`, color: YT_COLOR }}>
-                        {entry.topic[0].toUpperCase()}
-                      </div>
+                    <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === entry.id ? null : entry.id)}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm" style={{ background: `${YT_COLOR}15`, color: YT_COLOR }}>{entry.topic[0].toUpperCase()}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">{entry.topic}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-muted-foreground">{formatTime(entry.timestamp)}</span>
-                          <span className="text-xs text-muted-foreground">· {entry.duration} min · {entry.language}</span>
-                        </div>
+                        <p className="text-xs text-muted-foreground">{formatTime(entry.timestamp)} · {entry.duration} min</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={(e) => { e.stopPropagation(); copyAll(entry.result, entry.id); }}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
+                        <button onClick={e => { e.stopPropagation(); copyAll(entry.result, entry.id); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
                           {copied === `all${entry.id}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); deleteHistory(entry.id); }}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400">
+                        <button onClick={e => { e.stopPropagation(); deleteHistory(entry.id); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                         <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expandedHistory === entry.id ? 'rotate-90' : ''}`} />
@@ -454,14 +396,12 @@ export default function YouTubeScript() {
                     </div>
                     <AnimatePresence>
                       {expandedHistory === entry.id && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                          className="border-t border-border overflow-hidden">
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-border overflow-hidden">
                           <div className="p-4 space-y-3">
                             <ResultCard r={entry.result} prefix={entry.id} />
                             <button onClick={() => { setActiveView("generate"); handleGenerate(entry.topic); }}
-                              className="w-full py-2.5 rounded-xl text-white text-xs font-medium flex items-center justify-center gap-1.5"
-                              style={{ background: YT_GRAD }}>
-                              <RefreshCw className="w-3.5 h-3.5" /> Regenerate This Script
+                              className="w-full py-2.5 rounded-xl text-white text-xs font-medium flex items-center justify-center gap-1.5" style={{ background: YT_GRAD }}>
+                              <RefreshCw className="w-3.5 h-3.5" /> {t('scripts.regenerate')}
                             </button>
                           </div>
                         </motion.div>
@@ -474,54 +414,33 @@ export default function YouTubeScript() {
           </motion.div>
         )}
 
-        {/* ── CALENDAR VIEW ── */}
+        {/* CALENDAR VIEW */}
         {activeView === "calendar" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-foreground">📅 Upload Calendar</p>
-              {seriesScripts.length > 0 && (
-                <span className="text-xs text-muted-foreground">{seriesParts} parts · {seriesFrequency}</span>
-              )}
-            </div>
             {seriesScripts.length > 0 || showSeriesResult ? (
-              <SeriesCalendar
-                startDate={seriesStartDate}
-                parts={seriesParts}
-                frequency={seriesFrequency}
-                accentColor={YT_COLOR}
-                accentGrad={YT_GRAD}
-              />
+              <SeriesCalendar startDate={seriesStartDate} parts={seriesParts} frequency={seriesFrequency} accentColor={YT_COLOR} accentGrad={YT_GRAD} />
             ) : (
               <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                 <span className="text-5xl">📅</span>
                 <p className="text-sm font-semibold text-foreground">No Series Scheduled Yet</p>
-                <p className="text-xs text-muted-foreground max-w-xs">Generate a YouTube series to see your upload calendar here. Search any topic 3+ times to unlock the series feature.</p>
-                <button onClick={() => setActiveView("generate")}
-                  className="text-xs px-4 py-2 rounded-xl text-white mt-2"
-                  style={{ background: YT_GRAD }}>
-                  Go Generate Scripts
-                </button>
+                <p className="text-xs text-muted-foreground max-w-xs">Generate a YouTube series to see your upload calendar here.</p>
+                <button onClick={() => setActiveView("generate")} className="text-xs px-4 py-2 rounded-xl text-white mt-2" style={{ background: YT_GRAD }}>Go Generate Scripts</button>
               </div>
             )}
           </motion.div>
         )}
 
-        {/* ── GENERATE VIEW ── */}
+        {/* GENERATE VIEW */}
         {activeView === "generate" && (
           <>
             <div className="relative">
-              <input ref={inputRef} value={topic} onChange={(e) => setTopic(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleGenerate(); if (e.key === "Escape") setShowDropdown(false); }}
-                onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
-                placeholder="Enter video topic (e.g. Gaming, Finance, Fitness)..."
-                className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-                onFocus={(e) => { e.target.style.borderColor = `${YT_COLOR}60`; }}
-                onBlur={(e) => { e.target.style.borderColor = ''; }} />
-              {topic && (
-                <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+              <input ref={inputRef} value={topic} onChange={e => setTopic(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleGenerate(); if (e.key === "Escape") setShowDropdown(false); }}
+                onFocus={e => { if (dropdownSuggestions.length > 0) setShowDropdown(true); e.target.style.borderColor = `${YT_COLOR}60`; }}
+                onBlur={e => { e.target.style.borderColor = ''; }}
+                placeholder="Enter video topic..."
+                className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all" />
+              {topic && <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"><X className="w-4 h-4" /></button>}
               {showDropdown && dropdownSuggestions.length > 0 && (
                 <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
                   {dropdownSuggestions.map((s, i) => (
@@ -533,7 +452,6 @@ export default function YouTubeScript() {
               )}
             </div>
 
-            {/* Sub-categories */}
             <AnimatePresence>
               {showSubCategories && subCat && !result && (
                 <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
@@ -541,10 +459,7 @@ export default function YouTubeScript() {
                   style={{ borderColor: `${YT_COLOR}30`, background: `${YT_COLOR}08` }}>
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{subCat.emoji}</span>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{subCat.label}</p>
-                      <p className="text-xs text-muted-foreground">Pick a specific topic for a better script</p>
-                    </div>
+                    <p className="text-sm font-semibold text-foreground">{subCat.label}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {subCat.suggestions.map((s, i) => (
@@ -558,16 +473,15 @@ export default function YouTubeScript() {
                       </motion.button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">Or press <kbd className="px-1.5 py-0.5 rounded text-xs" style={{ background: `${YT_COLOR}15`, color: YT_COLOR }}>Enter</kbd> to generate a general {detectedNiche} script</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {!topic && !result && (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Popular topics:</p>
+                <p className="text-xs text-muted-foreground">{t('scripts.popular_topics')}</p>
                 <div className="flex flex-wrap gap-2">
-                  {SCRIPT_SUGGESTIONS.slice(0, 8).map((s) => (
+                  {SCRIPT_SUGGESTIONS.slice(0, 8).map(s => (
                     <button key={s} onClick={() => setTopic(s)}
                       className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground transition-colors"
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${YT_COLOR}60`; (e.currentTarget as HTMLElement).style.color = YT_COLOR; }}
@@ -582,7 +496,7 @@ export default function YouTubeScript() {
             <div>
               <p className="text-xs text-muted-foreground mb-2 font-medium">Video Duration</p>
               <div className="flex gap-2">
-                {[3, 5, 8, 10].map((d) => (
+                {[3, 5, 8, 10].map(d => (
                   <button key={d} onClick={() => setDuration(d)}
                     className="flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all"
                     style={duration === d ? { background: YT_GRAD, color: "#fff", borderColor: "transparent" } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
@@ -596,143 +510,88 @@ export default function YouTubeScript() {
               className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
               style={{ background: YT_GRAD }}>
               <Sparkles className="w-4 h-4" />
-              {loading ? `Generating ${duration}-min script...` : 'Generate Script'}
+              {loading ? `${t('common.loading')}` : t('scripts.generate')}
             </button>
 
             {loading && (
               <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <Loader2 className="w-6 h-6 animate-spin" style={{ color: YT_COLOR }} />
-                <p className="text-xs text-muted-foreground">Writing your {duration}-minute script for <span style={{ color: YT_COLOR }}>"{topic}"</span>...</p>
+                <p className="text-xs text-muted-foreground">{t('scripts.generating')} <span style={{ color: YT_COLOR }}>"{topic}"</span>...</p>
               </div>
             )}
 
             {result && !result.error && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Your Script</p>
-                    <p className="text-xs text-muted-foreground">Language: {localStorage.getItem('userLanguage') || 'english'}</p>
-                  </div>
+                  <p className="text-sm font-semibold text-foreground">Your Script</p>
                   <button onClick={() => copyAll(result)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground">
-                    {copied === 'all' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} Copy All
+                    {copied === 'all' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} {t('scripts.copy_all')}
                   </button>
                 </div>
                 <ResultCard r={result} />
                 <button onClick={handleClear} className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2">
-                  <X className="w-4 h-4" /> New Topic
+                  <X className="w-4 h-4" /> {t('scripts.new')}
                 </button>
               </motion.div>
             )}
 
             {result?.error && <p className="text-sm text-center" style={{ color: YT_COLOR }}>{result.error}</p>}
 
-            {/* ── SERIES PROMPT ── */}
+            {/* SERIES PROMPT */}
             <AnimatePresence>
               {showSeriesPrompt && (
-                <motion.div initial={{ opacity:0, scale:0.95, y:10 }} animate={{ opacity:1, scale:1, y:0 }} exit={{ opacity:0, scale:0.95 }}
+                <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                   className="rounded-2xl p-5 space-y-4"
-                  style={{ background:`${YT_COLOR}08`, border:`2px solid ${YT_COLOR}40` }}>
-
+                  style={{ background: `${YT_COLOR}08`, border: `2px solid ${YT_COLOR}40` }}>
                   {seriesStep === 'prompt' && (
                     <>
                       <div className="flex items-start gap-3">
                         <div className="text-3xl">🎬</div>
                         <div>
                           <p className="font-bold text-foreground text-sm">Want a YouTube Video Series?</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            You've searched <span style={{ color: YT_COLOR }}>"{seriesTopic}"</span> multiple times. Want to create a full YouTube series?
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">You've searched <span style={{ color: YT_COLOR }}>"{seriesTopic}"</span> multiple times.</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => setSeriesStep('customize')}
-                          className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2"
-                          style={{ background: YT_GRAD }}>
+                        <button onClick={() => setSeriesStep('customize')} className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2" style={{ background: YT_GRAD }}>
                           <Sparkles className="w-4 h-4" /> Yes, Create Series!
                         </button>
-                        <button onClick={() => setShowSeriesPrompt(false)}
-                          className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground">
-                          Not now
-                        </button>
+                        <button onClick={() => setShowSeriesPrompt(false)} className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">{t('common.cancel')}</button>
                       </div>
                     </>
                   )}
-
                   {seriesStep === 'customize' && (
                     <>
-                      <div className="flex items-center gap-2">
-                        <div className="text-2xl">📅</div>
-                        <p className="font-bold text-foreground text-sm">Customize Your Series</p>
-                      </div>
-
+                      <p className="font-bold text-foreground text-sm">📅 Customize Your Series</p>
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">How many parts?</p>
                         <div className="flex gap-2">
                           {[3, 5, 7, 10].map(n => (
-                            <button key={n} onClick={() => setSeriesParts(n)}
-                              className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all"
-                              style={seriesParts === n
-                                ? { background: YT_GRAD, color: '#fff', borderColor: 'transparent' }
-                                : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>
-                              {n}
-                            </button>
+                            <button key={n} onClick={() => setSeriesParts(n)} className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all"
+                              style={seriesParts === n ? { background: YT_GRAD, color: '#fff', borderColor: 'transparent' } : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>{n}</button>
                           ))}
-                          <input type="number" min={2} max={20} value={seriesParts}
-                            onChange={e => setSeriesParts(Math.min(20, Math.max(2, parseInt(e.target.value) || 2)))}
-                            className="w-16 text-center py-2 rounded-xl border border-border bg-card text-foreground text-sm outline-none"
-                            onFocus={e => e.target.style.borderColor = `${YT_COLOR}50`}
-                            onBlur={e => e.target.style.borderColor = ''} />
                         </div>
                       </div>
-
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Upload Frequency</p>
                         <div className="flex gap-2">
-                          {([
-                            { id: 'daily', label: 'Every Day' },
-                            { id: 'alternate', label: 'Every 2 Days' },
-                            { id: 'weekly', label: 'Every Week' },
-                          ] as const).map(f => (
-                            <button key={f.id} onClick={() => setSeriesFrequency(f.id)}
-                              className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
-                              style={seriesFrequency === f.id
-                                ? { background: YT_GRAD, color: '#fff', borderColor: 'transparent' }
-                                : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>
-                              {f.label}
-                            </button>
+                          {([{ id: 'daily', label: 'Every Day' }, { id: 'alternate', label: 'Every 2 Days' }, { id: 'weekly', label: 'Every Week' }] as const).map(f => (
+                            <button key={f.id} onClick={() => setSeriesFrequency(f.id)} className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
+                              style={seriesFrequency === f.id ? { background: YT_GRAD, color: '#fff', borderColor: 'transparent' } : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>{f.label}</button>
                           ))}
                         </div>
                       </div>
-
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Start Date</p>
-                        <input type="date" value={seriesStartDate}
-                          onChange={e => setSeriesStartDate(e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-foreground text-sm outline-none transition-all"
-                          onFocus={e => e.target.style.borderColor = `${YT_COLOR}50`}
-                          onBlur={e => e.target.style.borderColor = ''} />
+                        <input type="date" value={seriesStartDate} onChange={e => setSeriesStartDate(e.target.value)} min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-foreground text-sm outline-none" />
                       </div>
-
-                      {/* ── REAL CALENDAR ── */}
-                      <SeriesCalendar
-                        startDate={seriesStartDate}
-                        parts={seriesParts}
-                        frequency={seriesFrequency}
-                        accentColor={YT_COLOR}
-                        accentGrad={YT_GRAD}
-                      />
-
+                      <SeriesCalendar startDate={seriesStartDate} parts={seriesParts} frequency={seriesFrequency} accentColor={YT_COLOR} accentGrad={YT_GRAD} />
                       <div className="flex gap-2">
-                        <button onClick={generateSeries}
-                          className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2"
-                          style={{ background: YT_GRAD }}>
+                        <button onClick={generateSeries} className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2" style={{ background: YT_GRAD }}>
                           <Sparkles className="w-4 h-4" /> Generate {seriesParts}-Part Series
                         </button>
-                        <button onClick={() => setSeriesStep('prompt')}
-                          className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground">
-                          Back
-                        </button>
+                        <button onClick={() => setSeriesStep('prompt')} className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">{t('common.back')}</button>
                       </div>
                     </>
                   )}
@@ -740,73 +599,41 @@ export default function YouTubeScript() {
               )}
             </AnimatePresence>
 
-            {/* ── SERIES RESULT ── */}
+            {/* SERIES RESULT */}
             {showSeriesResult && (
-              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} className="space-y-3">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-foreground text-sm">🎬 {seriesParts}-Part Series: <span style={{ color: YT_COLOR }}>{seriesTopic}</span></p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{seriesScripts.length}/{seriesParts} scripts generated</p>
-                  </div>
-                  <button onClick={() => { setShowSeriesResult(false); setSeriesScripts([]); }}
-                    className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                  <p className="font-bold text-foreground text-sm">🎬 {seriesParts}-Part Series: <span style={{ color: YT_COLOR }}>{seriesTopic}</span></p>
+                  <button onClick={() => { setShowSeriesResult(false); setSeriesScripts([]); }} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
                 </div>
-
                 {generatingSeries && seriesScripts.length < seriesParts && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
                     <Loader2 className="w-4 h-4 animate-spin" style={{ color: YT_COLOR }} />
                     Generating Part {seriesScripts.length + 1} of {seriesParts}...
                   </div>
                 )}
-
                 {seriesScripts.map((item, idx) => (
                   <div key={idx} className="rounded-2xl border border-border bg-card overflow-hidden">
-                    <div className="flex items-center gap-3 p-4 cursor-pointer"
-                      onClick={() => setExpandedHistory(expandedHistory === `series-${idx}` ? null : `series-${idx}`)}>
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0"
-                        style={{ background: YT_GRAD }}>{idx + 1}</div>
+                    <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === `series-${idx}` ? null : `series-${idx}`)}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: YT_GRAD }}>{idx + 1}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">{item.angle}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {item.script?.title && <p className="text-xs text-muted-foreground truncate">{item.script.title}</p>}
-                          {item.postDate && <span className="text-xs shrink-0" style={{ color: YT_COLOR }}>📅 {item.postDate}</span>}
-                        </div>
+                        {item.postDate && <span className="text-xs" style={{ color: YT_COLOR }}>📅 {item.postDate}</span>}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        {item.script && (
-                          <button onClick={e => { e.stopPropagation(); copyAll(item.script, `series-${idx}`); }}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
-                            {copied === `allseries-${idx}` ? <Check className="w-3.5 h-3.5 text-green-400"/> : <Copy className="w-3.5 h-3.5"/>}
-                          </button>
-                        )}
+                        {item.script && <button onClick={e => { e.stopPropagation(); copyAll(item.script, `series-${idx}`); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">{copied === `allseries-${idx}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}</button>}
                         <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expandedHistory === `series-${idx}` ? 'rotate-90' : ''}`} />
                       </div>
                     </div>
                     <AnimatePresence>
                       {expandedHistory === `series-${idx}` && item.script && (
-                        <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }}
-                          className="border-t border-border overflow-hidden">
-                          <div className="p-4">
-                            <ResultCard r={item.script} prefix={`series-${idx}`} />
-                          </div>
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-border overflow-hidden">
+                          <div className="p-4"><ResultCard r={item.script} prefix={`series-${idx}`} /></div>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
                 ))}
-
-                {!generatingSeries && seriesScripts.length === seriesParts && (
-                  <button onClick={() => {
-                    const all = seriesScripts.map((s, i) =>
-                      `PART ${i+1} — Upload: ${s.postDate}\n${s.angle}\n\nTITLE: ${s.script?.title || ''}\n\nINTRO: ${s.script?.intro || ''}\n\nOUTRO: ${s.script?.outro || ''}`
-                    ).join('\n\n─────────────\n\n');
-                    navigator.clipboard.writeText(all);
-                    setCopied('series'); setTimeout(() => setCopied(null), 2000);
-                  }} className="w-full py-3 rounded-2xl text-white font-semibold text-sm flex items-center justify-center gap-2"
-                    style={{ background: YT_GRAD }}>
-                    {copied === 'series' ? <><Check className="w-4 h-4"/> All Copied!</> : <><Copy className="w-4 h-4"/> Copy All {seriesParts} Scripts with Schedule</>}
-                  </button>
-                )}
               </motion.div>
             )}
           </>
