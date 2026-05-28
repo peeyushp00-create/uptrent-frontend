@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useTranslation } from 'react-i18next';
 
 const PRIMARY = "#7C3AED";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
@@ -16,23 +17,8 @@ const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
 const YT_COLOR = "#ff0000";
 const YT_CONTAINER = "#ffebee";
 
-const instagramNav = [
-  { icon: LayoutDashboard, label: "Home", path: "/home" },
-  { icon: TrendingUp, label: "Trending", path: "/trending" },
-  { icon: Newspaper, label: "News Feed", path: "/news" },
-  { icon: FileText, label: "Scripts", path: "/scripts" },
-  { icon: Search, label: "Analyzer", path: "/instagram/analyzer" },
-];
-
-const youtubeNav = [
-  { icon: LayoutDashboard, label: "Home", path: "/home" },
-  { icon: Tag, label: "SEO", path: "/youtube/seo" },
-  { icon: FileText, label: "Script", path: "/youtube/script" },
-  { icon: Search, label: "Analyzer", path: "/youtube/analyzer" },
-  { icon: TrendingUp, label: "Trending", path: "/youtube/trending" },
-];
-
 export default function AppSidebar() {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [platform, setPlatform] = useState<"instagram" | "youtube">(
@@ -42,6 +28,22 @@ export default function AppSidebar() {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  const instagramNav = [
+    { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
+    { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
+    { icon: Newspaper, label: t('nav.news'), path: "/news" },
+    { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
+    { icon: Search, label: "Analyzer", path: "/instagram/analyzer" },
+  ];
+
+  const youtubeNav = [
+    { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
+    { icon: Tag, label: "SEO", path: "/youtube/seo" },
+    { icon: FileText, label: t('nav.scripts'), path: "/youtube/script" },
+    { icon: Search, label: "Analyzer", path: "/youtube/analyzer" },
+    { icon: TrendingUp, label: t('nav.trending'), path: "/youtube/trending" },
+  ];
 
   useEffect(() => {
     const handleCustom = (e: any) => setPlatform(e.detail);
@@ -101,7 +103,6 @@ export default function AppSidebar() {
       {!collapsed && (
         <div className="px-3 pt-4 pb-2">
           <div className="flex items-center gap-1 p-1 rounded-xl bg-muted">
-            {/* Instagram button — always violet when active */}
             <button onClick={() => switchPlatform("instagram")}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
               style={effectivePlatform === "instagram"
@@ -110,7 +111,6 @@ export default function AppSidebar() {
               <Instagram className="w-3.5 h-3.5" />
               Instagram
             </button>
-            {/* YouTube button — always red when active */}
             <button onClick={() => switchPlatform("youtube")}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
               style={effectivePlatform === "youtube"
@@ -132,7 +132,7 @@ export default function AppSidebar() {
             {effectivePlatform === "instagram"
               ? <Instagram className="w-4 h-4 text-white" />
               : <Youtube className="w-4 h-4 text-white" />}
-          </button>
+        </button>
         </div>
       )}
 
@@ -151,9 +151,7 @@ export default function AppSidebar() {
             <button key={item.path} onClick={() => navigate(item.path)}
               title={collapsed ? item.label : undefined}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={active
-                ? { background: acContainer, color: ac }
-                : { color: 'hsl(var(--foreground)/0.7)' }}
+              style={active ? { background: acContainer, color: ac } : { color: 'hsl(var(--foreground)/0.7)' }}
               onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}>
               <item.icon className="w-4 h-4 shrink-0" style={active ? { color: ac } : { color: 'hsl(var(--muted-foreground))' }} />
@@ -183,12 +181,12 @@ export default function AppSidebar() {
 
         {/* Settings */}
         <button onClick={() => navigate('/settings')}
-          title={collapsed ? "Settings" : undefined}
+          title={collapsed ? t('nav.settings') : undefined}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground/80 transition-all"
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
           <Settings className="w-4 h-4 shrink-0 text-muted-foreground" />
-          {!collapsed && <span>Settings</span>}
+          {!collapsed && <span>{t('nav.settings')}</span>}
         </button>
 
         {/* Profile */}
@@ -211,7 +209,6 @@ export default function AppSidebar() {
             )}
           </button>
 
-          {/* Profile popup */}
           {showProfileMenu && (
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
               <div className="p-3 border-b border-border">
