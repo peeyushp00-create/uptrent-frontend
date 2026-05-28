@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, User, Target, Globe, Palette, Save, Loader2, Check,
   Mic, MicOff, MessageSquare, Star, Send, ThumbsUp, Zap, Bug, Lightbulb,
-  Youtube, Unlink, CheckCircle2
+  Youtube, Unlink, CheckCircle2, Instagram
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import i18n from '@/i18n';
 import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -86,6 +88,7 @@ export default function SettingsPage() {
     localStorage.getItem('userStyle') || user?.user_metadata?.style || 'casual'
   );
   const [platform, setPlatform] = useState(user?.user_metadata?.platform || 'both');
+  const [igUsername, setIgUsername] = useState(user?.user_metadata?.instagram_username || '');
   const [isRecording, setIsRecording] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState(user?.user_metadata?.voice_transcript || '');
   const [voiceStyle, setVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
@@ -108,15 +111,11 @@ export default function SettingsPage() {
   const [ytConnecting, setYtConnecting] = useState(false);
   const [ytDisconnecting, setYtDisconnecting] = useState(false);
 
-  // Check OAuth redirect params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('youtube') === 'connected') {
       window.history.replaceState({}, '', '/settings');
       window.location.reload();
-    }
-    if (params.get('error')) {
-      window.history.replaceState({}, '', '/settings');
     }
   }, []);
 
@@ -127,10 +126,7 @@ export default function SettingsPage() {
       const res = await fetch(`${BASE}/api/youtube/oauth/url?userId=${user.id}`);
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch (e) {
-      console.error(e);
-      setYtConnecting(false);
-    }
+    } catch (e) { console.error(e); setYtConnecting(false); }
   };
 
   const handleYtDisconnect = async () => {
@@ -158,30 +154,41 @@ export default function SettingsPage() {
 
   const handleNameChange = (val: string) => {
     setName(val);
-    autoSave({ full_name: val, niche: niches[0] || '', niches, language, style, platform });
+    autoSave({ full_name: val, niche: niches[0] || '', niches, language, style, platform, instagram_username: igUsername });
   };
 
   const toggleNiche = (n: string) => {
     const updated = niches.includes(n) ? niches.filter(x => x !== n) : [...niches, n];
     setNiches(updated);
-    autoSave({ full_name: name, niche: updated[0] || '', niches: updated, language, style, platform });
+    autoSave({ full_name: name, niche: updated[0] || '', niches: updated, language, style, platform, instagram_username: igUsername });
   };
 
   const handleLanguageChange = (val: string) => {
-    setLanguage(val);
-    localStorage.setItem('userLanguage', val);
-    autoSave({ full_name: name, niche: niches[0] || '', niches, language: val, style, platform });
+  setLanguage(val);
+  localStorage.setItem('userLanguage', val);
+  // Map language value to i18n code
+  const langMap: Record<string, string> = {
+    english: 'en', hindi: 'hi', tamil: 'ta', telugu: 'te', malayalam: 'ml'
   };
+  i18n.changeLanguage(langMap[val] || 'en');
+  autoSave({ full_name: name, niche: niches[0] || '', niches, language: val, style, platform, instagram_username: igUsername });
+};
 
   const handleStyleChange = (val: string) => {
     setStyle(val);
     localStorage.setItem('userStyle', val);
-    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style: val, platform });
+    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style: val, platform, instagram_username: igUsername });
   };
 
   const handlePlatformChange = (val: string) => {
     setPlatform(val);
-    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style, platform: val });
+    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style, platform: val, instagram_username: igUsername });
+  };
+
+  const handleIgUsernameChange = (val: string) => {
+    const clean = val.replace('@', '').trim();
+    setIgUsername(clean);
+    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style, platform, instagram_username: clean });
   };
 
   const startRecording = () => {
@@ -235,7 +242,7 @@ export default function SettingsPage() {
   const handleSaveVoice = async () => {
     setVoiceSaving(true);
     const { error } = await supabase.auth.updateUser({
-      data: { full_name: name, niche: niches[0] || '', niches, language, style, platform, voice_transcript: voiceTranscript, voice_style: voiceStyle }
+      data: { full_name: name, niche: niches[0] || '', niches, language, style, platform, voice_transcript: voiceTranscript, voice_style: voiceStyle, instagram_username: igUsername }
     });
     setVoiceSaving(false);
     if (!error) { setVoiceSaved(true); setTimeout(() => setVoiceSaved(false), 3000); }
@@ -263,9 +270,7 @@ export default function SettingsPage() {
       setFeedbackSubmitted(true);
     } catch (e: any) {
       setFeedbackError(e.message || 'Failed to submit. Please try again.');
-    } finally {
-      setFeedbackLoading(false);
-    }
+    } finally { setFeedbackLoading(false); }
   };
 
   const avatarInitials = name
@@ -337,21 +342,37 @@ export default function SettingsPage() {
                 <input type="email" value={user?.email || ''} disabled
                   className="w-full px-4 py-3 rounded-xl border border-border bg-background text-muted-foreground text-sm opacity-60 cursor-not-allowed" />
               </div>
+              {/* Instagram Username */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Instagram className="w-3.5 h-3.5 text-pink-500" /> Instagram Username
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">@</span>
+                  <input type="text" value={igUsername}
+                    onChange={e => handleIgUsernameChange(e.target.value)}
+                    placeholder="your_instagram_handle"
+                    className="w-full pl-8 pr-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none transition-colors text-sm"
+                    onFocus={e => e.target.style.borderColor = '#ec489960'}
+                    onBlur={e => e.target.style.borderColor = ''} />
+                </div>
+                {igUsername && (
+                  <p className="text-xs text-green-500 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Scripts will be personalized for @{igUsername}
+                  </p>
+                )}
+              </div>
             </div>
 
-            {/* ── YouTube Connect Card ── */}
+            {/* YouTube Connect Card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Youtube className="w-4 h-4 text-red-500" /> YouTube Channel
               </h2>
-
               {ytChannel ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                    {ytChannel.channel_thumbnail && (
-                      <img src={ytChannel.channel_thumbnail} alt="" className="w-10 h-10 rounded-full shrink-0" />
-                    )}
+                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                    {ytChannel.channel_thumbnail && <img src={ytChannel.channel_thumbnail} alt="" className="w-10 h-10 rounded-full shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
@@ -372,32 +393,25 @@ export default function SettingsPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Connect your YouTube channel to get personalized content ideas, analytics insights and SEO recommendations.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Connect your YouTube channel to get personalized content ideas, analytics insights and SEO recommendations.</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {['Personalized content ideas', 'Channel analytics', 'SEO recommendations', 'Growth insights'].map(f => (
+                    {['Personalized scripts', 'Channel analytics', 'SEO recommendations', 'Growth insights'].map(f => (
                       <div key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                        {f}
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" /> {f}
                       </div>
                     ))}
                   </div>
                   <button onClick={handleYtConnect} disabled={ytConnecting}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
                     style={{ background: 'linear-gradient(135deg, #ff0000, #cc0000)', boxShadow: '0 4px 14px #ff000030' }}>
-                    {ytConnecting
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Connecting...</>
-                      : <><Youtube className="w-4 h-4" /> Connect YouTube Channel</>}
+                    {ytConnecting ? <><Loader2 className="w-4 h-4 animate-spin" /> Connecting...</> : <><Youtube className="w-4 h-4" /> Connect YouTube Channel</>}
                   </button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Read-only access · Revoke anytime in Google Account settings
-                  </p>
+                  <p className="text-xs text-center text-muted-foreground">Read-only access · Revoke anytime in Google Account settings</p>
                 </div>
               )}
             </div>
 
-            {/* Niches card */}
+            {/* Niches */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Target className="w-4 h-4" style={{ color: BLUE }} /> Content Niches
@@ -421,17 +435,14 @@ export default function SettingsPage() {
         {/* ── PREFERENCES TAB ── */}
         {activeTab === "preferences" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="p-3 rounded-2xl flex items-center gap-3"
-              style={{ background: `${BLUE}10`, border: `1px solid ${BLUE}25` }}>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: BLUE_GRADIENT }}>
+            <div className="p-3 rounded-2xl flex items-center gap-3" style={{ background: `${BLUE}10`, border: `1px solid ${BLUE}25` }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BLUE_GRADIENT }}>
                 <Check className="w-4 h-4 text-white" />
               </div>
               <div>
                 <p className="text-xs font-semibold text-foreground">Current Settings</p>
                 <p className="text-xs text-muted-foreground">
-                  Language: <span style={{ color: BLUE }}>{currentLangLabel}</span> ·
-                  Style: <span style={{ color: BLUE }}>{style}</span>
+                  Language: <span style={{ color: BLUE }}>{currentLangLabel}</span> · Style: <span style={{ color: BLUE }}>{style}</span>
                 </p>
               </div>
             </div>
@@ -520,8 +531,7 @@ export default function SettingsPage() {
               )}
               {analyzingVoice && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Analyzing your speaking style...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Analyzing your speaking style...
                 </div>
               )}
               <button onClick={isRecording ? stopRecording : startRecording}
@@ -552,8 +562,7 @@ export default function SettingsPage() {
                 <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col items-center justify-center py-16 gap-5 text-center">
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-                    className="w-16 h-16 rounded-full flex items-center justify-center"
-                    style={{ background: BLUE_GRADIENT }}>
+                    className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: BLUE_GRADIENT }}>
                     <Check className="w-8 h-8 text-white" />
                   </motion.div>
                   <div>
@@ -562,8 +571,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium"
                     style={{ background: "#7C3AED15", border: "1px solid #7C3AED30", color: BLUE }}>
-                    <ThumbsUp className="w-3.5 h-3.5" />
-                    Saved to database + emailed to team ✅
+                    <ThumbsUp className="w-3.5 h-3.5" /> Saved to database + emailed to team ✅
                   </div>
                   <button onClick={() => { setFeedbackSubmitted(false); setFeedbackRating(0); setFeedbackMessage(""); setFeedbackError(""); }}
                     className="px-6 py-2 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
@@ -613,8 +621,7 @@ export default function SettingsPage() {
                   <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
                     <h2 className="font-semibold text-foreground text-sm">Your Feedback</h2>
                     <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value.slice(0, 500))}
-                      placeholder="Tell us what you think... What do you love? What can we improve?"
-                      rows={4}
+                      placeholder="Tell us what you think..." rows={4}
                       className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none text-sm resize-none transition-all"
                       onFocus={e => { e.target.style.borderColor = "#7C3AED50"; }}
                       onBlur={e => { e.target.style.borderColor = ""; }} />
@@ -628,9 +635,7 @@ export default function SettingsPage() {
                     disabled={feedbackLoading || !feedbackMessage.trim() || feedbackRating === 0}
                     className="w-full py-3.5 rounded-2xl text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                     style={{ background: BLUE_GRADIENT }}>
-                    {feedbackLoading
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
-                      : <><Send className="w-4 h-4" /> Submit Feedback</>}
+                    {feedbackLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Send className="w-4 h-4" /> Submit Feedback</>}
                   </motion.button>
                 </motion.div>
               )}
@@ -651,8 +656,7 @@ export default function SettingsPage() {
                     className="bg-card border border-border rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                          style={{ background: BLUE_GRADIENT }}>{review.name[0]}</div>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: BLUE_GRADIENT }}>{review.name[0]}</div>
                         <div>
                           <p className="text-sm font-medium text-foreground">{review.name}</p>
                           <p className="text-xs text-muted-foreground">{review.niche}</p>
@@ -662,8 +666,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center gap-0.5 mb-2">
                       {Array.from({ length: 5 }).map((_, j) => (
-                        <Star key={j} className="w-3 h-3"
-                          style={{ fill: j < review.rating ? BLUE : "transparent", color: j < review.rating ? BLUE : "hsl(var(--border))" }} />
+                        <Star key={j} className="w-3 h-3" style={{ fill: j < review.rating ? BLUE : "transparent", color: j < review.rating ? BLUE : "hsl(var(--border))" }} />
                       ))}
                     </div>
                     <p className="text-xs text-muted-foreground">{review.text}</p>
