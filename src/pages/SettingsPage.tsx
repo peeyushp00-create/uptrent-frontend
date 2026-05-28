@@ -6,10 +6,10 @@ import {
   Youtube, Unlink, CheckCircle2, Instagram
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
-
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -22,12 +22,10 @@ const NICHES = [
 
 const LANGUAGES = [
   { value: "english", label: "English" },
-  { value: "hindi", label: "Hindi" },
-  { value: "hinglish", label: "Hinglish (Hindi + English)" },
-  { value: "tamil", label: "Tamil" },
-  { value: "telugu", label: "Telugu" },
-  { value: "malayalam", label: "Malayalam" },
-  { value: "manglish", label: "Manglish (Malayalam + English)" },
+  { value: "hindi", label: "हिंदी (Hindi)" },
+  { value: "tamil", label: "தமிழ் (Tamil)" },
+  { value: "telugu", label: "తెలుగు (Telugu)" },
+  { value: "malayalam", label: "മലയാളം (Malayalam)" },
 ];
 
 const STYLES = [
@@ -44,20 +42,6 @@ const PLATFORMS = [
   { value: "both", label: "Both" },
 ];
 
-const TABS = [
-  { id: "profile", label: "Profile", icon: User },
-  { id: "preferences", label: "Preferences", icon: Palette },
-  { id: "voice", label: "Voice", icon: Mic },
-  { id: "feedback", label: "Feedback", icon: MessageSquare },
-];
-
-const FEEDBACK_CATEGORIES = [
-  { id: "general", label: "General", icon: MessageSquare },
-  { id: "feature", label: "Feature Request", icon: Lightbulb },
-  { id: "bug", label: "Bug Report", icon: Bug },
-  { id: "performance", label: "Performance", icon: Zap },
-];
-
 const BLUE_GRADIENT = "linear-gradient(135deg, #7C3AED, #0D9488)";
 const BLUE = "#7C3AED";
 
@@ -67,12 +51,16 @@ const sampleText = {
   tamil: "வணக்கம் நண்பர்களே! இன்று நான் உங்களுடன் சில முக்கியமான tips பகிர்ந்துகொள்ள விரும்புகிறேன்.",
   telugu: "నమస్కారం నేస్తాలు! ఈరోజు నేను మీతో కొన్ని చాలా ముఖ్యమైన tips share చేయాలనుకుంటున్నాను.",
   malayalam: "നമസ്കാരം സുഹൃത്തുക്കളേ! ഇന്ന് ഞാൻ നിങ്ങളുമായി ചില പ്രധാനപ്പെട്ട tips പങ്കിടാൻ ആഗ്രഹിക്കുന്നു.",
-  hinglish: "Hey guys, welcome back! Aaj main aapke saath kuch bahut important tips share karna chahta hoon.",
-  manglish: "Hello guys! Innu njaan ningalude koodey share cheyyaan pokunnathu chila important tips aanu.",
+};
+
+const langMap: Record<string, string> = {
+  english: 'en', hindi: 'hi', tamil: 'ta', telugu: 'te', malayalam: 'ml'
 };
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
+
   const [activeTab, setActiveTab] = useState("profile");
   const [voiceSaving, setVoiceSaving] = useState(false);
   const [voiceSaved, setVoiceSaved] = useState(false);
@@ -105,11 +93,23 @@ export default function SettingsPage() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState("");
   const [savingIndicator, setSavingIndicator] = useState(false);
-
-  // YouTube OAuth state
   const [ytChannel, setYtChannel] = useState<any>(user?.user_metadata?.youtube_channel || null);
   const [ytConnecting, setYtConnecting] = useState(false);
   const [ytDisconnecting, setYtDisconnecting] = useState(false);
+
+  const TABS = [
+    { id: "profile", label: t('settings.profile'), icon: User },
+    { id: "preferences", label: t('settings.preferences'), icon: Palette },
+    { id: "voice", label: t('settings.voice'), icon: Mic },
+    { id: "feedback", label: t('settings.feedback'), icon: MessageSquare },
+  ];
+
+  const FEEDBACK_CATEGORIES = [
+    { id: "general", label: t('settings.feedback'), icon: MessageSquare },
+    { id: "feature", label: "Feature Request", icon: Lightbulb },
+    { id: "bug", label: "Bug Report", icon: Bug },
+    { id: "performance", label: "Performance", icon: Zap },
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -164,15 +164,11 @@ export default function SettingsPage() {
   };
 
   const handleLanguageChange = (val: string) => {
-  setLanguage(val);
-  localStorage.setItem('userLanguage', val);
-  // Map language value to i18n code
-  const langMap: Record<string, string> = {
-    english: 'en', hindi: 'hi', tamil: 'ta', telugu: 'te', malayalam: 'ml'
+    setLanguage(val);
+    localStorage.setItem('userLanguage', val);
+    i18n.changeLanguage(langMap[val] || 'en');
+    autoSave({ full_name: name, niche: niches[0] || '', niches, language: val, style, platform, instagram_username: igUsername });
   };
-  i18n.changeLanguage(langMap[val] || 'en');
-  autoSave({ full_name: name, niche: niches[0] || '', niches, language: val, style, platform, instagram_username: igUsername });
-};
 
   const handleStyleChange = (val: string) => {
     setStyle(val);
@@ -202,8 +198,8 @@ export default function SettingsPage() {
     recognition.interimResults = true;
     recognition.lang = language === 'tamil' ? 'ta-IN' :
                        language === 'telugu' ? 'te-IN' :
-                       language === 'malayalam' || language === 'manglish' ? 'ml-IN' :
-                       language === 'hindi' || language === 'hinglish' ? 'hi-IN' : 'en-IN';
+                       language === 'malayalam' ? 'ml-IN' :
+                       language === 'hindi' ? 'hi-IN' : 'en-IN';
     let finalTranscript = '';
     recognition.onresult = (event: any) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -284,11 +280,11 @@ export default function SettingsPage() {
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           <Settings className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">Settings</h1>
+          <h1 className="text-lg font-bold text-foreground">{t('settings.title')}</h1>
           <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
             {savingIndicator
-              ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</>
-              : <><Check className="w-3 h-3 text-green-400" /> Auto-saved</>}
+              ? <><Loader2 className="w-3 h-3 animate-spin" /> {t('settings.saving')}</>
+              : <><Check className="w-3 h-3 text-green-400" /> {t('settings.auto_saved')}</>}
           </span>
         </div>
       </div>
@@ -312,11 +308,9 @@ export default function SettingsPage() {
         {/* ── PROFILE TAB ── */}
         {activeTab === "profile" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-
-            {/* Profile card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <User className="w-4 h-4" style={{ color: BLUE }} /> Profile
+                <User className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.profile')}
               </h2>
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold shrink-0"
@@ -324,33 +318,29 @@ export default function SettingsPage() {
                 <div>
                   <p className="font-medium text-foreground">{name || 'Your Name'}</p>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <p className="text-xs mt-0.5" style={{ color: BLUE }}>
-                    🌐 {currentLangLabel} · 🎨 {style}
-                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: BLUE }}>🌐 {currentLangLabel}</p>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Full Name</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('settings.full_name')}</label>
                 <input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="Your full name"
+                  placeholder={t('settings.full_name')}
                   className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none transition-colors text-sm"
                   onFocus={e => e.target.style.borderColor = `${BLUE}60`}
                   onBlur={e => e.target.style.borderColor = ''} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('settings.email')}</label>
                 <input type="email" value={user?.email || ''} disabled
                   className="w-full px-4 py-3 rounded-xl border border-border bg-background text-muted-foreground text-sm opacity-60 cursor-not-allowed" />
               </div>
-              {/* Instagram Username */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Instagram className="w-3.5 h-3.5 text-pink-500" /> Instagram Username
+                  <Instagram className="w-3.5 h-3.5 text-pink-500" /> {t('settings.instagram_username')}
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">@</span>
-                  <input type="text" value={igUsername}
-                    onChange={e => handleIgUsernameChange(e.target.value)}
+                  <input type="text" value={igUsername} onChange={e => handleIgUsernameChange(e.target.value)}
                     placeholder="your_instagram_handle"
                     className="w-full pl-8 pr-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none transition-colors text-sm"
                     onFocus={e => e.target.style.borderColor = '#ec489960'}
@@ -358,16 +348,16 @@ export default function SettingsPage() {
                 </div>
                 {igUsername && (
                   <p className="text-xs text-green-500 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Scripts will be personalized for @{igUsername}
+                    <CheckCircle2 className="w-3 h-3" /> {t('settings.scripts_personalized')} @{igUsername}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* YouTube Connect Card */}
+            {/* YouTube Connect */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Youtube className="w-4 h-4 text-red-500" /> YouTube Channel
+                <Youtube className="w-4 h-4 text-red-500" /> {t('settings.youtube_channel')}
               </h2>
               {ytChannel ? (
                 <div className="space-y-3">
@@ -379,34 +369,26 @@ export default function SettingsPage() {
                         <p className="font-semibold text-sm text-green-800 truncate">{ytChannel.channel_name}</p>
                       </div>
                       <div className="flex gap-3 mt-0.5 flex-wrap">
-                        <span className="text-xs text-green-600">{Number(ytChannel.subscribers || 0).toLocaleString()} subscribers</span>
-                        <span className="text-xs text-green-600">{Number(ytChannel.video_count || 0).toLocaleString()} videos</span>
-                        <span className="text-xs text-green-600">{Number(ytChannel.total_views || 0).toLocaleString()} views</span>
+                        <span className="text-xs text-green-600">{Number(ytChannel.subscribers || 0).toLocaleString()} {t('home.subscribers')}</span>
+                        <span className="text-xs text-green-600">{Number(ytChannel.video_count || 0).toLocaleString()} {t('home.videos')}</span>
                       </div>
                     </div>
                   </div>
                   <button onClick={handleYtDisconnect} disabled={ytDisconnecting}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 text-red-500 text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
                     {ytDisconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
-                    Disconnect Channel
+                    {t('settings.disconnect')}
                   </button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">Connect your YouTube channel to get personalized content ideas, analytics insights and SEO recommendations.</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['Personalized scripts', 'Channel analytics', 'SEO recommendations', 'Growth insights'].map(f => (
-                      <div key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" /> {f}
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm text-muted-foreground">Connect your YouTube channel to get personalized content ideas.</p>
                   <button onClick={handleYtConnect} disabled={ytConnecting}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #ff0000, #cc0000)', boxShadow: '0 4px 14px #ff000030' }}>
-                    {ytConnecting ? <><Loader2 className="w-4 h-4 animate-spin" /> Connecting...</> : <><Youtube className="w-4 h-4" /> Connect YouTube Channel</>}
+                    style={{ background: 'linear-gradient(135deg, #ff0000, #cc0000)' }}>
+                    {ytConnecting ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('home.connecting')}</> : <><Youtube className="w-4 h-4" /> {t('settings.connect_youtube')}</>}
                   </button>
-                  <p className="text-xs text-center text-muted-foreground">Read-only access · Revoke anytime in Google Account settings</p>
+                  <p className="text-xs text-center text-muted-foreground">{t('settings.connected_hint')}</p>
                 </div>
               )}
             </div>
@@ -414,8 +396,8 @@ export default function SettingsPage() {
             {/* Niches */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Target className="w-4 h-4" style={{ color: BLUE }} /> Content Niches
-                {niches.length > 0 && <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ background: "#7C3AED15", color: BLUE }}>{niches.length} selected</span>}
+                <Target className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.content_niches')}
+                {niches.length > 0 && <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ background: "#7C3AED15", color: BLUE }}>{niches.length} {t('settings.selected')}</span>}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {NICHES.map((n) => (
@@ -440,16 +422,16 @@ export default function SettingsPage() {
                 <Check className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-foreground">Current Settings</p>
+                <p className="text-xs font-semibold text-foreground">{t('settings.current_settings')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Language: <span style={{ color: BLUE }}>{currentLangLabel}</span> · Style: <span style={{ color: BLUE }}>{style}</span>
+                  {t('settings.language_label')} <span style={{ color: BLUE }}>{currentLangLabel}</span> · {t('settings.style_label')} <span style={{ color: BLUE }}>{style}</span>
                 </p>
               </div>
             </div>
 
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Palette className="w-4 h-4" style={{ color: BLUE }} /> Platform
+                <Palette className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.platform')}
               </h2>
               <div className="flex gap-2">
                 {PLATFORMS.map((p) => (
@@ -466,9 +448,9 @@ export default function SettingsPage() {
 
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Globe className="w-4 h-4" style={{ color: BLUE }} /> Script Language
+                <Globe className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.script_language')}
               </h2>
-              <p className="text-xs text-muted-foreground">All scripts across the app will be generated in this language</p>
+              <p className="text-xs text-muted-foreground">All scripts and app UI will use this language</p>
               <div className="flex flex-col gap-2">
                 {LANGUAGES.map((l) => (
                   <button key={l.value} onClick={() => handleLanguageChange(l.value)}
@@ -485,7 +467,7 @@ export default function SettingsPage() {
 
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Palette className="w-4 h-4" style={{ color: BLUE }} /> Content Style
+                <Palette className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.content_style')}
               </h2>
               <div className="flex flex-col gap-2">
                 {STYLES.map((s) => (
@@ -508,7 +490,7 @@ export default function SettingsPage() {
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Mic className="w-4 h-4" style={{ color: BLUE }} /> Voice Style
+                <Mic className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.voice_style')}
               </h2>
               <p className="text-xs text-muted-foreground">Record your voice so we can personalize scripts to match your natural speaking style</p>
               <div className="p-3 rounded-xl bg-secondary/30 border border-border space-y-1">
@@ -525,29 +507,29 @@ export default function SettingsPage() {
               )}
               {voiceStyle && (
                 <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30">
-                  <p className="text-xs text-green-400 mb-1">✅ Voice style analyzed!</p>
+                  <p className="text-xs text-green-400 mb-1">{t('settings.voice_analyzed')}</p>
                   <p className="text-sm text-foreground">{voiceStyle}</p>
                 </div>
               )}
               {analyzingVoice && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Analyzing your speaking style...
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('settings.analyzing')}
                 </div>
               )}
               <button onClick={isRecording ? stopRecording : startRecording}
                 className={`w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-all ${isRecording ? 'bg-red-500 animate-pulse' : ''}`}
                 style={!isRecording ? { background: BLUE_GRADIENT } : {}}>
                 {isRecording
-                  ? <><MicOff className="w-4 h-4" /> Stop Recording ({recordingTime}s)</>
-                  : <><Mic className="w-4 h-4" /> {voiceStyle ? 'Re-record Voice' : 'Record Your Voice'}</>}
+                  ? <><MicOff className="w-4 h-4" /> {t('settings.stop_recording')} ({recordingTime}s)</>
+                  : <><Mic className="w-4 h-4" /> {voiceStyle ? t('settings.re_record') : t('settings.record_voice')}</>}
               </button>
               {voiceStyle && (
                 <button onClick={handleSaveVoice} disabled={voiceSaving}
                   className="w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>
-                  {voiceSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                  {voiceSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('settings.saving')}</>
                     : voiceSaved ? <><Check className="w-4 h-4" /> Saved!</>
-                    : <><Save className="w-4 h-4" /> Save Voice Style</>}
+                    : <><Save className="w-4 h-4" /> {t('settings.save_voice')}</>}
                 </button>
               )}
             </div>
@@ -635,7 +617,9 @@ export default function SettingsPage() {
                     disabled={feedbackLoading || !feedbackMessage.trim() || feedbackRating === 0}
                     className="w-full py-3.5 rounded-2xl text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                     style={{ background: BLUE_GRADIENT }}>
-                    {feedbackLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Send className="w-4 h-4" /> Submit Feedback</>}
+                    {feedbackLoading
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+                      : <><Send className="w-4 h-4" /> {t('common.submit')}</>}
                   </motion.button>
                 </motion.div>
               )}
