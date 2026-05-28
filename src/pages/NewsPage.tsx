@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, Bookmark, Share2 } from "lucide-react";
+import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, Bookmark } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from 'react-i18next';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PRIMARY = "#7C3AED";
@@ -76,7 +77,7 @@ const getCategoryImage = (headline: string) => {
   return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600';
 };
 
-const getTimeAgo = (dateStr: string) => {
+const getTimeAgo = (dateStr: string, t: any) => {
   if (!dateStr) return '';
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
   if (diff < 60) return 'Just now';
@@ -130,6 +131,7 @@ const getTagStyle = (topic: string) => {
 export default function NewsPage() {
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const initialQuery = (location.state as any)?.query || "";
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
 
@@ -196,7 +198,7 @@ export default function NewsPage() {
       );
       setArticles(sorted);
       if (!activeQuery) setAllArticles(sorted);
-    } catch { setError("Failed to load news"); }
+    } catch { setError(t('common.error')); }
     finally { setLoading(false); }
   };
 
@@ -266,22 +268,19 @@ export default function NewsPage() {
 
   const filterLabel = customDate
     ? new Date(customDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-    : DATE_FILTERS.find(f => f.value === dateFilter)?.label || 'Today';
-
-  const categories = ['All News', ...Array.from(new Set(trendingTopics.map(t => t.topic))).slice(0, 5)];
+    : DATE_FILTERS.find(f => f.value === dateFilter)?.label || t('news.today');
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
 
-      {/* ── Sticky Header ── */}
+      {/* Header */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="font-bold text-xl text-[#7C3AED] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            News Feed
+            {t('news.title')}
           </h1>
           {userNiches.length > 0 && !query && !trendingFilter && (
-            <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
-              style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+            <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
               For You
             </span>
           )}
@@ -294,7 +293,7 @@ export default function NewsPage() {
 
       <main className="max-w-2xl mx-auto px-5 pt-4 pb-28 space-y-4">
 
-        {/* ── Search + Filter ── */}
+        {/* Search + Filter */}
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
@@ -302,17 +301,15 @@ export default function NewsPage() {
               onChange={e => setSearchInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") handleSearch(searchInput); }}
               onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
-              placeholder="Search topics..."
+              placeholder={t('common.search') + ' topics...'}
               className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#c5c5d4] bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white text-[#191c1d] placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20" />
             {searchInput && (
-              <button onClick={() => handleSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
+              <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
                 <X className="w-4 h-4" />
               </button>
             )}
             {showDropdown && dropdownSuggestions.length > 0 && (
-              <div ref={dropdownRef}
-                className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-[#c5c5d4] dark:border-gray-600 rounded-xl shadow-lg z-50 overflow-hidden">
+              <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-[#c5c5d4] dark:border-gray-600 rounded-xl shadow-lg z-50 overflow-hidden">
                 {dropdownSuggestions.map((s, i) => (
                   <button key={i} onClick={() => handleSearch(s)}
                     className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#191c1d] dark:text-white hover:bg-[#f3f4f5] dark:hover:bg-gray-700 text-left">
@@ -353,7 +350,6 @@ export default function NewsPage() {
                   </div>
                   {customDate && <div className="w-1.5 h-1.5 rounded-full" style={{ background: PRIMARY }} />}
                 </button>
-
                 {showDatePicker && (
                   <div className="px-4 pb-4 pt-2 space-y-3 border-t border-[#e1e3e4] dark:border-gray-700" onClick={e => e.stopPropagation()}>
                     <div className="grid grid-cols-3 gap-2">
@@ -410,26 +406,21 @@ export default function NewsPage() {
           </div>
         </div>
 
-        {/* ── Category chips ── */}
+        {/* Category chips */}
         <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           {trendingTopics.length > 0 ? (
             <>
               <button
                 onClick={() => { setTrendingFilter(null); setQuery(''); setSearchInput(''); fetchNews(dateFilter, undefined, null); }}
                 className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                style={!trendingFilter
-                  ? { background: PRIMARY, color: '#fff' }
-                  : { background: '#e7e8e9', color: '#454652' }}>
-                All News
+                style={!trendingFilter ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+                {t('news.all')}
               </button>
-              {trendingTopics.map(t => (
-                <button key={t.topic}
-                  onClick={() => handleTrendingFilter(t.topic)}
+              {trendingTopics.map(tt => (
+                <button key={tt.topic} onClick={() => handleTrendingFilter(tt.topic)}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                  style={trendingFilter === t.topic
-                    ? { background: PRIMARY, color: '#fff' }
-                    : { background: '#e7e8e9', color: '#454652' }}>
-                  {t.emoji} {t.topic}
+                  style={trendingFilter === tt.topic ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+                  {tt.emoji} {tt.topic}
                 </button>
               ))}
             </>
@@ -438,29 +429,26 @@ export default function NewsPage() {
               <button key={cat}
                 onClick={() => { setActiveCategory(cat); if (cat !== 'All News') handleTrendingFilter(cat); else { setTrendingFilter(null); fetchNews(dateFilter, undefined, null); } }}
                 className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                style={activeCategory === cat
-                  ? { background: PRIMARY, color: '#fff' }
-                  : { background: '#e7e8e9', color: '#454652' }}>
+                style={activeCategory === cat ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
                 {cat}
               </button>
             ))
           )}
         </div>
 
-        {/* ── Article count ── */}
+        {/* Article count */}
         {!loading && (
           <p className="text-xs text-[#757684]">
-            <span className="font-semibold" style={{ color: PRIMARY }}>{articles.length}</span> articles
+            <span className="font-semibold" style={{ color: PRIMARY }}>{articles.length}</span> {t('home.articles')}
             {(query || trendingFilter) && <span> for "<span style={{ color: PRIMARY }}>{trendingFilter || query}</span>"</span>}
-            {!query && !trendingFilter && userNiches.length > 0 && <span> · personalized</span>}
           </p>
         )}
 
-        {/* ── Loading ── */}
+        {/* Loading */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: PRIMARY }} />
-            <p className="text-sm text-[#757684]">Loading news...</p>
+            <p className="text-sm text-[#757684]">{t('news.loading')}</p>
           </div>
         )}
 
@@ -469,7 +457,7 @@ export default function NewsPage() {
         {!loading && !error && articles.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ background: PRIMARY_CONTAINER }}>📰</div>
-            <p className="font-semibold text-[#191c1d] dark:text-white">No news found</p>
+            <p className="font-semibold text-[#191c1d] dark:text-white">{t('news.no_news')}</p>
             <p className="text-sm text-[#757684]">Fresh news will appear here soon</p>
             <button onClick={() => { setCustomDate(null); setTrendingFilter(null); handleDateFilter('all'); }}
               className="text-sm px-5 py-2.5 rounded-full text-white font-semibold mt-1"
@@ -479,19 +467,18 @@ export default function NewsPage() {
           </div>
         )}
 
-        {/* ── Articles ── */}
+        {/* Articles */}
         {!loading && !error && articles.length > 0 && (
           <div className="flex flex-col gap-4">
             {articles.map((item, i) => {
               const headline = item.title || item.headline || "Untitled";
-              const timeAgo = getTimeAgo(item.published_at || '');
+              const timeAgo = getTimeAgo(item.published_at || '', t);
               const topic = item.topic || '';
               const tagStyle = getTagStyle(topic);
               const isSaved = savedArticles.has(item.id || String(i));
               const isFeatured = i === 0;
 
               if (isFeatured) {
-                // ── Featured card (large image) ──
                 return (
                   <motion.article key={item.id || i}
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
@@ -504,8 +491,7 @@ export default function NewsPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                       {topic && (
                         <div className="absolute top-4 left-4">
-                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase"
-                            style={{ background: SECONDARY_CONTAINER, color: '#491d8a' }}>
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase" style={{ background: SECONDARY_CONTAINER, color: '#491d8a' }}>
                             {TOPIC_EMOJIS[topic] || '📰'} {topic}
                           </span>
                         </div>
@@ -519,22 +505,15 @@ export default function NewsPage() {
                       <h2 className="font-bold text-lg text-[#191c1d] dark:text-white leading-tight" style={{ fontFamily: 'Montserrat, sans-serif' }}>
                         {headline}
                       </h2>
-                      {item.summary && (
-                        <p className="text-sm text-[#454652] dark:text-gray-300 line-clamp-2">{item.summary}</p>
-                      )}
+                      {item.summary && <p className="text-sm text-[#454652] dark:text-gray-300 line-clamp-2">{item.summary}</p>}
                       <div className="flex items-center justify-between mt-1">
-                        <div className="flex items-center gap-3">
-                          {item.summary && (
-                            <span className="text-xs flex items-center gap-1 font-semibold" style={{ color: PRIMARY }}>
-                              <Sparkles className="w-3 h-3" /> View Insights
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-xs flex items-center gap-1 font-semibold" style={{ color: PRIMARY }}>
+                          <Sparkles className="w-3 h-3" /> View Insights
+                        </span>
                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                           <button onClick={() => toggleSave(item.id || String(i))}
                             className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`}
-                              style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} style={{ color: isSaved ? PRIMARY : '#757684' }} />
                           </button>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
@@ -549,7 +528,6 @@ export default function NewsPage() {
                 );
               }
 
-              // ── Regular card (horizontal layout with hover expand) ──
               return (
                 <motion.article key={item.id || i}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -557,19 +535,16 @@ export default function NewsPage() {
                   whileHover={{ scale: 1.02, boxShadow: '0 8px 32px rgba(36,56,156,0.12)' }}
                   className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-[#e1e3e4] dark:border-gray-700 cursor-pointer transition-all duration-300 group"
                   onClick={() => setSelectedArticle(item)}>
-                  {/* Collapsed: horizontal layout */}
                   <div className="flex gap-0 p-4 group-hover:hidden">
                     <div className="flex-1 flex flex-col gap-1.5">
                       <div className="flex items-center gap-2">
                         {topic && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
-                            style={{ background: tagStyle.bg, color: tagStyle.text }}>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase" style={{ background: tagStyle.bg, color: tagStyle.text }}>
                             {TOPIC_EMOJIS[topic] || '📰'} {topic}
                           </span>
                         )}
                       </div>
-                      <h3 className="font-semibold text-sm text-[#191c1d] dark:text-white leading-snug line-clamp-2"
-                        style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                      <h3 className="font-semibold text-sm text-[#191c1d] dark:text-white leading-snug line-clamp-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>
                         {headline}
                       </h3>
                       <div className="flex items-center justify-between">
@@ -580,8 +555,7 @@ export default function NewsPage() {
                         <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                           <button onClick={() => toggleSave(item.id || String(i))}
                             className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`}
-                              style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} style={{ color: isSaved ? PRIMARY : '#757684' }} />
                           </button>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
@@ -598,8 +572,6 @@ export default function NewsPage() {
                         onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
                     </div>
                   </div>
-
-                  {/* Expanded: shown on hover */}
                   <div className="hidden group-hover:block">
                     <div className="relative h-40 w-full">
                       <img src={item.image_url || getCategoryImage(headline)} alt={headline}
@@ -608,8 +580,7 @@ export default function NewsPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       {topic && (
                         <div className="absolute top-3 left-3">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase"
-                            style={{ background: SECONDARY_CONTAINER, color: '#491d8a' }}>
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase" style={{ background: SECONDARY_CONTAINER, color: '#491d8a' }}>
                             {TOPIC_EMOJIS[topic] || '📰'} {topic}
                           </span>
                         </div>
@@ -620,15 +591,8 @@ export default function NewsPage() {
                         <span className="text-xs font-semibold" style={{ color: PRIMARY }}>{item.source}</span>
                         <span className="text-[#757684] text-[10px]">• {timeAgo}</span>
                       </div>
-                      <h3 className="font-bold text-base text-[#191c1d] dark:text-white leading-snug"
-                        style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                        {headline}
-                      </h3>
-                      {item.summary && (
-                        <p className="text-sm text-[#454652] dark:text-gray-300 line-clamp-3 leading-relaxed">
-                          {item.summary}
-                        </p>
-                      )}
+                      <h3 className="font-bold text-base text-[#191c1d] dark:text-white leading-snug" style={{ fontFamily: 'Montserrat, sans-serif' }}>{headline}</h3>
+                      {item.summary && <p className="text-sm text-[#454652] dark:text-gray-300 line-clamp-3 leading-relaxed">{item.summary}</p>}
                       <div className="flex items-center justify-between mt-1">
                         <span className="text-xs font-semibold flex items-center gap-1" style={{ color: PRIMARY }}>
                           <Sparkles className="w-3 h-3" /> Tap for insights
@@ -636,8 +600,7 @@ export default function NewsPage() {
                         <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                           <button onClick={() => toggleSave(item.id || String(i))}
                             className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`}
-                              style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} style={{ color: isSaved ? PRIMARY : '#757684' }} />
                           </button>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
@@ -656,7 +619,7 @@ export default function NewsPage() {
         )}
       </main>
 
-      {/* ── Article Detail Popup ── */}
+      {/* Article Detail Popup */}
       <AnimatePresence>
         {selectedArticle && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -667,8 +630,6 @@ export default function NewsPage() {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
               className="bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
-
-              {/* Image */}
               <div className="relative h-44">
                 <img src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '')}
                   alt="" className="w-full h-full object-cover"
@@ -680,28 +641,20 @@ export default function NewsPage() {
                 </button>
                 {selectedArticle.topic && (
                   <div className="absolute bottom-4 left-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase text-white"
-                      style={{ background: SECONDARY }}>
+                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase text-white" style={{ background: SECONDARY }}>
                       {TOPIC_EMOJIS[selectedArticle.topic] || '📰'} {selectedArticle.topic}
                     </span>
                   </div>
                 )}
               </div>
-
               <div className="p-5 space-y-4">
-                {/* Title */}
-                <h2 className="font-bold text-lg text-[#191c1d] dark:text-white leading-snug"
-                  style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                <h2 className="font-bold text-lg text-[#191c1d] dark:text-white leading-snug" style={{ fontFamily: 'Montserrat, sans-serif' }}>
                   {selectedArticle.title || selectedArticle.headline}
                 </h2>
-
-                {/* Meta */}
                 <div className="flex items-center gap-3 text-xs text-[#757684]">
                   {selectedArticle.source && <span className="font-semibold" style={{ color: PRIMARY }}>{selectedArticle.source}</span>}
-                  {selectedArticle.published_at && <span>{getTimeAgo(selectedArticle.published_at)}</span>}
+                  {selectedArticle.published_at && <span>{getTimeAgo(selectedArticle.published_at, t)}</span>}
                 </div>
-
-                {/* Key Highlights */}
                 {keyPoints.length > 0 && (
                   <div className="rounded-xl p-4 space-y-2.5" style={{ background: '#ede9fe' }}>
                     <div className="flex items-center gap-2">
@@ -716,18 +669,12 @@ export default function NewsPage() {
                     ))}
                   </div>
                 )}
-
                 {keyPoints.length === 0 && selectedArticle.summary && (
                   <p className="text-sm text-[#454652] dark:text-gray-300 leading-relaxed">{selectedArticle.summary}</p>
                 )}
-
-                {/* Creator Impact */}
                 {impactData && (
                   <div className="rounded-xl p-4"
-                    style={{
-                      background: impactData.level === 'high' ? '#fff3e0' : impactData.level === 'medium' ? '#e8f5e9' : '#f3e5f5',
-                      border: `1px solid ${impactData.level === 'high' ? '#ffcc80' : impactData.level === 'medium' ? '#a5d6a7' : '#ce93d8'}`,
-                    }}>
+                    style={{ background: impactData.level === 'high' ? '#fff3e0' : impactData.level === 'medium' ? '#e8f5e9' : '#f3e5f5', border: `1px solid ${impactData.level === 'high' ? '#ffcc80' : impactData.level === 'medium' ? '#a5d6a7' : '#ce93d8'}` }}>
                     <div className="flex items-center gap-2 mb-1.5">
                       {impactData.level === 'high' ? <AlertTriangle className="w-4 h-4 text-orange-500" />
                         : impactData.level === 'medium' ? <TrendingUp className="w-4 h-4 text-green-600" />
@@ -737,26 +684,23 @@ export default function NewsPage() {
                         {impactData.level === 'high' ? '🔥 High Impact' : impactData.level === 'medium' ? '📈 Medium Impact' : '✅ Low Impact'} for Creators
                       </p>
                     </div>
-                    <p className="text-sm"
-                      style={{ color: impactData.level === 'high' ? '#bf360c' : impactData.level === 'medium' ? '#1b5e20' : '#4a148c' }}>
+                    <p className="text-sm" style={{ color: impactData.level === 'high' ? '#bf360c' : impactData.level === 'medium' ? '#1b5e20' : '#4a148c' }}>
                       {impactData.text}
                     </p>
                   </div>
                 )}
-
-                {/* Actions */}
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => toggleSave(selectedArticle.id || '')}
                     className="flex-1 py-2.5 rounded-xl border border-[#c5c5d4] text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
                     style={savedArticles.has(selectedArticle.id || '') ? { background: PRIMARY_CONTAINER, color: PRIMARY, borderColor: PRIMARY } : { color: '#454652' }}>
                     <Bookmark className={`w-4 h-4 ${savedArticles.has(selectedArticle.id || '') ? 'fill-current' : ''}`} />
-                    {savedArticles.has(selectedArticle.id || '') ? 'Saved' : 'Save'}
+                    {savedArticles.has(selectedArticle.id || '') ? 'Saved' : t('common.save')}
                   </button>
                   {selectedArticle.url && (
                     <button onClick={() => window.open(selectedArticle.url, '_blank')}
                       className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2"
                       style={{ background: PRIMARY_GRAD }}>
-                      Read Full <ExternalLink className="w-3.5 h-3.5" />
+                      {t('news.read_more')} <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
