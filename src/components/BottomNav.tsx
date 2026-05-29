@@ -16,6 +16,7 @@ export default function BottomNav() {
     () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
   );
 
+  // ── Nav arrays inside component so they re-render on language change ──
   const instagramNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
     { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
@@ -57,13 +58,11 @@ export default function BottomNav() {
       <div style={{ display: 'flex', gap: '6px', padding: '8px 12px 4px', borderBottom: '1px solid hsl(var(--border))' }}>
         <button onClick={() => switchPlatform("instagram")}
           style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '7px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, background: effectivePlatform === "instagram" ? IG_GRAD : 'transparent', color: effectivePlatform === "instagram" ? 'white' : 'hsl(var(--muted-foreground))', transition: 'all 0.2s' }}>
-          <Instagram style={{ width: '14px', height: '14px' }} />
-          Instagram
+          <Instagram style={{ width: '14px', height: '14px' }} /> Instagram
         </button>
         <button onClick={() => switchPlatform("youtube")}
           style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '7px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, background: effectivePlatform === "youtube" ? YT_GRAD : 'transparent', color: effectivePlatform === "youtube" ? 'white' : 'hsl(var(--muted-foreground))', transition: 'all 0.2s' }}>
-          <Youtube style={{ width: '14px', height: '14px' }} />
-          YouTube
+          <Youtube style={{ width: '14px', height: '14px' }} /> YouTube
         </button>
       </div>
 

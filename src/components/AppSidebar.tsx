@@ -18,7 +18,7 @@ const YT_COLOR = "#ff0000";
 const YT_CONTAINER = "#ffebee";
 
 export default function AppSidebar() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [platform, setPlatform] = useState<"instagram" | "youtube">(
@@ -29,6 +29,7 @@ export default function AppSidebar() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
+  // ── Nav arrays inside component so they re-render on language change ──
   const instagramNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
     { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
@@ -108,16 +109,14 @@ export default function AppSidebar() {
               style={effectivePlatform === "instagram"
                 ? { background: PRIMARY_GRAD, color: '#fff', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }
                 : { color: 'hsl(var(--muted-foreground))' }}>
-              <Instagram className="w-3.5 h-3.5" />
-              Instagram
+              <Instagram className="w-3.5 h-3.5" /> Instagram
             </button>
             <button onClick={() => switchPlatform("youtube")}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
               style={effectivePlatform === "youtube"
                 ? { background: YT_GRAD, color: '#fff', boxShadow: '0 2px 8px rgba(255,0,0,0.35)' }
                 : { color: 'hsl(var(--muted-foreground))' }}>
-              <Youtube className="w-3.5 h-3.5" />
-              YouTube
+              <Youtube className="w-3.5 h-3.5" /> YouTube
             </button>
           </div>
         </div>
@@ -132,7 +131,7 @@ export default function AppSidebar() {
             {effectivePlatform === "instagram"
               ? <Instagram className="w-4 h-4 text-white" />
               : <Youtube className="w-4 h-4 text-white" />}
-        </button>
+          </button>
         </div>
       )}
 
@@ -156,9 +155,7 @@ export default function AppSidebar() {
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}>
               <item.icon className="w-4 h-4 shrink-0" style={active ? { color: ac } : { color: 'hsl(var(--muted-foreground))' }} />
               {!collapsed && <span>{item.label}</span>}
-              {active && !collapsed && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ac }} />
-              )}
+              {active && !collapsed && <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ac }} />}
             </button>
           );
         })}
@@ -169,19 +166,15 @@ export default function AppSidebar() {
 
         {/* Theme toggle */}
         <button onClick={toggleTheme}
-          title={collapsed ? (theme === "dark" ? "Light Mode" : "Dark Mode") : undefined}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground/80 transition-all"
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-          {theme === "dark"
-            ? <Sun className="w-4 h-4 shrink-0 text-muted-foreground" />
-            : <Moon className="w-4 h-4 shrink-0 text-muted-foreground" />}
+          {theme === "dark" ? <Sun className="w-4 h-4 shrink-0 text-muted-foreground" /> : <Moon className="w-4 h-4 shrink-0 text-muted-foreground" />}
           {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
         </button>
 
         {/* Settings */}
         <button onClick={() => navigate('/settings')}
-          title={collapsed ? t('nav.settings') : undefined}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground/80 transition-all"
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
@@ -213,8 +206,7 @@ export default function AppSidebar() {
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
               <div className="p-3 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: ag }}>{avatarInitials}</div>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: ag }}>{avatarInitials}</div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
@@ -234,7 +226,7 @@ export default function AppSidebar() {
                   className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-semibold text-red-500 transition-all"
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#fef2f2'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                  <LogOut className="w-4 h-4" /> Logout
+                  <LogOut className="w-4 h-4" /> {t('common.close') === 'Close' ? 'Logout' : t('common.close')}
                 </button>
               </div>
             </div>
