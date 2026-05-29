@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { TrendingUp, Sparkles } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 const YT_GRAD = "linear-gradient(135deg, #ff0000, #FFB86C)";
 const YT_COLOR = "#ff0000";
@@ -31,6 +32,7 @@ const TRENDING_TOPICS = [
 
 export default function YouTubeTrending() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,14 +46,12 @@ export default function YouTubeTrending() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-24">
         <div>
           <h2 className="font-semibold text-foreground mb-1">Trending in India 🇮🇳</h2>
-          <p className="text-xs text-muted-foreground">Popular video topics right now — click Script to generate a script</p>
+          <p className="text-xs text-muted-foreground">Popular video topics right now — click Script to generate</p>
         </div>
-
         <div className="space-y-2">
           {TRENDING_TOPICS.map((topic, i) => (
             <motion.div key={topic}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
               className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 transition-colors"
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${YT_COLOR}40`; }}
@@ -66,7 +66,7 @@ export default function YouTubeTrending() {
                 className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-white text-xs font-medium shrink-0"
                 style={{ background: YT_GRAD }}>
                 <Sparkles className="w-3 h-3" />
-                Script
+                {t('scripts.generate')}
               </button>
             </motion.div>
           ))}
