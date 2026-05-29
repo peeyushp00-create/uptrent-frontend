@@ -102,7 +102,8 @@ export default function Index() {
     const channelContext = ytChannel?.channel_name ? `,${ytChannel.channel_name}` : '';
     const p = isIG ? 'instagram' : 'youtube';
     try {
-      const res = await fetch(`${BASE}/api/topics/suggestions?platform=${p}&niches=${encodeURIComponent(niches + channelContext)}`);
+      const userLanguage = localStorage.getItem('userLanguage') || 'english';
+const res = await fetch(`${BASE}/api/topics/suggestions?platform=${p}&niches=${encodeURIComponent(niches + channelContext)}&language=${userLanguage}`);
       const data = await res.json();
       setChips(data.suggestions || []);
     } catch { } finally { setChipsLoading(false); }

@@ -196,11 +196,12 @@ export default function TrendingDashboard() {
     setAnalysisLoading(true);
     setTrendAnalysis(null);
     try {
-      const res = await fetch(`${BASE}/api/topics/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic }),
-      });
+     const userLanguage = localStorage.getItem('userLanguage') || 'english';
+const res = await fetch(`${BASE}/api/topics/analyze`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ topic, language: userLanguage }),
+});
       const data = await res.json();
       if (!data.error) {
         setTrendAnalysis(data);
