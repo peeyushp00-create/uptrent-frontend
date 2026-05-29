@@ -249,8 +249,54 @@ export default function YouTubeAnalyzer() {
 
 function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (text: string, key: string) => void; copied: string | null }) {
   const { t } = useTranslation();
+  const stats = result.channelStats;
   return (
     <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} className="space-y-3">
+
+      {/* Real channel stats card */}
+      {stats && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+          <div className="flex items-center gap-3 mb-4">
+            {stats.thumbnail && <img src={stats.thumbnail} alt="" className="w-12 h-12 rounded-full shrink-0" />}
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-base text-[#191c1d] dark:text-white truncate">{stats.name}</p>
+              {stats.description && <p className="text-xs text-[#757684] line-clamp-2 mt-0.5">{stats.description}</p>}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {[
+              { label: t('home.subscribers'), val: stats.subscribers, color: '#ff0000' },
+              { label: t('home.total_views'), val: stats.total_views, color: '#ff6b35' },
+              { label: t('home.videos'), val: stats.video_count, color: '#ff9900' },
+            ].map((s, i) => (
+              <div key={i} className="rounded-xl p-3 text-center" style={{ background: YT_CONTAINER }}>
+                <p className="font-bold text-sm text-[#191c1d]" style={{ color: s.color }}>{s.val}</p>
+                <p className="text-[10px] text-[#757684]">{s.label}</p>
+              </div>
+            ))}
+          </div>
+          {/* Avg per video stats */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'Avg Views', val: stats.avg_views, icon: '👁️' },
+              { label: 'Avg Likes', val: stats.avg_likes, icon: '❤️' },
+              { label: 'Avg Comments', val: stats.avg_comments, icon: '💬' },
+            ].map((s, i) => (
+              <div key={i} className="rounded-xl p-2.5 text-center bg-[#f8f9fa] dark:bg-gray-700">
+                <p className="text-base">{s.icon}</p>
+                <p className="font-bold text-sm text-[#191c1d] dark:text-white">{s.val}</p>
+                <p className="text-[9px] text-[#757684]">{s.label}</p>
+              </div>
+            ))}
+          </div>
+          {stats.engagement_rate && (
+            <div className="mt-2 flex items-center justify-center gap-2 px-3 py-2 rounded-xl" style={{ background: '#e8f5e9' }}>
+              <span className="text-xs font-bold text-green-700">📊 Engagement Rate: {stats.engagement_rate}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {result.summary && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
           <div className="flex items-center gap-2 mb-2">
