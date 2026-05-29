@@ -5,7 +5,8 @@ const resources = {
   en: {
     translation: {
       nav: {
-        home: 'Home', news: 'News', scripts: 'Scripts', trending: 'Trending', settings: 'Settings', pricing: 'Pricing',
+        home: 'Home', news: 'News', scripts: 'Scripts', trending: 'Trending',
+        settings: 'Settings', pricing: 'Pricing', analyzer: 'Analyzer', seo: 'SEO',
       },
       home: {
         badge: 'AI-powered content discovery',
@@ -69,7 +70,8 @@ const resources = {
   hi: {
     translation: {
       nav: {
-        home: 'होम', news: 'समाचार', scripts: 'स्क्रिप्ट', trending: 'ट्रेंडिंग', settings: 'सेटिंग्स', pricing: 'मूल्य',
+        home: 'होम', news: 'समाचार', scripts: 'स्क्रिप्ट', trending: 'ट्रेंडिंग',
+        settings: 'सेटिंग्स', pricing: 'मूल्य', analyzer: 'एनालाइज़र', seo: 'SEO',
       },
       home: {
         badge: 'AI-powered कंटेंट डिस्कवरी',
@@ -123,7 +125,7 @@ const resources = {
         hashtags: 'हैशटैग', best_time: 'पोस्ट करने का सबसे अच्छा समय',
         peak_time: 'पीक एंगेजमेंट: सोम-शुक्र शाम 6-10 बजे', posting_tips: 'पोस्टिंग टिप्स',
         empty_title: 'किसी भी प्रोफ़ाइल का विश्लेषण करें',
-        empty_desc: 'वास्तविक स्टैट्स, कंटेंट पिलर, रील आइडिया और पोस्टिंग टिप्स पाने के लिए कोई भी Instagram यूज़रनेम दर्ज करें',
+        empty_desc: 'वास्तविक स्टैट्स, रील आइडिया और पोस्टिंग टिप्स पाने के लिए Instagram यूज़रनेम दर्ज करें',
       },
       common: {
         loading: 'लोड हो रहा है...', error: 'कुछ गलत हुआ', retry: 'दोबारा कोशिश करें', cancel: 'रद्द करें',
@@ -134,7 +136,8 @@ const resources = {
   ta: {
     translation: {
       nav: {
-        home: 'முகப்பு', news: 'செய்திகள்', scripts: 'ஸ்கிரிப்ட்', trending: 'டிரெண்டிங்', settings: 'அமைப்புகள்', pricing: 'விலை',
+        home: 'முகப்பு', news: 'செய்திகள்', scripts: 'ஸ்கிரிப்ட்', trending: 'டிரெண்டிங்',
+        settings: 'அமைப்புகள்', pricing: 'விலை', analyzer: 'பகுப்பாய்வி', seo: 'SEO',
       },
       home: {
         badge: 'AI-powered உள்ளடக்க கண்டுபிடிப்பு',
@@ -198,7 +201,8 @@ const resources = {
   te: {
     translation: {
       nav: {
-        home: 'హోమ్', news: 'వార్తలు', scripts: 'స్క్రిప్ట్', trending: 'ట్రెండింగ్', settings: 'సెట్టింగ్‌లు', pricing: 'ధర',
+        home: 'హోమ్', news: 'వార్తలు', scripts: 'స్క్రిప్ట్', trending: 'ట్రెండింగ్',
+        settings: 'సెట్టింగ్‌లు', pricing: 'ధర', analyzer: 'అనలైజర్', seo: 'SEO',
       },
       home: {
         badge: 'AI-powered కంటెంట్ డిస్కవరీ',
@@ -262,7 +266,8 @@ const resources = {
   ml: {
     translation: {
       nav: {
-        home: 'ഹോം', news: 'വാർത്തകൾ', scripts: 'സ്ക്രിപ്റ്റ്', trending: 'ട്രെൻഡിംഗ്', settings: 'ക്രമീകരണങ്ങൾ', pricing: 'വില',
+        home: 'ഹോം', news: 'വാർത്തകൾ', scripts: 'സ്ക്രിപ്റ്റ്', trending: 'ട്രെൻഡിംഗ്',
+        settings: 'ക്രമീകരണങ്ങൾ', pricing: 'വില', analyzer: 'അനലൈസർ', seo: 'SEO',
       },
       home: {
         badge: 'AI-powered ഉള്ളടക്ക കണ്ടെത്തൽ',
@@ -325,7 +330,7 @@ const resources = {
   },
 };
 
-// ── Fix: map stored language value to i18n code ──
+// Fix: map stored language value to i18n code
 const savedLang = localStorage.getItem('userLanguage') || 'english';
 const langMap: Record<string, string> = {
   english: 'en', hindi: 'hi', tamil: 'ta', telugu: 'te', malayalam: 'ml',

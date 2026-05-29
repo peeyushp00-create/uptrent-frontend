@@ -29,8 +29,7 @@ export default function BottomNav() {
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
     { icon: Tag, label: t('nav.seo'), path: "/youtube/seo" },
     { icon: FileText, label: t('nav.scripts'), path: "/youtube/script" },
-   { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
-{ icon: Search, label: t('nav.analyzer'), path: "/youtube/analyzer" },
+    { icon: Search, label: t('nav.analyzer'), path: "/youtube/analyzer" },
     { icon: Settings, label: t('nav.settings'), path: "/settings" },
   ];
 

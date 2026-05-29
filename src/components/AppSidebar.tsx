@@ -35,16 +35,14 @@ export default function AppSidebar() {
     { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
     { icon: Newspaper, label: t('nav.news'), path: "/news" },
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
-   { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
-{ icon: Search, label: t('nav.analyzer'), path: "/youtube/analyzer" },
-{ icon: Tag, label: t('nav.seo'), path: "/youtube/seo" },
+    { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
   ];
 
   const youtubeNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
     { icon: Tag, label: t('nav.seo'), path: "/youtube/seo" },
     { icon: FileText, label: t('nav.scripts'), path: "/youtube/script" },
-    { icon: Search, label: "Analyzer", path: "/youtube/analyzer" },
+    { icon: Search, label: t('nav.analyzer'), path: "/youtube/analyzer" },
     { icon: TrendingUp, label: t('nav.trending'), path: "/youtube/trending" },
   ];
 
