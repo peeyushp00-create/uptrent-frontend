@@ -170,7 +170,7 @@ export default function AppSidebar() {
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
           {theme === "dark" ? <Sun className="w-4 h-4 shrink-0 text-muted-foreground" /> : <Moon className="w-4 h-4 shrink-0 text-muted-foreground" />}
-          {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+          {!collapsed && <span>{theme === "dark" ? t('nav.light_mode') : t('nav.dark_mode')}</span>}
         </button>
 
         {/* Settings */}
@@ -219,14 +219,14 @@ export default function AppSidebar() {
                   style={{ color: ac }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = acContainer}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                  <Crown className="w-4 h-4" /> Upgrade to Pro
+                  <Crown className="w-4 h-4" /> {t('nav.upgrade')}
                 </button>
                 <div className="border-t border-border my-1" />
                 <button onClick={() => { handleLogout(); setShowProfileMenu(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-semibold text-red-500 transition-all"
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#fef2f2'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                  <LogOut className="w-4 h-4" /> {t('common.close') === 'Close' ? 'Logout' : t('common.close')}
+                  <LogOut className="w-4 h-4" /> {t('nav.logout')}
                 </button>
               </div>
             </div>

@@ -7,6 +7,7 @@ const resources = {
       nav: {
         home: 'Home', news: 'News', scripts: 'Scripts', trending: 'Trending',
         settings: 'Settings', pricing: 'Pricing', analyzer: 'Analyzer', seo: 'SEO',
+        light_mode: 'Light Mode', dark_mode: 'Dark Mode', upgrade: 'Upgrade to Pro', logout: 'Logout',
       },
       home: {
         badge: 'AI-powered content discovery',
@@ -72,6 +73,7 @@ const resources = {
       nav: {
         home: 'होम', news: 'समाचार', scripts: 'स्क्रिप्ट', trending: 'ट्रेंडिंग',
         settings: 'सेटिंग्स', pricing: 'मूल्य', analyzer: 'एनालाइज़र', seo: 'SEO',
+        light_mode: 'लाइट मोड', dark_mode: 'डार्क मोड', upgrade: 'Pro में अपग्रेड करें', logout: 'लॉगआउट',
       },
       home: {
         badge: 'AI-powered कंटेंट डिस्कवरी',
@@ -138,6 +140,7 @@ const resources = {
       nav: {
         home: 'முகப்பு', news: 'செய்திகள்', scripts: 'ஸ்கிரிப்ட்', trending: 'டிரெண்டிங்',
         settings: 'அமைப்புகள்', pricing: 'விலை', analyzer: 'பகுப்பாய்வி', seo: 'SEO',
+        light_mode: 'ஒளி பயன்முறை', dark_mode: 'இருள் பயன்முறை', upgrade: 'Pro-க்கு மேம்படுத்தவும்', logout: 'வெளியேறு',
       },
       home: {
         badge: 'AI-powered உள்ளடக்க கண்டுபிடிப்பு',
@@ -203,6 +206,7 @@ const resources = {
       nav: {
         home: 'హోమ్', news: 'వార్తలు', scripts: 'స్క్రిప్ట్', trending: 'ట్రెండింగ్',
         settings: 'సెట్టింగ్‌లు', pricing: 'ధర', analyzer: 'అనలైజర్', seo: 'SEO',
+        light_mode: 'లైట్ మోడ్', dark_mode: 'డార్క్ మోడ్', upgrade: 'Pro కి అప్‌గ్రేడ్ చేయండి', logout: 'లాగ్అవుట్',
       },
       home: {
         badge: 'AI-powered కంటెంట్ డిస్కవరీ',
@@ -268,6 +272,7 @@ const resources = {
       nav: {
         home: 'ഹോം', news: 'വാർത്തകൾ', scripts: 'സ്ക്രിപ്റ്റ്', trending: 'ട്രെൻഡിംഗ്',
         settings: 'ക്രമീകരണങ്ങൾ', pricing: 'വില', analyzer: 'അനലൈസർ', seo: 'SEO',
+        light_mode: 'ലൈറ്റ് മോഡ്', dark_mode: 'ഡാർക്ക് മോഡ്', upgrade: 'Pro-ലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യൂ', logout: 'ലോഗ്ഔട്ട്',
       },
       home: {
         badge: 'AI-powered ഉള്ളടക്ക കണ്ടെത്തൽ',
