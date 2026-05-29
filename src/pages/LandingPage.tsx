@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 
 const FEATURES = [
@@ -12,7 +11,7 @@ const FEATURES = [
 
 const STEPS = [
   { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library.', note: 'OAuth 2.0 secure. Read-only access. Revoke anytime.' },
-  { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: "Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience.", note: 'Processes 150+ content signals per channel per day.' },
+  { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: 'Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience.', note: 'Processes 150+ content signals per channel per day.' },
   { num: '03', title: 'Publish & Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark premium workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
 ];
 
@@ -24,18 +23,18 @@ const STATS = [
 ];
 
 const VIDEO_CARDS = [
-  { id:1,  platform:'youtube',   title:'How I Got 100K Subs in 30 Days',       views:'2.4M', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png',  channel:'@CreatorPro',    lane:0, speed:18, startOffset:0   },
-  { id:2,  platform:'instagram', title:'Morning Routine That Changed My Life',  views:'890K', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1521eb58e-1764644106046.png',  channel:'@LifeWithAlex',  lane:1, speed:22, startOffset:-40 },
-  { id:3,  platform:'youtube',   title:'AI Tools Every Creator Needs in 2026', views:'1.1M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1ddab98dc-1773131998650.png',  channel:'@TechCreator',   lane:2, speed:16, startOffset:-20 },
-  { id:4,  platform:'instagram', title:'Street Food Tour in Tokyo',            views:'3.7M', duration:'0:60', thumbnail:'https://images.unsplash.com/photo-1516822561562-a6762898eb60?w=200',                 channel:'@FoodieWorld',   lane:3, speed:20, startOffset:-10 },
-  { id:5,  platform:'youtube',   title:'Build a SaaS in 24 Hours Challenge',   views:'780K', duration:'0:59', thumbnail:'https://images.unsplash.com/photo-1564756296543-d61bebcd226a?w=200',                 channel:'@DevShorts',     lane:4, speed:19, startOffset:-50 },
-  { id:6,  platform:'instagram', title:'Minimalist Home Makeover on Budget',   views:'1.5M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_15eaab260-1772956699125.png',  channel:'@HomeVibes',     lane:5, speed:21, startOffset:-80 },
-  { id:7,  platform:'youtube',   title:'Camera Settings for Perfect Reels',    views:'640K', duration:'0:55', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1b0948c90-1771909777566.png',  channel:'@FilmTips',      lane:0, speed:17, startOffset:-70 },
-  { id:8,  platform:'instagram', title:'Fitness Transformation 30 Days',       views:'4.3M', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_159a50448-1767636094533.png',  channel:'@FitLife',       lane:1, speed:23, startOffset:-45 },
-  { id:9,  platform:'youtube',   title:'Grow on YouTube with Zero Budget',     views:'920K', duration:'0:58', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_17b6062b2-1772483137359.png',  channel:'@GrowthHacks',   lane:2, speed:19, startOffset:-90 },
-  { id:10, platform:'instagram', title:'Aesthetic Room Tour 2026',             views:'1.2M', duration:'0:45', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_150de2b75-1772333562367.png',  channel:'@AestheticVibes',lane:3, speed:16, startOffset:-35 },
-  { id:11, platform:'youtube',   title:'Top 10 Trending Niches Right Now',     views:'3.1M', duration:'0:59', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_126d7e136-1768020582546.png',  channel:'@NicheHunter',   lane:4, speed:20, startOffset:-65 },
-  { id:12, platform:'instagram', title:'Skincare Routine for Glowing Skin',    views:'2.9M', duration:'0:30', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_194b951ad-1772304624866.png',  channel:'@GlowUp',        lane:5, speed:18, startOffset:-25 },
+  { id:1,  platform:'youtube',   title:'How I Got 100K Subs in 30 Days',       views:'2.4M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png',  lane:0, speed:18, startOffset:0   },
+  { id:2,  platform:'instagram', title:'Morning Routine That Changed My Life',  views:'890K', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1521eb58e-1764644106046.png',  lane:1, speed:22, startOffset:-40 },
+  { id:3,  platform:'youtube',   title:'AI Tools Every Creator Needs in 2026', views:'1.1M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1ddab98dc-1773131998650.png',  lane:2, speed:16, startOffset:-20 },
+  { id:4,  platform:'instagram', title:'Street Food Tour in Tokyo',            views:'3.7M', thumbnail:'https://images.unsplash.com/photo-1516822561562-a6762898eb60?w=200',                 lane:3, speed:20, startOffset:-10 },
+  { id:5,  platform:'youtube',   title:'Build a SaaS in 24 Hours Challenge',   views:'780K', thumbnail:'https://images.unsplash.com/photo-1564756296543-d61bebcd226a?w=200',                 lane:4, speed:19, startOffset:-50 },
+  { id:6,  platform:'instagram', title:'Minimalist Home Makeover on Budget',   views:'1.5M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_15eaab260-1772956699125.png',  lane:5, speed:21, startOffset:-80 },
+  { id:7,  platform:'youtube',   title:'Camera Settings for Perfect Reels',    views:'640K', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1b0948c90-1771909777566.png',  lane:0, speed:17, startOffset:-70 },
+  { id:8,  platform:'instagram', title:'Fitness Transformation 30 Days',       views:'4.3M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_159a50448-1767636094533.png',  lane:1, speed:23, startOffset:-45 },
+  { id:9,  platform:'youtube',   title:'Grow on YouTube with Zero Budget',     views:'920K', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_17b6062b2-1772483137359.png',  lane:2, speed:19, startOffset:-90 },
+  { id:10, platform:'instagram', title:'Aesthetic Room Tour 2026',             views:'1.2M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_150de2b75-1772333562367.png',  lane:3, speed:16, startOffset:-35 },
+  { id:11, platform:'youtube',   title:'Top 10 Trending Niches Right Now',     views:'3.1M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_126d7e136-1768020582546.png',  lane:4, speed:20, startOffset:-65 },
+  { id:12, platform:'instagram', title:'Skincare Routine for Glowing Skin',    views:'2.9M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_194b951ad-1772304624866.png',  lane:5, speed:18, startOffset:-25 },
 ];
 
 const TypingScript = () => {
@@ -147,36 +146,14 @@ const css = `
   @keyframes srFadeIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
   @keyframes srFloatDown{from{transform:translate3d(0,-380px,0)}to{transform:translate3d(0,calc(100vh + 380px),0)}}
   @keyframes srFloatUp{from{transform:translate3d(0,calc(100vh + 380px),0)}to{transform:translate3d(0,-380px,0)}}
-
-  /* Mobile menu */
   .sr-mobile-menu{position:fixed;inset:0;background:rgba(3,0,10,0.97);backdrop-filter:blur(20px);z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;transform:translateY(-100%);transition:transform .4s cubic-bezier(.16,1,.3,1)}
   .sr-mobile-menu.open{transform:translateY(0)}
   .sr-mobile-menu a{color:#fff;font-size:22px;text-decoration:none;font-weight:700;letter-spacing:-.02em}
-
-  /* Responsive */
-  @media(max-width:1024px){
-    .sr-hero-grid{grid-template-columns:1fr !important}
-    .sr-side-cards{display:none !important}
-    .sr-hero-section{padding:100px 24px 60px !important;min-height:auto !important}
-  }
-  @media(max-width:768px){
-    .sr-nav{padding:0 20px !important}
-    .sr-nav-links{display:none !important}
-    .sr-nav-cta{display:none !important}
-    .sr-hamburger{display:flex !important}
-    .sr-hero-section{padding:90px 20px 48px !important}
-    .sr-stats{gap:32px !important;padding:32px 20px !important}
-    .sr-section{padding:60px 20px !important}
-    .sr-ea-section{padding:60px 20px 80px !important}
-    .sr-ea-grid{grid-template-columns:1fr !important;gap:32px !important;padding:32px 24px !important}
-    .sr-footer{padding:32px 20px !important;flex-direction:column !important;align-items:flex-start !important;gap:24px !important}
-    .sr-footer-links{flex-wrap:wrap !important;gap:16px !important}
-    .sr-step-card{padding:24px !important}
-  }
+  @media(max-width:1024px){.sr-hero-grid{grid-template-columns:1fr !important}.sr-side-cards{display:none !important}.sr-hero-section{padding:100px 24px 60px !important;min-height:auto !important}}
+  @media(max-width:768px){.sr-nav{padding:0 20px !important}.sr-nav-links{display:none !important}.sr-nav-cta{display:none !important}.sr-hamburger{display:flex !important}.sr-hero-section{padding:90px 20px 48px !important}.sr-stats{gap:32px !important;padding:32px 20px !important}.sr-section{padding:60px 20px !important}.sr-ea-section{padding:60px 20px 80px !important}.sr-ea-grid{grid-template-columns:1fr !important;gap:32px !important;padding:32px 24px !important}.sr-footer{padding:32px 20px !important;flex-direction:column !important;align-items:flex-start !important;gap:24px !important}.sr-footer-links{flex-wrap:wrap !important;gap:16px !important}.sr-step-card{padding:24px !important}}
 `;
 
 export default function LandingPage() {
-  const navigate = useNavigate();
   const emailRef = useRef<HTMLInputElement>(null);
   const otpRef = useRef<HTMLInputElement>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -235,7 +212,7 @@ export default function LandingPage() {
     <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily:"'Roboto',sans-serif" }}>
       <style>{css}</style>
 
-      {/* Mobile menu */}
+      {/* Mobile menu — no /home links */}
       <div className={`sr-mobile-menu ${menuOpen ? 'open' : ''}`}>
         <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
         <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How It Works</a>
@@ -252,7 +229,7 @@ export default function LandingPage() {
       <motion.div animate={{ y:[0,-15,0], x:[0,10,0] }} transition={{ duration:20, repeat:Infinity, ease:'linear' }}
         style={{ position:'fixed', inset:-20, zIndex:1, pointerEvents:'none', opacity:0.025, backgroundImage:'linear-gradient(rgba(255,255,255,0.2) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.2) 1px,transparent 1px)', backgroundSize:'60px 60px' }} />
 
-      {/* Video bg — hidden on mobile for performance */}
+      {/* Floating video cards */}
       <div className="hidden md:block" style={{ position:'fixed', inset:0, zIndex:2, overflow:'hidden', pointerEvents:'none' }}>
         {[0,1,2,3,4,5].map(laneIndex => {
           const laneCards = VIDEO_CARDS.filter(c => c.lane === laneIndex);
@@ -280,17 +257,29 @@ export default function LandingPage() {
         })}
       </div>
 
-      {/* NAVBAR */}
+      {/* ── NAVBAR ── logo uses /logo.png, no /home link ── */}
       <nav className="sr-nav" style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 64px', height:72, transition:'all .3s', background: scrolled || menuOpen ? 'rgba(3,0,10,0.95)' : 'transparent', backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(139,92,246,0.1)' : 'none' }}>
-        <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none', zIndex:51 }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <div style={{ width:10, height:10, borderRadius:3, background:'#a855f7', boxShadow:'0 0 10px #a855f7' }} />
+
+        {/* ✅ Logo — uses /logo.png, no link to /home */}
+        <div style={{ display:'flex', alignItems:'center', gap:10, zIndex:51 }}>
+          <div style={{ width:36, height:36, borderRadius:10, overflow:'hidden', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <img src="/logo.png" alt="SocialRum" style={{ width:36, height:36, objectFit:'cover', borderRadius:10 }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  const dot = document.createElement('div');
+                  dot.style.cssText = 'width:10px;height:10px;border-radius:3px;background:#a855f7;box-shadow:0 0 10px #a855f7';
+                  parent.appendChild(dot);
+                }
+              }} />
           </div>
           <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:18, color:'#fff', letterSpacing:'-.02em' }}>SocialRum</span>
-        </a>
+        </div>
 
         {/* Desktop nav */}
-        <ul className="sr-nav-links" style={{ display:'flex', gap:40, listStyle:'none' }}>
+        <ul className="sr-nav-links" style={{ display:'flex', gap:40, listStyle:'none', margin:0, padding:0 }}>
           {['Features','How It Works','Blog','Early Access'].map(item => (
             <li key={item}><a href={item === 'Blog' ? '/blog' : `#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'Roboto,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
           ))}
@@ -315,7 +304,7 @@ export default function LandingPage() {
       <section className="sr-hero-section" style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', padding:'0 64px', zIndex:10, paddingTop:80 }}>
         <div className="sr-hero-grid" style={{ width:'100%', maxWidth:1400, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1.4fr 1fr', gap:40, alignItems:'center' }}>
 
-          {/* LEFT — hidden on mobile */}
+          {/* LEFT */}
           <motion.div className="sr-side-cards" initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.3 }}
             style={{ display:'flex', flexDirection:'column', gap:12 }}>
             <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', cursor:'default' }}>
@@ -387,7 +376,7 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
-          {/* RIGHT — hidden on mobile */}
+          {/* RIGHT */}
           <motion.div className="sr-side-cards" initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.2 }}>
             <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:28, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 30px 60px rgba(0,0,0,0.6)', position:'relative', overflow:'hidden', cursor:'default' }}>
               <div style={{ position:'absolute', top:-30, right:-30, width:96, height:96, background:'rgba(139,92,246,0.12)', filter:'blur(20px)', borderRadius:'50%', pointerEvents:'none' }} />
@@ -399,7 +388,7 @@ export default function LandingPage() {
                 <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>Trending Now</p>
                 {[['#AIVideoEditing','Trending'],['#CreatorEconomy2026','Rising'],['#YouTubeShorts','Hot']].map(([tag, status]) => (
                   <div key={tag} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, fontSize:12, color:'#fff', fontFamily:'Roboto,sans-serif' }}>
-                    <span>{tag}</span><span style={{ color:'#a78bfa', fontSize:10, fontWeight:600 }}>↑ {status}</span>
+                    <span>{tag}</span><span style={{ color:'#a78bfa', fontSize:10, fontWeight:600 }}>→ {status}</span>
                   </div>
                 ))}
               </div>
@@ -431,7 +420,6 @@ export default function LandingPage() {
               </div>
             </TiltCard>
           </motion.div>
-
         </div>
       </section>
 
@@ -454,9 +442,9 @@ export default function LandingPage() {
           {FEATURES.map((f, i) => (
             <motion.div key={f.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.08 }} className="sr-step-card">
               <div className="sr-step-num">{f.num}</div>
-              <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:8, position:'relative', zIndex:1 }}>{f.title}</h3>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:14, fontFamily:'Roboto,sans-serif', position:'relative', zIndex:1 }}>{f.desc}</p>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap', position:'relative', zIndex:1 }}>
+              <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:8 }}>{f.title}</h3>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:14, fontFamily:'Roboto,sans-serif' }}>{f.desc}</p>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                 {f.tags.map(tag => <span key={tag} className="sr-feature-tag">{tag}</span>)}
               </div>
             </motion.div>
@@ -511,6 +499,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
+          {/* Form */}
           <motion.div initial={{ opacity:0, x:20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }}
             style={{ background:'rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:36, position:'relative', overflow:'hidden' }}>
             <div style={{ position:'absolute', top:-60, right:-60, width:160, height:160, background:'rgba(139,92,246,0.1)', filter:'blur(30px)', borderRadius:'50%', pointerEvents:'none' }} />
@@ -534,42 +523,48 @@ export default function LandingPage() {
                 <input ref={otpRef} type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit code" className="sr-input" style={{ letterSpacing:'0.35em', textAlign:'center', fontSize:22, marginBottom:12 }} onKeyDown={e => { if (e.key==='Enter') handleVerifyOTP(); }} />
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
                 <button onClick={handleVerifyOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Verifying...' : 'Verify & Get Access →'}</button>
-                <button onClick={() => { setStep('email'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer', display:'block', width:'100%', textAlign:'center', padding:4, fontFamily:'Roboto,sans-serif' }}>← Use a different email</button>
+                <button onClick={() => { setStep('email'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer', display:'block', width:'100%', textAlign:'center', padding:4, fontFamily:'Roboto,sans-serif' }}>← Back</button>
               </div>
             )}
 
             {step === 'email' && (
-              <div>
-                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Free Early Access</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:24, fontFamily:'Roboto,sans-serif' }}>Enter your email — we'll send you a verification code.</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:14 }}>
+              <div className="sr-fade-in">
+                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Get Early Access</h3>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:24, lineHeight:1.6, fontFamily:'Roboto,sans-serif' }}>Join creators who are getting early access to SocialRum.</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
                   <input id="sr-name-input" type="text" placeholder="Your name (optional)" className="sr-input" />
-                  <input ref={emailRef} type="email" placeholder="you@example.com" className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleSendOTP(); }} />
+                  <input ref={emailRef} type="email" placeholder="your@email.com" className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleSendOTP(); }} />
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
-                <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Sending code...' : 'Get Early Access →'}</button>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', textAlign:'center', fontFamily:'Roboto,sans-serif' }}>No spam. No credit card. Unsubscribe anytime.</p>
+                <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">
+                  {loading ? 'Sending...' : 'Get Early Access →'}
+                </button>
+                <p style={{ fontSize:11, color:'rgba(255,255,255,0.2)', textAlign:'center', fontFamily:'Roboto,sans-serif' }}>No spam. Unsubscribe anytime.</p>
               </div>
             )}
           </motion.div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="sr-footer" style={{ borderTop:'1px solid rgba(139,92,246,0.1)', padding:'36px 64px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, position:'relative', zIndex:20, background:'#03000a' }}>
-        <a href="/home" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
-          <div style={{ width:28, height:28, borderRadius:8, background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <div style={{ width:8, height:8, borderRadius:2, background:'#a855f7' }} />
+      {/* FOOTER — no /home or app links */}
+      <footer className="sr-footer" style={{ borderTop:'1px solid rgba(139,92,246,0.08)', padding:'40px 64px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:20 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ width:28, height:28, borderRadius:8, overflow:'hidden', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <img src="/logo.png" alt="SocialRum" style={{ width:28, height:28, objectFit:'cover', borderRadius:8 }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
           </div>
-          <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:16, color:'#fff' }}>SocialRum</span>
-        </a>
-        <div className="sr-footer-links" style={{ display:'flex', gap:28, flexWrap:'wrap' }}>
-          {[['Features','#features'],['How It Works','#how-it-works'],['Early Access','#early-access'],['Blog','/blog'],['Contact','mailto:hello@socialrum.com']].map(([label,href]) => (
-            <a key={label} href={href} style={{ color:'rgba(255,255,255,0.3)', textDecoration:'none', fontSize:13, fontFamily:'Roboto,sans-serif', transition:'color .2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.3)')}>{label}</a>
+          <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.6)' }}>SocialRum</span>
+          <span style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif', marginLeft:8 }}>© 2026 · Built for Indian Creators</span>
+        </div>
+        <div className="sr-footer-links" style={{ display:'flex', gap:24 }}>
+          {[['Blog', '/blog'], ['Privacy', '#'], ['Terms', '#']].map(([label, href]) => (
+            <a key={label} href={href} style={{ fontSize:13, color:'rgba(255,255,255,0.3)', textDecoration:'none', fontFamily:'Roboto,sans-serif', transition:'color .2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.6)')}
+              onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.3)')}>
+              {label}
+            </a>
           ))}
         </div>
-        <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif' }}>© 2026 SocialRum · Built for Indian Creators 🇮🇳</p>
       </footer>
     </div>
   );
