@@ -78,7 +78,7 @@ const resources = {
         search_placeholder_yt: 'YouTube टॉपिक खोजें (जैसे BGMI, AI Tools)...',
         connect_instagram: 'Instagram कनेक्ट करें', connect_youtube: 'YouTube कनेक्ट करें',
         connecting: 'कनेक्ट हो रहा है...', connected: 'चैनल कनेक्ट है · कंटेंट आपके लिए पर्सनलाइज़ है',
-        connect_hint: 'पर्सनलाइज़ कंटेंट आइडिया पाने के लिए अपना चैनल कनेक्ट करें',
+        connect_hint: 'पर्सनलाइज़ आइडिया पाने के लिए अपना चैनल कनेक्ट करें',
         trending_ideas: '🔥 ट्रेंडिंग आइडिया', popular_topics: '📺 लोकप्रिय टॉपिक', refresh: 'रिफ्रेश',
         news_feed: '📰 न्यूज़ फीड', scripts: '✍️ स्क्रिप्ट', trending: '📈 ट्रेंडिंग',
         dashboard_stats: '📊 डैशबोर्ड स्टैट्स', subscribers: 'सब्सक्राइबर', total_views: 'कुल व्यूज़', videos: 'वीडियो',
@@ -139,11 +139,10 @@ const resources = {
       home: {
         badge: 'AI-powered உள்ளடக்க கண்டுபிடிப்பு',
         subtitle: 'Instagram Reels மற்றும் YouTube Shorts-க்கான வைரல் யோசனைகள் — இந்திய கிரியேட்டர்களுக்காக',
-        search_placeholder_ig: 'ரீல் யோசனைகள் தேடுங்கள் (எ.கா. ஃபிட்னஸ், நிதி)...',
-        search_placeholder_yt: 'YouTube தலைப்புகள் தேடுங்கள் (எ.கா. BGMI, AI Tools)...',
+        search_placeholder_ig: 'ரீல் யோசனைகள் தேடுங்கள்...', search_placeholder_yt: 'YouTube தலைப்புகள் தேடுங்கள்...',
         connect_instagram: 'Instagram இணைக்கவும்', connect_youtube: 'YouTube இணைக்கவும்',
-        connecting: 'இணைக்கிறது...', connected: 'சேனல் இணைக்கப்பட்டது · உங்களுக்காக தனிப்பயனாக்கப்பட்டது',
-        connect_hint: 'தனிப்பயன் யோசனைகள் பெற உங்கள் சேனலை இணைக்கவும்',
+        connecting: 'இணைக்கிறது...', connected: 'சேனல் இணைக்கப்பட்டது · தனிப்பயனாக்கப்பட்டது',
+        connect_hint: 'தனிப்பயன் யோசனைகள் பெற சேனலை இணைக்கவும்',
         trending_ideas: '🔥 டிரெண்டிங் யோசனைகள்', popular_topics: '📺 பிரபலமான தலைப்புகள்', refresh: 'புதுப்பிக்கவும்',
         news_feed: '📰 செய்தி ஊட்டம்', scripts: '✍️ ஸ்கிரிப்ட்', trending: '📈 டிரெண்டிங்',
         dashboard_stats: '📊 டாஷ்போர்ட் புள்ளிவிவரம்', subscribers: 'சந்தாதாரர்கள்', total_views: 'மொத்த பார்வைகள்', videos: 'வீடியோக்கள்',
@@ -154,7 +153,7 @@ const resources = {
         save_script: 'ஸ்கிரிப்ட் சேமிக்கவும்', generate: 'உருவாக்கவும்', ideas: 'யோசனைகள்', regenerate: 'மீண்டும் உருவாக்கவும்', new: 'புதியது',
         hook: 'ஹுக்', body: 'உடல்', cta: 'CTA', copy: 'நகலெடுக்கவும்', copied: 'நகலெடுக்கப்பட்டது', copy_all: 'அனைத்தையும் நகலெடுக்கவும்', words: 'வார்த்தைகள்',
         reach_forecast: 'எட்டும் முன்னறிவிப்பு', potential_views: 'சாத்தியமான பார்வைகள்', ai_copilot: 'AI உதவியாளர்', rewrite: 'AI-யால் மீண்டும் எழுதவும்',
-        popular_topics: 'பிரபலமான தலைப்புகள்:', generating: 'ஸ்கிரிப்ட் எழுதுகிறோம்', personalizing: '✨ உங்கள் சேனலுக்காக தனிப்பயனாக்குகிறோம்...',
+        popular_topics: 'பிரபலமான தலைப்புகள்:', generating: 'ஸ்கிரிப்ட் எழுதுகிறோம்', personalizing: '✨ தனிப்பயனாக்குகிறோம்...',
         no_history: 'இதுவரை வரலாறு இல்லை', clear_all: 'அனைத்தையும் அழிக்கவும்', script_history: 'ஸ்கிரிப்ட் வரலாறு',
       },
       news: {
@@ -166,7 +165,7 @@ const resources = {
         preferences: 'விருப்பங்கள்', voice: 'குரல்', feedback: 'கருத்து', full_name: 'முழு பெயர்', email: 'மின்னஞ்சல்',
         instagram_username: 'Instagram பயனர்பெயர்', scripts_personalized: 'ஸ்கிரிப்ட்கள் தனிப்பயனாக்கப்படும்',
         youtube_channel: 'YouTube சேனல்', connect_youtube: 'YouTube சேனல் இணைக்கவும்', disconnect: 'சேனலை துண்டிக்கவும்',
-        connected_hint: 'படிக்க மட்டும் அணுகல் · Google Account-ல் எப்போதும் ரத்து செய்யலாம்',
+        connected_hint: 'படிக்க மட்டும் அணுகல் · Google Account-ல் ரத்து செய்யலாம்',
         content_niches: 'உள்ளடக்க நிஷ்சுகள்', selected: 'தேர்ந்தெடுக்கப்பட்டது', platform: 'தளம்',
         script_language: 'ஸ்கிரிப்ட் மொழி', content_style: 'உள்ளடக்க பாணி', voice_style: 'குரல் பாணி',
         record_voice: 'குரல் பதிவு செய்யவும்', re_record: 'மீண்டும் பதிவு செய்யவும்', stop_recording: 'பதிவை நிறுத்தவும்',
@@ -188,7 +187,7 @@ const resources = {
         hashtags: 'ஹேஷ்டேக்கள்', best_time: 'பதிவிட சிறந்த நேரம்',
         peak_time: 'உச்ச ஈடுபாடு: திங்கள்-வெள்ளி மாலை 6-10 மணி', posting_tips: 'பதிவிடும் குறிப்புகள்',
         empty_title: 'எந்த சுயவிவரத்தையும் பகுப்பாய்வு செய்யுங்கள்',
-        empty_desc: 'உண்மையான புள்ளிவிவரங்கள், உள்ளடக்க தூண்கள், ரீல் யோசனைகள் பெற Instagram பயனர்பெயரை உள்ளிடுங்கள்',
+        empty_desc: 'உண்மையான புள்ளிவிவரங்கள், ரீல் யோசனைகள் பெற Instagram பயனர்பெயரை உள்ளிடுங்கள்',
       },
       common: {
         loading: 'ஏற்றுகிறது...', error: 'ஏதோ தவறு நடந்தது', retry: 'மீண்டும் முயற்சிக்கவும்', cancel: 'ரத்து செய்யவும்',
@@ -204,11 +203,10 @@ const resources = {
       home: {
         badge: 'AI-powered కంటెంట్ డిస్కవరీ',
         subtitle: 'Instagram Reels మరియు YouTube Shorts కోసం వైరల్ ఆలోచనలు — భారతీయ క్రియేటర్‌లకోసం',
-        search_placeholder_ig: 'రీల్ ఆలోచనలు వెతకండి (ఉదా. ఫిట్‌నెస్, ఫైనాన్స్)...',
-        search_placeholder_yt: 'YouTube అంశాలు వెతకండి (ఉదా. BGMI, AI Tools)...',
+        search_placeholder_ig: 'రీల్ ఆలోచనలు వెతకండి...', search_placeholder_yt: 'YouTube అంశాలు వెతకండి...',
         connect_instagram: 'Instagram కనెక్ట్ చేయండి', connect_youtube: 'YouTube కనెక్ట్ చేయండి',
-        connecting: 'కనెక్ట్ అవుతోంది...', connected: 'ఛానల్ కనెక్ట్ అయింది · మీకోసం వ్యక్తిగతీకరించబడింది',
-        connect_hint: 'వ్యక్తిగత ఆలోచనలు పొందడానికి మీ ఛానల్ కనెక్ట్ చేయండి',
+        connecting: 'కనెక్ట్ అవుతోంది...', connected: 'ఛానల్ కనెక్ట్ అయింది · వ్యక్తిగతీకరించబడింది',
+        connect_hint: 'వ్యక్తిగత ఆలోచనలు పొందడానికి ఛానల్ కనెక్ట్ చేయండి',
         trending_ideas: '🔥 ట్రెండింగ్ ఆలోచనలు', popular_topics: '📺 ప్రముఖ అంశాలు', refresh: 'రిఫ్రెష్',
         news_feed: '📰 వార్తా ఫీడ్', scripts: '✍️ స్క్రిప్ట్', trending: '📈 ట్రెండింగ్',
         dashboard_stats: '📊 డాష్‌బోర్డ్ స్టాట్స్', subscribers: 'సబ్‌స్క్రైబర్లు', total_views: 'మొత్తం వీక్షణలు', videos: 'వీడియోలు',
@@ -219,7 +217,7 @@ const resources = {
         save_script: 'స్క్రిప్ట్ సేవ్ చేయండి', generate: 'జెనరేట్ చేయండి', ideas: 'ఆలోచనలు', regenerate: 'మళ్ళీ జెనరేట్ చేయండి', new: 'కొత్తది',
         hook: 'హుక్', body: 'బాడీ', cta: 'CTA', copy: 'కాపీ', copied: 'కాపీ అయింది', copy_all: 'అన్నీ కాపీ చేయండి', words: 'పదాలు',
         reach_forecast: 'చేరిక అంచనా', potential_views: 'సాధ్యమైన వీక్షణలు', ai_copilot: 'AI సహాయకుడు', rewrite: 'AI తో మళ్ళీ రాయండి',
-        popular_topics: 'ప్రముఖ అంశాలు:', generating: 'స్క్రిప్ట్ రాస్తున్నాం', personalizing: '✨ మీ ఛానల్ కోసం వ్యక్తిగతీకరిస్తున్నాం...',
+        popular_topics: 'ప్రముఖ అంశాలు:', generating: 'స్క్రిప్ట్ రాస్తున్నాం', personalizing: '✨ వ్యక్తిగతీకరిస్తున్నాం...',
         no_history: 'ఇంకా చరిత్ర లేదు', clear_all: 'అన్నీ తొలగించండి', script_history: 'స్క్రిప్ట్ చరిత్ర',
       },
       news: {
@@ -231,7 +229,7 @@ const resources = {
         preferences: 'ప్రాధాన్యతలు', voice: 'వాయిస్', feedback: 'అభిప్రాయం', full_name: 'పూర్తి పేరు', email: 'ఇమెయిల్',
         instagram_username: 'Instagram యూజర్‌నేమ్', scripts_personalized: 'స్క్రిప్ట్‌లు వ్యక్తిగతీకరించబడతాయి',
         youtube_channel: 'YouTube ఛానల్', connect_youtube: 'YouTube ఛానల్ కనెక్ట్ చేయండి', disconnect: 'ఛానల్ డిస్‌కనెక్ట్ చేయండి',
-        connected_hint: 'చదవడానికి మాత్రమే · Google Account లో ఎప్పుడైనా రద్దు చేయండి',
+        connected_hint: 'చదవడానికి మాత్రమే · Google Account లో రద్దు చేయండి',
         content_niches: 'కంటెంట్ నిఛ్చులు', selected: 'ఎంచుకున్నవి', platform: 'ప్లాట్‌ఫారమ్',
         script_language: 'స్క్రిప్ట్ భాష', content_style: 'కంటెంట్ స్టైల్', voice_style: 'వాయిస్ స్టైల్',
         record_voice: 'వాయిస్ రికార్డ్ చేయండి', re_record: 'మళ్ళీ రికార్డ్ చేయండి', stop_recording: 'రికార్డింగ్ ఆపండి',
@@ -253,7 +251,7 @@ const resources = {
         hashtags: 'హాష్‌ట్యాగ్‌లు', best_time: 'పోస్ట్ చేయడానికి ఉత్తమ సమయం',
         peak_time: 'పీక్ ఎంగేజ్‌మెంట్: సోమ-శుక్ర సాయంత్రం 6-10', posting_tips: 'పోస్టింగ్ చిట్కాలు',
         empty_title: 'ఏ ప్రొఫైల్‌నైనా విశ్లేషించండి',
-        empty_desc: 'నిజమైన స్టాట్స్, కంటెంట్ స్తంభాలు, రీల్ ఆలోచనలు పొందడానికి Instagram యూజర్‌నేమ్ నమోదు చేయండి',
+        empty_desc: 'నిజమైన స్టాట్స్, రీల్ ఆలోచనలు పొందడానికి Instagram యూజర్‌నేమ్ నమోదు చేయండి',
       },
       common: {
         loading: 'లోడ్ అవుతోంది...', error: 'ఏదో తప్పు జరిగింది', retry: 'మళ్ళీ ప్రయతించండి', cancel: 'రద్దు చేయండి',
@@ -269,10 +267,9 @@ const resources = {
       home: {
         badge: 'AI-powered ഉള്ളടക്ക കണ്ടെത്തൽ',
         subtitle: 'Instagram Reels, YouTube Shorts-ന് വൈറൽ ആശയങ്ങൾ — ഇന്ത്യൻ ക്രിയേറ്റർമാർക്കായി',
-        search_placeholder_ig: 'റീൽ ആശയങ്ങൾ തിരയൂ (ഉദാ. ഫിറ്റ്നസ്, ഫിനാൻസ്)...',
-        search_placeholder_yt: 'YouTube വിഷയങ്ങൾ തിരയൂ (ഉദാ. BGMI, AI Tools)...',
+        search_placeholder_ig: 'റീൽ ആശയങ്ങൾ തിരയൂ...', search_placeholder_yt: 'YouTube വിഷയങ്ങൾ തിരയൂ...',
         connect_instagram: 'Instagram കണക്ട് ചെയ്യൂ', connect_youtube: 'YouTube കണക്ട് ചെയ്യൂ',
-        connecting: 'കണക്ട് ചെയ്യുന്നു...', connected: 'ചാനൽ കണക്ട് ചെയ്തിരിക്കുന്നു · നിങ്ങൾക്കായി വ്യക്തിഗതമാക്കിയിരിക്കുന്നു',
+        connecting: 'കണക്ട് ചെയ്യുന്നു...', connected: 'ചാനൽ കണക്ട് ചെയ്തിരിക്കുന്നു · വ്യക്തിഗതമാക്കിയിരിക്കുന്നു',
         connect_hint: 'വ്യക്തിഗത ആശയങ്ങൾ ലഭിക്കാൻ ചാനൽ കണക്ട് ചെയ്യൂ',
         trending_ideas: '🔥 ട്രെൻഡിംഗ് ആശയങ്ങൾ', popular_topics: '📺 ജനപ്രിയ വിഷയങ്ങൾ', refresh: 'പുതുക്കുക',
         news_feed: '📰 വാർത്താ ഫീഡ്', scripts: '✍️ സ്ക്രിപ്റ്റ്', trending: '📈 ട്രെൻഡിംഗ്',
@@ -284,7 +281,7 @@ const resources = {
         save_script: 'സ്ക്രിപ്റ്റ് സേവ് ചെയ്യൂ', generate: 'ജനറേറ്റ് ചെയ്യൂ', ideas: 'ആശയങ്ങൾ', regenerate: 'വീണ്ടും ജനറേറ്റ് ചെയ്യൂ', new: 'പുതിയത്',
         hook: 'ഹുക്ക്', body: 'ബോഡി', cta: 'CTA', copy: 'പകർത്തുക', copied: 'പകർത്തി', copy_all: 'എല്ലാം പകർത്തുക', words: 'വാക്കുകൾ',
         reach_forecast: 'എത്തിക്കൽ പ്രവചനം', potential_views: 'സാധ്യമായ കാഴ്ചകൾ', ai_copilot: 'AI സഹായി', rewrite: 'AI ഉപയോഗിച്ച് വീണ്ടും എഴുതുക',
-        popular_topics: 'ജനപ്രിയ വിഷയങ്ങൾ:', generating: 'സ്ക്രിപ്റ്റ് എഴുതുന്നു', personalizing: '✨ നിങ്ങളുടെ ചാനലിനായി വ്യക്തിഗതമാക്കുന്നു...',
+        popular_topics: 'ജനപ്രിയ വിഷയങ്ങൾ:', generating: 'സ്ക്രിപ്റ്റ് എഴുതുന്നു', personalizing: '✨ വ്യക്തിഗതമാക്കുന്നു...',
         no_history: 'ഇതുവരെ ചരിത്രമില്ല', clear_all: 'എല്ലാം മായ്ക്കുക', script_history: 'സ്ക്രിപ്റ്റ് ചരിത്രം',
       },
       news: {
@@ -296,7 +293,7 @@ const resources = {
         preferences: 'മുൻഗണനകൾ', voice: 'ശബ്ദം', feedback: 'ഫീഡ്ബാക്ക്', full_name: 'പൂർണ്ണ പേര്', email: 'ഇമെയിൽ',
         instagram_username: 'Instagram യൂസർനെയിം', scripts_personalized: 'സ്ക്രിപ്റ്റുകൾ വ്യക്തിഗതമാക്കും',
         youtube_channel: 'YouTube ചാനൽ', connect_youtube: 'YouTube ചാനൽ കണക്ട് ചെയ്യൂ', disconnect: 'ചാനൽ ഡിസ്കണക്ട് ചെയ്യൂ',
-        connected_hint: 'വായന മാത്രം ആക്സസ് · Google Account-ൽ എപ്പോൾ വേണമെങ്കിലും റദ്ദാക്കൂ',
+        connected_hint: 'വായന മാത്രം ആക്സസ് · Google Account-ൽ റദ്ദാക്കൂ',
         content_niches: 'ഉള്ളടക്ക നിഷ്കൾ', selected: 'തിരഞ്ഞെടുത്തവ', platform: 'പ്ലാറ്റ്‌ഫോം',
         script_language: 'സ്ക്രിപ്റ്റ് ഭാഷ', content_style: 'ഉള്ളടക്ക ശൈലി', voice_style: 'ശബ്ദ ശൈലി',
         record_voice: 'ശബ്ദം റെക്കോർഡ് ചെയ്യൂ', re_record: 'വീണ്ടും റെക്കോർഡ് ചെയ്യൂ', stop_recording: 'റെക്കോർഡിംഗ് നിർത്തുക',
@@ -318,7 +315,7 @@ const resources = {
         hashtags: 'ഹാഷ്‌ടാഗുകൾ', best_time: 'പോസ്റ്റ് ചെയ്യാൻ ഏറ്റവും നല്ല സമയം',
         peak_time: 'പീക്ക് ഇടപഴകൽ: തിങ്കൾ-വെള്ളി വൈകുന്നേരം 6-10', posting_tips: 'പോസ്റ്റിംഗ് ടിപ്സ്',
         empty_title: 'ഏത് പ്രൊഫൈലും വിശകലനം ചെയ്യൂ',
-        empty_desc: 'യഥാർത്ഥ സ്റ്റാറ്റ്സ്, കണ്ടന്റ് തൂണുകൾ, റീൽ ആശയങ്ങൾ ലഭിക്കാൻ ഏത് Instagram യൂസർനെയിമും നൽകൂ',
+        empty_desc: 'യഥാർത്ഥ സ്റ്റാറ്റ്സ്, റീൽ ആശയങ്ങൾ ലഭിക്കാൻ ഏത് Instagram യൂസർനെയിമും നൽകൂ',
       },
       common: {
         loading: 'ലോഡ് ചെയ്യുന്നു...', error: 'എന്തോ തെറ്റ് സംഭവിച്ചു', retry: 'വീണ്ടും ശ്രമിക്കൂ', cancel: 'റദ്ദാക്കുക',
@@ -328,11 +325,17 @@ const resources = {
   },
 };
 
+// ── Fix: map stored language value to i18n code ──
+const savedLang = localStorage.getItem('userLanguage') || 'english';
+const langMap: Record<string, string> = {
+  english: 'en', hindi: 'hi', tamil: 'ta', telugu: 'te', malayalam: 'ml',
+};
+
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: localStorage.getItem('userLanguage') || 'en',
+    lng: langMap[savedLang] || 'en',
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
   });
