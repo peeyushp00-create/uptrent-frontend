@@ -49,10 +49,11 @@ export default function InstagramAnalyzer() {
     if (!username.trim()) return;
     setLoading(true); setError(''); setResult(null); setImgError(false);
     try {
+      const userLanguage = localStorage.getItem('userLanguage') || 'english';
       const res = await fetch(`${BASE}/api/instagram/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.replace('@', '') }),
+        body: JSON.stringify({ username: username.replace('@', ''), language: userLanguage }),
       });
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
