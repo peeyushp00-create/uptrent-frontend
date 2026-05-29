@@ -27,9 +27,10 @@ export default function BottomNav() {
 
   const youtubeNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
-    { icon: Tag, label: "SEO", path: "/youtube/seo" },
+    { icon: Tag, label: t('nav.seo'), path: "/youtube/seo" },
     { icon: FileText, label: t('nav.scripts'), path: "/youtube/script" },
-    { icon: Search, label: "Analyzer", path: "/youtube/analyzer" },
+   { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
+{ icon: Search, label: t('nav.analyzer'), path: "/youtube/analyzer" },
     { icon: Settings, label: t('nav.settings'), path: "/settings" },
   ];
 
