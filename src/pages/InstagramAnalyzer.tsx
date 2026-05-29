@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb, User, Users, Heart, MessageCircle, BarChart2, BadgeCheck } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 const PRIMARY = "#7C3AED";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
@@ -35,6 +36,7 @@ const formatNumber = (n: number) => {
 };
 
 export default function InstagramAnalyzer() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -55,7 +57,7 @@ export default function InstagramAnalyzer() {
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
       setResult(data);
-    } catch { setError('Failed to analyze. Please try again.'); }
+    } catch { setError(t('common.error')); }
     finally { setLoading(false); }
   };
 
@@ -78,22 +80,22 @@ export default function InstagramAnalyzer() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center">
         <h1 className="font-bold text-xl text-[#7C3AED] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-          Content Analyzer
+          {t('analyzer.title')}
         </h1>
-        <p className="text-sm text-[#757684] ml-3 hidden sm:block">Deep-dive into any Instagram profile</p>
+        <p className="text-sm text-[#757684] ml-3 hidden sm:block">{t('analyzer.subtitle')}</p>
       </header>
 
       <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-5">
 
         {/* Search Input */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-          <p className="text-sm text-[#757684] mb-3">Enter an Instagram username to get content strategy insights</p>
+          <p className="text-sm text-[#757684] mb-3">{t('analyzer.description')}</p>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#757684] text-sm font-bold">@</span>
               <input type="text" value={username} onChange={e => setUsername(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') analyze(); }}
-                placeholder="username"
+                placeholder={t('analyzer.placeholder')}
                 className="w-full pl-8 pr-9 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 transition-all" />
               {username && (
                 <button onClick={() => { setUsername(''); setResult(null); }}
@@ -105,7 +107,7 @@ export default function InstagramAnalyzer() {
             <button onClick={analyze} disabled={loading || !username.trim()}
               className="px-5 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-60 hover:shadow-lg transition-all"
               style={{ background: PRIMARY_GRAD }}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Analyze'}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('analyzer.analyze_btn')}
             </button>
           </div>
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
@@ -117,8 +119,8 @@ export default function InstagramAnalyzer() {
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
               <Sparkles className="w-8 h-8" style={{ color: PRIMARY }} />
             </motion.div>
-            <p className="text-sm font-semibold text-[#191c1d] dark:text-white">Analyzing @{username.replace('@', '')}...</p>
-            <p className="text-xs text-[#757684]">Fetching real data & building insights</p>
+            <p className="text-sm font-semibold text-[#191c1d] dark:text-white">{t('analyzer.analyzing')} @{username.replace('@', '')}...</p>
+            <p className="text-xs text-[#757684]">{t('analyzer.fetching')}</p>
           </div>
         )}
 
@@ -130,20 +132,17 @@ export default function InstagramAnalyzer() {
             <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
               <div className="flex items-center gap-3 mb-3">
                 {result.stats?.profile_pic_base64 && !imgError ? (
-                  <img
-                    src={result.stats.profile_pic_base64}
-                    alt={username}
+                  <img src={result.stats.profile_pic_base64} alt={username}
                     className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
-                    onError={() => setImgError(true)}
-                  />
+                    onError={() => setImgError(true)} />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
                     {(result.profile_name || username)[0].toUpperCase()}
                   </div>
                 )}
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <p className="font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>@{username.replace('@', '')}</p>
+                    <p className="font-bold text-white">@{username.replace('@', '')}</p>
                     {result.stats?.is_verified && <BadgeCheck className="w-4 h-4 text-blue-300" />}
                   </div>
                   <p className="text-xs text-white/70">{result.data_source === 'real' ? '✓ Real data' : 'AI Analysis'}</p>
@@ -157,68 +156,61 @@ export default function InstagramAnalyzer() {
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Profile Stats</h2>
-                  <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Live Data</span>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.profile_stats')}</h2>
+                  <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                    {t('analyzer.live_data')}
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
                     <div className="flex items-center gap-2 mb-1">
                       <Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                      <span className="text-xs text-[#757684]">Followers</span>
+                      <span className="text-xs text-[#757684]">{t('analyzer.followers')}</span>
                     </div>
-                    <p className="font-bold text-lg" style={{ color: PRIMARY, fontFamily: 'Montserrat, sans-serif' }}>
-                      {formatNumber(result.stats.followers)}
-                    </p>
+                    <p className="font-bold text-lg" style={{ color: PRIMARY }}>{formatNumber(result.stats.followers)}</p>
                   </div>
                   <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
                     <div className="flex items-center gap-2 mb-1">
                       <TrendingUp className="w-3.5 h-3.5 text-green-600" />
-                      <span className="text-xs text-[#757684]">Engagement</span>
+                      <span className="text-xs text-[#757684]">{t('analyzer.engagement')}</span>
                     </div>
-                    <p className="font-bold text-lg text-green-700" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                      {result.stats.engagement_rate}%
-                    </p>
+                    <p className="font-bold text-lg text-green-700">{result.stats.engagement_rate}%</p>
                   </div>
                   <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
                     <div className="flex items-center gap-2 mb-1">
                       <Heart className="w-3.5 h-3.5 text-pink-600" />
-                      <span className="text-xs text-[#757684]">Avg Likes</span>
+                      <span className="text-xs text-[#757684]">{t('analyzer.avg_likes')}</span>
                     </div>
-                    <p className="font-bold text-lg text-pink-700" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                      {formatNumber(result.stats.avg_likes)}
-                    </p>
+                    <p className="font-bold text-lg text-pink-700">{formatNumber(result.stats.avg_likes)}</p>
                   </div>
                   <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
                     <div className="flex items-center gap-2 mb-1">
                       <MessageCircle className="w-3.5 h-3.5 text-orange-600" />
-                      <span className="text-xs text-[#757684]">Avg Comments</span>
+                      <span className="text-xs text-[#757684]">{t('analyzer.avg_comments')}</span>
                     </div>
-                    <p className="font-bold text-lg text-orange-700" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                      {formatNumber(result.stats.avg_comments)}
-                    </p>
+                    <p className="font-bold text-lg text-orange-700">{formatNumber(result.stats.avg_comments)}</p>
                   </div>
                 </div>
                 {result.stats.total_posts && (
                   <p className="text-xs text-[#757684] mt-3 text-center">
-                    Based on {result.stats.total_posts.toLocaleString()} total posts
+                    {t('analyzer.based_on')} {result.stats.total_posts.toLocaleString()} {t('analyzer.total_posts')}
                   </p>
                 )}
               </div>
             )}
 
             {/* Content Pillars */}
-            {result.content_pillars && result.content_pillars.length > 0 && (
+            {result.content_pillars?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Content Pillars</h2>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.content_pillars')}</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {result.content_pillars.map((pillar: string, i: number) => {
                     const style = PILLAR_COLORS[i % PILLAR_COLORS.length];
                     return (
-                      <span key={i} className="px-4 py-2 rounded-full text-xs font-bold"
-                        style={{ background: style.bg, color: style.text }}>
+                      <span key={i} className="px-4 py-2 rounded-full text-xs font-bold" style={{ background: style.bg, color: style.text }}>
                         {pillar}
                       </span>
                     );
@@ -228,17 +220,16 @@ export default function InstagramAnalyzer() {
             )}
 
             {/* Reel Ideas */}
-            {result.reel_ideas && result.reel_ideas.length > 0 && (
+            {result.reel_ideas?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} />
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Reel Ideas</h2>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.reel_ideas')}</h2>
                 </div>
                 <div className="space-y-2">
                   {result.reel_ideas.map((idea: string, i: number) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f8f9fa] dark:hover:bg-gray-700 transition-colors">
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
-                        style={{ background: PRIMARY_GRAD }}>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: PRIMARY_GRAD }}>
                         {i + 1}
                       </div>
                       <p className="text-sm text-[#454652] dark:text-gray-200 flex-1">{idea}</p>
@@ -249,16 +240,16 @@ export default function InstagramAnalyzer() {
             )}
 
             {/* Hashtags */}
-            {result.hashtags && result.hashtags.length > 0 && (
+            {result.hashtags?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Hash className="w-4 h-4" style={{ color: PRIMARY }} />
-                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Hashtags</h2>
+                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.hashtags')}</h2>
                   </div>
                   <button onClick={() => copyText(result.hashtags.map((h: string) => `#${h}`).join(' '), 'hashtags')}
                     className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
-                    {copied === 'hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy All</>}
+                    {copied === 'hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> {t('scripts.copied')}</> : <><Copy className="w-3.5 h-3.5" /> {t('scripts.copy_all')}</>}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -276,14 +267,10 @@ export default function InstagramAnalyzer() {
             {/* Activity Heatmap */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                  Best Time to Post
-                </h2>
+                <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.best_time')}</h2>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-[#757684]">Less</span>
-                  {heatmapColors.map((c, i) => (
-                    <div key={i} className="w-3 h-3 rounded-sm" style={{ background: c }} />
-                  ))}
+                  {heatmapColors.map((c, i) => <div key={i} className="w-3 h-3 rounded-sm" style={{ background: c }} />)}
                   <span className="text-[10px] text-[#757684]">More</span>
                 </div>
               </div>
@@ -297,24 +284,22 @@ export default function InstagramAnalyzer() {
                       <div key={row.day} className="flex items-center gap-1">
                         <span className="w-7 text-[9px] font-bold text-[#757684]">{row.day}</span>
                         <div className="flex-1 grid gap-0.5" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
-                          {row.hours.map((v, hi) => (
-                            <div key={hi} className="h-5 rounded-sm" style={{ background: heatmapColors[v] }} />
-                          ))}
+                          {row.hours.map((v, hi) => <div key={hi} className="h-5 rounded-sm" style={{ background: heatmapColors[v] }} />)}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-[#757684] mt-3">📍 Peak engagement: 6PM–10PM on weekdays</p>
+              <p className="text-xs text-[#757684] mt-3">📍 {t('analyzer.peak_time')}</p>
             </div>
 
             {/* Posting Tips */}
-            {result.posting_tips && result.posting_tips.length > 0 && (
+            {result.posting_tips?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="w-4 h-4" style={{ color: PRIMARY }} />
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Posting Tips</h2>
+                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.posting_tips')}</h2>
                 </div>
                 <div className="space-y-2.5">
                   {result.posting_tips.map((tip: string, i: number) => (
@@ -337,8 +322,8 @@ export default function InstagramAnalyzer() {
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: PRIMARY_CONTAINER }}>
               <User className="w-8 h-8" style={{ color: PRIMARY }} />
             </div>
-            <p className="font-bold text-[#191c1d] dark:text-white mb-1" style={{ fontFamily: 'Montserrat, sans-serif' }}>Analyze Any Profile</p>
-            <p className="text-sm text-[#757684]">Enter any Instagram username to get real stats, content pillars, reel ideas, hashtags and posting tips</p>
+            <p className="font-bold text-[#191c1d] dark:text-white mb-1">{t('analyzer.empty_title')}</p>
+            <p className="text-sm text-[#757684]">{t('analyzer.empty_desc')}</p>
           </div>
         )}
       </main>
