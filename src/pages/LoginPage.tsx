@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 
 const IG_GRAD = "linear-gradient(135deg, #7C3AED, #0D9488)";
 const IG = "#7C3AED";
@@ -12,6 +12,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [view, setView] = useState<"login" | "forgot" | "forgot_sent">("login");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,9 +36,7 @@ export default function LoginPage() {
     setError("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      }
+      options: { redirectTo: `${window.location.origin}/` }
     });
     if (error) {
       setError(error.message);
@@ -42,22 +44,113 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail || !resetEmail.includes('@')) {
+      setResetError('Please enter a valid email.');
+      return;
+    }
+    setResetLoading(true);
+    setResetError('');
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) {
+      setResetError(error.message);
+    } else {
+      setView('forgot_sent');
+    }
+  };
+
+  // ── FORGOT PASSWORD VIEW ──
+  if (view === 'forgot') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background px-4">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
+            <h1 className="text-2xl font-bold text-foreground">Forgot Password?</h1>
+            <p className="text-sm text-muted-foreground">Enter your email and we'll send you a reset link</p>
+          </div>
+
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Email</label>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={resetEmail}
+                onChange={e => setResetEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
+                onFocus={e => e.target.style.borderColor = `${IG}60`}
+                onBlur={e => e.target.style.borderColor = ''}
+              />
+            </div>
+
+            {resetError && <p className="text-sm text-red-400">{resetError}</p>}
+
+            <button type="submit" disabled={resetLoading}
+              className="w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ background: IG_GRAD }}>
+              {resetLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : 'Send Reset Link'}
+            </button>
+          </form>
+
+          <button onClick={() => { setView('login'); setResetError(''); }}
+            className="flex items-center justify-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── RESET LINK SENT VIEW ──
+  if (view === 'forgot_sent') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background px-4">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
+              style={{ background: `${IG}15` }}>
+              📧
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
+            <p className="text-sm text-muted-foreground">
+              We sent a password reset link to<br />
+              <span className="font-semibold" style={{ color: IG }}>{resetEmail}</span>
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl text-sm text-muted-foreground"
+            style={{ background: `${IG}08`, border: `1px solid ${IG}20` }}>
+            Click the link in the email to reset your password. Check your spam folder if you don't see it.
+          </div>
+
+          <button onClick={() => { setView('login'); setResetEmail(''); setResetError(''); }}
+            className="flex items-center justify-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── LOGIN VIEW ──
   return (
     <div className="flex items-center justify-center min-h-screen bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Header */}
         <div className="flex flex-col items-center gap-3 text-center">
           <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
           <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
           <p className="text-sm text-muted-foreground">Sign in to your SocialRum account</p>
         </div>
 
-        {/* Google Sign In */}
         <button onClick={handleGoogleLogin} disabled={googleLoading}
           className="w-full py-3 px-4 rounded-xl border border-border bg-card text-foreground text-sm font-medium flex items-center justify-center gap-3 hover:bg-accent transition-colors disabled:opacity-60">
-          {googleLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
+          {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -68,23 +161,18 @@ export default function LoginPage() {
           {googleLoading ? 'Signing in...' : 'Continue with Google'}
         </button>
 
-        {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-border" />
           <span className="text-xs text-muted-foreground">or</span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
-        {/* Email/Password Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Email</label>
             <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              id="email" type="email" placeholder="you@example.com"
+              value={email} onChange={e => setEmail(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('password')?.focus(); } }}
               required
               className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
@@ -93,13 +181,18 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Password</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground">Password</label>
+              {/* ✅ Forgot password link */}
+              <button type="button" onClick={() => { setView('forgot'); setResetEmail(email); setResetError(''); }}
+                className="text-xs hover:underline transition-colors"
+                style={{ color: IG }}>
+                Forgot password?
+              </button>
+            </div>
             <input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
+              id="password" type="password" placeholder="••••••••"
+              value={password} onChange={e => setPassword(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleLogin(e as any); } }}
               required
               className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"

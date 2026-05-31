@@ -24,6 +24,7 @@ import PricingPage from "./pages/PricingPage";
 import LandingPage from "./pages/LandingPage";
 import BlogPage from "@/pages/BlogPage";
 import AdminBlogPage from "@/pages/AdminBlogPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
