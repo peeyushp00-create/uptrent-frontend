@@ -14,6 +14,12 @@ const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
 const PRIMARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
+// ✅ Instagram CDN thumbnails are referrer-blocked → route them through our proxy
+const proxyImg = (url?: string) =>
+  url && /(cdninstagram\.com|fbcdn\.net)/i.test(url)
+    ? `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`
+    : (url || "");
+
 const WORDS = ["Discover.", "Create.", "Go Viral."];
 
 const FLOATING_TAGS = [
@@ -310,7 +316,7 @@ export default function Index() {
                       }}
                       className="relative rounded-2xl overflow-hidden cursor-pointer group"
                       style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
-                      <img src={video.thumbnail} alt={video.caption} className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      <img src={proxyImg(video.thumbnail)} alt={video.caption} referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         onError={e => { (e.target as HTMLImageElement).style.opacity='0'; }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                       <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
@@ -406,7 +412,7 @@ export default function Index() {
                     onClick={() => { if (video.permalink) window.open(video.permalink, '_blank'); }}
                     className="relative rounded-2xl overflow-hidden cursor-pointer group"
                     style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
-                    <img src={video.thumbnail} alt={video.caption} className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    <img src={proxyImg(video.thumbnail)} alt={video.caption} referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform group-hover:scale-105"
                       onError={e => { (e.target as HTMLImageElement).style.opacity='0'; }} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                     <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
