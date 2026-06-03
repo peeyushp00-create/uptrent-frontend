@@ -125,7 +125,7 @@ export default function Index() {
       setVideosLoading(true);
       try {
         const res = isIG
-          ? await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(search)}`)
+          ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}`)
           : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
         const data = await res.json();
         setVideos(data.items || data.reels || []);
@@ -142,7 +142,7 @@ export default function Index() {
     (async () => {
       setTrendingLoading(true);
       try {
-        const res = await fetch(`${BASE}/api/instagram/trending`);
+        const res = await fetch(`${BASE}/api/hiker/trending`);
         const data = await res.json();
         if (!cancelled) setTrendingReels(data.items || data.reels || []);
       } catch (e) { console.error(e); } finally { if (!cancelled) setTrendingLoading(false); }
