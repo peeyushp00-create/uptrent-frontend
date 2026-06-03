@@ -111,7 +111,7 @@ export default function Index() {
 
   useEffect(() => { fetchSuggestions(); }, [platform]);
 
-  // ✅ Instagram uses the new Indian reel search; YouTube uses existing search
+  // ✅ Search: Instagram → Indian reel search, YouTube → existing search
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     if (!search.trim()) { setVideos([]); return; }
@@ -126,6 +126,23 @@ export default function Index() {
       } catch (e) { console.error(e); } finally { setVideosLoading(false); }
     }, 600);
   }, [search, platform]);
+
+  // ✅ Trending reels by default (Instagram, when search box is empty)
+  const [trendingReels, setTrendingReels] = useState<any[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
+  useEffect(() => {
+    if (!isIG) { setTrendingReels([]); return; }
+    let cancelled = false;
+    (async () => {
+      setTrendingLoading(true);
+      try {
+        const res = await fetch(`${BASE}/api/instagram/trending`);
+        const data = await res.json();
+        if (!cancelled) setTrendingReels(data.items || data.reels || []);
+      } catch (e) { console.error(e); } finally { if (!cancelled) setTrendingLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [platform]);
 
   const handleYtConnect = async () => {
     if (!user?.id) { navigate('/login'); return; }
@@ -362,6 +379,62 @@ export default function Index() {
                     </motion.button>
                   ))}
                 </AnimatePresence>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ✅ Trending Reels (Instagram, default feed when search is empty) */}
+        {!search && isIG && (trendingLoading || trendingReels.length > 0) && (
+          <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.8 }} className="w-full">
+            <div className="flex items-center gap-2 mb-3">
+              <Instagram className="w-4 h-4" style={{ color:activeColor }} />
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color:activeColor }}>
+                🔥 Trending Reels
+              </p>
+            </div>
+            {trendingLoading ? (
+              <div className="grid grid-cols-3 gap-2">
+                {[1,2,3,4,5,6].map(i => <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl animate-pulse" style={{ aspectRatio:'9/16' }} />)}
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {trendingReels.slice(0, 9).map((video, i) => (
+                  <motion.div key={video.id || i}
+                    initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
+                    transition={{ delay:i * 0.05 }}
+                    onClick={() => { if (video.permalink) window.open(video.permalink, '_blank'); }}
+                    className="relative rounded-2xl overflow-hidden cursor-pointer group"
+                    style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
+                    <img src={video.thumbnail} alt={video.caption} className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      onError={e => { (e.target as HTMLImageElement).style.opacity='0'; }} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                    <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                      style={{ background:'linear-gradient(45deg,#f09433,#bc1888)' }}>
+                      Reels
+                    </div>
+                    {video.virality?.label && (
+                      <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                        style={{ background: video.virality.score >= 65 ? '#16a34a' : '#7C3AED' }}>
+                        {video.virality.label}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(4px)' }}>
+                        <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-2">
+                      <p className="text-white text-[9px] font-semibold line-clamp-2 leading-tight mb-1">{video.caption}</p>
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-2.5 h-2.5 text-white/70" />
+                        <span className="text-[8px] text-white/70">{formatNum(Number(video.views) || 0)}</span>
+                        <Heart className="w-2.5 h-2.5 text-white/70" />
+                        <span className="text-[8px] text-white/70">{formatNum(Number(video.likes) || 0)}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             )}
           </motion.div>
