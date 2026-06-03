@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, X, Sparkles, Instagram, Youtube, Play, Heart, Eye,
-  ExternalLink, RefreshCw, Loader2, TrendingUp, FileText, Newspaper, Users
+  RefreshCw, Loader2, TrendingUp, FileText, Newspaper, Users
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
@@ -103,7 +103,7 @@ export default function Index() {
     const p = isIG ? 'instagram' : 'youtube';
     try {
       const userLanguage = localStorage.getItem('userLanguage') || 'english';
-const res = await fetch(`${BASE}/api/topics/suggestions?platform=${p}&niches=${encodeURIComponent(niches + channelContext)}&language=${userLanguage}`);
+      const res = await fetch(`${BASE}/api/topics/suggestions?platform=${p}&niches=${encodeURIComponent(niches + channelContext)}&language=${userLanguage}`);
       const data = await res.json();
       setChips(data.suggestions || []);
     } catch { } finally { setChipsLoading(false); }
@@ -111,16 +111,18 @@ const res = await fetch(`${BASE}/api/topics/suggestions?platform=${p}&niches=${e
 
   useEffect(() => { fetchSuggestions(); }, [platform]);
 
+  // ✅ Instagram uses the new Indian reel search; YouTube uses existing search
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     if (!search.trim()) { setVideos([]); return; }
     searchTimeout.current = setTimeout(async () => {
       setVideosLoading(true);
       try {
-        const endpoint = isIG ? 'instagram' : 'youtube';
-        const res = await fetch(`${BASE}/api/search/${endpoint}?q=${encodeURIComponent(search)}`);
+        const res = isIG
+          ? await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(search)}`)
+          : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
         const data = await res.json();
-        setVideos(data.items || []);
+        setVideos(data.items || data.reels || []);
       } catch (e) { console.error(e); } finally { setVideosLoading(false); }
     }, 600);
   }, [search, platform]);
@@ -285,7 +287,10 @@ const res = await fetch(`${BASE}/api/topics/suggestions?platform=${p}&niches=${e
                     <motion.div key={video.id || i}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
-                      onClick={() => navigate('/insight', { state: { query: search, video } })}
+                      onClick={() => {
+                        if (video.permalink) window.open(video.permalink, '_blank');
+                        else navigate('/insight', { state: { query: search, video } });
+                      }}
                       className="relative rounded-2xl overflow-hidden cursor-pointer group"
                       style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
                       <img src={video.thumbnail} alt={video.caption} className="w-full h-full object-cover transition-transform group-hover:scale-105"
@@ -295,6 +300,12 @@ const res = await fetch(`${BASE}/api/topics/suggestions?platform=${p}&niches=${e
                         style={{ background: isIG ? 'linear-gradient(45deg,#f09433,#bc1888)' : '#FF0000' }}>
                         {isIG ? 'Reels' : 'Shorts'}
                       </div>
+                      {video.virality?.label && (
+                        <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                          style={{ background: video.virality.score >= 65 ? '#16a34a' : '#7C3AED' }}>
+                          {video.virality.label}
+                        </div>
+                      )}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(4px)' }}>
                           <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
@@ -304,9 +315,9 @@ const res = await fetch(`${BASE}/api/topics/suggestions?platform=${p}&niches=${e
                         <p className="text-white text-[9px] font-semibold line-clamp-2 leading-tight mb-1">{video.caption}</p>
                         <div className="flex items-center gap-2">
                           <Eye className="w-2.5 h-2.5 text-white/70" />
-                          <span className="text-[8px] text-white/70">{video.views}</span>
+                          <span className="text-[8px] text-white/70">{formatNum(Number(video.views) || 0)}</span>
                           <Heart className="w-2.5 h-2.5 text-white/70" />
-                          <span className="text-[8px] text-white/70">{video.likes}</span>
+                          <span className="text-[8px] text-white/70">{formatNum(Number(video.likes) || 0)}</span>
                         </div>
                       </div>
                     </motion.div>

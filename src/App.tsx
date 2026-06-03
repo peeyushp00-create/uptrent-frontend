@@ -43,6 +43,7 @@ const App = () => (
             <Route path="/admin/blog" element={<AdminBlogPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* ── Public home/dashboard ── */}
             <Route path="/home" element={<AppLayout />}>
@@ -62,7 +63,7 @@ const App = () => (
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
+            
             </Route>
 
             <Route path="*" element={<NotFound />} />
