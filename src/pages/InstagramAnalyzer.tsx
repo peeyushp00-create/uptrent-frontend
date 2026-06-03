@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb, User, Users, Heart, MessageCircle, BarChart2, BadgeCheck } from "lucide-react";
+import { Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb, User, Users, Heart, MessageCircle, BarChart2, BadgeCheck, Eye, Play, Music, Clock, Calendar } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
 const PRIMARY = "#7C3AED";
@@ -45,21 +45,46 @@ export default function InstagramAnalyzer() {
   const [heatmap] = useState(generateHeatmap());
   const [imgError, setImgError] = useState(false);
 
+  // ✅ HikerAPI reels + deep insights (extra section, runs alongside ScrapeCreators)
+  const [hiker, setHiker] = useState<any>(null);
+  const [hikerLoading, setHikerLoading] = useState(false);
+  const [reelsVisible, setReelsVisible] = useState(9);
+
+  // Route Instagram CDN thumbnails through our proxy so they render
+  const proxyImg = (url?: string) =>
+    url && /(cdninstagram\.com|fbcdn\.net)/i.test(url)
+      ? `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`
+      : (url || '');
+
   const analyze = async () => {
     if (!username.trim()) return;
-    setLoading(true); setError(''); setResult(null); setImgError(false);
-    try {
-      const userLanguage = localStorage.getItem('userLanguage') || 'english';
-      const res = await fetch(`${BASE}/api/instagram/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.replace('@', ''), language: userLanguage }),
-      });
-      if (!res.ok) throw new Error('Failed');
-      const data = await res.json();
-      setResult(data);
-    } catch { setError(t('common.error')); }
-    finally { setLoading(false); }
+    const clean = username.replace('@', '').trim();
+    setLoading(true); setHikerLoading(true);
+    setError(''); setResult(null); setHiker(null); setImgError(false); setReelsVisible(9);
+
+    // 1. Existing ScrapeCreators + AI analysis
+    (async () => {
+      try {
+        const userLanguage = localStorage.getItem('userLanguage') || 'english';
+        const res = await fetch(`${BASE}/api/instagram/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: clean, language: userLanguage }),
+        });
+        if (!res.ok) throw new Error('Failed');
+        setResult(await res.json());
+      } catch { setError(t('common.error')); }
+      finally { setLoading(false); }
+    })();
+
+    // 2. HikerAPI reels + insights (independent — failure here won't break the page)
+    (async () => {
+      try {
+        const res = await fetch(`${BASE}/api/hiker/analyze?username=${encodeURIComponent(clean)}`);
+        if (res.ok) setHiker(await res.json());
+      } catch (e) { console.error(e); }
+      finally { setHikerLoading(false); }
+    })();
   };
 
   const copyText = (text: string, key: string) => {
@@ -314,6 +339,159 @@ export default function InstagramAnalyzer() {
                 </div>
               </div>
             )}
+          </motion.div>
+        )}
+
+        {/* ✅ HikerAPI — Reels & Deep Insights (extra section) */}
+        {(hikerLoading || hiker) && (
+          <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} className="space-y-4 mt-4">
+            <div className="flex items-center gap-2">
+              <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
+              <h2 className="font-bold text-base text-[#191c1d] dark:text-white">Reels & Deep Insights</h2>
+            </div>
+
+            {hikerLoading && !hiker ? (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-8 text-center">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: PRIMARY }} />
+                <p className="text-sm text-[#757684] mt-2">Analyzing reels…</p>
+              </div>
+            ) : hiker && hiker.reels?.length > 0 ? (
+              <>
+                {/* Reel stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { label: 'Avg Views', value: formatNum(hiker.stats?.avg_views || 0), icon: Eye },
+                    { label: 'Avg Likes', value: formatNum(hiker.stats?.avg_likes || 0), icon: Heart },
+                    { label: 'Avg Comments', value: formatNum(hiker.stats?.avg_comments || 0), icon: MessageCircle },
+                    { label: 'Engagement', value: `${hiker.stats?.engagement_rate || 0}%`, icon: TrendingUp },
+                  ].map((s, i) => (
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-3">
+                      <s.icon className="w-3.5 h-3.5 mb-1" style={{ color: PRIMARY }} />
+                      <p className="font-bold text-base text-[#191c1d] dark:text-white">{s.value}</p>
+                      <p className="text-[10px] text-[#757684]">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Posting patterns */}
+                {(hiker.posting_patterns?.best_day || hiker.posting_patterns?.best_hour_ist) && (
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4 flex flex-wrap gap-4">
+                    {hiker.posting_patterns.best_day && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" style={{ color: PRIMARY }} />
+                        <span className="text-xs text-[#757684]">Best day:</span>
+                        <span className="text-sm font-bold text-[#191c1d] dark:text-white">{hiker.posting_patterns.best_day}</span>
+                      </div>
+                    )}
+                    {hiker.posting_patterns.best_hour_ist && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" style={{ color: PRIMARY }} />
+                        <span className="text-xs text-[#757684]">Best time (IST):</span>
+                        <span className="text-sm font-bold text-[#191c1d] dark:text-white">{hiker.posting_patterns.best_hour_ist}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Top hashtags */}
+                {hiker.top_hashtags?.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Hash className="w-4 h-4" style={{ color: PRIMARY }} />
+                      <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Top Hashtags</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {hiker.top_hashtags.map((h: any, i: number) => (
+                        <span key={i} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                          {h.tag} <span className="opacity-60">×{h.count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Top audio */}
+                {hiker.top_audio?.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Music className="w-4 h-4" style={{ color: PRIMARY }} />
+                      <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Top Audio</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      {hiker.top_audio.map((a: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between text-sm">
+                          <span className="text-[#454652] dark:text-gray-200 truncate mr-2">🎵 {a.title}</span>
+                          <span className="text-xs text-[#757684] shrink-0">×{a.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Best hooks */}
+                {hiker.top_hooks?.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} />
+                      <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Best Hooks</h3>
+                    </div>
+                    <div className="space-y-2.5">
+                      {hiker.top_hooks.map((h: any, i: number) => (
+                        <div key={i} onClick={() => h.permalink && window.open(h.permalink, '_blank')}
+                          className="cursor-pointer p-2 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-gray-700">
+                          <p className="text-sm text-[#191c1d] dark:text-white leading-snug">"{h.hook}"</p>
+                          <p className="text-[10px] text-[#757684] mt-0.5">{formatNum(h.views || 0)} views · {formatNum(h.likes || 0)} likes</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reel grid */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Play className="w-4 h-4" style={{ color: PRIMARY }} />
+                    <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Reels ({hiker.reels.length})</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {hiker.reels.slice(0, reelsVisible).map((reel: any, i: number) => (
+                      <div key={reel.id || i}
+                        onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
+                        className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
+                        <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          onError={e => { (e.target as HTMLImageElement).style.opacity='0'; }} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                        {reel.virality?.label && (
+                          <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                            style={{ background: reel.virality.score >= 65 ? '#16a34a' : PRIMARY }}>
+                            {reel.virality.label}
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Eye className="w-2.5 h-2.5 text-white/80" />
+                            <span className="text-[8px] text-white/80">{formatNum(Number(reel.views) || 0)}</span>
+                            <Heart className="w-2.5 h-2.5 text-white/80" />
+                            <span className="text-[8px] text-white/80">{formatNum(Number(reel.likes) || 0)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {hiker.reels.length > reelsVisible && (
+                    <button onClick={() => setReelsVisible(v => v + 9)}
+                      className="mx-auto mt-3 block px-5 py-2 rounded-full text-sm font-semibold text-white" style={{ background: PRIMARY }}>
+                      Load More
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : hiker ? (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5 text-center">
+                <p className="text-sm text-[#757684]">No public reels found for this account.</p>
+              </div>
+            ) : null}
           </motion.div>
         )}
 
