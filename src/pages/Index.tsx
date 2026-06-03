@@ -136,6 +136,13 @@ export default function Index() {
   // ✅ Trending reels by default (Instagram, when search box is empty)
   const [trendingReels, setTrendingReels] = useState<any[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(false);
+
+  // ✅ Load-more: how many reels are visible in each grid
+  const [videosVisible, setVideosVisible] = useState(9);
+  const [trendingVisible, setTrendingVisible] = useState(9);
+  useEffect(() => { setVideosVisible(9); }, [search, platform]);
+  useEffect(() => { setTrendingVisible(9); }, [platform]);
+
   useEffect(() => {
     if (!isIG) { setTrendingReels([]); return; }
     let cancelled = false;
@@ -306,7 +313,7 @@ export default function Index() {
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {videos.slice(0, 9).map((video, i) => (
+                  {videos.slice(0, videosVisible).map((video, i) => (
                     <motion.div key={video.id || i}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
@@ -346,6 +353,14 @@ export default function Index() {
                     </motion.div>
                   ))}
                 </div>
+              )}
+              {!videosLoading && videos.length > videosVisible && (
+                <button
+                  onClick={() => setVideosVisible(v => v + 9)}
+                  className="mx-auto mt-4 block px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-transform active:scale-95"
+                  style={{ background: activeColor }}>
+                  Load More
+                </button>
               )}
             </motion.div>
           )}
@@ -405,7 +420,7 @@ export default function Index() {
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {trendingReels.slice(0, 9).map((video, i) => (
+                {trendingReels.slice(0, trendingVisible).map((video, i) => (
                   <motion.div key={video.id || i}
                     initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                     transition={{ delay:i * 0.05 }}
@@ -442,6 +457,14 @@ export default function Index() {
                   </motion.div>
                 ))}
               </div>
+            )}
+            {!trendingLoading && trendingReels.length > trendingVisible && (
+              <button
+                onClick={() => setTrendingVisible(v => v + 9)}
+                className="mx-auto mt-4 block px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-transform active:scale-95"
+                style={{ background: activeColor }}>
+                Load More
+              </button>
             )}
           </motion.div>
         )}
