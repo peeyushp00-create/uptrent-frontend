@@ -931,6 +931,42 @@ export default function InstagramAnalyzer() {
           </motion.div>
         )}
 
+        {/* Posts from ScrapeCreators */}
+        {result && !loading && result.posts?.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} />
+                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posts ({result.posts.length})</h2>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {result.posts.map((post: any, i: number) => (
+                  <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
+                    className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e' }}>
+                    {post.thumbnail && (
+                      <img
+                        src={`${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
+                        alt={post.caption?.slice(0, 40) || ''}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-0 left-0 right-0 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1.5">
+                        <Heart className="w-2.5 h-2.5 text-white/80" />
+                        <span className="text-[8px] text-white/80">{formatNumber(post.likes || 0)}</span>
+                        <MessageCircle className="w-2.5 h-2.5 text-white/80" />
+                        <span className="text-[8px] text-white/80">{formatNumber(post.comments || 0)}</span>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Hiker section — reels from HikerAPI */}
         {(hikerLoading || hiker) && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 mt-4">
