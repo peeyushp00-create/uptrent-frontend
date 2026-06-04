@@ -931,23 +931,26 @@ export default function InstagramAnalyzer() {
           </motion.div>
         )}
 
-        {/* Posts from HikerAPI (cached in Supabase) */}
-        {hiker && !hikerLoading && hiker.posts?.length > 0 && (
+        {/* Posts grid — HikerAPI preferred, ScrapeCreators as fallback */}
+        {(() => {
+          const displayPosts = (hiker?.posts?.length > 0 ? hiker.posts : result?.sc_posts) || [];
+          if (!displayPosts.length) return null;
+          return (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
               <div className="flex items-center gap-2 mb-3">
                 <MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} />
-                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posts ({result.posts.length})</h2>
+                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posts ({displayPosts.length})</h2>
               </div>
               <div className="grid grid-cols-3 gap-1.5">
-                {hiker.posts.map((post: any, i: number) => (
+                {displayPosts.map((post: any, i: number) => (
                   <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
                     className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e' }}>
 
                     {/* Thumbnail */}
                     {post.thumbnail && (
                       <img
-                        src={`${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
+                        src={post.thumbnail ? `${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}` : ''}
                         alt={post.caption?.slice(0, 40) || ''}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
@@ -991,7 +994,8 @@ export default function InstagramAnalyzer() {
               </div>
             </div>
           </motion.div>
-        )}
+          );
+        })()}
 
         {/* Hiker section — reels from HikerAPI */}
         {(hikerLoading || hiker) && (
