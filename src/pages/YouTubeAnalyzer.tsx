@@ -4,7 +4,7 @@ import {
   Search, Copy, Check, Loader2, Youtube, X,
   TrendingUp, Users, Eye, Video, Sparkles, BarChart2,
   Target, Lightbulb, ArrowRight, Plus, Trash2, UserPlus,
-  ChevronLeft, Clock, Calendar,
+  ChevronLeft,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +28,6 @@ function formatNum(n: number) {
   return String(n);
 }
 
-// ─── Types ───────────────────────────────────────────────────────────────────
 interface CompetitorCard {
   channelName: string;
   thumbnail?: string;
@@ -38,42 +37,84 @@ interface CompetitorCard {
   fullData?: any;
 }
 
-// ─── Competitor Detail Page ──────────────────────────────────────────────────
-function CompetitorDetail({
-  competitor,
-  onBack,
-  onCopy,
-  copied,
-}: {
-  competitor: CompetitorCard;
-  onBack: () => void;
-  onCopy: (text: string, key: string) => void;
-  copied: string | null;
+function VideoGrid({ title, videos, isShorts = false }: { title: string; videos: any[]; isShorts?: boolean }) {
+  const [visible, setVisible] = useState(isShorts ? 6 : 4);
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Video className="w-4 h-4 text-red-500" />
+        <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">{title}</h3>
+      </div>
+      {isShorts ? (
+        <div className="grid grid-cols-3 gap-2">
+          {videos.slice(0, visible).map((v) => (
+            <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer"
+              className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '9/16', background: '#1a1a2e' }}>
+              <img src={v.thumbnail} alt={v.title}
+                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+              <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-white text-[8px] font-bold bg-red-600">SHORT</div>
+              <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                <p className="text-[8px] text-white/90 line-clamp-2 leading-tight mb-1">{v.title}</p>
+                <div className="flex items-center gap-1.5">
+                  <Eye className="w-2.5 h-2.5 text-white/70" />
+                  <span className="text-[8px] text-white/70">{v.views_formatted}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {videos.slice(0, visible).map((v) => (
+            <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer"
+              className="flex gap-3 p-2 rounded-xl hover:bg-[#f8f9fa] dark:hover:bg-gray-700 transition-colors group">
+              <div className="relative shrink-0 rounded-lg overflow-hidden" style={{ width: 96, height: 54, background: '#1a1a2e' }}>
+                <img src={v.thumbnail} alt={v.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[#191c1d] dark:text-white line-clamp-2 leading-snug">{v.title}</p>
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <span className="text-[10px] text-[#757684] flex items-center gap-1"><Eye className="w-3 h-3" />{v.views_formatted} views</span>
+                  <span className="text-[10px] text-[#757684]">❤️ {v.likes_formatted}</span>
+                  <span className="text-[10px] text-[#757684]">💬 {v.comments_formatted}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+      {videos.length > visible && (
+        <button onClick={() => setVisible(v => v + (isShorts ? 6 : 4))}
+          className="mx-auto mt-3 block px-5 py-2 rounded-full text-sm font-semibold text-white" style={{ background: YT_GRAD }}>
+          Load More
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CompetitorDetail({ competitor, onBack, onCopy, copied }: {
+  competitor: CompetitorCard; onBack: () => void;
+  onCopy: (text: string, key: string) => void; copied: string | null;
 }) {
   const result = competitor.fullData;
   const stats = result?.channelStats;
   const { t } = useTranslation();
-
   return (
-    <motion.div
-      initial={{ x: '100%' }}
-      animate={{ x: 0 }}
-      exit={{ x: '100%' }}
+    <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed inset-0 z-50 bg-[#f8f9fa] dark:bg-gray-900 overflow-y-auto"
-    >
-      {/* Header */}
+      className="fixed inset-0 z-50 bg-[#f8f9fa] dark:bg-gray-900 overflow-y-auto">
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-4 h-14 flex items-center gap-3">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: YT_COLOR }}>
-          <ChevronLeft className="w-4 h-4" />
-          Back
+          <ChevronLeft className="w-4 h-4" /> Back
         </button>
         <span className="text-sm font-bold text-[#191c1d] dark:text-white truncate">{competitor.channelName}</span>
       </header>
-
       <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 space-y-4">
-
-        {/* Profile Banner */}
         <div className="rounded-2xl p-5" style={{ background: YT_GRAD }}>
           <div className="flex items-center gap-3 mb-3">
             {stats?.thumbnail ? (
@@ -90,8 +131,6 @@ function CompetitorDetail({
           </div>
           {result?.summary && <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>}
         </div>
-
-        {/* Stats */}
         {stats && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -128,13 +167,9 @@ function CompetitorDetail({
                 <span className="text-xs font-bold text-green-700">📊 Engagement Rate: {stats.engagement_rate}</span>
               </div>
             )}
-            {stats.description && (
-              <p className="text-xs text-[#757684] mt-3 line-clamp-3">{stats.description}</p>
-            )}
+            {stats.description && <p className="text-xs text-[#757684] mt-3 line-clamp-3">{stats.description}</p>}
           </div>
         )}
-
-        {/* Content Pillars */}
         {result?.content_pillars?.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
             <div className="flex items-center gap-2 mb-3">
@@ -151,8 +186,6 @@ function CompetitorDetail({
             </div>
           </div>
         )}
-
-        {/* Video Ideas */}
         {result?.video_ideas?.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
             <div className="flex items-center gap-2 mb-3">
@@ -172,8 +205,6 @@ function CompetitorDetail({
             </div>
           </div>
         )}
-
-        {/* Growth Tips */}
         {result?.growth_tips?.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
             <div className="flex items-center gap-2 mb-3">
@@ -190,8 +221,6 @@ function CompetitorDetail({
             </div>
           </div>
         )}
-
-        {/* Key Insight */}
         {result?.competitor_insights && (
           <div className="rounded-2xl p-4" style={{ background: YT_CONTAINER, border: '1px solid #ffcdd2' }}>
             <div className="flex items-center gap-2 mb-2">
@@ -201,34 +230,31 @@ function CompetitorDetail({
             <p className="text-sm text-[#191c1d] leading-relaxed">{result.competitor_insights}</p>
           </div>
         )}
-
-        {/* Shorts */}
-        {result?.shorts?.length > 0 && (
-          <VideoGrid title={`Shorts (${result.shorts.length})`} videos={result.shorts} isShorts />
-        )}
-
-        {/* Videos */}
-        {result?.videos?.length > 0 && (
-          <VideoGrid title={`Recent Videos (${result.videos.length})`} videos={result.videos} />
-        )}
+        {result?.shorts?.length > 0 && <VideoGrid title={`Shorts (${result.shorts.length})`} videos={result.shorts} isShorts />}
+        {result?.videos?.length > 0 && <VideoGrid title={`Recent Videos (${result.videos.length})`} videos={result.videos} />}
       </div>
     </motion.div>
   );
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
 export default function YouTubeAnalyzer() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const ytChannel = user?.user_metadata?.youtube_channel || null;
 
-  const [channelUrl, setChannelUrl] = useState(() => localStorage.getItem('yt_analyzer_channel') || "");
+  const [channelUrl, setChannelUrl] = useState(() => localStorage.getItem('yt_search_channel') || "");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(() => {
-    const saved = localStorage.getItem('yt_analyzer_result');
-    return saved ? JSON.parse(saved) : null;
+
+  // Separate results per tab — My Channel never shows search results
+  const [myResult, setMyResult] = useState<any>(null);
+  const [searchResult, setSearchResult] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('yt_search_result');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
   });
+
   const [copied, setCopied] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
@@ -236,7 +262,6 @@ export default function YouTubeAnalyzer() {
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // ── Competitor state ──
   const [competitors, setCompetitors] = useState<CompetitorCard[]>(() => {
     try { return JSON.parse(localStorage.getItem('yt_competitors') || '[]'); } catch { return []; }
   });
@@ -246,7 +271,7 @@ export default function YouTubeAnalyzer() {
   const [compError, setCompError] = useState('');
   const [openCompetitor, setOpenCompetitor] = useState<CompetitorCard | null>(null);
 
-  useEffect(() => { localStorage.setItem('yt_analyzer_channel', channelUrl); }, [channelUrl]);
+  useEffect(() => { localStorage.setItem('yt_search_channel', channelUrl); }, [channelUrl]);
   useEffect(() => { localStorage.setItem('yt_competitors', JSON.stringify(competitors)); }, [competitors]);
 
   useEffect(() => {
@@ -268,34 +293,50 @@ export default function YouTubeAnalyzer() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // Auto-analyze only My Channel — never touches searchResult
   useEffect(() => {
-    if (ytChannel && activeTab === 'mine' && !result) handleAnalyze(ytChannel.channel_name);
+    if (ytChannel && activeTab === 'mine' && !myResult) {
+      handleAnalyzeMine(ytChannel.channel_name);
+    }
   }, [activeTab]);
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleClear = () => {
-    setChannelUrl(''); setResult(null);
-    localStorage.removeItem('yt_analyzer_result');
-    localStorage.removeItem('yt_analyzer_channel');
+  const handleClearSearch = () => {
+    setChannelUrl(''); setSearchResult(null);
+    localStorage.removeItem('yt_search_result');
+    localStorage.removeItem('yt_search_channel');
   };
 
-  const handleAnalyze = async (channel?: string) => {
+  const handleAnalyzeMine = async (channel: string) => {
+    if (!channel.trim()) return;
+    setLoading(true); setMyResult(null);
+    try {
+      const res = await fetch(`${BASE}/api/youtube/analyze`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelUrl: channel }),
+      });
+      setMyResult(await res.json());
+    } catch { setMyResult({ error: 'Failed to analyze channel. Try again.' }); }
+    finally { setLoading(false); }
+  };
+
+  const handleAnalyzeSearch = async (channel?: string) => {
     const target = channel || channelUrl;
     if (!target.trim()) return;
-    setChannelUrl(target); setShowDropdown(false); setLoading(true); setResult(null);
+    setChannelUrl(target); setShowDropdown(false); setLoading(true); setSearchResult(null);
     try {
       const res = await fetch(`${BASE}/api/youtube/analyze`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channelUrl: target }),
       });
       const data = await res.json();
-      setResult(data);
-      localStorage.setItem('yt_analyzer_result', JSON.stringify(data));
-      localStorage.setItem('yt_analyzer_channel', target);
-    } catch { setResult({ error: 'Failed to analyze channel. Try again.' }); }
+      setSearchResult(data);
+      localStorage.setItem('yt_search_result', JSON.stringify(data));
+      localStorage.setItem('yt_search_channel', target);
+    } catch { setSearchResult({ error: 'Failed to analyze channel. Try again.' }); }
     finally { setLoading(false); }
   };
 
@@ -324,11 +365,8 @@ export default function YouTubeAnalyzer() {
       setCompetitors(prev => [card, ...prev]);
       setCompInput('');
       setAddingCompetitor(false);
-    } catch {
-      setCompError('Failed to fetch. Try again.');
-    } finally {
-      setCompLoading(false);
-    }
+    } catch { setCompError('Failed to fetch. Try again.'); }
+    finally { setCompLoading(false); }
   };
 
   const removeCompetitor = (channelName: string) => {
@@ -337,16 +375,9 @@ export default function YouTubeAnalyzer() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
-
-      {/* Competitor detail full-page */}
       <AnimatePresence>
         {openCompetitor && (
-          <CompetitorDetail
-            competitor={openCompetitor}
-            onBack={() => setOpenCompetitor(null)}
-            onCopy={copyText}
-            copied={copied}
-          />
+          <CompetitorDetail competitor={openCompetitor} onBack={() => setOpenCompetitor(null)} onCopy={copyText} copied={copied} />
         )}
       </AnimatePresence>
 
@@ -358,8 +389,6 @@ export default function YouTubeAnalyzer() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-5 pb-28 space-y-5">
-
-        {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-2xl bg-white dark:bg-gray-800 border border-[#e1e3e4] dark:border-gray-700">
           <button onClick={() => setActiveTab('mine')}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all"
@@ -373,7 +402,6 @@ export default function YouTubeAnalyzer() {
           </button>
         </div>
 
-        {/* MY CHANNEL TAB */}
         {activeTab === 'mine' && (
           <AnimatePresence mode="wait">
             {!ytChannel ? (
@@ -387,8 +415,7 @@ export default function YouTubeAnalyzer() {
                   <p className="text-sm text-[#757684] max-w-xs">Connect your YouTube channel to get personalized analysis</p>
                 </div>
                 <button onClick={() => navigate('/settings')}
-                  className="flex items-center gap-2 px-6 py-3 rounded-2xl text-white font-bold text-sm"
-                  style={{ background: YT_GRAD }}>
+                  className="flex items-center gap-2 px-6 py-3 rounded-2xl text-white font-bold text-sm" style={{ background: YT_GRAD }}>
                   <Youtube className="w-4 h-4" /> {t('settings.connect_youtube')}
                 </button>
               </motion.div>
@@ -401,7 +428,7 @@ export default function YouTubeAnalyzer() {
                       <p className="font-bold text-base text-[#191c1d] dark:text-white truncate">{ytChannel.channel_name}</p>
                       <p className="text-xs text-[#757684]">Your connected channel</p>
                     </div>
-                    <button onClick={() => handleAnalyze(ytChannel.channel_name)} disabled={loading}
+                    <button onClick={() => handleAnalyzeMine(ytChannel.channel_name)} disabled={loading}
                       className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50"
                       style={{ background: YT_GRAD }}>
                       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
@@ -428,14 +455,13 @@ export default function YouTubeAnalyzer() {
                     <p className="text-sm text-[#757684]">{t('common.loading')}</p>
                   </div>
                 )}
-                {result && !result.error && !loading && <AnalysisResults result={result} onCopy={copyText} copied={copied} />}
-                {result?.error && <p className="text-sm text-center text-red-500">{result.error}</p>}
+                {myResult && !myResult.error && !loading && <AnalysisResults result={myResult} onCopy={copyText} copied={copied} />}
+                {myResult?.error && <p className="text-sm text-center text-red-500">{myResult.error}</p>}
               </motion.div>
             )}
           </AnimatePresence>
         )}
 
-        {/* SEARCH ANY CHANNEL TAB */}
         {activeTab === 'search' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <div className="relative">
@@ -443,23 +469,22 @@ export default function YouTubeAnalyzer() {
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
                   <input ref={inputRef} value={channelUrl} onChange={e => setChannelUrl(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") handleAnalyze(); if (e.key === "Escape") setShowDropdown(false); }}
+                    onKeyDown={e => { if (e.key === "Enter") handleAnalyzeSearch(); if (e.key === "Escape") setShowDropdown(false); }}
                     onFocus={e => { e.target.style.borderColor = `${YT_COLOR}60`; if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
                     onBlur={e => { e.target.style.borderColor = ''; }}
                     placeholder="Channel name (e.g. MrBeast, Dhruv Rathee)"
                     className="w-full pl-11 pr-9 py-3.5 rounded-2xl border border-[#e1e3e4] bg-white dark:bg-gray-800 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all" />
-                  {channelUrl && <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]"><X className="w-4 h-4" /></button>}
+                  {channelUrl && <button onClick={handleClearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]"><X className="w-4 h-4" /></button>}
                 </div>
-                <button onClick={() => handleAnalyze()} disabled={loading || !channelUrl.trim()}
-                  className="px-5 py-3.5 rounded-2xl text-white text-sm font-bold disabled:opacity-50"
-                  style={{ background: YT_GRAD }}>
+                <button onClick={() => handleAnalyzeSearch()} disabled={loading || !channelUrl.trim()}
+                  className="px-5 py-3.5 rounded-2xl text-white text-sm font-bold disabled:opacity-50" style={{ background: YT_GRAD }}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 </button>
               </div>
               {showDropdown && (
                 <div ref={dropdownRef} className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-[#e1e3e4] rounded-2xl shadow-xl z-50 overflow-hidden" style={{ width: 'calc(100% - 60px)' }}>
                   {dropdownSuggestions.map((s, i) => (
-                    <button key={i} onClick={() => handleAnalyze(s)}
+                    <button key={i} onClick={() => handleAnalyzeSearch(s)}
                       className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#191c1d] dark:text-white hover:bg-[#f3f4f5] text-left">
                       <Youtube className="w-3.5 h-3.5 shrink-0 text-red-500" />{s}
                     </button>
@@ -467,13 +492,12 @@ export default function YouTubeAnalyzer() {
                 </div>
               )}
             </div>
-
-            {!channelUrl && !result && (
+            {!channelUrl && !searchResult && (
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider">Popular Indian Channels</p>
                 <div className="flex flex-wrap gap-2">
                   {POPULAR_CHANNELS.map(ch => (
-                    <button key={ch} onClick={() => handleAnalyze(ch)}
+                    <button key={ch} onClick={() => handleAnalyzeSearch(ch)}
                       className="px-3 py-1.5 rounded-full border border-[#e1e3e4] bg-white dark:bg-gray-800 text-xs text-[#454652] hover:border-red-300 hover:text-red-500 transition-colors">
                       {ch}
                     </button>
@@ -481,19 +505,18 @@ export default function YouTubeAnalyzer() {
                 </div>
               </div>
             )}
-
             {loading && (
               <div className="flex flex-col items-center justify-center py-10 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-red-500" />
                 <p className="text-sm text-[#757684]">{t('common.loading')}</p>
               </div>
             )}
-            {result && !result.error && !loading && <AnalysisResults result={result} onCopy={copyText} copied={copied} />}
-            {result?.error && <p className="text-sm text-center text-red-500">{result.error}</p>}
+            {searchResult && !searchResult.error && !loading && <AnalysisResults result={searchResult} onCopy={copyText} copied={copied} />}
+            {searchResult?.error && <p className="text-sm text-center text-red-500">{searchResult.error}</p>}
           </motion.div>
         )}
 
-        {/* ── Competitor Tracker ── */}
+        {/* Competitor Tracker */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -506,51 +529,30 @@ export default function YouTubeAnalyzer() {
               )}
             </div>
             {!addingCompetitor && (
-              <button
-                onClick={() => { setAddingCompetitor(true); setCompError(''); }}
+              <button onClick={() => { setAddingCompetitor(true); setCompError(''); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all hover:shadow-md"
-                style={{ background: YT_GRAD }}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Competitor
+                style={{ background: YT_GRAD }}>
+                <Plus className="w-3.5 h-3.5" /> Add Competitor
               </button>
             )}
           </div>
-
-          {/* Add input */}
           <AnimatePresence>
             {addingCompetitor && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                 <div className="flex gap-2 mb-3">
                   <div className="relative flex-1">
                     <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-400" />
-                    <input
-                      autoFocus
-                      type="text"
-                      value={compInput}
-                      onChange={e => setCompInput(e.target.value)}
+                    <input autoFocus type="text" value={compInput} onChange={e => setCompInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') addCompetitor(); if (e.key === 'Escape') setAddingCompetitor(false); }}
                       placeholder="Channel name (e.g. Dhruv Rathee)"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-red-400 focus:ring-2 focus:ring-red-400/20 transition-all"
-                    />
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-red-400 focus:ring-2 focus:ring-red-400/20 transition-all" />
                   </div>
-                  <button
-                    onClick={addCompetitor}
-                    disabled={compLoading || !compInput.trim()}
-                    className="px-4 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60"
-                    style={{ background: YT_GRAD }}
-                  >
+                  <button onClick={addCompetitor} disabled={compLoading || !compInput.trim()}
+                    className="px-4 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60" style={{ background: YT_GRAD }}>
                     {compLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
                   </button>
-                  <button
-                    onClick={() => { setAddingCompetitor(false); setCompInput(''); setCompError(''); }}
-                    className="px-3 py-2.5 rounded-xl border border-[#e1e3e4] dark:border-gray-600 text-[#757684] hover:text-[#191c1d] dark:hover:text-white transition-colors"
-                  >
+                  <button onClick={() => { setAddingCompetitor(false); setCompInput(''); setCompError(''); }}
+                    className="px-3 py-2.5 rounded-xl border border-[#e1e3e4] dark:border-gray-600 text-[#757684] hover:text-[#191c1d] dark:hover:text-white transition-colors">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -564,8 +566,6 @@ export default function YouTubeAnalyzer() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Competitor cards */}
           {competitors.length === 0 && !addingCompetitor ? (
             <div className="text-center py-6">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: YT_CONTAINER }}>
@@ -576,13 +576,9 @@ export default function YouTubeAnalyzer() {
           ) : (
             <div className="space-y-2 mt-1">
               {competitors.map((comp) => (
-                <motion.div
-                  key={comp.channelName}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
+                <motion.div key={comp.channelName} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 p-3 rounded-xl border border-[#e1e3e4] dark:border-gray-700 cursor-pointer hover:border-red-300 hover:bg-[#fff8f8] dark:hover:bg-gray-700 transition-all"
-                  onClick={() => setOpenCompetitor(comp)}
-                >
+                  onClick={() => setOpenCompetitor(comp)}>
                   {comp.thumbnail ? (
                     <img src={comp.thumbnail} alt={comp.channelName} className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0" />
                   ) : (
@@ -593,24 +589,14 @@ export default function YouTubeAnalyzer() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[#191c1d] dark:text-white truncate">{comp.channelName}</p>
                     <div className="flex items-center gap-3 mt-0.5">
-                      {comp.subscribers && (
-                        <span className="text-xs text-[#757684]">
-                          <span className="font-semibold text-[#454652] dark:text-gray-300">{comp.subscribers}</span> subs
-                        </span>
-                      )}
-                      {comp.engagement_rate && (
-                        <span className="text-xs text-[#757684]">
-                          <span className="font-semibold text-green-600">{comp.engagement_rate}</span> eng.
-                        </span>
-                      )}
+                      {comp.subscribers && <span className="text-xs text-[#757684]"><span className="font-semibold text-[#454652] dark:text-gray-300">{comp.subscribers}</span> subs</span>}
+                      {comp.engagement_rate && <span className="text-xs text-[#757684]"><span className="font-semibold text-green-600">{comp.engagement_rate}</span> eng.</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <span className="text-[10px] text-[#757684] hidden sm:block">View details</span>
-                    <button
-                      onClick={e => { e.stopPropagation(); removeCompetitor(comp.channelName); }}
-                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-[#757684] hover:text-red-500 transition-colors"
-                    >
+                    <button onClick={e => { e.stopPropagation(); removeCompetitor(comp.channelName); }}
+                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-[#757684] hover:text-red-500 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -619,19 +605,16 @@ export default function YouTubeAnalyzer() {
             </div>
           )}
         </div>
-
       </main>
     </div>
   );
 }
 
-// ─── Analysis Results ────────────────────────────────────────────────────────
 function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (text: string, key: string) => void; copied: string | null }) {
   const { t } = useTranslation();
   const stats = result.channelStats;
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-
       {stats && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
           <div className="flex items-center gap-3 mb-4">
@@ -673,7 +656,6 @@ function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (tex
           )}
         </div>
       )}
-
       {result.summary && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
           <div className="flex items-center gap-2 mb-2">
@@ -683,7 +665,6 @@ function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (tex
           <p className="text-sm text-[#454652] dark:text-gray-300 leading-relaxed">{result.summary}</p>
         </div>
       )}
-
       {result.content_pillars?.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
           <div className="flex items-center gap-2 mb-3">
@@ -700,7 +681,6 @@ function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (tex
           </div>
         </div>
       )}
-
       {result.video_ideas?.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
           <div className="flex items-center gap-2 mb-3">
@@ -720,7 +700,6 @@ function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (tex
           </div>
         </div>
       )}
-
       {result.growth_tips?.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
           <div className="flex items-center gap-2 mb-3">
@@ -737,7 +716,6 @@ function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (tex
           </div>
         </div>
       )}
-
       {result.competitor_insights && (
         <div className="rounded-2xl p-4" style={{ background: YT_CONTAINER, border: '1px solid #ffcdd2' }}>
           <div className="flex items-center gap-2 mb-2">
@@ -747,107 +725,8 @@ function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (tex
           <p className="text-sm text-[#191c1d] leading-relaxed">{result.competitor_insights}</p>
         </div>
       )}
-
-      {/* Shorts Grid */}
-      {result.shorts?.length > 0 && (
-        <VideoGrid title={`Shorts (${result.shorts.length})`} videos={result.shorts} isShorts />
-      )}
-
-      {/* Videos Grid */}
-      {result.videos?.length > 0 && (
-        <VideoGrid title={`Recent Videos (${result.videos.length})`} videos={result.videos} />
-      )}
+      {result.shorts?.length > 0 && <VideoGrid title={`Shorts (${result.shorts.length})`} videos={result.shorts} isShorts />}
+      {result.videos?.length > 0 && <VideoGrid title={`Recent Videos (${result.videos.length})`} videos={result.videos} />}
     </motion.div>
-  );
-}
-
-// ─── Video / Shorts Grid ──────────────────────────────────────────────────────
-function VideoGrid({ title, videos, isShorts = false }: { title: string; videos: any[]; isShorts?: boolean }) {
-  const [visible, setVisible] = useState(isShorts ? 6 : 4);
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Video className="w-4 h-4 text-red-500" />
-        <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">{title}</h3>
-      </div>
-
-      {isShorts ? (
-        /* Shorts — 3-col portrait grid */
-        <div className="grid grid-cols-3 gap-2">
-          {videos.slice(0, visible).map((v) => (
-            <a
-              key={v.id}
-              href={v.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative rounded-xl overflow-hidden group block"
-              style={{ aspectRatio: '9/16', background: '#1a1a2e' }}
-            >
-              <img
-                src={v.thumbnail}
-                alt={v.title}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
-              {/* Shorts badge */}
-              <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-white text-[8px] font-bold bg-red-600">
-                SHORT
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-1.5">
-                <p className="text-[8px] text-white/90 line-clamp-2 leading-tight mb-1">{v.title}</p>
-                <div className="flex items-center gap-1.5">
-                  <Eye className="w-2.5 h-2.5 text-white/70" />
-                  <span className="text-[8px] text-white/70">{v.views_formatted}</span>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      ) : (
-        /* Regular videos — list layout */
-        <div className="space-y-2">
-          {videos.slice(0, visible).map((v) => (
-            <a
-              key={v.id}
-              href={v.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex gap-3 p-2 rounded-xl hover:bg-[#f8f9fa] dark:hover:bg-gray-700 transition-colors group"
-            >
-              <div className="relative shrink-0 rounded-lg overflow-hidden" style={{ width: 96, height: 54, background: '#1a1a2e' }}>
-                <img
-                  src={v.thumbnail}
-                  alt={v.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#191c1d] dark:text-white line-clamp-2 leading-snug">{v.title}</p>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  <span className="text-[10px] text-[#757684] flex items-center gap-1">
-                    <Eye className="w-3 h-3" />{v.views_formatted} views
-                  </span>
-                  <span className="text-[10px] text-[#757684]">❤️ {v.likes_formatted}</span>
-                  <span className="text-[10px] text-[#757684]">💬 {v.comments_formatted}</span>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      )}
-
-      {videos.length > visible && (
-        <button
-          onClick={() => setVisible(v => v + (isShorts ? 6 : 4))}
-          className="mx-auto mt-3 block px-5 py-2 rounded-full text-sm font-semibold text-white"
-          style={{ background: YT_GRAD }}
-        >
-          Load More
-        </button>
-      )}
-    </div>
   );
 }
