@@ -516,8 +516,8 @@ export default function YouTubeAnalyzer() {
           </motion.div>
         )}
 
-        {/* Competitor Tracker */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+        {/* Competitor Tracker — only on Any Channel tab */}
+        {activeTab === 'search' && <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-red-500" />
@@ -604,7 +604,7 @@ export default function YouTubeAnalyzer() {
               ))}
             </div>
           )}
-        </div>
+        </div>}
       </main>
     </div>
   );
