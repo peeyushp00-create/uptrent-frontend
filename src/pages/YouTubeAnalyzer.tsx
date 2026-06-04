@@ -453,6 +453,28 @@ export default function YouTubeAnalyzer() {
                     ))}
                   </div>
 
+                  {/* Avg stats from API — shown after analysis */}
+                  {myResult?.channelStats && !loading && (
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {[
+                        { label: 'Avg Views', val: myResult.channelStats.avg_views, icon: '👁️' },
+                        { label: 'Avg Likes', val: myResult.channelStats.avg_likes, icon: '❤️' },
+                        { label: 'Avg Comments', val: myResult.channelStats.avg_comments, icon: '💬' },
+                      ].map((s, i) => (
+                        <div key={i} className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                          <p className="text-sm">{s.icon}</p>
+                          <p className="font-bold text-white text-sm">{s.val}</p>
+                          <p className="text-[9px] text-white/70">{s.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {myResult?.channelStats?.engagement_rate && !loading && (
+                    <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                      <span className="text-xs font-bold text-white">📊 Engagement Rate: {myResult.channelStats.engagement_rate}</span>
+                    </div>
+                  )}
+
                   {/* Analyze button */}
                   <button
                     onClick={() => handleAnalyzeMine(ytChannel.channel_name)}
@@ -474,7 +496,7 @@ export default function YouTubeAnalyzer() {
                 )}
 
                 {/* Results */}
-                {myResult && !myResult.error && !loading && <AnalysisResults result={myResult} onCopy={copyText} copied={copied} />}
+                {myResult && !myResult.error && !loading && <AnalysisResults result={myResult} onCopy={copyText} copied={copied} hideStats />}
                 {myResult?.error && <p className="text-sm text-center text-red-500">{myResult.error}</p>}
               </motion.div>
             )}
@@ -629,12 +651,12 @@ export default function YouTubeAnalyzer() {
   );
 }
 
-function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (text: string, key: string) => void; copied: string | null }) {
+function AnalysisResults({ result, onCopy, copied, hideStats = false }: { result: any; onCopy: (text: string, key: string) => void; copied: string | null; hideStats?: boolean }) {
   const { t } = useTranslation();
   const stats = result.channelStats;
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-      {stats && (
+      {stats && !hideStats && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
           <div className="flex items-center gap-3 mb-4">
             {stats.thumbnail && <img src={stats.thumbnail} alt="" className="w-12 h-12 rounded-full shrink-0" />}
