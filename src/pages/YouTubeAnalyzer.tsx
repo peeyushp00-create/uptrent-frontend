@@ -421,40 +421,59 @@ export default function YouTubeAnalyzer() {
               </motion.div>
             ) : (
               <motion.div key="connected" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-                  <div className="flex items-center gap-3 mb-4">
-                    {ytChannel.channel_thumbnail && <img src={ytChannel.channel_thumbnail} alt="" className="w-12 h-12 rounded-full shrink-0" />}
+
+                {/* Channel profile banner */}
+                <div className="rounded-2xl p-5" style={{ background: YT_GRAD }}>
+                  <div className="flex items-center gap-4 mb-4">
+                    {ytChannel.channel_thumbnail ? (
+                      <img src={ytChannel.channel_thumbnail} alt={ytChannel.channel_name}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-white/30 shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-2xl border-2 border-white/30 shrink-0">
+                        {ytChannel.channel_name?.[0]?.toUpperCase() || 'Y'}
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base text-[#191c1d] dark:text-white truncate">{ytChannel.channel_name}</p>
-                      <p className="text-xs text-[#757684]">Your connected channel</p>
+                      <p className="font-bold text-white text-lg truncate">{ytChannel.channel_name}</p>
+                      <p className="text-xs text-white/70 mt-0.5">✓ Connected channel</p>
                     </div>
-                    <button onClick={() => handleAnalyzeMine(ytChannel.channel_name)} disabled={loading}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50"
-                      style={{ background: YT_GRAD }}>
-                      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                      {t('trending.analyze')}
-                    </button>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-3 gap-2 mb-4">
                     {[
-                      { icon: Users, label: t('home.subscribers'), val: formatNum(Number(ytChannel.subscribers || 0)), color: '#cc0000' },
-                      { icon: Video, label: t('home.videos'), val: formatNum(Number(ytChannel.video_count || 0)), color: '#ff6b35' },
-                      { icon: Eye, label: t('home.total_views'), val: formatNum(Number(ytChannel.total_views || 0)), color: '#ff9900' },
+                      { label: t('home.subscribers'), val: formatNum(Number(ytChannel.subscribers || 0)) },
+                      { label: t('home.videos'), val: formatNum(Number(ytChannel.video_count || 0)) },
+                      { label: t('home.total_views'), val: formatNum(Number(ytChannel.total_views || 0)) },
                     ].map((stat, i) => (
-                      <div key={i} className="rounded-xl p-3 text-center" style={{ background: YT_CONTAINER }}>
-                        <stat.icon className="w-4 h-4 mx-auto mb-1" style={{ color: stat.color }} />
-                        <p className="font-bold text-sm text-[#191c1d]">{stat.val}</p>
-                        <p className="text-[10px] text-[#757684]">{stat.label}</p>
+                      <div key={i} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                        <p className="font-bold text-white text-base">{stat.val}</p>
+                        <p className="text-[10px] text-white/70 mt-0.5">{stat.label}</p>
                       </div>
                     ))}
                   </div>
+
+                  {/* Analyze button */}
+                  <button
+                    onClick={() => handleAnalyzeMine(ytChannel.channel_name)}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
+                    style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}>
+                    {loading
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing…</>
+                      : <><Sparkles className="w-4 h-4" /> {myResult ? 'Re-analyze Channel' : 'Analyze My Channel'}</>}
+                  </button>
                 </div>
+
+                {/* Loading */}
                 {loading && (
                   <div className="flex flex-col items-center justify-center py-10 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-red-500" />
-                    <p className="text-sm text-[#757684]">{t('common.loading')}</p>
+                    <p className="text-sm text-[#757684]">Analyzing your channel…</p>
                   </div>
                 )}
+
+                {/* Results */}
                 {myResult && !myResult.error && !loading && <AnalysisResults result={myResult} onCopy={copyText} copied={copied} />}
                 {myResult?.error && <p className="text-sm text-center text-red-500">{myResult.error}</p>}
               </motion.div>
