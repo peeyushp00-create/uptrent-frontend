@@ -1053,20 +1053,65 @@ export default function InstagramAnalyzer() {
                 )}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
                   <div className="flex items-center gap-2 mb-3"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Reels ({hiker.reels.length})</h3></div>
+                  <style>{`
+                    @keyframes scanline {
+                      0% { transform: translateY(-100%); }
+                      100% { transform: translateY(900%); }
+                    }
+                  `}</style>
                   <div className="grid grid-cols-3 gap-2">
                     {hiker.reels.slice(0, reelsVisible).map((reel: any, i: number) => (
-                      <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
-                        className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e' }}>
+                      <div key={reel.id || i}
+                        onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
+                        className="relative rounded-xl overflow-hidden cursor-pointer group"
+                        style={{ aspectRatio: '9/16', background: '#1a1a2e' }}>
+
+                        {/* Thumbnail */}
                         <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                           onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+
+                        {/* Base dark gradient */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+
+                        {/* Purple shimmer on hover */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                          style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.3) 0%, transparent 60%, rgba(124,58,237,0.15) 100%)' }} />
+
+                        {/* Animated scan line */}
+                        <div className="absolute inset-0 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                          <div style={{
+                            position: 'absolute', width: '100%', height: '30%',
+                            background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.07), transparent)',
+                            animation: 'scanline 1.5s linear infinite',
+                          }} />
+                        </div>
+
+                        {/* Play button on hover */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
+                          <div className="w-11 h-11 rounded-full flex items-center justify-center shadow-2xl"
+                            style={{ background: 'rgba(124,58,237,0.9)', backdropFilter: 'blur(6px)' }}>
+                            <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
+                          </div>
+                        </div>
+
+                        {/* Caption on hover — top */}
+                        {reel.caption && (
+                          <div className="absolute top-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.75), transparent)' }}>
+                            <p className="text-[7px] text-white/90 line-clamp-2 leading-tight">{reel.caption}</p>
+                          </div>
+                        )}
+
+                        {/* Virality badge */}
                         {reel.virality?.label && (
                           <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
                             style={{ background: reel.virality.score >= 65 ? '#16a34a' : PRIMARY }}>
                             {reel.virality.label}
                           </div>
                         )}
+
+                        {/* Stats — bottom */}
                         <div className="absolute bottom-0 left-0 right-0 p-1.5">
                           <div className="flex items-center gap-1.5">
                             <Eye className="w-2.5 h-2.5 text-white/80" />
