@@ -201,6 +201,16 @@ function CompetitorDetail({
             <p className="text-sm text-[#191c1d] leading-relaxed">{result.competitor_insights}</p>
           </div>
         )}
+
+        {/* Shorts */}
+        {result?.shorts?.length > 0 && (
+          <VideoGrid title={`Shorts (${result.shorts.length})`} videos={result.shorts} isShorts />
+        )}
+
+        {/* Videos */}
+        {result?.videos?.length > 0 && (
+          <VideoGrid title={`Recent Videos (${result.videos.length})`} videos={result.videos} />
+        )}
       </div>
     </motion.div>
   );
@@ -737,6 +747,107 @@ function AnalysisResults({ result, onCopy, copied }: { result: any; onCopy: (tex
           <p className="text-sm text-[#191c1d] leading-relaxed">{result.competitor_insights}</p>
         </div>
       )}
+
+      {/* Shorts Grid */}
+      {result.shorts?.length > 0 && (
+        <VideoGrid title={`Shorts (${result.shorts.length})`} videos={result.shorts} isShorts />
+      )}
+
+      {/* Videos Grid */}
+      {result.videos?.length > 0 && (
+        <VideoGrid title={`Recent Videos (${result.videos.length})`} videos={result.videos} />
+      )}
     </motion.div>
+  );
+}
+
+// ─── Video / Shorts Grid ──────────────────────────────────────────────────────
+function VideoGrid({ title, videos, isShorts = false }: { title: string; videos: any[]; isShorts?: boolean }) {
+  const [visible, setVisible] = useState(isShorts ? 6 : 4);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Video className="w-4 h-4 text-red-500" />
+        <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">{title}</h3>
+      </div>
+
+      {isShorts ? (
+        /* Shorts — 3-col portrait grid */
+        <div className="grid grid-cols-3 gap-2">
+          {videos.slice(0, visible).map((v) => (
+            <a
+              key={v.id}
+              href={v.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative rounded-xl overflow-hidden group block"
+              style={{ aspectRatio: '9/16', background: '#1a1a2e' }}
+            >
+              <img
+                src={v.thumbnail}
+                alt={v.title}
+                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+              {/* Shorts badge */}
+              <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-white text-[8px] font-bold bg-red-600">
+                SHORT
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                <p className="text-[8px] text-white/90 line-clamp-2 leading-tight mb-1">{v.title}</p>
+                <div className="flex items-center gap-1.5">
+                  <Eye className="w-2.5 h-2.5 text-white/70" />
+                  <span className="text-[8px] text-white/70">{v.views_formatted}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        /* Regular videos — list layout */
+        <div className="space-y-2">
+          {videos.slice(0, visible).map((v) => (
+            <a
+              key={v.id}
+              href={v.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex gap-3 p-2 rounded-xl hover:bg-[#f8f9fa] dark:hover:bg-gray-700 transition-colors group"
+            >
+              <div className="relative shrink-0 rounded-lg overflow-hidden" style={{ width: 96, height: 54, background: '#1a1a2e' }}>
+                <img
+                  src={v.thumbnail}
+                  alt={v.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[#191c1d] dark:text-white line-clamp-2 leading-snug">{v.title}</p>
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <span className="text-[10px] text-[#757684] flex items-center gap-1">
+                    <Eye className="w-3 h-3" />{v.views_formatted} views
+                  </span>
+                  <span className="text-[10px] text-[#757684]">❤️ {v.likes_formatted}</span>
+                  <span className="text-[10px] text-[#757684]">💬 {v.comments_formatted}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {videos.length > visible && (
+        <button
+          onClick={() => setVisible(v => v + (isShorts ? 6 : 4))}
+          className="mx-auto mt-3 block px-5 py-2 rounded-full text-sm font-semibold text-white"
+          style={{ background: YT_GRAD }}
+        >
+          Load More
+        </button>
+      )}
+    </div>
   );
 }
