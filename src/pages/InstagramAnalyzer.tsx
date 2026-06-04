@@ -931,8 +931,8 @@ export default function InstagramAnalyzer() {
           </motion.div>
         )}
 
-        {/* Posts from ScrapeCreators */}
-        {result && !loading && result.posts?.length > 0 && (
+        {/* Posts from HikerAPI (cached in Supabase) */}
+        {hiker && !hikerLoading && hiker.posts?.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -940,19 +940,45 @@ export default function InstagramAnalyzer() {
                 <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posts ({result.posts.length})</h2>
               </div>
               <div className="grid grid-cols-3 gap-1.5">
-                {result.posts.map((post: any, i: number) => (
+                {hiker.posts.map((post: any, i: number) => (
                   <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
                     className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e' }}>
+
+                    {/* Thumbnail */}
                     {post.thumbnail && (
                       <img
                         src={`${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
                         alt={post.caption?.slice(0, 40) || ''}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute bottom-0 left-0 right-0 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                    {/* Base gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                    {/* Purple shimmer */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                      style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.25) 0%, transparent 60%, rgba(124,58,237,0.1) 100%)' }} />
+
+                    {/* View icon center on hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-2xl"
+                        style={{ background: 'rgba(124,58,237,0.9)', backdropFilter: 'blur(6px)' }}>
+                        <Eye className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+
+                    {/* Caption on hover — top */}
+                    {post.caption && (
+                      <div className="absolute top-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.75), transparent)' }}>
+                        <p className="text-[7px] text-white/90 line-clamp-2 leading-tight">{post.caption}</p>
+                      </div>
+                    )}
+
+                    {/* Stats on hover — bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="flex items-center gap-1.5">
                         <Heart className="w-2.5 h-2.5 text-white/80" />
                         <span className="text-[8px] text-white/80">{formatNumber(post.likes || 0)}</span>
