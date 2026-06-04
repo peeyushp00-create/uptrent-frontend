@@ -634,8 +634,17 @@ export default function YouTubeAnalyzer() {
                       {comp.engagement_rate && <span className="text-xs text-[#757684]"><span className="font-semibold text-green-600">{comp.engagement_rate}</span> eng.</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] text-[#757684] hidden sm:block">View details</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(comp.channelName)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-colors hidden sm:block"
+                      style={{ background: YT_CONTAINER, color: YT_COLOR }}
+                    >
+                      View Channel
+                    </a>
                     <button onClick={e => { e.stopPropagation(); removeCompetitor(comp.channelName); }}
                       className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-[#757684] hover:text-red-500 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
