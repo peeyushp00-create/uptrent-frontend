@@ -60,11 +60,25 @@ interface CompetitorCard {
 // ─── Competitor Detail Page ───────────────────────────────────────────────────
 function CompetitorDetail({ competitor, onBack }: { competitor: CompetitorCard; onBack: () => void }) {
   const result = competitor.fullData;
-  const hiker = competitor.hikerData;
+  const [hiker, setHiker] = useState<any>(competitor.hikerData);
+  const [hikerLoading, setHikerLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
   const [heatmap] = useState(generateHeatmap());
+
+  // Re-fetch fresh hiker data on open so CDN URLs are not expired
+  useEffect(() => {
+    const refetch = async () => {
+      setHikerLoading(true);
+      try {
+        const res = await fetch(`${BASE}/api/hiker/analyze?username=${encodeURIComponent(competitor.username)}`);
+        if (res.ok) setHiker(await res.json());
+      } catch (e) { console.error(e); }
+      finally { setHikerLoading(false); }
+    };
+    refetch();
+  }, [competitor.username]);
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -232,7 +246,13 @@ function CompetitorDetail({ competitor, onBack }: { competitor: CompetitorCard; 
         </div>
 
         {/* Reels */}
-        {hiker?.reels?.length > 0 && (
+        {hikerLoading && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-6 text-center">
+            <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" style={{ color: PRIMARY }} />
+            <p className="text-xs text-[#757684]">Fetching latest reels & posts…</p>
+          </div>
+        )}
+        {!hikerLoading && hiker?.reels?.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
             <div className="flex items-center gap-2 mb-3"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Their Reels ({hiker.reels.length})</h2></div>
             <div className="grid grid-cols-3 gap-2">
@@ -266,6 +286,55 @@ function CompetitorDetail({ competitor, onBack }: { competitor: CompetitorCard; 
             {hiker.reels.length > reelsVisible && (
               <button onClick={() => setReelsVisible(v => v + 9)} className="mx-auto mt-3 block px-5 py-2 rounded-full text-sm font-semibold text-white" style={{ background: PRIMARY }}>Load More</button>
             )}
+          </div>
+        )}
+
+        {/* Posts */}
+        {!hikerLoading && hiker?.posts?.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} />
+              <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Their Posts ({hiker.posts.length})</h2>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {hiker.posts.map((post: any, i: number) => (
+                <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
+                  className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e' }}>
+                  {post.thumbnail && (
+                    <img src={`${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
+                      alt={post.caption?.slice(0, 40) || ''}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'rgba(124,58,237,0.9)', backdropFilter: 'blur(6px)' }}>
+                      <Eye className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="flex items-center gap-1.5">
+                      <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(post.likes || 0)}</span>
+                      <MessageCircle className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(post.comments || 0)}</span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Top Hashtags */}
+        {!hikerLoading && hiker?.top_hashtags?.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+            <div className="flex items-center gap-2 mb-3"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Hashtags They Use</h2></div>
+            <div className="flex flex-wrap gap-2">
+              {hiker.top_hashtags.map((h: any, i: number) => (
+                <span key={i} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                  {h.tag} <span className="opacity-60">×{h.count}</span>
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>
