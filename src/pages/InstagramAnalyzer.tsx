@@ -48,6 +48,7 @@ const PILLAR_COLORS = [
 interface CompetitorCard {
   username: string;
   profile_pic_base64?: string;
+  profile_pic_url?: string;
   followers?: number;
   engagement_rate?: string;
   is_verified?: boolean;
@@ -342,9 +343,12 @@ export default function InstagramAnalyzer() {
       ]);
       const fullData = mainRes.status === 'fulfilled' ? mainRes.value : null;
       const hikerData = hikerRes.status === 'fulfilled' ? hikerRes.value : null;
+      // Use HikerAPI profile pic (proxied) as it's more reliable than ScrapeCreators base64
+      const hikerProfilePic = hikerData?.reels?.[0]?.profile_pic_url || null;
       const card: CompetitorCard = {
         username: clean,
-        profile_pic_base64: fullData?.stats?.profile_pic_base64,
+        profile_pic_base64: fullData?.stats?.profile_pic_base64 || null,
+        profile_pic_url: hikerProfilePic,
         followers: fullData?.stats?.followers,
         engagement_rate: fullData?.stats?.engagement_rate,
         is_verified: fullData?.stats?.is_verified,
@@ -463,8 +467,13 @@ export default function InstagramAnalyzer() {
                 <motion.div key={comp.username} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 p-3 rounded-xl border border-[#e1e3e4] dark:border-gray-700 cursor-pointer hover:border-[#7C3AED]/40 hover:bg-[#faf9ff] dark:hover:bg-gray-700 transition-all"
                   onClick={() => setOpenCompetitor(comp)}>
-                  {comp.profile_pic_base64 ? (
-                    <img src={comp.profile_pic_base64} alt={comp.username} className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0" />
+                  {(comp.profile_pic_base64 || comp.profile_pic_url) ? (
+                    <img
+                      src={comp.profile_pic_base64 || (comp.profile_pic_url ? `${BASE}/api/instagram/img?u=${encodeURIComponent(comp.profile_pic_url)}` : '')}
+                      alt={comp.username}
+                      className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
                   ) : (
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ background: PRIMARY_GRAD }}>
                       {comp.username[0].toUpperCase()}
@@ -611,26 +620,7 @@ export default function InstagramAnalyzer() {
               </div>
             )}
 
-            {/* Hashtags */}
-            {result.hashtags?.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.hashtags')}</h2></div>
-                  <button onClick={() => copyText(result.hashtags.map((h: string) => `#${h}`).join(' '), 'hashtags')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
-                    {copied === 'hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> {t('scripts.copied')}</> : <><Copy className="w-3.5 h-3.5" /> {t('scripts.copy_all')}</>}
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {result.hashtags.map((tag: string, i: number) => (
-                    <button key={i} onClick={() => copyText(`#${tag}`, `tag-${i}`)}
-                      className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80"
-                      style={i % 3 === 0 ? { background: PRIMARY_CONTAINER, color: PRIMARY } : i % 3 === 1 ? { background: '#e8f5e9', color: '#2e7d32' } : { background: '#e7e8e9', color: '#454652' }}>
-                      #{tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+
 
             {/* Best Time Heatmap */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
@@ -811,15 +801,25 @@ export default function InstagramAnalyzer() {
                   );
                 })()}
 
-                {/* Top Hashtags */}
+                {/* Real hashtags from HikerAPI only */}
                 {hiker.top_hashtags?.length > 0 && (
                   <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-                    <div className="flex items-center gap-2 mb-3"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Top Hashtags Used</h3></div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-4 h-4" style={{ color: PRIMARY }} />
+                        <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Hashtags They Use ({hiker.top_hashtags.length})</h3>
+                      </div>
+                      <button onClick={() => copyText(hiker.top_hashtags.map((h: any) => h.tag).join(' '), 'all-hashtags')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
+                        {copied === 'all-hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy all</>}
+                      </button>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       {hiker.top_hashtags.map((h: any, i: number) => (
-                        <span key={i} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                        <button key={i} onClick={() => copyText(h.tag, `htag-${i}`)}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80 flex items-center gap-1"
+                          style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
                           {h.tag} <span className="opacity-60">×{h.count}</span>
-                        </span>
+                        </button>
                       ))}
                     </div>
                   </div>
