@@ -611,7 +611,26 @@ export default function InstagramAnalyzer() {
               </div>
             )}
 
-
+            {/* Hashtags */}
+            {result.hashtags?.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.hashtags')}</h2></div>
+                  <button onClick={() => copyText(result.hashtags.map((h: string) => `#${h}`).join(' '), 'hashtags')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
+                    {copied === 'hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> {t('scripts.copied')}</> : <><Copy className="w-3.5 h-3.5" /> {t('scripts.copy_all')}</>}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {result.hashtags.map((tag: string, i: number) => (
+                    <button key={i} onClick={() => copyText(`#${tag}`, `tag-${i}`)}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80"
+                      style={i % 3 === 0 ? { background: PRIMARY_CONTAINER, color: PRIMARY } : i % 3 === 1 ? { background: '#e8f5e9', color: '#2e7d32' } : { background: '#e7e8e9', color: '#454652' }}>
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Best Time Heatmap */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
@@ -792,25 +811,15 @@ export default function InstagramAnalyzer() {
                   );
                 })()}
 
-                {/* Real hashtags from HikerAPI only */}
+                {/* Top Hashtags */}
                 {hiker.top_hashtags?.length > 0 && (
                   <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Hash className="w-4 h-4" style={{ color: PRIMARY }} />
-                        <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Hashtags They Use ({hiker.top_hashtags.length})</h3>
-                      </div>
-                      <button onClick={() => copyText(hiker.top_hashtags.map((h: any) => h.tag).join(' '), 'all-hashtags')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
-                        {copied === 'all-hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy all</>}
-                      </button>
-                    </div>
+                    <div className="flex items-center gap-2 mb-3"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Top Hashtags Used</h3></div>
                     <div className="flex flex-wrap gap-2">
                       {hiker.top_hashtags.map((h: any, i: number) => (
-                        <button key={i} onClick={() => copyText(h.tag, `htag-${i}`)}
-                          className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80 flex items-center gap-1"
-                          style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                        <span key={i} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
                           {h.tag} <span className="opacity-60">×{h.count}</span>
-                        </button>
+                        </span>
                       ))}
                     </div>
                   </div>
