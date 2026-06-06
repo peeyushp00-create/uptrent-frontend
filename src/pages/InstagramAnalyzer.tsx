@@ -58,7 +58,11 @@ interface CompetitorCard {
 }
 
 // ─── Competitor Detail Page ───────────────────────────────────────────────────
-function CompetitorDetail({ competitor, onBack }: { competitor: CompetitorCard; onBack: () => void }) {
+function CompetitorDetail({ competitor, onBack, onUpdate }: { 
+  competitor: CompetitorCard; 
+  onBack: () => void;
+  onUpdate?: (username: string, hikerData: any) => void;
+}) {
   const result = competitor.fullData;
   const [hiker, setHiker] = useState<any>(competitor.hikerData);
   const [hikerLoading, setHikerLoading] = useState(false);
@@ -73,7 +77,12 @@ function CompetitorDetail({ competitor, onBack }: { competitor: CompetitorCard; 
       setHikerLoading(true);
       try {
         const res = await fetch(`${BASE}/api/hiker/analyze?username=${encodeURIComponent(competitor.username)}`);
-        if (res.ok) setHiker(await res.json());
+        if (res.ok) {
+          const freshData = await res.json();
+          setHiker(freshData);
+          // Update the competitor card in the list with fresh data
+          if (onUpdate) onUpdate(competitor.username, freshData);
+        }
       } catch (e) { console.error(e); }
       finally { setHikerLoading(false); }
     };
@@ -432,6 +441,14 @@ export default function InstagramAnalyzer() {
 
   const removeCompetitor = (username: string) => setCompetitors(prev => prev.filter(c => c.username !== username));
 
+  const updateCompetitorData = (username: string, hikerData: any) => {
+    setCompetitors(prev => prev.map(c => 
+      c.username.toLowerCase() === username.toLowerCase()
+        ? { ...c, hikerData, updatedAt: Date.now() }
+        : c
+    ));
+  };
+
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
@@ -439,7 +456,13 @@ export default function InstagramAnalyzer() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
       <AnimatePresence>
-        {openCompetitor && <CompetitorDetail competitor={openCompetitor} onBack={() => setOpenCompetitor(null)} />}
+        {openCompetitor && (
+          <CompetitorDetail
+            competitor={openCompetitor}
+            onBack={() => setOpenCompetitor(null)}
+            onUpdate={updateCompetitorData}
+          />
+        )}
       </AnimatePresence>
 
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center">
@@ -536,18 +559,22 @@ export default function InstagramAnalyzer() {
                 <motion.div key={comp.username} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 p-3 rounded-xl border border-[#e1e3e4] dark:border-gray-700 cursor-pointer hover:border-[#7C3AED]/40 hover:bg-[#faf9ff] dark:hover:bg-gray-700 transition-all"
                   onClick={() => setOpenCompetitor(comp)}>
-                  {(comp.profile_pic_base64 || comp.profile_pic_url) ? (
-                    <img
-                      src={comp.profile_pic_base64 || (comp.profile_pic_url ? `${BASE}/api/instagram/img?u=${encodeURIComponent(comp.profile_pic_url)}` : '')}
-                      alt={comp.username}
-                      className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0"
-                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ background: PRIMARY_GRAD }}>
-                      {comp.username[0].toUpperCase()}
-                    </div>
-                  )}
+                  {/* Profile pic — use latest reel thumbnail if available */}
+                  {(() => {
+                    const latestThumb = comp.hikerData?.reels?.[0]?.thumbnail;
+                    const picSrc = comp.profile_pic_base64 ||
+                      (comp.profile_pic_url ? `${BASE}/api/instagram/img?u=${encodeURIComponent(comp.profile_pic_url)}` : null) ||
+                      (latestThumb ? `${BASE}/api/instagram/img?u=${encodeURIComponent(latestThumb)}` : null);
+                    return picSrc ? (
+                      <img src={picSrc} alt={comp.username}
+                        className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0"
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ background: PRIMARY_GRAD }}>
+                        {comp.username[0].toUpperCase()}
+                      </div>
+                    );
+                  })()}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-bold text-[#191c1d] dark:text-white truncate">@{comp.username}</p>
@@ -556,6 +583,7 @@ export default function InstagramAnalyzer() {
                     <div className="flex items-center gap-3 mt-0.5">
                       {comp.followers && <span className="text-xs text-[#757684]"><span className="font-semibold text-[#454652] dark:text-gray-300">{formatNum(comp.followers)}</span> followers</span>}
                       {comp.engagement_rate && <span className="text-xs text-[#757684]"><span className="font-semibold text-green-600">{comp.engagement_rate}%</span> eng.</span>}
+                      {comp.hikerData?.reels?.length > 0 && <span className="text-xs text-[#757684]"><span className="font-semibold" style={{ color: PRIMARY }}>{comp.hikerData.reels.length}</span> reels</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
