@@ -170,6 +170,36 @@ function CompetitorDetail({ competitor, onBack, onCopy, copied }: {
             {stats.description && <p className="text-xs text-[#757684] mt-3 line-clamp-3">{stats.description}</p>}
           </div>
         )}
+        {result?.niche && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-red-500" />
+                <p className="text-xs font-bold uppercase tracking-wider text-red-500">Niche</p>
+              </div>
+              {result.niche_score && (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
+                  🎯 {result.niche_score}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-4 py-2 rounded-full text-sm font-bold text-white" style={{ background: YT_GRAD }}>
+                {result.niche}
+              </span>
+            </div>
+            {result.sub_niches?.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {result.sub_niches.map((sub: string, i: number) => (
+                  <span key={i} className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: YT_CONTAINER, color: YT_COLOR }}>
+                    {sub}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {result?.content_pillars?.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
             <div className="flex items-center gap-2 mb-3">
@@ -715,6 +745,36 @@ function AnalysisResults({ result, onCopy, copied, hideStats = false }: { result
           <p className="text-sm text-[#454652] dark:text-gray-300 leading-relaxed">{result.summary}</p>
         </div>
       )}
+      {result.niche && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-red-500" />
+              <p className="text-xs font-bold uppercase tracking-wider text-red-500">Niche</p>
+            </div>
+            {result.niche_score && (
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
+                🎯 {result.niche_score}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-4 py-2 rounded-full text-sm font-bold text-white" style={{ background: YT_GRAD }}>
+              {result.niche}
+            </span>
+          </div>
+          {result.sub_niches?.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {result.sub_niches.map((sub: string, i: number) => (
+                <span key={i} className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: YT_CONTAINER, color: YT_COLOR }}>
+                  {sub}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {result.content_pillars?.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
           <div className="flex items-center gap-2 mb-3">
