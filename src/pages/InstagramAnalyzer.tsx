@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb,
   User, Users, Heart, MessageCircle, BarChart2, BadgeCheck, Eye,
-  Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus,
+  Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target,
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
@@ -157,6 +157,37 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Niche Detection */}
+        {result?.niche && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4" style={{ color: PRIMARY }} />
+                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Niche</h2>
+              </div>
+              {result.niche_score && (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
+                  🎯 {result.niche_score}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-4 py-2 rounded-full text-sm font-bold text-white" style={{ background: PRIMARY_GRAD }}>
+                {result.niche}
+              </span>
+            </div>
+            {result.sub_niches?.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {result.sub_niches.map((sub: string, i: number) => (
+                  <span key={i} className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                    {sub}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -658,6 +689,37 @@ export default function InstagramAnalyzer() {
               </div>
               <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>
             </div>
+
+            {/* Niche Detection */}
+            {result.niche && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4" style={{ color: PRIMARY }} />
+                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white">Niche</h2>
+                  </div>
+                  {result.niche_score && (
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
+                      🎯 {result.niche_score}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="px-4 py-2 rounded-full text-sm font-bold text-white" style={{ background: PRIMARY_GRAD }}>
+                    {result.niche}
+                  </span>
+                </div>
+                {result.sub_niches?.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {result.sub_niches.map((sub: string, i: number) => (
+                      <span key={i} className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                        {sub}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Stats */}
             {result.stats && (
