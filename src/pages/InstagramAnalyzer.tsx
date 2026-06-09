@@ -486,6 +486,23 @@ export default function InstagramAnalyzer() {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
 
+  const isBoosted = (item: any, avgViews?: number) => {
+    const caption = (item.caption || '').toLowerCase();
+    // Check for paid promotion keywords
+    const adKeywords = ['#ad', '#sponsored', '#collab', '#paid', '#gifted', '#partnership', '#brandpartner', 'paid partnership', '#promotion', '#promo', '#sp'];
+    if (adKeywords.some(k => caption.includes(k))) return true;
+    // Check engagement anomaly — high views but very low engagement ratio
+    const views = Number(item.views) || 0;
+    const likes = Number(item.likes) || 0;
+    const comments = Number(item.comments) || 0;
+    if (views > 0 && avgViews) {
+      const engRate = (likes + comments) / views;
+      // If views are 3x above average but engagement rate is below 1%, likely boosted
+      if (views > avgViews * 3 && engRate < 0.01) return true;
+    }
+    return false;
+  };
+
   const filterReels = (reels: any[]) => {
     const r = [...reels];
     if (reelsFilter === 'top') return r.sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0));
@@ -934,10 +951,17 @@ export default function InstagramAnalyzer() {
                               <p className="text-[7px] text-white/90 line-clamp-2 leading-tight">{reel.caption}</p>
                             </div>
                           )}
-                          {reel.virality?.label && (
-                            <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
-                              style={{ background: reel.virality.score >= 65 ? '#16a34a' : PRIMARY }}>{reel.virality.label}</div>
-                          )}
+                          <div className="absolute top-1.5 right-1.5 flex flex-col gap-0.5 items-end">
+                            {isBoosted(reel, hiker.stats?.avg_views) && (
+                              <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold" style={{ background: '#f59e0b' }}>
+                                💰 Boosted
+                              </div>
+                            )}
+                            {reel.virality?.label && (
+                              <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                                style={{ background: reel.virality.score >= 65 ? '#16a34a' : PRIMARY }}>{reel.virality.label}</div>
+                            )}
+                          </div>
                           <div className="absolute bottom-0 left-0 right-0 p-1.5">
                             <div className="flex items-center gap-1.5">
                               <Eye className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.views) || 0)}</span>
@@ -986,6 +1010,11 @@ export default function InstagramAnalyzer() {
                                 <Eye className="w-4 h-4 text-white" />
                               </div>
                             </div>
+                            {isBoosted(post) && (
+                              <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-white text-[8px] font-bold" style={{ background: '#f59e0b' }}>
+                                💰 Boosted
+                              </div>
+                            )}
                             <div className="absolute bottom-0 left-0 right-0 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                               <div className="flex items-center gap-1.5">
                                 <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(post.likes || 0)}</span>
