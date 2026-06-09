@@ -364,6 +364,8 @@ export default function InstagramAnalyzer() {
   const [hiker, setHiker] = useState<any>(null);
   const [hikerLoading, setHikerLoading] = useState(false);
   const [reelsVisible, setReelsVisible] = useState(9);
+  const [reelsFilter, setReelsFilter] = useState<'top' | 'latest' | 'liked' | 'viral'>('top');
+  const [postsFilter, setPostsFilter] = useState<'top' | 'latest' | 'liked'>('top');
   const [competitors, setCompetitors] = useState<CompetitorCard[]>(() => {
     try { return JSON.parse(localStorage.getItem('ig_competitors') || '[]'); } catch { return []; }
   });
@@ -451,6 +453,23 @@ export default function InstagramAnalyzer() {
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
+  };
+
+  const filterReels = (reels: any[]) => {
+    const r = [...reels];
+    if (reelsFilter === 'top') return r.sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0));
+    if (reelsFilter === 'latest') return r.sort((a, b) => new Date(b.posted_at || 0).getTime() - new Date(a.posted_at || 0).getTime());
+    if (reelsFilter === 'liked') return r.sort((a, b) => (Number(b.likes) || 0) - (Number(a.likes) || 0));
+    if (reelsFilter === 'viral') return r.sort((a, b) => (b.virality?.score || 0) - (a.virality?.score || 0));
+    return r;
+  };
+
+  const filterPosts = (posts: any[]) => {
+    const p = [...posts];
+    if (postsFilter === 'top') return p.sort((a, b) => (Number(b.views) || Number(b.likes) || 0) - (Number(a.views) || Number(a.likes) || 0));
+    if (postsFilter === 'latest') return p.sort((a, b) => new Date(b.posted_at || 0).getTime() - new Date(a.posted_at || 0).getTime());
+    if (postsFilter === 'liked') return p.sort((a, b) => (Number(b.likes) || 0) - (Number(a.likes) || 0));
+    return p;
   };
 
   return (
@@ -816,10 +835,21 @@ export default function InstagramAnalyzer() {
                 {/* Reels Grid */}
                 {hiker.reels?.length > 0 && (
                   <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-                    <div className="flex items-center gap-2 mb-3"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Reels ({hiker.reels.length})</h3></div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Reels ({hiker.reels.length})</h3></div>
+                    </div>
+                    <div className="flex gap-1.5 mb-3 flex-wrap">
+                      {([['top', 'Top Views'], ['latest', 'Latest'], ['liked', 'Most Liked'], ['viral', 'Viral']] as const).map(([val, label]) => (
+                        <button key={val} onClick={() => { setReelsFilter(val); setReelsVisible(9); }}
+                          className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+                          style={reelsFilter === val ? { background: PRIMARY, color: '#fff' } : { background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                     <style>{`@keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(900%); } }`}</style>
                     <div className="grid grid-cols-3 gap-2">
-                      {hiker.reels.slice(0, reelsVisible).map((reel: any, i: number) => (
+                      {filterReels(hiker.reels).slice(0, reelsVisible).map((reel: any, i: number) => (
                         <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
                           className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e' }}>
                           <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
@@ -867,8 +897,17 @@ export default function InstagramAnalyzer() {
                   return (
                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
                       <div className="flex items-center gap-2 mb-3"><MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Posts ({displayPosts.length})</h3></div>
+                      <div className="flex gap-1.5 mb-3 flex-wrap">
+                        {([['top', 'Top'], ['latest', 'Latest'], ['liked', 'Most Liked']] as const).map(([val, label]) => (
+                          <button key={val} onClick={() => setPostsFilter(val)}
+                            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+                            style={postsFilter === val ? { background: PRIMARY, color: '#fff' } : { background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
                       <div className="grid grid-cols-3 gap-1.5">
-                        {displayPosts.map((post: any, i: number) => (
+                        {filterPosts(displayPosts).map((post: any, i: number) => (
                           <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
                             className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e' }}>
                             {post.thumbnail && (
