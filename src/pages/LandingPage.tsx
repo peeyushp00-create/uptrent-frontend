@@ -5,12 +5,12 @@ const FEATURES = [
   { num: '01', title: 'Creator News Feed', desc: 'Curated industry news, platform updates, and creator economy signals — filtered for what actually matters to your niche.', tags: ['YouTube', 'Instagram'] },
   { num: '02', title: 'AI Script Generator', desc: 'Go from idea to full video script in 60 seconds. Trained on viral hooks, retention patterns, and your channel voice.', tags: ['Hook', 'Body', 'CTA'] },
   { num: '03', title: 'Content Analyzer', desc: "Deep-dive analytics on your existing content. Identify what's working, what's losing viewers, and what to create next.", tags: ['Retention', 'Drop-off'] },
-  { num: '04', title: 'Trending Topics', desc: 'Real-time trend detection across YouTube and Instagram before they peak — publish first, win the algorithm.', tags: ['#AIVideoEditing ↑ 340%', '#CreatorEconomy ↑ 128%'] },
+  { num: '04', title: 'Trending Topics', desc: 'Real-time trend detection across YouTube and Instagram before they peak — publish first, win the algorithm.', tags: ['#AIVideoEditing → 340%', '#CreatorEconomy → 128%'] },
   { num: '05', title: 'YouTube SEO', desc: 'Keyword research, title optimization, tag suggestions, and thumbnail analysis — everything to rank on page one.', tags: ['Keywords', 'Titles', 'Tags'] },
 ];
 
 const STEPS = [
-  { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library.', note: 'OAuth 2.0 secure. Read-only access. Revoke anytime.' },
+  { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library.', note: 'OAuth2.0 secure. Read-only access. Revoke anytime.' },
   { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: 'Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience.', note: 'Processes 150+ content signals per channel per day.' },
   { num: '03', title: 'Publish & Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark premium workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
 ];
@@ -23,7 +23,7 @@ const STATS = [
 ];
 
 const VIDEO_CARDS = [
-  { id:1,  platform:'youtube',   title:'How I Got 100K Subs in 30 Days',       views:'2.4M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png',  lane:0, speed:18, startOffset:0   },
+  { id:1,  platform:'youtube',   title:'How I Got 100K Subs in 30 Days',       views:'2.4M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png',  lane:0, speed:18, startOffset:0 },
   { id:2,  platform:'instagram', title:'Morning Routine That Changed My Life',  views:'890K', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1521eb58e-1764644106046.png',  lane:1, speed:22, startOffset:-40 },
   { id:3,  platform:'youtube',   title:'AI Tools Every Creator Needs in 2026', views:'1.1M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1ddab98dc-1773131998650.png',  lane:2, speed:16, startOffset:-20 },
   { id:4,  platform:'instagram', title:'Street Food Tour in Tokyo',            views:'3.7M', thumbnail:'https://images.unsplash.com/photo-1516822561562-a6762898eb60?w=200',                 lane:3, speed:20, startOffset:-10 },
@@ -121,7 +121,7 @@ const HeroTitle = () => {
         <motion.div animate={{ opacity:[0.6,1,0.6], boxShadow:['0 0 12px 2px rgba(139,92,246,0.4)','0 0 30px 6px rgba(139,92,246,0.8)','0 0 12px 2px rgba(139,92,246,0.4)'] }}
           transition={{ duration:2, repeat:Infinity, ease:'easeInOut' }}
           style={{ position:'absolute', inset:0, borderRadius:50, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)' }} />
-        <motion.div animate={{ x:['-200%','300%'] }} transition={{ duration:4, repeat:Infinity, repeatDelay:0, ease:'linear' }}
+        <motion.div animate={{ x:['-200%','300%'] }} transition={{ duration:4, repeat:Infinity, repeatDelay:0,ease:'linear' }}
           style={{ position:'absolute', top:0, bottom:0, width:'60%', borderRadius:50, background:'linear-gradient(to right,transparent,rgba(255,255,255,0.7) 40%,rgba(255,255,255,0.9) 50%,rgba(255,255,255,0.7) 60%,transparent)' }} />
       </motion.div>
     </div>
@@ -166,16 +166,34 @@ export default function LandingPage() {
 
   const BASE = import.meta.env.VITE_API_URL || 'https://uptrent-backend.onrender.com';
 
+  // Scroll to top on mount
   useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  // ✅ SEO: Set page title and meta description
+  useEffect(() => {
+    document.title = 'SocialRum AI – Content Engine for Indian Creators | Scripts, Trends & Captions in Your Language';
+    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (meta) {
+      meta.setAttribute('content', 'AI for Indian creators — discover trends, write scripts in your voice & language, and analyse competitors on Instagram & YouTube. Get started with SocialRum.');
+    } else {
+      meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = 'AI for Indian creators — discover trends, write scripts in your voice & language, and analyse competitors on Instagram & YouTube. Get started with SocialRum.';
+      document.head.appendChild(meta);
+    }
+  }, []);
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', fn, { passive:true });
     return () => window.removeEventListener('scroll', fn);
   }, []);
+
   useEffect(() => {
     const t = setInterval(() => setActiveNiche(p => (p + 1) % TRENDING_NICHES.length), 2000);
     return () => clearInterval(t);
   }, []);
+
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -212,7 +230,7 @@ export default function LandingPage() {
     <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily:"'Roboto',sans-serif" }}>
       <style>{css}</style>
 
-      {/* Mobile menu — no /home links */}
+      {/* Mobile menu */}
       <div className={`sr-mobile-menu ${menuOpen ? 'open' : ''}`}>
         <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
         <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How It Works</a>
@@ -257,10 +275,9 @@ export default function LandingPage() {
         })}
       </div>
 
-      {/* ── NAVBAR ── logo uses /logo.png, no /home link ── */}
+      {/* NAVBAR */}
       <nav className="sr-nav" style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 64px', height:72, transition:'all .3s', background: scrolled || menuOpen ? 'rgba(3,0,10,0.95)' : 'transparent', backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(139,92,246,0.1)' : 'none' }}>
 
-        {/* ✅ Logo — uses /logo.png, no link to /home */}
         <div style={{ display:'flex', alignItems:'center', gap:10, zIndex:51 }}>
           <div style={{ width:36, height:36, borderRadius:10, overflow:'hidden', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <img src="/logo.png" alt="SocialRum" style={{ width:36, height:36, objectFit:'cover', borderRadius:10 }}
@@ -278,7 +295,6 @@ export default function LandingPage() {
           <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:18, color:'#fff', letterSpacing:'-.02em' }}>SocialRum</span>
         </div>
 
-        {/* Desktop nav */}
         <ul className="sr-nav-links" style={{ display:'flex', gap:40, listStyle:'none', margin:0, padding:0 }}>
           {['Features','How It Works','Blog','Early Access'].map(item => (
             <li key={item}><a href={item === 'Blog' ? '/blog' : `#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'Roboto,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
@@ -289,7 +305,6 @@ export default function LandingPage() {
           Be the First to Know
         </a>
 
-        {/* Hamburger */}
         <button className="sr-hamburger" onClick={() => setMenuOpen(!menuOpen)}
           style={{ display:'none', background:'none', border:'none', color:'#fff', cursor:'pointer', padding:4, zIndex:51, flexDirection:'column', gap:5, alignItems:'center', justifyContent:'center' }}>
           {menuOpen ? (
@@ -488,7 +503,12 @@ export default function LandingPage() {
             <h2 style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:16, lineHeight:1.2 }}>Be the First to<br/>Know &amp; Create.</h2>
             <p style={{ fontSize:15, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:32, fontFamily:'Roboto,sans-serif' }}>Get early access and founding creator status when SocialRum launches.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-              {['Beta Access — Use all 5 tools before public launch','Founding Creator Badge — Exclusive profile recognition','Free Early Access Tier — No credit card required','Priority support from the SocialRum team'].map(b => (
+              {[
+                'Beta Access — Use all 5 tools before public launch',
+                'Founding Creator Badge — Exclusive profile recognition',
+                'Free Early Access Tier — No credit card required',
+                'Priority support from the SocialRum team'
+              ].map(b => (
                 <div key={b} style={{ display:'flex', alignItems:'flex-start', gap:12, fontSize:14, color:'rgba(255,255,255,0.55)', fontFamily:'Roboto,sans-serif' }}>
                   <div style={{ width:20, height:20, borderRadius:'50%', background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2 }}>
                     <svg viewBox="0 0 12 12" style={{ width:10, height:10 }} fill="none" strokeWidth={2.5} stroke="#a78bfa" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
@@ -529,16 +549,14 @@ export default function LandingPage() {
 
             {step === 'email' && (
               <div className="sr-fade-in">
-                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Get Early Access</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:24, lineHeight:1.6, fontFamily:'Roboto,sans-serif' }}>Join creators who are getting early access to SocialRum.</p>
+                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Join Early Access</h3>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:24, lineHeight:1.6, fontFamily:'Roboto,sans-serif' }}>Be among the first Indian creators to get access to SocialRum.</p>
                 <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
                   <input id="sr-name-input" type="text" placeholder="Your name (optional)" className="sr-input" />
                   <input ref={emailRef} type="email" placeholder="your@email.com" className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleSendOTP(); }} />
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
-                <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">
-                  {loading ? 'Sending...' : 'Get Early Access →'}
-                </button>
+                <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Sending...' : 'Get Early Access →'}</button>
                 <p style={{ fontSize:11, color:'rgba(255,255,255,0.2)', textAlign:'center', fontFamily:'Roboto,sans-serif' }}>No spam. Unsubscribe anytime.</p>
               </div>
             )}
@@ -546,7 +564,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER — no /home or app links */}
+      {/* FOOTER */}
       <footer className="sr-footer" style={{ borderTop:'1px solid rgba(139,92,246,0.08)', padding:'40px 64px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:20 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <div style={{ width:28, height:28, borderRadius:8, overflow:'hidden', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -554,17 +572,18 @@ export default function LandingPage() {
               onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
           </div>
           <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.6)' }}>SocialRum</span>
-          <span style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif', marginLeft:8 }}>© 2026 · Built for Indian Creators</span>
         </div>
         <div className="sr-footer-links" style={{ display:'flex', gap:24 }}>
-          {[['Blog', '/blog'], ['Privacy', '#'], ['Terms', '#']].map(([label, href]) => (
-            <a key={label} href={href} style={{ fontSize:13, color:'rgba(255,255,255,0.3)', textDecoration:'none', fontFamily:'Roboto,sans-serif', transition:'color .2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.6)')}
+          {['Features', 'How It Works', 'Blog', 'Early Access'].map(item => (
+            <a key={item} href={item === 'Blog' ? '/blog' : `#${item.toLowerCase().replace(/ /g,'-')}`}
+              style={{ color:'rgba(255,255,255,0.3)', textDecoration:'none', fontSize:13, fontFamily:'Roboto,sans-serif', transition:'color .2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.7)')}
               onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.3)')}>
-              {label}
+              {item}
             </a>
           ))}
         </div>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif' }}>© 2026 SocialRum. Made for India 🇮🇳</p>
       </footer>
     </div>
   );
