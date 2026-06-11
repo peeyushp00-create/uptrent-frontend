@@ -171,14 +171,14 @@ export default function LandingPage() {
 
   // ✅ SEO: Set page title and meta description
   useEffect(() => {
-    document.title = 'SocialRum AI – Content Engine for Indian Creators | Scripts, Trends & Captions in Your Language';
+    document.title = 'SocialRum – Content Engine for Indian Creators | Scripts, Trends & Captions in Your Language';
     let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
     if (meta) {
-      meta.setAttribute('content', 'AI for Indian creators — discover trends, write scripts in your voice & language, and analyse competitors on Instagram & YouTube. Get started with SocialRum.');
+      meta.setAttribute('content', 'AI platform for Indian creators — discover trends, write scripts in your own voice & language, and analyse competitors on Instagram & YouTube. Join the waitlist.');
     } else {
       meta = document.createElement('meta');
       meta.name = 'description';
-      meta.content = 'AI for Indian creators — discover trends, write scripts in your voice & language, and analyse competitors on Instagram & YouTube. Get started with SocialRum.';
+      meta.content = 'AI platform for Indian creators — discover trends, write scripts in your own voice & language, and analyse competitors on Instagram & YouTube. Join the waitlist.';
       document.head.appendChild(meta);
     }
   }, []);
