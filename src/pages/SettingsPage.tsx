@@ -78,13 +78,16 @@ export default function SettingsPage() {
   const [platform, setPlatform] = useState(user?.user_metadata?.platform || 'both');
   const [igUsername, setIgUsername] = useState(user?.user_metadata?.instagram_username || '');
   const [isRecording, setIsRecording] = useState(false);
-  const [voiceTranscript, setVoiceTranscript] = useState(user?.user_metadata?.voice_transcript || '');
   const [voiceStyle, setVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
   const [analyzingVoice, setAnalyzingVoice] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const recognitionRef = useRef<any>(null);
+
+  // ✅ MediaRecorder refs for Whisper
+  const mediaRecorderRef = useRef<any>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<any>(null);
   const autoSaveTimer = useRef<any>(null);
+
   const [feedbackCategory, setFeedbackCategory] = useState("general");
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -187,58 +190,63 @@ export default function SettingsPage() {
     autoSave({ full_name: name, niche: niches[0] || '', niches, language, style, platform, instagram_username: clean });
   };
 
-  const startRecording = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Speech recognition not supported. Please use Chrome.');
-      return;
+  // ✅ NEW: MediaRecorder-based recording for Whisper
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e: BlobEvent) => chunksRef.current.push(e.data);
+      mediaRecorder.start();
+
+      setIsRecording(true);
+      setVoiceStyle('');
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= 60) { stopRecording(); return 60; }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch {
+      alert('Microphone access denied. Please allow mic permissions and try again.');
     }
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = language === 'tamil' ? 'ta-IN' :
-                       language === 'telugu' ? 'te-IN' :
-                       language === 'malayalam' ? 'ml-IN' :
-                       language === 'hindi' ? 'hi-IN' : 'en-IN';
-    let finalTranscript = '';
-    recognition.onresult = (event: any) => {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
-      }
-      setVoiceTranscript(finalTranscript);
+  };
+
+  const stopRecording = () => {
+    const mediaRecorder = mediaRecorderRef.current;
+    if (!mediaRecorder) return;
+
+    mediaRecorder.onstop = async () => {
+      clearInterval(timerRef.current);
+      setIsRecording(false);
+      const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      await analyzeVoice(audioBlob);
     };
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsRecording(true);
-    setRecordingTime(0);
-    timerRef.current = setInterval(() => {
-      setRecordingTime(prev => {
-        if (prev >= 60) { stopRecording(); return 60; }
-        return prev + 1;
-      });
-    }, 1000);
+
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
   };
 
-  const stopRecording = async () => {
-    if (recognitionRef.current) recognitionRef.current.stop();
-    clearInterval(timerRef.current);
-    setIsRecording(false);
-    if (voiceTranscript) await analyzeVoice(voiceTranscript);
-  };
-
-  const analyzeVoice = async (transcript: string) => {
+  const analyzeVoice = async (audioBlob: Blob) => {
     setAnalyzingVoice(true);
     try {
-      const data = await analyzeVoiceStyleRequest(transcript);
+      const data = await analyzeVoiceStyleRequest(audioBlob, language);
       setVoiceStyle(data.style);
-    } catch { console.error('Voice analysis failed'); }
-    finally { setAnalyzingVoice(false); }
+    } catch (err) {
+      console.error('Voice analysis failed:', err);
+      alert('Voice analysis failed. Please try again.');
+    } finally {
+      setAnalyzingVoice(false);
+    }
   };
 
   const handleSaveVoice = async () => {
     setVoiceSaving(true);
     const { error } = await supabase.auth.updateUser({
-      data: { full_name: name, niche: niches[0] || '', niches, language, style, platform, voice_transcript: voiceTranscript, voice_style: voiceStyle, instagram_username: igUsername }
+      data: { full_name: name, niche: niches[0] || '', niches, language, style, platform, voice_style: voiceStyle, instagram_username: igUsername }
     });
     setVoiceSaving(false);
     if (!error) { setVoiceSaved(true); setTimeout(() => setVoiceSaved(false), 3000); }
@@ -492,38 +500,47 @@ export default function SettingsPage() {
               <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
                 <Mic className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.voice_style')}
               </h2>
-              <p className="text-xs text-muted-foreground">Record your voice so we can personalize scripts to match your natural speaking style</p>
+              <p className="text-xs text-muted-foreground">
+                Record your voice so we can personalize scripts to match your natural speaking style.
+                Powered by OpenAI Whisper — works with all Indian languages.
+              </p>
               <div className="p-3 rounded-xl bg-secondary/30 border border-border space-y-1">
                 <p className="text-xs font-medium" style={{ color: BLUE }}>📖 Read this text aloud while recording:</p>
                 <p className="text-sm text-foreground leading-relaxed">
                   {sampleText[language as keyof typeof sampleText] || sampleText.english}
                 </p>
               </div>
-              {voiceTranscript && !analyzingVoice && (
-                <div className="p-3 rounded-xl bg-secondary/30 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Your transcript:</p>
-                  <p className="text-sm text-foreground">{voiceTranscript.slice(0, 200)}...</p>
-                </div>
-              )}
-              {voiceStyle && (
+
+              {voiceStyle && !analyzingVoice && (
                 <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30">
                   <p className="text-xs text-green-400 mb-1">{t('settings.voice_analyzed')}</p>
                   <p className="text-sm text-foreground">{voiceStyle}</p>
                 </div>
               )}
+
               {analyzingVoice && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" /> {t('settings.analyzing')}
                 </div>
               )}
-              <button onClick={isRecording ? stopRecording : startRecording}
+
+              {isRecording && (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-sm text-red-500 font-medium">Recording... {recordingTime}s / 60s</span>
+                </div>
+              )}
+
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
                 className={`w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-all ${isRecording ? 'bg-red-500 animate-pulse' : ''}`}
                 style={!isRecording ? { background: BLUE_GRADIENT } : {}}>
                 {isRecording
                   ? <><MicOff className="w-4 h-4" /> {t('settings.stop_recording')} ({recordingTime}s)</>
                   : <><Mic className="w-4 h-4" /> {voiceStyle ? t('settings.re_record') : t('settings.record_voice')}</>}
               </button>
-              {voiceStyle && (
+
+              {voiceStyle && !analyzingVoice && (
                 <button onClick={handleSaveVoice} disabled={voiceSaving}
                   className="w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>

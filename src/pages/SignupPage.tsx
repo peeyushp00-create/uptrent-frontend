@@ -49,12 +49,14 @@ export default function SignupPage() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [voiceTranscript, setVoiceTranscript] = useState("");
   const [voiceStyle, setVoiceStyle] = useState("");
   const [analyzingVoice, setAnalyzingVoice] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordingDone, setRecordingDone] = useState(false);
-  const recognitionRef = useRef<any>(null);
+
+  // ✅ MediaRecorder refs for Whisper
+  const mediaRecorderRef = useRef<any>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<any>(null);
   const navigate = useNavigate();
 
@@ -86,55 +88,59 @@ export default function SignupPage() {
 
   const removeNiche = (n: string) => setNiches(prev => prev.filter(x => x !== n));
 
-  const startRecording = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Speech recognition not supported. Please use Chrome.');
-      return;
+  // ✅ NEW: MediaRecorder-based recording for Whisper
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e: BlobEvent) => chunksRef.current.push(e.data);
+      mediaRecorder.start();
+
+      setIsRecording(true);
+      setRecordingDone(false);
+      setVoiceStyle('');
+      setRecordingTime(0);
+
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= 60) { stopRecording(); return 60; }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch {
+      alert('Microphone access denied. Please allow mic permissions and try again.');
     }
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = language === 'tamil' ? 'ta-IN' :
-                       language === 'telugu' ? 'te-IN' :
-                       language === 'malayalam' || language === 'manglish' ? 'ml-IN' :
-                       language === 'hindi' || language === 'hinglish' ? 'hi-IN' : 'en-IN';
-    let finalTranscript = '';
-    recognition.onresult = (event: any) => {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
-      }
-      setVoiceTranscript(finalTranscript);
+  };
+
+  const stopRecording = () => {
+    const mediaRecorder = mediaRecorderRef.current;
+    if (!mediaRecorder) return;
+
+    mediaRecorder.onstop = async () => {
+      clearInterval(timerRef.current);
+      setIsRecording(false);
+      setRecordingDone(true);
+      const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      await analyzeVoice(audioBlob);
     };
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsRecording(true);
-    setRecordingDone(false);
-    setVoiceStyle('');
-    setRecordingTime(0);
-    timerRef.current = setInterval(() => {
-      setRecordingTime(prev => {
-        if (prev >= 60) { stopRecording(); return 60; }
-        return prev + 1;
-      });
-    }, 1000);
+
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
   };
 
-  const stopRecording = async () => {
-    if (recognitionRef.current) recognitionRef.current.stop();
-    clearInterval(timerRef.current);
-    setIsRecording(false);
-    setRecordingDone(true);
-    if (voiceTranscript) await analyzeVoice(voiceTranscript);
-  };
-
-  const analyzeVoice = async (transcript: string) => {
+  const analyzeVoice = async (audioBlob: Blob) => {
     setAnalyzingVoice(true);
     try {
-      const data = await analyzeVoiceStyleRequest(transcript);
+      const data = await analyzeVoiceStyleRequest(audioBlob, language);
       setVoiceStyle(data.style);
-    } catch { console.error('Voice analysis failed'); }
-    finally { setAnalyzingVoice(false); }
+    } catch (err) {
+      console.error('Voice analysis failed:', err);
+    } finally {
+      setAnalyzingVoice(false);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -146,7 +152,7 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email, password,
       options: {
-        data: { full_name: name, niche: niches[0], niches, language, voice_transcript: voiceTranscript, voice_style: voiceStyle },
+        data: { full_name: name, niche: niches[0], niches, language, voice_style: voiceStyle },
         emailRedirectTo: `${window.location.origin}/`,
       }
     });
@@ -203,8 +209,6 @@ export default function SignupPage() {
           {/* ── Step 1 — Account ── */}
           {step === 1 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-
-              {/* Google Sign Up */}
               <button type="button" onClick={handleGoogleSignup} disabled={googleLoading}
                 className="w-full py-3 px-4 rounded-xl border border-border bg-card text-foreground text-sm font-medium flex items-center justify-center gap-3 hover:bg-accent transition-colors disabled:opacity-60">
                 {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
@@ -218,14 +222,12 @@ export default function SignupPage() {
                 {googleLoading ? 'Signing up...' : 'Continue with Google'}
               </button>
 
-              {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-border" />
                 <span className="text-xs text-muted-foreground">or</span>
                 <div className="flex-1 h-px bg-border" />
               </div>
 
-              {/* Email/Password fields */}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Full Name</label>
                 <input id="signup-name" type="text" placeholder="Your name" value={name}
@@ -405,6 +407,13 @@ export default function SignupPage() {
                     <p className="text-xs text-muted-foreground">This takes a few seconds</p>
                   </div>
                 </motion.div>
+              )}
+
+              {isRecording && (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-sm text-red-500 font-medium">Recording... {recordingTime}s / 60s</span>
+                </div>
               )}
 
               {voiceStyle && (

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Copy, Check, Clock, RefreshCw, Mic, Search, X, ChevronRight, Trash2, Flame, TrendingUp, Newspaper, Wand2, BarChart2, FileText, ChevronDown } from "lucide-react";
 import { generateScript } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const PRIMARY = "#7C3AED";
 const SECONDARY = "#7C3AED";
@@ -100,7 +101,14 @@ export default function ScriptsPage() {
   const { user } = useAuth();
 const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
 const userNiche = userNiches.join(', ') || '';
-const userVoiceStyle = user?.user_metadata?.voice_style || '';
+const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
+
+useEffect(() => {
+  supabase.auth.getUser().then(({ data }) => {
+    const fresh = data?.user?.user_metadata?.voice_style || '';
+    if (fresh) setUserVoiceStyle(fresh);
+  });
+}, []);
 const ytChannel = user?.user_metadata?.youtube_channel || null;
 const ytContext = ytChannel ? `YouTube channel: ${ytChannel.channel_name} with ${ytChannel.subscribers} subscribers` : '';
 

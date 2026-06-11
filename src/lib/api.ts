@@ -71,21 +71,21 @@ export const generateScript = (
   });
 };
 
-export const generateHooks = (topic: string, niche?: string, language?: string) => {
+export const generateHooks = (topic: string, niche?: string, language?: string, voiceStyle?: string) => {
   const savedLanguage = localStorage.getItem('userLanguage') || 'english';
   return apiFetch("/api/scripts/hooks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ topic, niche, language: language || savedLanguage }),
+    body: JSON.stringify({ topic, niche, language: language || savedLanguage, voiceStyle }),
   });
 };
 
-export const generateIdeas = (topic: string, niche?: string, language?: string) => {
+export const generateIdeas = (topic: string, niche?: string, language?: string, voiceStyle?: string) => {
   const savedLanguage = localStorage.getItem('userLanguage') || 'english';
   return apiFetch("/api/scripts/ideas", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ topic, niche, language: language || savedLanguage }),
+    body: JSON.stringify({ topic, niche, language: language || savedLanguage, voiceStyle }),
   });
 };
 
@@ -96,12 +96,20 @@ export const chatWithAI = (message: string) =>
     body: JSON.stringify({ message }),
   });
 
-export const analyzeVoiceStyle = (transcript: string) =>
-  apiFetch("/api/scripts/analyze-voice", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ transcript }),
+// ✅ UPDATED: Sends audio blob to Whisper for accurate transcription
+export const analyzeVoiceStyle = async (audioBlob: Blob, language: string = 'english') => {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'voice.webm');
+  formData.append('language', language);
+
+  const response = await fetch(`${BASE}/api/scripts/analyze-voice`, {
+    method: 'POST',
+    body: formData, // No Content-Type header — browser sets multipart boundary automatically
   });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.error || 'Voice analysis failed');
+  return data;
+};
 
 export const submitWaitlist = (email: string) =>
   apiFetch<{ success: boolean; message: string }>("/api/waitlist", {
