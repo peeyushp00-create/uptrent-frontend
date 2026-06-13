@@ -205,7 +205,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         )}
 
         {/* What they post */}
-        {result?.reel_ideas?.length > 0 && (
+        {result?.reel_ideas?.length > 0 && (result?.stats?.total_posts ?? 0) > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
             <div className="flex items-center gap-2 mb-4"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">What Kind of Content They Post</h2></div>
             <div className="space-y-2">
