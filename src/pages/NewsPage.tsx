@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, Bookmark } from "lucide-react";
+import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, Bookmark, ArrowUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
 
@@ -156,6 +156,7 @@ export default function NewsPage() {
   const [savedArticles, setSavedArticles] = useState<Set<string>>(new Set());
   const [activeCategory, setActiveCategory] = useState('All News');
   const [region, setRegion] = useState<'in' | 'global'>('in');
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -228,6 +229,12 @@ export default function NewsPage() {
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleSearch = (q: string) => {
@@ -730,6 +737,21 @@ export default function NewsPage() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Scroll to top button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-24 right-5 z-40 w-11 h-11 rounded-full flex items-center justify-center shadow-lg"
+            style={{ background: PRIMARY }}>
+            <ArrowUp className="w-5 h-5 text-white" />
+          </motion.button>
         )}
       </AnimatePresence>
     </div>
