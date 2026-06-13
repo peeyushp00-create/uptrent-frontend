@@ -295,10 +295,10 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         {!hikerLoading && hiker?.reels?.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
             <div className="flex items-center gap-2 mb-3"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Their Reels ({hiker.reels.length})</h2></div>
-            <div className="grid grid-cols-3 gap-2">
-              {hiker.reels.slice(0, reelsVisible).map((reel: any, i: number) => (
+            <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
+              {hiker.reels.map((reel: any, i: number) => (
                 <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
-                  className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e' }}>
+                  className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
                   <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
@@ -323,9 +323,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                 </div>
               ))}
             </div>
-            {hiker.reels.length > reelsVisible && (
-              <button onClick={() => setReelsVisible(v => v + 9)} className="mx-auto mt-3 block px-5 py-2 rounded-full text-sm font-semibold text-white" style={{ background: PRIMARY }}>Load More</button>
-            )}
+
           </div>
         )}
 
@@ -336,10 +334,10 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
               <MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} />
               <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Their Posts ({hiker.posts.length})</h2>
             </div>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="flex gap-1.5 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
               {hiker.posts.map((post: any, i: number) => (
                 <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
-                  className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e' }}>
+                  className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
                   {post.thumbnail && (
                     <img src={`${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
                       alt={post.caption?.slice(0, 40) || ''}
@@ -474,6 +472,35 @@ export default function InstagramAnalyzer() {
 
   const removeCompetitor = (username: string) => setCompetitors(prev => prev.filter(c => c.username !== username));
 
+  const isAlreadyCompetitor = (username: string) => {
+    const clean = username.replace('@', '').trim().toLowerCase();
+    return competitors.some(c => c.username.toLowerCase() === clean);
+  };
+
+  // Quick-add the currently searched profile as a competitor using existing result + hiker data
+  const quickAddCompetitor = async (username: string) => {
+    const clean = username.replace('@', '').trim();
+    if (!clean || isAlreadyCompetitor(clean)) return;
+    setCompLoading(true);
+    try {
+      const hikerProfilePic = hiker?.reels?.[0]?.profile_pic_url || null;
+      const card: CompetitorCard = {
+        username: clean,
+        profile_pic_base64: result?.stats?.profile_pic_base64 || null,
+        profile_pic_url: hikerProfilePic,
+        followers: result?.stats?.followers,
+        engagement_rate: result?.stats?.engagement_rate,
+        is_verified: result?.stats?.is_verified,
+        savedAt: Date.now(),
+        fullData: result,
+        hikerData: hiker,
+      };
+      setCompetitors(prev => [card, ...prev]);
+    } finally {
+      setCompLoading(false);
+    }
+  };
+
   const updateCompetitorData = (username: string, hikerData: any) => {
     setCompetitors(prev => prev.map(c => 
       c.username.toLowerCase() === username.toLowerCase()
@@ -522,6 +549,13 @@ export default function InstagramAnalyzer() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+      <style>{`
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: ${PRIMARY}40; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: ${PRIMARY}80; }
+        .horizontal-scroll { scrollbar-width: thin; scrollbar-color: ${PRIMARY}40 transparent; }
+      `}</style>
       <AnimatePresence>
         {openCompetitor && (
           <CompetitorDetail
@@ -561,11 +595,26 @@ export default function InstagramAnalyzer() {
               style={{ background: PRIMARY_GRAD }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('analyzer.analyze_btn')}
             </button>
+            {result && !loading && (
+              <button
+                onClick={() => quickAddCompetitor(handle.replace('@', '').trim())}
+                disabled={compLoading}
+                className="px-4 py-3 rounded-xl text-sm font-bold border transition-all disabled:opacity-60 flex items-center gap-1.5 shrink-0"
+                style={
+                  isAlreadyCompetitor(handle)
+                    ? { background: '#e8f5e9', color: '#2e7d32', borderColor: '#c8e6c9' }
+                    : { background: PRIMARY_CONTAINER, color: PRIMARY, borderColor: 'transparent' }
+                }
+              >
+                {compLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isAlreadyCompetitor(handle) ? <><Check className="w-4 h-4" /></> : <Plus className="w-4 h-4" />}
+              </button>
+            )}
           </div>
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
 
-        {/* Competitor Tracker */}
+        {/* Competitor Tracker — hidden while viewing search results */}
+        {!(result && !loading) && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -668,6 +717,7 @@ export default function InstagramAnalyzer() {
             </div>
           )}
         </div>
+        )}
 
         {/* Loading */}
         {loading && (
@@ -927,10 +977,10 @@ export default function InstagramAnalyzer() {
                       ))}
                     </div>
                     <style>{`@keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(900%); } }`}</style>
-                    <div className="grid grid-cols-3 gap-2">
-                      {filterReels(hiker.reels).slice(0, reelsVisible).map((reel: any, i: number) => (
+                    <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
+                      {filterReels(hiker.reels).map((reel: any, i: number) => (
                         <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
-                          className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e' }}>
+                          className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
                           <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
@@ -971,9 +1021,7 @@ export default function InstagramAnalyzer() {
                         </div>
                       ))}
                     </div>
-                    {hiker.reels.length > reelsVisible && (
-                      <button onClick={() => setReelsVisible(v => v + 9)} className="mx-auto mt-3 block px-5 py-2 rounded-full text-sm font-semibold text-white" style={{ background: PRIMARY }}>Load More</button>
-                    )}
+
                   </div>
                 )}
 
@@ -992,10 +1040,10 @@ export default function InstagramAnalyzer() {
                           </button>
                         ))}
                       </div>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="flex gap-1.5 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
                         {filterPosts(displayPosts).map((post: any, i: number) => (
                           <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
-                            className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e' }}>
+                            className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
                             {post.thumbnail && (
                               <img src={post.thumbnail ? `${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}` : ''}
                                 alt={post.caption?.slice(0, 40) || ''}
