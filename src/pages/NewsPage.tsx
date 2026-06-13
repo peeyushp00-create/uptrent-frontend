@@ -303,15 +303,15 @@ export default function NewsPage() {
       <main className="max-w-2xl mx-auto px-5 pt-4 pb-28 space-y-4">
 
         {/* Region toggle */}
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <button onClick={() => handleRegionChange('in')}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={region === 'in' ? { background: PRIMARY_GRAD, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+            style={region === 'in' ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
             🇮🇳 India
           </button>
           <button onClick={() => handleRegionChange('global')}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={region === 'global' ? { background: PRIMARY_GRAD, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+            style={region === 'global' ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
             🌍 Global
           </button>
         </div>
