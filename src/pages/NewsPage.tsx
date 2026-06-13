@@ -302,20 +302,6 @@ export default function NewsPage() {
 
       <main className="max-w-2xl mx-auto px-5 pt-4 pb-28 space-y-4">
 
-        {/* Region toggle */}
-        <div className="flex gap-1.5">
-          <button onClick={() => handleRegionChange('in')}
-            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-            style={region === 'in' ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
-            🇮🇳 India
-          </button>
-          <button onClick={() => handleRegionChange('global')}
-            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-            style={region === 'global' ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
-            🌍 Global
-          </button>
-        </div>
-
         {/* Search + Filter */}
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -427,6 +413,20 @@ export default function NewsPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Region toggle */}
+        <div className="flex gap-1.5">
+          <button onClick={() => handleRegionChange('in')}
+            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+            style={region === 'in' ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+            🇮🇳 India
+          </button>
+          <button onClick={() => handleRegionChange('global')}
+            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+            style={region === 'global' ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+            🌍 Global
+          </button>
         </div>
 
         {/* Category chips */}
