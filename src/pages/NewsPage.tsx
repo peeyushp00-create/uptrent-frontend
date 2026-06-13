@@ -155,6 +155,7 @@ export default function NewsPage() {
   const [pickerYear, setPickerYear] = useState('');
   const [savedArticles, setSavedArticles] = useState<Set<string>>(new Set());
   const [activeCategory, setActiveCategory] = useState('All News');
+  const [region, setRegion] = useState<'in' | 'global'>('in');
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -169,10 +170,11 @@ export default function NewsPage() {
       .map(([topic, count]) => ({ topic, count, emoji: TOPIC_EMOJIS[topic] || '📰' }));
   }, [allArticles, userNiches]);
 
-  const fetchNews = async (filter: string, topicQuery?: string, trending?: string | null, date?: string) => {
+  const fetchNews = async (filter: string, topicQuery?: string, trending?: string | null, date?: string, regionOverride?: 'in' | 'global') => {
     setLoading(true); setError(null);
     try {
-      let url = `${BASE}/api/news?filter=${filter}`;
+      const activeRegion = regionOverride || region;
+      let url = `${BASE}/api/news?filter=${filter}&region=${activeRegion}`;
       if (date) url += `&date=${date}`;
       const activeQuery = trending || topicQuery;
       if (activeQuery) {
@@ -203,9 +205,9 @@ export default function NewsPage() {
   };
 
   useEffect(() => {
-    fetch(`${BASE}/api/news?filter=today`)
+    fetch(`${BASE}/api/news?filter=today&region=${region}`)
       .then(r => r.json()).then(data => setAllArticles(Array.isArray(data) ? data : [])).catch(() => {});
-  }, []);
+  }, [region]);
 
   useEffect(() => { fetchNews(dateFilter, initialQuery || undefined, null); }, []);
 
@@ -247,6 +249,13 @@ export default function NewsPage() {
       setTrendingFilter(topic); setQuery(''); setSearchInput('');
       fetchNews(dateFilter, undefined, topic);
     }
+  };
+
+  const handleRegionChange = (newRegion: 'in' | 'global') => {
+    if (newRegion === region) return;
+    setRegion(newRegion);
+    setTrendingFilter(null); setQuery(''); setSearchInput(''); setCustomDate(null);
+    fetchNews(dateFilter, undefined, null, undefined, newRegion);
   };
 
   const handleRefresh = async () => {
@@ -292,6 +301,20 @@ export default function NewsPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-5 pt-4 pb-28 space-y-4">
+
+        {/* Region toggle */}
+        <div className="flex gap-2">
+          <button onClick={() => handleRegionChange('in')}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={region === 'in' ? { background: PRIMARY_GRAD, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+            🇮🇳 India
+          </button>
+          <button onClick={() => handleRegionChange('global')}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={region === 'global' ? { background: PRIMARY_GRAD, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+            🌍 Global
+          </button>
+        </div>
 
         {/* Search + Filter */}
         <div className="flex gap-2">
