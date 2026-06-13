@@ -284,7 +284,7 @@ export default function Index() {
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder={isIG ? t('home.search_placeholder_ig') : ytChannel ? `Search ${ytChannel.channel_name} niche...` : t('home.search_placeholder_yt')}
                 className="w-full pl-11 pr-10 py-4 rounded-2xl text-sm text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none transition-all"
-                style={{ background:'white', border:`2px solid ${search ? activeColor : '#e1e3e4'}`, boxShadow:search ? `0 0 0 4px ${activeColor}15` : 'none' }} />
+                style={{ border:`2px solid ${search ? activeColor : '#e1e3e4'}`, boxShadow:search ? `0 0 0 4px ${activeColor}15` : 'none' }}} />
               {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]"><X className="w-4 h-4" /></button>}
             </div>
             <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
