@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 const FEATURES = [
   { num: '01', title: 'Creator News Feed', desc: 'Curated industry news, platform updates, and creator economy signals — filtered for what actually matters to your niche.', tags: ['YouTube', 'Instagram'] },
   { num: '02', title: 'AI Script Generator', desc: 'Go from idea to full video script in 60 seconds. Trained on viral hooks, retention patterns, and your channel voice.', tags: ['Hook', 'Body', 'CTA'] },
-  { num: '03', title: 'Content Analyzer', desc: "Deep-dive analytics on your existing content. Identify what's working, what's losing viewers, and what to create next.", tags: ['Retention', 'Drop-off'] },
+  { num: '03', title: 'Competitor Analyzer', desc: "Deep-dive analytics on competitor profiles. Identify what's working in your niche, spot content gaps, and stay ahead of the curve.", tags: ['Instagram', 'YouTube'] },
   { num: '04', title: 'Trending Topics', desc: 'Real-time trend detection across YouTube and Instagram before they peak — publish first, win the algorithm.', tags: ['#AIVideoEditing → 340%', '#CreatorEconomy → 128%'] },
   { num: '05', title: 'YouTube SEO', desc: 'Keyword research, title optimization, tag suggestions, and thumbnail analysis — everything to rank on page one.', tags: ['Keywords', 'Titles', 'Tags'] },
 ];
@@ -373,7 +373,7 @@ export default function LandingPage() {
 
             <motion.p initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, delay:1.0, ease:[0.16,1,0.3,1] }}
               style={{ fontFamily:'Roboto,sans-serif', fontSize:14, color:'rgba(255,255,255,0.5)', maxWidth:380, lineHeight:1.8, marginBottom:32, padding:'0 8px' }}>
-              SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, content analysis, and SEO in one dark premium dashboard.
+              SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, competitor analysis, and SEO in one dark premium dashboard.
             </motion.p>
 
             <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, delay:1.2, ease:[0.16,1,0.3,1] }}
