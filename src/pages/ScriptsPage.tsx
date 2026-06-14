@@ -109,8 +109,6 @@ useEffect(() => {
     if (fresh) setUserVoiceStyle(fresh);
   });
 }, []);
-const ytChannel = user?.user_metadata?.youtube_channel || null;
-const ytContext = ytChannel ? `YouTube channel: ${ytChannel.channel_name} with ${ytChannel.subscribers} subscribers` : '';
 
   const [topicInput, setTopicInput] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -201,7 +199,7 @@ const ytContext = ytChannel ? `YouTube channel: ${ytChannel.channel_name} with $
   duration,
   contentTypePrompt: selectedContentType?.prompt || '',
   contentType: selectedContentType?.label || '',
-  ytContext,
+  
 });
       setScript(result);
       saveHistory({ topic, script: result, mode: contentType, duration, language: userLanguage });
@@ -337,13 +335,17 @@ const ytContext = ytChannel ? `YouTube channel: ${ytChannel.channel_name} with $
                 </div>
 
                 {/* Ideas button */}
-                <div className="relative" ref={ideasRef}>
-                  <button onClick={() => { if (!showIdeas) fetchIdeas(); setShowIdeas(prev => !prev); }}
+              <div className="relative group" ref={ideasRef}>
+  <button onClick={() => {}}
                     className="px-3 py-3 rounded-xl border text-sm font-bold transition-all flex items-center gap-1.5"
                     style={showIdeas ? { background: PRIMARY_GRAD, color: '#fff', borderColor: 'transparent' } : { borderColor: '#c5c5d4', color: SECONDARY, background: SECONDARY_CONTAINER }}>
                     <Flame className="w-4 h-4" />
                     <span className="hidden sm:inline">Ideas</span>
                   </button>
+                  <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+  🚀 Coming Soon
+  <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
+</div>
                   <AnimatePresence>
                     {showIdeas && (
                       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
