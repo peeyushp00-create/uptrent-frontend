@@ -12,23 +12,8 @@ const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #9f6fef)";
 const PRIMARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-const DAYS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
-const HOURS = ['12am','6am','12pm','6pm','11pm'];
-
-const generateHeatmap = () =>
-  DAYS.map(day => ({
-    day,
-    hours: Array.from({ length: 24 }, (_, h) => {
-      const isEvening = h >= 18 && h <= 22;
-      const isMorning = h >= 6 && h <= 9;
-      const isLunch = h >= 12 && h <= 14;
-      if (isEvening) return Math.random() > 0.3 ? 3 : 2;
-      if (isMorning || isLunch) return Math.random() > 0.5 ? 2 : 1;
-      return Math.random() > 0.7 ? 1 : 0;
-    }),
-  }));
-
-const heatmapColors = ['#e7e8e9', '#b78efe40', '#b78efe80', '#7C3AED'];
+const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const HOURS_LABELS = ['12am', '3am', '6am', '9am', '12pm', '3pm', '6pm', '9pm'];
 
 const formatNum = (n: number) => {
   if (!n) return '—';
@@ -69,7 +54,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
-  const [heatmap] = useState(generateHeatmap());
+
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -240,50 +225,88 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
           </div>
         )}
 
-        {/* When they post */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2"><Clock className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">When They Commonly Post</h2></div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-[#757684]">Less</span>
-              {heatmapColors.map((c, i) => <div key={i} className="w-3 h-3 rounded-sm" style={{ background: c }} />)}
-              <span className="text-[10px] text-[#757684]">More</span>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <div className="min-w-[400px]">
-              <div className="flex justify-between text-[9px] font-bold text-[#757684] uppercase mb-1 ml-8">
-                {HOURS.map(h => <span key={h}>{h}</span>)}
+        {/* Posting Patterns — real data */}
+        {hiker?.reels?.length > 0 && (() => {
+          const reels = hiker.reels || [];
+          const dayCount: Record<string, number> = {};
+          const hourCount: Record<number, number> = {};
+          DAYS_SHORT.forEach(d => dayCount[d] = 0);
+          reels.forEach((r: any) => {
+            if (!r.posted_at) return;
+            const d = new Date(r.posted_at);
+            const day = DAYS_SHORT[d.getDay()];
+            const hourIST = (d.getUTCHours() + 5) % 24;
+            dayCount[day] = (dayCount[day] || 0) + 1;
+            hourCount[hourIST] = (hourCount[hourIST] || 0) + 1;
+          });
+          const maxDay = Math.max(...Object.values(dayCount), 1);
+          const maxHour = Math.max(...Object.values(hourCount), 1);
+          const bestDay = Object.entries(dayCount).sort((a,b) => b[1]-a[1])[0]?.[0];
+          const bestHourRaw = Object.entries(hourCount).sort((a,b) => b[1]-a[1])[0]?.[0];
+          const bestHour = bestHourRaw !== undefined ? (() => {
+            const h = parseInt(bestHourRaw);
+            return `${h % 12 || 12}:00 ${h >= 12 ? 'PM' : 'AM'} IST`;
+          })() : null;
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="w-4 h-4" style={{ color: PRIMARY }} />
+                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posting Patterns</h2>
+                <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Real Data</span>
               </div>
-              <div className="space-y-1">
-                {heatmap.map(row => (
-                  <div key={row.day} className="flex items-center gap-1">
-                    <span className="w-7 text-[9px] font-bold text-[#757684]">{row.day}</span>
-                    <div className="flex-1 grid gap-0.5" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
-                      {row.hours.map((v, hi) => <div key={hi} className="h-5 rounded-sm" style={{ background: heatmapColors[v] }} />)}
-                    </div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {bestDay && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
+                    <Calendar className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+                    <span className="text-xs text-[#757684]">Best day:</span>
+                    <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestDay}</span>
                   </div>
-                ))}
+                )}
+                {bestHour && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
+                    <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+                    <span className="text-xs text-[#757684]">Best time:</span>
+                    <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestHour}</span>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
-          {hiker?.posting_patterns?.best_day && (
-            <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-[#e1e3e4] dark:border-gray-700">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" style={{ color: PRIMARY }} />
-                <span className="text-xs text-[#757684]">Best day:</span>
-                <span className="text-sm font-bold text-[#191c1d] dark:text-white">{hiker.posting_patterns.best_day}</span>
-              </div>
-              {hiker.posting_patterns.best_hour_ist && (
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" style={{ color: PRIMARY }} />
-                  <span className="text-xs text-[#757684]">Best time (IST):</span>
-                  <span className="text-sm font-bold text-[#191c1d] dark:text-white">{hiker.posting_patterns.best_hour_ist}</span>
+              {Object.values(dayCount).some(v => v > 0) && (
+                <div className="mb-4">
+                  <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider mb-2">Posts by Day</p>
+                  <div className="flex items-end gap-1.5 h-14">
+                    {DAYS_SHORT.map(day => (
+                      <div key={day} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full rounded-t-md" style={{
+                          height: `${Math.round((dayCount[day] / maxDay) * 40)}px`,
+                          minHeight: dayCount[day] > 0 ? '3px' : '0',
+                          background: day === bestDay ? PRIMARY : PRIMARY_CONTAINER,
+                        }} />
+                        <span className="text-[9px] font-bold" style={{ color: day === bestDay ? PRIMARY : '#757684' }}>{day}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {Object.values(hourCount).some(v => v > 0) && (
+                <div>
+                  <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider mb-2">Posts by Time (IST)</p>
+                  <div className="flex items-end gap-0.5 h-10">
+                    {Array.from({ length: 24 }, (_, h) => (
+                      <div key={h} className="flex-1 rounded-t-sm" style={{
+                        height: `${Math.round(((hourCount[h] || 0) / maxHour) * 36)}px`,
+                        minHeight: (hourCount[h] || 0) > 0 ? '3px' : '0',
+                        background: (hourCount[h] || 0) === maxHour ? PRIMARY : PRIMARY_CONTAINER,
+                      }} />
+                    ))}
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    {HOURS_LABELS.map(h => <span key={h} className="text-[8px] text-[#757684]">{h}</span>)}
+                  </div>
                 </div>
               )}
             </div>
-          )}
-        </div>
+          );
+        })()}
 
         {/* Reels */}
         {hikerLoading && (
@@ -388,7 +411,6 @@ export default function InstagramAnalyzer() {
   const [result, setResult] = useState<any>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const [heatmap] = useState(generateHeatmap());
   const [imgError, setImgError] = useState(false);
   const [hiker, setHiker] = useState<any>(null);
   const [hikerLoading, setHikerLoading] = useState(false);
@@ -867,35 +889,114 @@ export default function InstagramAnalyzer() {
 
 
 
-            {/* Best Time Heatmap */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.best_time')}</h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[#757684]">Less</span>
-                  {heatmapColors.map((c, i) => <div key={i} className="w-3 h-3 rounded-sm" style={{ background: c }} />)}
-                  <span className="text-[10px] text-[#757684]">More</span>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <div className="min-w-[400px]">
-                  <div className="flex justify-between text-[9px] font-bold text-[#757684] uppercase mb-1 ml-8">
-                    {HOURS.map(h => <span key={h}>{h}</span>)}
+            {/* Posting Patterns — real data from HikerAPI */}
+            {hiker && (hiker.posting_patterns?.best_day || hiker.reels?.length > 0) && (() => {
+              const reels = hiker.reels || [];
+              // Build day count from real posted_at timestamps
+              const dayCount: Record<string, number> = {};
+              const hourCount: Record<number, number> = {};
+              DAYS_SHORT.forEach(d => dayCount[d] = 0);
+              reels.forEach((r: any) => {
+                if (!r.posted_at) return;
+                const d = new Date(r.posted_at);
+                const day = DAYS_SHORT[d.getDay()];
+                const hourIST = (d.getUTCHours() + 5) % 24;
+                dayCount[day] = (dayCount[day] || 0) + 1;
+                hourCount[hourIST] = (hourCount[hourIST] || 0) + 1;
+              });
+              const maxDay = Math.max(...Object.values(dayCount), 1);
+              const maxHour = Math.max(...Object.values(hourCount), 1);
+              const bestDay = Object.entries(dayCount).sort((a,b) => b[1]-a[1])[0]?.[0];
+              const bestHourRaw = Object.entries(hourCount).sort((a,b) => b[1]-a[1])[0]?.[0];
+              const bestHour = bestHourRaw !== undefined ? (() => {
+                const h = parseInt(bestHourRaw);
+                return `${h % 12 || 12}:00 ${h >= 12 ? 'PM' : 'AM'} IST`;
+              })() : null;
+              const postsPerWeek = reels.length > 0
+                ? (() => {
+                    const sorted = reels.filter((r: any) => r.posted_at).sort((a: any, b: any) => new Date(a.posted_at).getTime() - new Date(b.posted_at).getTime());
+                    if (sorted.length < 2) return null;
+                    const weeks = (new Date(sorted[sorted.length-1].posted_at).getTime() - new Date(sorted[0].posted_at).getTime()) / (7 * 24 * 3600 * 1000);
+                    return weeks > 0 ? (sorted.length / weeks).toFixed(1) : null;
+                  })()
+                : null;
+
+              return (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Clock className="w-4 h-4" style={{ color: PRIMARY }} />
+                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white">Posting Patterns</h2>
+                    <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Real Data</span>
                   </div>
-                  <div className="space-y-1">
-                    {heatmap.map(row => (
-                      <div key={row.day} className="flex items-center gap-1">
-                        <span className="w-7 text-[9px] font-bold text-[#757684]">{row.day}</span>
-                        <div className="flex-1 grid gap-0.5" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
-                          {row.hours.map((v, hi) => <div key={hi} className="h-5 rounded-sm" style={{ background: heatmapColors[v] }} />)}
-                        </div>
+
+                  {/* Summary pills */}
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    {bestDay && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
+                        <Calendar className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+                        <span className="text-xs text-[#757684]">Best day:</span>
+                        <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestDay}</span>
                       </div>
-                    ))}
+                    )}
+                    {bestHour && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
+                        <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+                        <span className="text-xs text-[#757684]">Best time:</span>
+                        <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestHour}</span>
+                      </div>
+                    )}
+                    {postsPerWeek && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: '#e8f5e9' }}>
+                        <TrendingUp className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-xs font-bold text-green-700">{postsPerWeek}x / week</span>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Days bar chart */}
+                  {Object.values(dayCount).some(v => v > 0) && (
+                    <div className="mb-5">
+                      <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider mb-2">Posts by Day</p>
+                      <div className="flex items-end gap-1.5 h-16">
+                        {DAYS_SHORT.map(day => (
+                          <div key={day} className="flex-1 flex flex-col items-center gap-1">
+                            <div className="w-full rounded-t-md transition-all" style={{
+                              height: `${Math.round((dayCount[day] / maxDay) * 48)}px`,
+                              minHeight: dayCount[day] > 0 ? '4px' : '0',
+                              background: day === bestDay ? PRIMARY : PRIMARY_CONTAINER,
+                            }} />
+                            <span className="text-[9px] font-bold" style={{ color: day === bestDay ? PRIMARY : '#757684' }}>{day}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hours bar chart */}
+                  {Object.values(hourCount).some(v => v > 0) && (
+                    <div>
+                      <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider mb-2">Posts by Time (IST)</p>
+                      <div className="flex items-end gap-0.5 h-12">
+                        {Array.from({ length: 24 }, (_, h) => (
+                          <div key={h} className="flex-1 rounded-t-sm transition-all" style={{
+                            height: `${Math.round(((hourCount[h] || 0) / maxHour) * 40)}px`,
+                            minHeight: (hourCount[h] || 0) > 0 ? '3px' : '0',
+                            background: (hourCount[h] || 0) === maxHour ? PRIMARY : PRIMARY_CONTAINER,
+                          }} />
+                        ))}
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        {HOURS_LABELS.map(h => <span key={h} className="text-[8px] text-[#757684]">{h}</span>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {reels.length === 0 && (
+                    <p className="text-xs text-[#757684] text-center py-2">No reel data available for posting patterns</p>
+                  )}
                 </div>
-              </div>
-              <p className="text-xs text-[#757684] mt-3">📍 {t('analyzer.peak_time')}</p>
-            </div>
+              );
+            })()}
           </motion.div>
         )}
 
@@ -1100,25 +1201,7 @@ export default function InstagramAnalyzer() {
                   </div>
                 )}
 
-                {/* Best Posting Time */}
-                {(hiker.posting_patterns?.best_day || hiker.posting_patterns?.best_hour_ist) && (
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4 flex flex-wrap gap-4">
-                    {hiker.posting_patterns.best_day && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" style={{ color: PRIMARY }} />
-                        <span className="text-xs text-[#757684]">Best day:</span>
-                        <span className="text-sm font-bold text-[#191c1d] dark:text-white">{hiker.posting_patterns.best_day}</span>
-                      </div>
-                    )}
-                    {hiker.posting_patterns.best_hour_ist && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" style={{ color: PRIMARY }} />
-                        <span className="text-xs text-[#757684]">Best time (IST):</span>
-                        <span className="text-sm font-bold text-[#191c1d] dark:text-white">{hiker.posting_patterns.best_hour_ist}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+
               </>
             ) : hiker ? (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5 text-center">
