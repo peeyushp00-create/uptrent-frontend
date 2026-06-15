@@ -55,7 +55,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
 
-
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
     const refetch = async () => {
@@ -1103,9 +1102,11 @@ export default function InstagramAnalyzer() {
                             </div>
                           )}
                           <div className="absolute top-1.5 right-1.5 flex flex-col gap-0.5 items-end">
-                            {isBoosted(reel, hiker.stats?.avg_views) && (
-                              <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold" style={{ background: '#f59e0b' }}>
-                                💰 Boosted
+                            {(reel.is_boosted || isBoosted(reel, hiker.stats?.avg_views)) && (
+                              <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold" 
+                                title={reel.boost_reason === 'paid_partnership' ? 'Paid Partnership' : 'Sponsored Content'}
+                                style={{ background: '#f59e0b' }}>
+                                💰 {reel.boost_reason === 'paid_partnership' ? 'Paid' : 'Ad'}
                               </div>
                             )}
                             {reel.virality?.label && (
