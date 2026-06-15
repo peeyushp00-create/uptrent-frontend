@@ -1,20 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, RefreshCw, ExternalLink, Flame, Eye, Users, Zap, Instagram, Youtube } from "lucide-react";
+import { Trophy, RefreshCw, Flame, Eye, Users, Zap, Instagram } from "lucide-react";
 
 const PRIMARY = "#7C3AED";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
 const PRIMARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-type Platform = "all" | "instagram" | "youtube";
 type GrowthTagType = "Hot" | "Rising" | "Stable";
 
 interface Creator {
   id: string;
-  platform: "instagram" | "youtube";
-  username?: string;
-  channel_id?: string;
+  platform: "instagram";
+  username: string;
   display_name: string;
   niche: string;
   profile_pic_url: string | null;
@@ -34,7 +32,7 @@ const NICHE_EMOJIS: Record<string, string> = {
   Comedy: "😂", Finance: "📈", Tech: "💻", Motivation: "🚀",
   Fashion: "👗", Travel: "✈️", Food: "🍳", Business: "💼",
   Education: "📚", Gaming: "🎮", Fitness: "💪", News: "📰",
-  "Food & Health": "🥗", Skincare: "✨",
+  "Food & Health": "🥗", Skincare: "✨", Bollywood: "🎬",
 };
 
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
@@ -96,7 +94,6 @@ function CreatorCard({ creator, index }: { creator: Creator; index: number }) {
       style={{ borderColor: isTop3 ? rankColor + "60" : "#e1e3e4" }}>
 
       <div className="flex items-center gap-3">
-        {/* Rank */}
         <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-sm shrink-0"
           style={{ background: isTop3 ? rankColor + "20" : "#f3f4f5", color: isTop3 ? rankColor : "#9ca3af" }}>
           {isTop3 ? RANK_MEDALS[creator.rank - 1] : creator.rank}
@@ -125,10 +122,8 @@ function CreatorCard({ creator, index }: { creator: Creator; index: number }) {
 
         <a href={creator.profile_url} target="_blank" rel="noopener noreferrer"
           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity"
-          style={{ background: creator.platform === "instagram" ? "linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)" : "#ff0000" }}>
-          {creator.platform === "instagram"
-            ? <Instagram className="w-4 h-4 text-white" />
-            : <Youtube className="w-4 h-4 text-white" />}
+          style={{ background: "linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)" }}>
+          <Instagram className="w-4 h-4 text-white" />
         </a>
       </div>
 
@@ -157,9 +152,7 @@ function CreatorCard({ creator, index }: { creator: Creator; index: number }) {
       </div>
 
       <div className="mt-3">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-[#757684] font-medium">SocialRum Score</span>
-        </div>
+        <span className="text-[10px] text-[#757684] font-medium">SocialRum Score</span>
         <ScoreBar score={creator.combined_score} />
       </div>
     </motion.div>
@@ -186,9 +179,7 @@ function SkeletonCard() {
 }
 
 export default function CreatorLeaderboard() {
-  const [platform, setPlatform] = useState<Platform>("all");
-  const [instagram, setInstagram] = useState<Creator[]>([]);
-  const [youtube, setYoutube] = useState<Creator[]>([]);
+  const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
@@ -197,12 +188,11 @@ export default function CreatorLeaderboard() {
   const fetchLeaderboard = async (force = false) => {
     setError(null);
     try {
-      const url = `${BASE}/api/leaderboard?platform=all${force ? "&refresh=1" : ""}`;
+      const url = `${BASE}/api/leaderboard${force ? "?refresh=1" : ""}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch leaderboard");
       const data = await res.json();
-      setInstagram(data.instagram || []);
-      setYoutube(data.youtube || []);
+      setCreators(data.instagram || []);
       if (data.fetched_at) setCachedAt(data.fetched_at);
     } catch (err: unknown) {
       console.error(err);
@@ -216,18 +206,6 @@ export default function CreatorLeaderboard() {
   useEffect(() => { fetchLeaderboard(); }, []);
 
   const handleRefresh = () => { setRefreshing(true); fetchLeaderboard(true); };
-
-  const visibleCreators = (): Creator[] => {
-    if (platform === "instagram") return instagram;
-    if (platform === "youtube") return youtube;
-    const max = Math.max(instagram.length, youtube.length);
-    const merged: Creator[] = [];
-    for (let i = 0; i < max; i++) {
-      if (instagram[i]) merged.push(instagram[i]);
-      if (youtube[i]) merged.push(youtube[i]);
-    }
-    return merged;
-  };
 
   const timeAgo = cachedAt
     ? (() => {
@@ -265,10 +243,10 @@ export default function CreatorLeaderboard() {
         <div className="rounded-2xl p-4 text-white" style={{ background: PRIMARY_GRAD }}>
           <div className="flex items-center gap-2 mb-1">
             <Flame className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider opacity-80">India's Top Creators</span>
+            <span className="text-xs font-bold uppercase tracking-wider opacity-80">India's Top Instagram Creators</span>
           </div>
           <p className="text-lg font-black leading-snug">Real-time rankings based on followers, views & engagement</p>
-          <p className="text-xs opacity-70 mt-1">Updated every 24 hours · Both Instagram & YouTube</p>
+          <p className="text-xs opacity-70 mt-1">Updated every 24 hours · Top 10 Indian Creators</p>
         </div>
 
         {/* Score legend */}
@@ -286,22 +264,6 @@ export default function CreatorLeaderboard() {
           ))}
         </div>
 
-        {/* Platform tabs */}
-        <div className="flex gap-2">
-          {(["all", "instagram", "youtube"] as Platform[]).map(tab => (
-            <button key={tab} onClick={() => setPlatform(tab)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all capitalize"
-              style={platform === tab
-                ? { background: PRIMARY_GRAD, color: "#fff" }
-                : { background: "#e7e8e9", color: "#454652" }}>
-              {tab === "instagram" && <Instagram className="w-3.5 h-3.5" />}
-              {tab === "youtube" && <Youtube className="w-3.5 h-3.5" />}
-              {tab === "all" && <Trophy className="w-3.5 h-3.5" />}
-              {tab === "all" ? "All" : tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-
         {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
@@ -314,17 +276,16 @@ export default function CreatorLeaderboard() {
 
         {/* List */}
         <AnimatePresence mode="wait">
-          <motion.div key={platform} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="space-y-3">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
             {loading
               ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-              : visibleCreators().map((creator, i) => (
+              : creators.map((creator, i) => (
                   <CreatorCard key={creator.id} creator={creator} index={i} />
                 ))}
           </motion.div>
         </AnimatePresence>
 
-        {!loading && visibleCreators().length === 0 && !error && (
+        {!loading && creators.length === 0 && !error && (
           <div className="text-center py-12">
             <Trophy className="w-12 h-12 mx-auto mb-3 opacity-20" />
             <p className="text-sm text-[#757684]">No creators loaded yet. Try refreshing.</p>
