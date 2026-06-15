@@ -54,7 +54,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
-
+  
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -490,14 +490,14 @@ export default function InstagramAnalyzer() {
       const fullData = mainRes.status === 'fulfilled' ? mainRes.value : null;
       const hikerData = hikerRes.status === 'fulfilled' ? hikerRes.value : null;
       // Use HikerAPI profile pic (proxied) as it's more reliable than ScrapeCreators base64
-      const hikerProfilePic = hikerData?.profile_pic_url || hikerData?.reels?.[0]?.profile_pic_url || null;
+      const hikerProfilePic = hikerData?.profile?.profile_pic_url || hikerData?.profile_pic_url || hikerData?.reels?.[0]?.profile_pic_url || null;
       const card: CompetitorCard = {
         username: clean,
-        profile_pic_base64: fullData?.stats?.profile_pic_base64 || null,
+        profile_pic_base64: null,
         profile_pic_url: hikerProfilePic,
-        followers: fullData?.stats?.followers,
-        engagement_rate: fullData?.stats?.engagement_rate,
-        is_verified: fullData?.stats?.is_verified,
+        followers: hikerData?.profile?.followers || fullData?.stats?.followers,
+        engagement_rate: hikerData?.profile?.engagement_rate || fullData?.stats?.engagement_rate,
+        is_verified: hikerData?.profile?.is_verified || fullData?.stats?.is_verified,
         savedAt: Date.now(),
         fullData, hikerData,
       };
@@ -520,14 +520,14 @@ export default function InstagramAnalyzer() {
     if (!clean || isAlreadyCompetitor(clean)) return;
     setCompLoading(true);
     try {
-      const hikerProfilePic = hiker?.profile_pic_url || hiker?.reels?.[0]?.profile_pic_url || null;
+      const hikerProfilePic = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || hiker?.reels?.[0]?.profile_pic_url || null;
       const card: CompetitorCard = {
         username: clean,
-        profile_pic_base64: result?.stats?.profile_pic_base64 || null,
+        profile_pic_base64: null,
         profile_pic_url: hikerProfilePic,
-        followers: result?.stats?.followers,
-        engagement_rate: result?.stats?.engagement_rate,
-        is_verified: result?.stats?.is_verified,
+        followers: hiker?.profile?.followers || result?.stats?.followers,
+        engagement_rate: hiker?.profile?.engagement_rate || result?.stats?.engagement_rate,
+        is_verified: hiker?.profile?.is_verified || result?.stats?.is_verified,
         savedAt: Date.now(),
         fullData: result,
         hikerData: hiker,
@@ -716,17 +716,11 @@ export default function InstagramAnalyzer() {
                   {(() => {
                     const picUrl = comp.profile_pic_base64 || comp.profile_pic_url;
                     if (picUrl) return (
-                      <img src={picUrl} alt={comp.username}
+                      <img
+                        src={`${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}`}
+                        alt={comp.username}
                         className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0"
-                        onError={e => {
-                          // On error try proxy, then fallback to initials
-                          const img = e.target as HTMLImageElement;
-                          if (!img.src.includes('/api/instagram/img') && comp.profile_pic_url) {
-                            img.src = `${BASE}/api/instagram/img?u=${encodeURIComponent(comp.profile_pic_url)}`;
-                          } else {
-                            img.style.display = 'none';
-                          }
-                        }} />
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     );
                     return (
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ background: PRIMARY_GRAD }}>
@@ -780,19 +774,24 @@ export default function InstagramAnalyzer() {
             {/* Profile Banner */}
             <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
               <div className="flex items-center gap-3 mb-3">
-                {result.stats?.profile_pic_base64 && !imgError ? (
-                  <img src={result.stats.profile_pic_base64} alt={handle}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
-                    onError={() => setImgError(true)} />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
-                    {(result.profile_name || handle)[0].toUpperCase()}
-                  </div>
-                )}
+                {(() => {
+                  // HikerAPI pic first, then ScrapeCreators URL fallback — always proxy
+                  const picUrl = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || result.stats?.profile_pic_url;
+                  const proxiedPic = picUrl ? `${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}` : null;
+                  return proxiedPic && !imgError ? (
+                    <img src={proxiedPic} alt={handle}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
+                      onError={() => setImgError(true)} />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
+                      {(result.profile_name || handle)[0].toUpperCase()}
+                    </div>
+                  );
+                })()}
                 <div>
                   <div className="flex items-center gap-1.5">
                     <p className="font-bold text-white">@{handle.replace('@', '')}</p>
-                    {result.stats?.is_verified && <BadgeCheck className="w-4 h-4 text-blue-300" />}
+                    {(result.stats?.is_verified || hiker?.profile?.is_verified) && <BadgeCheck className="w-4 h-4 text-blue-300" />}
                   </div>
                   <p className="text-xs text-white/70">{result.data_source === 'real' ? '✓ Live data' : 'AI Analysis'}</p>
                 </div>
@@ -831,7 +830,7 @@ export default function InstagramAnalyzer() {
               </div>
             )}
 
-            {/* Stats */}
+            {/* Stats — ScrapeCreators for follower/engagement, HikerAPI for views */}
             {result.stats && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4">
