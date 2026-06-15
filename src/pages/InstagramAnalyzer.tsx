@@ -54,6 +54,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
+  
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -82,11 +83,9 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const proxyImg = (url?: string) => {
     if (!url) return '';
     // Supabase URLs load directly — no proxy needed
-    if (url.includes('supabase') || url.includes('storage')) return url;
-    // Instagram CDN URLs need proxy
-    if (/(cdninstagram\.com|fbcdn\.net)/i.test(url))
-      return `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`;
-    return url;
+    if (url.includes('supabase')) return url;
+    // All other CDN URLs go through proxy
+    return `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`;
   };
 
   return (
@@ -446,11 +445,9 @@ export default function InstagramAnalyzer() {
   const proxyImg = (url?: string) => {
     if (!url) return '';
     // Supabase URLs load directly — no proxy needed
-    if (url.includes('supabase') || url.includes('storage')) return url;
-    // Instagram CDN URLs need proxy
-    if (/(cdninstagram\.com|fbcdn\.net)/i.test(url))
-      return `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`;
-    return url;
+    if (url.includes('supabase')) return url;
+    // All other CDN URLs go through proxy
+    return `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`;
   };
 
   const analyze = async () => {
@@ -784,10 +781,11 @@ export default function InstagramAnalyzer() {
             <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
               <div className="flex items-center gap-3 mb-3">
                 {(() => {
-                  // Supabase stored URL — no proxy needed
+                  // Use Supabase URL directly, proxy Instagram CDN URLs
                   const picUrl = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || result.stats?.profile_pic_url;
-                  return picUrl && !imgError ? (
-                    <img src={picUrl} alt={handle}
+                  const picSrc = picUrl ? (picUrl.includes('supabase') ? picUrl : `${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}`) : null;
+                  return picSrc && !imgError ? (
+                    <img src={picSrc} alt={handle}
                       className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
                       onError={() => setImgError(true)} />
                   ) : (
