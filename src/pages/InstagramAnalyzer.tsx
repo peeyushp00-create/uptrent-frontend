@@ -1135,28 +1135,27 @@ export default function InstagramAnalyzer() {
                             </div>
                           )}
                           <div className="absolute top-1.5 right-1.5 flex flex-col gap-0.5 items-end">
-                            {(reel.is_boosted || isBoosted(reel, hiker.stats?.avg_views, hiker.stats?.avg_likes)) && (
-                              (() => {
-                                const boostType = getBoostType(reel, hiker.stats?.avg_views, hiker.stats?.avg_likes);
-                                return boostType === 'paid' ? (
-                                  <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
-                                    title="Sponsored/Paid promotion content"
-                                    style={{ background: '#7c3aed' }}>
-                                    💰 Paid
-                                  </div>
-                                ) : (
-                                  <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
-                                    title="High views but low likes/comments — possible view boosting"
-                                    style={{ background: '#f59e0b' }}>
-                                    ⚠️ Low Eng
-                                  </div>
-                                );
-                              })()
-                            )
-                          {reel.virality?.label && (
+                            {(() => {
+                              const boostType = getBoostType(reel, hiker.stats?.avg_views, hiker.stats?.avg_likes);
+                              if (!boostType) return null;
+                              return boostType === 'paid' ? (
+                                <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                                  title="Sponsored/Paid promotion content"
+                                  style={{ background: '#7c3aed' }}>
+                                  💰 Paid
+                                </div>
+                              ) : (
+                                <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                                  title="High views but low likes/comments — possible view boosting"
+                                  style={{ background: '#f59e0b' }}>
+                                  ⚠️ Low Eng
+                                </div>
+                              );
+                            })()}
+                            {reel.virality?.label && (
                               <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
                                 style={{ background: reel.virality.score >= 65 ? '#16a34a' : PRIMARY }}>{reel.virality.label}</div>
-                                )}
+                            )}
                           </div>
                           <div className="absolute bottom-0 left-0 right-0 p-1.5">
                             <div className="flex items-center gap-1.5">
