@@ -54,7 +54,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
-  
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -80,10 +79,15 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const proxyImg = (url?: string) =>
-    url && /(cdninstagram\.com|fbcdn\.net)/i.test(url)
-      ? `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`
-      : url || '';
+  const proxyImg = (url?: string) => {
+    if (!url) return '';
+    // Supabase URLs load directly — no proxy needed
+    if (url.includes('supabase') || url.includes('storage')) return url;
+    // Instagram CDN URLs need proxy
+    if (/(cdninstagram\.com|fbcdn\.net)/i.test(url))
+      return `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`;
+    return url;
+  };
 
   return (
     <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
@@ -439,10 +443,15 @@ export default function InstagramAnalyzer() {
 
   useEffect(() => { localStorage.setItem('ig_competitors', JSON.stringify(competitors)); }, [competitors]);
 
-  const proxyImg = (url?: string) =>
-    url && /(cdninstagram\.com|fbcdn\.net)/i.test(url)
-      ? `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`
-      : url || '';
+  const proxyImg = (url?: string) => {
+    if (!url) return '';
+    // Supabase URLs load directly — no proxy needed
+    if (url.includes('supabase') || url.includes('storage')) return url;
+    // Instagram CDN URLs need proxy
+    if (/(cdninstagram\.com|fbcdn\.net)/i.test(url))
+      return `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`;
+    return url;
+  };
 
   const analyze = async () => {
     if (!handle.trim()) return;
@@ -717,7 +726,7 @@ export default function InstagramAnalyzer() {
                     const picUrl = comp.profile_pic_base64 || comp.profile_pic_url;
                     if (picUrl) return (
                       <img
-                        src={`${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}`}
+                        src={picUrl}
                         alt={comp.username}
                         className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0"
                         onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -775,11 +784,10 @@ export default function InstagramAnalyzer() {
             <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
               <div className="flex items-center gap-3 mb-3">
                 {(() => {
-                  // HikerAPI pic first, then ScrapeCreators URL fallback — always proxy
+                  // Supabase stored URL — no proxy needed
                   const picUrl = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || result.stats?.profile_pic_url;
-                  const proxiedPic = picUrl ? `${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}` : null;
-                  return proxiedPic && !imgError ? (
-                    <img src={proxiedPic} alt={handle}
+                  return picUrl && !imgError ? (
+                    <img src={picUrl} alt={handle}
                       className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
                       onError={() => setImgError(true)} />
                   ) : (
