@@ -556,22 +556,28 @@ export default function InstagramAnalyzer() {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
 
-  const isBoosted = (item: any, avgViews?: number) => {
+  const getBoostType = (item: any, avgViews?: number, avgLikes?: number): string | null => {
     const caption = (item.caption || '').toLowerCase();
-    // Check for paid promotion keywords
-    const adKeywords = ['#ad', '#sponsored', '#collab', '#paid', '#gifted', '#partnership', '#brandpartner', 'paid partnership', '#promotion', '#promo', '#sp'];
-    if (adKeywords.some(k => caption.includes(k))) return true;
-    // Check engagement anomaly — high views but very low engagement ratio
     const views = Number(item.views) || 0;
     const likes = Number(item.likes) || 0;
     const comments = Number(item.comments) || 0;
-    if (views > 0 && avgViews) {
+
+    // 1. Paid promotion — caption keywords
+    const adKeywords = ['#ad', '#sponsored', '#collab', '#paid', '#gifted', '#partnership', '#brandpartner', 'paid partnership', '#promotion', '#promo'];
+    if (adKeywords.some(k => caption.includes(k))) return 'paid';
+
+    // 2. View anomaly — bought views (high views, low engagement)
+    if (views > 50000) {
       const engRate = (likes + comments) / views;
-      // If views are 3x above average but engagement rate is below 1%, likely boosted
-      if (views > avgViews * 3 && engRate < 0.01) return true;
+      if (engRate < 0.005) return 'low_eng'; // under 0.5%
     }
-    return false;
+    if (avgViews && avgLikes && views > avgViews * 5 && likes < avgLikes * 0.5) return 'low_eng';
+
+    return null;
   };
+
+  const isBoosted = (item: any, avgViews?: number, avgLikes?: number) =>
+    getBoostType(item, avgViews, avgLikes) !== null;
 
   const filterReels = (reels: any[]) => {
     const r = [...reels];
@@ -1129,17 +1135,28 @@ export default function InstagramAnalyzer() {
                             </div>
                           )}
                           <div className="absolute top-1.5 right-1.5 flex flex-col gap-0.5 items-end">
-                            {(reel.is_boosted || isBoosted(reel, hiker.stats?.avg_views)) && (
-                              <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold" 
-                                title={reel.boost_reason === 'paid_partnership' ? 'Paid Partnership' : 'Sponsored Content'}
-                                style={{ background: '#f59e0b' }}>
-                                💰 {reel.boost_reason === 'paid_partnership' ? 'Paid' : 'Ad'}
-                              </div>
-                            )}
-                            {reel.virality?.label && (
+                            {(reel.is_boosted || isBoosted(reel, hiker.stats?.avg_views, hiker.stats?.avg_likes)) && (
+                              (() => {
+                                const boostType = getBoostType(reel, hiker.stats?.avg_views, hiker.stats?.avg_likes);
+                                return boostType === 'paid' ? (
+                                  <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                                    title="Sponsored/Paid promotion content"
+                                    style={{ background: '#7c3aed' }}>
+                                    💰 Paid
+                                  </div>
+                                ) : (
+                                  <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                                    title="High views but low likes/comments — possible view boosting"
+                                    style={{ background: '#f59e0b' }}>
+                                    ⚠️ Low Eng
+                                  </div>
+                                );
+                              })()
+                            )
+                          {reel.virality?.label && (
                               <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
                                 style={{ background: reel.virality.score >= 65 ? '#16a34a' : PRIMARY }}>{reel.virality.label}</div>
-                            )}
+                                )}
                           </div>
                           <div className="absolute bottom-0 left-0 right-0 p-1.5">
                             <div className="flex items-center gap-1.5">
