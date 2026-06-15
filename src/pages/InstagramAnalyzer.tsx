@@ -55,6 +55,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
 
+
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
     const refetch = async () => {
@@ -100,15 +101,26 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         {/* Profile Banner */}
         <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
           <div className="flex items-center gap-3 mb-3">
-            {result?.stats?.profile_pic_base64 && !imgError ? (
-              <img src={result.stats.profile_pic_base64} alt={competitor.username}
-                className="w-14 h-14 rounded-full object-cover border-2 border-white/30"
-                onError={() => setImgError(true)} />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xl border-2 border-white/30">
-                {competitor.username[0].toUpperCase()}
-              </div>
-            )}
+            {(() => {
+              const picSrc = result?.stats?.profile_pic_base64 ||
+                hiker?.reels?.[0]?.profile_pic_url ||
+                competitor.profile_pic_url;
+              return picSrc && !imgError ? (
+                <img src={picSrc} alt={competitor.username}
+                  className="w-14 h-14 rounded-full object-cover border-2 border-white/30"
+                  onError={() => {
+                    if (picSrc && !picSrc.startsWith('data:') && !picSrc.includes('/api/instagram/img')) {
+                      // try proxy on first error
+                    } else {
+                      setImgError(true);
+                    }
+                  }} />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xl border-2 border-white/30">
+                  {competitor.username[0].toUpperCase()}
+                </div>
+              );
+            })()}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="font-bold text-white text-base">@{competitor.username}</p>
@@ -474,7 +486,7 @@ export default function InstagramAnalyzer() {
       const fullData = mainRes.status === 'fulfilled' ? mainRes.value : null;
       const hikerData = hikerRes.status === 'fulfilled' ? hikerRes.value : null;
       // Use HikerAPI profile pic (proxied) as it's more reliable than ScrapeCreators base64
-      const hikerProfilePic = hikerData?.reels?.[0]?.profile_pic_url || null;
+      const hikerProfilePic = hikerData?.profile_pic_url || hikerData?.reels?.[0]?.profile_pic_url || null;
       const card: CompetitorCard = {
         username: clean,
         profile_pic_base64: fullData?.stats?.profile_pic_base64 || null,
@@ -504,7 +516,7 @@ export default function InstagramAnalyzer() {
     if (!clean || isAlreadyCompetitor(clean)) return;
     setCompLoading(true);
     try {
-      const hikerProfilePic = hiker?.reels?.[0]?.profile_pic_url || null;
+      const hikerProfilePic = hiker?.profile_pic_url || hiker?.reels?.[0]?.profile_pic_url || null;
       const card: CompetitorCard = {
         username: clean,
         profile_pic_base64: result?.stats?.profile_pic_base64 || null,
@@ -696,17 +708,23 @@ export default function InstagramAnalyzer() {
                 <motion.div key={comp.username} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 p-3 rounded-xl border border-[#e1e3e4] dark:border-gray-700 cursor-pointer hover:border-[#7C3AED]/40 hover:bg-[#faf9ff] dark:hover:bg-gray-700 transition-all"
                   onClick={() => setOpenCompetitor(comp)}>
-                  {/* Profile pic — use latest reel thumbnail if available */}
+                  {/* Profile pic */}
                   {(() => {
-                    const latestThumb = comp.hikerData?.reels?.[0]?.thumbnail;
-                    const picSrc = comp.profile_pic_base64 ||
-                      (comp.profile_pic_url ? `${BASE}/api/instagram/img?u=${encodeURIComponent(comp.profile_pic_url)}` : null) ||
-                      (latestThumb ? `${BASE}/api/instagram/img?u=${encodeURIComponent(latestThumb)}` : null);
-                    return picSrc ? (
-                      <img src={picSrc} alt={comp.username}
+                    const picUrl = comp.profile_pic_base64 || comp.profile_pic_url;
+                    if (picUrl) return (
+                      <img src={picUrl} alt={comp.username}
                         className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0"
-                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    ) : (
+                        onError={e => {
+                          // On error try proxy, then fallback to initials
+                          const img = e.target as HTMLImageElement;
+                          if (!img.src.includes('/api/instagram/img') && comp.profile_pic_url) {
+                            img.src = `${BASE}/api/instagram/img?u=${encodeURIComponent(comp.profile_pic_url)}`;
+                          } else {
+                            img.style.display = 'none';
+                          }
+                        }} />
+                    );
+                    return (
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ background: PRIMARY_GRAD }}>
                         {comp.username[0].toUpperCase()}
                       </div>
