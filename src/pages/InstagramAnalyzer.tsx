@@ -457,8 +457,12 @@ export default function InstagramAnalyzer() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: clean, language: userLanguage }),
         });
-        if (!res.ok) throw new Error('Failed');
-        setResult(await res.json());
+        const data = await res.json();
+        if (!res.ok || data.error === 'user_not_found') {
+          setError(`@${clean} not found. The account may not exist, be private, or be unavailable.`);
+        } else {
+          setResult(data);
+        }
       } catch { setError(t('common.error')); }
       finally { setLoading(false); }
     })();
