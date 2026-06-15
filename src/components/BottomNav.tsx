@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, TrendingUp, Newspaper, FileText, Settings, Youtube, Instagram, Tag, Search } from "lucide-react";
+import { LayoutDashboard, TrendingUp, FileText, Settings, Youtube, Instagram, Tag, Search, BarChart2 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
 const IG_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
@@ -16,11 +16,10 @@ export default function BottomNav() {
     () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
   );
 
-  // ── Nav arrays inside component so they re-render on language change ──
   const instagramNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
     { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
-    { icon: Newspaper, label: t('nav.news'), path: "/news" },
+    { icon: BarChart2, label: t('nav.analyzer'), path: "/instagram/analyzer" },
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
     { icon: Settings, label: t('nav.settings'), path: "/settings" },
   ];
