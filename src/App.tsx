@@ -11,7 +11,7 @@ import NewsPage from "./pages/NewsPage";
 import ScriptsPage from "./pages/ScriptsPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
-import TrendingDashboard from "./pages/TrendingDashboard";
+import CreatorLeaderboard from "./pages/CreatorLeaderboard";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import YouTubeSEO from "./pages/YouTubeSEO";
@@ -55,7 +55,7 @@ const App = () => (
               <Route path="/insight" element={<InsightPage />} />
               <Route path="/news" element={<NewsPage />} />
               <Route path="/scripts" element={<ScriptsPage />} />
-              <Route path="/trending" element={<TrendingDashboard />} />
+              <Route path="/trending" element={<CreatorLeaderboard />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
@@ -63,7 +63,6 @@ const App = () => (
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
-            
             </Route>
 
             <Route path="*" element={<NotFound />} />
