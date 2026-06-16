@@ -20,6 +20,35 @@ const proxyImg = (url?: string) =>
     ? `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`
     : (url || "");
 
+// ✅ Maps our raw reel/video object (from HikerAPI / YouTube search) into the
+// shape InsightPage expects (item.platform, item.virality as a number, etc.)
+function toInsightItem(video: any, isIG: boolean, niche?: string) {
+  const hashtags = (video.caption || '')
+    .match(/#[a-zA-Z0-9_]+/g)?.slice(0, 8) || [];
+
+  return {
+    id: video.id,
+    platform: isIG ? 'instagram' : 'youtube',
+    user: video.username || video.channel_title || 'unknown',
+    name: video.full_name || video.channel_title || video.username || 'Unknown',
+    avatar: (video.full_name || video.username || '?')[0]?.toUpperCase(),
+    thumbnail: proxyImg(video.thumbnail),
+    caption: video.caption || video.title || '',
+    isVideo: true,
+    instagramUrl: isIG ? video.permalink : undefined,
+    youtubeUrl: !isIG ? video.permalink : undefined,
+    views: formatNum(Number(video.views) || 0),
+    likes: formatNum(Number(video.likes) || 0),
+    comments: formatNum(Number(video.comments) || 0),
+    shares: formatNum(Number(video.shares) || 0),
+    virality: video.virality?.score ?? 0,
+    boosted: false,
+    hashtags,
+    audio: video.audio_title || undefined,
+    niche: niche || undefined,
+  };
+}
+
 const WORDS = ["Discover.", "Create.", "Go Viral."];
 
 const FLOATING_TAGS = [
@@ -314,10 +343,7 @@ export default function Index() {
                     <motion.div key={video.id || i}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
-                      onClick={() => {
-                        if (video.permalink) window.open(video.permalink, '_blank');
-                        else navigate('/insight', { state: { query: search, video } });
-                      }}
+                      onClick={() => navigate('/insight', { state: { item: toInsightItem(video, isIG, search) } })}
                       className="relative rounded-2xl overflow-hidden cursor-pointer group"
                       style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
                       <img src={proxyImg(video.thumbnail)} alt={video.caption} referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform group-hover:scale-105"
@@ -334,9 +360,15 @@ export default function Index() {
                         </div>
                       )}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(4px)' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (video.permalink) window.open(video.permalink, '_blank');
+                          }}
+                          className="w-10 h-10 rounded-full flex items-center justify-center"
+                          style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(4px)' }}>
                           <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
-                        </div>
+                        </button>
                       </div>
                       <div className="absolute bottom-0 left-0 right-0 p-2">
                         <p className="text-white text-[9px] font-semibold line-clamp-2 leading-tight mb-1">{video.caption}</p>
