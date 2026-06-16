@@ -118,24 +118,40 @@ export default function Index() {
   useEffect(() => { fetchSuggestions(); }, [platform]);
 
   // ✅ Search: Instagram → Indian reel search, YouTube → existing search
+  const [videosHasMore, setVideosHasMore] = useState(false);
+  const [videosLoadingMore, setVideosLoadingMore] = useState(false);
+  const videosPageRef = useRef(1);
+
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    if (!search.trim()) { setVideos([]); return; }
+    if (!search.trim()) { setVideos([]); setVideosHasMore(false); return; }
     searchTimeout.current = setTimeout(async () => {
       setVideosLoading(true);
+      videosPageRef.current = 1;
       try {
         const res = isIG
-          ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}`)
+          ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=1`)
           : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
         const data = await res.json();
         setVideos(data.items || data.reels || []);
+        setVideosHasMore(Boolean(data.has_more));
       } catch (e) { console.error(e); } finally { setVideosLoading(false); }
     }, 600);
   }, [search, platform]);
 
-  // ✅ Load-more: how many reels are visible in the search results grid
-  const [videosVisible, setVideosVisible] = useState(9);
-  useEffect(() => { setVideosVisible(9); }, [search, platform]);
+  const loadMoreVideos = async () => {
+    if (!isIG || videosLoadingMore) return;
+    setVideosLoadingMore(true);
+    try {
+      const nextPage = videosPageRef.current + 1;
+      const res = await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=${nextPage}`);
+      const data = await res.json();
+      const newItems = data.items || data.reels || [];
+      setVideos(prev => [...prev, ...newItems]);
+      setVideosHasMore(Boolean(data.has_more));
+      videosPageRef.current = nextPage;
+    } catch (e) { console.error(e); } finally { setVideosLoadingMore(false); }
+  };
 
   const handleYtConnect = async () => {
     if (!user?.id) { navigate('/login'); return; }
@@ -293,7 +309,7 @@ export default function Index() {
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {videos.slice(0, videosVisible).map((video, i) => (
+                  {videos.map((video, i) => (
                     <motion.div key={video.id || i}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
@@ -334,12 +350,13 @@ export default function Index() {
                   ))}
                 </div>
               )}
-              {!videosLoading && videos.length > videosVisible && (
+              {!videosLoading && isIG && videosHasMore && (
                 <button
-                  onClick={() => setVideosVisible(v => v + 9)}
-                  className="mx-auto mt-4 block px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-transform active:scale-95"
+                  onClick={loadMoreVideos}
+                  disabled={videosLoadingMore}
+                  className="mx-auto mt-4 block px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-transform active:scale-95 disabled:opacity-60 flex items-center gap-2"
                   style={{ background: activeColor }}>
-                  Load More
+                  {videosLoadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</> : 'Load More'}
                 </button>
               )}
             </motion.div>
