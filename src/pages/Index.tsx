@@ -73,13 +73,25 @@ export default function Index() {
   const { t } = useTranslation();
   const searchTimeout = useRef<any>(null);
 
+  const SESSION_KEY = "home_reels_session";
+
   const [platform, setPlatform] = useState<"Instagram" | "YouTube">(() => {
     const saved = localStorage.getItem("platform");
     return saved === "youtube" ? "YouTube" : "Instagram";
   });
-  const [search, setSearch] = useState("");
+
+  // ✅ Restore search + results from sessionStorage on mount so navigating
+  // away (e.g. to /insight) and back doesn't lose the user's search.
+  const restored = (() => {
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
+
+  const [search, setSearch] = useState(restored?.search || "");
   const [wordIndex, setWordIndex] = useState(0);
-  const [videos, setVideos] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>(restored?.videos || []);
   const [videosLoading, setVideosLoading] = useState(false);
   const [chips, setChips] = useState<string[]>([]);
   const [chipsLoading, setChipsLoading] = useState(false);
@@ -148,13 +160,36 @@ export default function Index() {
 
   // ✅ Search: Instagram → Indian reel search, YouTube → existing search
   const PAGE_SIZE = 3; // show 3 reels per load, click Load More for the next 3
-  const [videosHasMore, setVideosHasMore] = useState(false);
+  const [videosHasMore, setVideosHasMore] = useState(restored?.hasMore || false);
   const [videosLoadingMore, setVideosLoadingMore] = useState(false);
-  const videosPageRef = useRef(1);
+  const videosPageRef = useRef(restored?.page || 1);
+  const skipNextSearchEffect = useRef(Boolean(restored?.videos?.length));
+
+  // ✅ Persist current search results so they survive navigating to /insight
+  // and back (or a refresh) within the same browser session.
+  const saveSession = (nextSearch: string, nextVideos: any[], nextHasMore: boolean, nextPage: number) => {
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        search: nextSearch, videos: nextVideos, hasMore: nextHasMore, page: nextPage,
+      }));
+    } catch { }
+  };
 
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    if (!search.trim()) { setVideos([]); setVideosHasMore(false); return; }
+    if (!search.trim()) {
+      setVideos([]); setVideosHasMore(false);
+      try { sessionStorage.removeItem(SESSION_KEY); } catch { }
+      return;
+    }
+
+    // Skip the very first run if we just restored a matching search from
+    // sessionStorage — avoids re-fetching page 1 and wiping Load More progress.
+    if (skipNextSearchEffect.current) {
+      skipNextSearchEffect.current = false;
+      return;
+    }
+
     searchTimeout.current = setTimeout(async () => {
       setVideosLoading(true);
       videosPageRef.current = 1;
@@ -163,8 +198,11 @@ export default function Index() {
           ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=1&limit=${PAGE_SIZE}`)
           : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
         const data = await res.json();
-        setVideos(data.items || data.reels || []);
-        setVideosHasMore(Boolean(data.has_more));
+        const newVideos = data.items || data.reels || [];
+        const hasMore = Boolean(data.has_more);
+        setVideos(newVideos);
+        setVideosHasMore(hasMore);
+        saveSession(search, newVideos, hasMore, 1);
       } catch (e) { console.error(e); } finally { setVideosLoading(false); }
     }, 600);
   }, [search, platform]);
@@ -177,8 +215,13 @@ export default function Index() {
       const res = await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=${nextPage}&limit=${PAGE_SIZE}`);
       const data = await res.json();
       const newItems = data.items || data.reels || [];
-      setVideos(prev => [...prev, ...newItems]);
-      setVideosHasMore(Boolean(data.has_more));
+      const hasMore = Boolean(data.has_more);
+      setVideos(prev => {
+        const combined = [...prev, ...newItems];
+        saveSession(search, combined, hasMore, nextPage);
+        return combined;
+      });
+      setVideosHasMore(hasMore);
       videosPageRef.current = nextPage;
     } catch (e) { console.error(e); } finally { setVideosLoadingMore(false); }
   };
