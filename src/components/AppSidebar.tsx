@@ -189,8 +189,15 @@ export default function AppSidebar() {
             style={showProfileMenu ? { background: acContainer } : {}}
             onMouseEnter={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
             onMouseLeave={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = ''; }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-              style={{ background: ag }}>{avatarInitials}</div>
+            <div className="relative w-8 h-8 shrink-0">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                style={{ background: ag }}>{avatarInitials}</div>
+              {effectivePlatform === "youtube" && (
+                <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-[2px] shadow-sm">
+                  <Youtube className="w-3 h-3" style={{ color: YT_COLOR }} />
+                </div>
+              )}
+            </div>
             {!collapsed && (
               <>
                 <div className="flex-1 min-w-0 text-left">
@@ -206,7 +213,14 @@ export default function AppSidebar() {
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
               <div className="p-3 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: ag }}>{avatarInitials}</div>
+                  <div className="relative w-9 h-9 shrink-0">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: ag }}>{avatarInitials}</div>
+                    {effectivePlatform === "youtube" && (
+                      <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-[2px] shadow-sm">
+                        <Youtube className="w-3 h-3" style={{ color: YT_COLOR }} />
+                      </div>
+                    )}
+                  </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
