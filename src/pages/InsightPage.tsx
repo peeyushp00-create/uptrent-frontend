@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -18,6 +19,7 @@ export default function InsightPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
   const item = state?.item || state?.video;
+  const [picError, setPicError] = useState(false);
 
   if (!item) { navigate("/home"); return null; }
 
@@ -88,22 +90,21 @@ export default function InsightPage() {
           <div className="absolute inset-0" style={{ background:"linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.85))" }} />
 
           {/* Play button */}
-          {/* Play button */}
-{item.isVideo && (
-  <button
-    onClick={() => {
-      if (item.youtubeUrl) {
-        const videoId = item.id;
-        window.open(`https://www.youtube.com/shorts/${videoId}`, '_blank');
-      } else if (item.instagramUrl) {
-        window.open(item.instagramUrl, '_blank');
-      }
-    }}
-    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center transition-transform hover:scale-110"
-    style={{ background:"rgba(255,255,255,0.2)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.3)" }}>
-    <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-  </button>
-)}
+          {item.isVideo && (
+            <button
+              onClick={() => {
+                if (item.youtubeUrl) {
+                  const videoId = item.id;
+                  window.open(`https://www.youtube.com/shorts/${videoId}`, '_blank');
+                } else if (item.instagramUrl) {
+                  window.open(item.instagramUrl, '_blank');
+                }
+              }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+              style={{ background:"rgba(255,255,255,0.2)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.3)" }}>
+              <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+            </button>
+          )}
 
           {/* Badges */}
           <div className="absolute top-4 left-4 flex gap-2">
@@ -123,8 +124,17 @@ export default function InsightPage() {
             <p className="text-white text-sm font-semibold leading-snug line-clamp-2 mb-3">{item.caption}</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                  style={{ background: ag }}>{item.avatar || item.name?.[0] || '?'}</div>
+                {item.profile_pic_url && !picError ? (
+                  <img
+                    src={item.profile_pic_url}
+                    alt={item.user}
+                    className="w-8 h-8 rounded-full object-cover border border-white/20"
+                    onError={() => setPicError(true)}
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                    style={{ background: ag }}>{item.avatar || item.name?.[0] || '?'}</div>
+                )}
                 <div>
                   <p className="text-white text-xs font-semibold">{item.name}</p>
                   <p className="text-white/60 text-xs">@{item.user}</p>
