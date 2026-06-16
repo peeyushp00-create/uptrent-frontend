@@ -118,6 +118,7 @@ export default function Index() {
   useEffect(() => { fetchSuggestions(); }, [platform]);
 
   // ✅ Search: Instagram → Indian reel search, YouTube → existing search
+  const PAGE_SIZE = 3; // show 3 reels per load, click Load More for the next 3
   const [videosHasMore, setVideosHasMore] = useState(false);
   const [videosLoadingMore, setVideosLoadingMore] = useState(false);
   const videosPageRef = useRef(1);
@@ -130,7 +131,7 @@ export default function Index() {
       videosPageRef.current = 1;
       try {
         const res = isIG
-          ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=1`)
+          ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=1&limit=${PAGE_SIZE}`)
           : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
         const data = await res.json();
         setVideos(data.items || data.reels || []);
@@ -144,7 +145,7 @@ export default function Index() {
     setVideosLoadingMore(true);
     try {
       const nextPage = videosPageRef.current + 1;
-      const res = await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=${nextPage}`);
+      const res = await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=${nextPage}&limit=${PAGE_SIZE}`);
       const data = await res.json();
       const newItems = data.items || data.reels || [];
       setVideos(prev => [...prev, ...newItems]);
