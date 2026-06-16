@@ -21,6 +21,7 @@ export default function AppSidebar() {
   const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const [platform, setPlatform] = useState<"instagram" | "youtube">(
     () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
   );
@@ -79,6 +80,11 @@ export default function AppSidebar() {
   const avatarInitials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : user?.email?.[0].toUpperCase() || 'U';
+
+  // ── Real YouTube channel picture, fetched during OAuth connect ──
+  const youtubeChannel = user?.user_metadata?.youtube_channel;
+  const channelThumbnail = youtubeChannel?.channel_thumbnail;
+  const showChannelPic = !!channelThumbnail && !avatarError;
 
   return (
     <aside className={`flex flex-col h-screen border-r border-border bg-card transition-all duration-300 relative ${collapsed ? "w-16" : "w-60"}`}>
@@ -189,14 +195,12 @@ export default function AppSidebar() {
             style={showProfileMenu ? { background: acContainer } : {}}
             onMouseEnter={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
             onMouseLeave={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = ''; }}>
-            <div className="relative w-8 h-8 shrink-0">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                style={{ background: ag }}>{avatarInitials}</div>
-              {effectivePlatform === "youtube" && (
-                <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-[2px] shadow-sm">
-                  <Youtube className="w-3 h-3" style={{ color: YT_COLOR }} />
-                </div>
-              )}
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white overflow-hidden"
+              style={!showChannelPic ? { background: ag } : undefined}>
+              {showChannelPic ? (
+                <img src={channelThumbnail} alt="Profile" className="w-8 h-8 rounded-full object-cover"
+                  onError={() => setAvatarError(true)} />
+              ) : avatarInitials}
             </div>
             {!collapsed && (
               <>
@@ -213,13 +217,12 @@ export default function AppSidebar() {
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
               <div className="p-3 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-9 h-9 shrink-0">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: ag }}>{avatarInitials}</div>
-                    {effectivePlatform === "youtube" && (
-                      <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-[2px] shadow-sm">
-                        <Youtube className="w-3 h-3" style={{ color: YT_COLOR }} />
-                      </div>
-                    )}
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden"
+                    style={!showChannelPic ? { background: ag } : undefined}>
+                    {showChannelPic ? (
+                      <img src={channelThumbnail} alt="Profile" className="w-9 h-9 rounded-full object-cover"
+                        onError={() => setAvatarError(true)} />
+                    ) : avatarInitials}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
