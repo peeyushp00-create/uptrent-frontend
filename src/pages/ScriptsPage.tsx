@@ -118,6 +118,8 @@ useEffect(() => {
   const [copied, setCopied] = useState<string | null>(null);
   const [contentType, setContentType] = useState('educational');
   const [duration, setDuration] = useState(60);
+  const [isCustomDuration, setIsCustomDuration] = useState(false);
+  const [customDurationInput, setCustomDurationInput] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>(() => JSON.parse(localStorage.getItem("ig_script_history") || "[]"));
   const [showHistory, setShowHistory] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -125,9 +127,6 @@ useEffect(() => {
   const [detectedNiche, setDetectedNiche] = useState<string | null>(null);
   const [showSubCategories, setShowSubCategories] = useState(false);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
-  const [showIdeas, setShowIdeas] = useState(false);
-  const [ideas, setIdeas] = useState<{ news: any[]; reelIdeas: string[] }>({ news: [], reelIdeas: [] });
-  const [loadingIdeas, setLoadingIdeas] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -154,41 +153,16 @@ useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
         inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
-      if (ideasRef.current && !ideasRef.current.contains(e.target as Node)) setShowIdeas(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const fetchIdeas = async () => {
-    setLoadingIdeas(true);
-    const userNiches: string[] = user?.user_metadata?.niches || (userNiche ? [userNiche] : []);
-    const topicForIdeas = topicInput.trim() || userNiches[0] || 'Finance';
-    try {
-      const res = await fetch(`${BASE}/api/news?filter=today&topicId=${encodeURIComponent(topicForIdeas)}`);
-      const data = await res.json();
-      const newsList = Array.isArray(data) ? data.slice(0, 5) : [];
-      const reelIdeas = [
-        `🔥 React to: "${newsList[0]?.title?.slice(0, 50) || topicForIdeas + ' latest'}"`,
-        `📊 Explain "${topicForIdeas}" in 60 seconds`,
-        `💡 Top 5 things about ${topicForIdeas} nobody knows`,
-        `⚡ ${topicForIdeas} mistake everyone makes`,
-        `🎯 My honest take on ${topicForIdeas}`,
-        `📈 Why ${topicForIdeas} is changing in 2026`,
-        `🚀 ${topicForIdeas} tips that actually work`,
-        `❌ Stop doing this in ${topicForIdeas}`,
-      ];
-      setIdeas({ news: newsList, reelIdeas });
-    } catch {
-      setIdeas({ news: [], reelIdeas: [`🔥 Top 5 ${topicForIdeas} tips`, `📊 ${topicForIdeas} in 60 seconds`, `💡 ${topicForIdeas} secrets`, `⚡ ${topicForIdeas} mistakes`] });
-    } finally { setLoadingIdeas(false); }
-  };
-
   const handleGenerate = async (topic: string) => {
     if (!topic.trim()) return;
     const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
     setGenerating(true); setError(''); setSelectedTopic(topic);
-    setTopicInput(topic); setShowDropdown(false); setShowSubCategories(false); setShowIdeas(false);
+    setTopicInput(topic); setShowDropdown(false); setShowSubCategories(false);
     try {
       const selectedContentType = CONTENT_TYPES.find(c => c.id === contentType);
       const result = await generateScript({
@@ -199,7 +173,6 @@ useEffect(() => {
   duration,
   contentTypePrompt: selectedContentType?.prompt || '',
   contentType: selectedContentType?.label || '',
-  
 });
       setScript(result);
       saveHistory({ topic, script: result, mode: contentType, duration, language: userLanguage });
@@ -295,16 +268,44 @@ useEffect(() => {
               </div>
               <div className="flex gap-2">
                 {DURATION_OPTIONS.map(d => (
-                  <button key={d.value} onClick={() => setDuration(d.value)}
+                  <button key={d.value} onClick={() => { setDuration(d.value); setIsCustomDuration(false); }}
                     className="flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all"
-                    style={duration === d.value
+                    style={!isCustomDuration && duration === d.value
                       ? { background: PRIMARY_GRAD, borderColor: 'transparent', color: '#fff' }
                       : { borderColor: '#c5c5d4', color: '#454652' }}>
                     {d.label}
                     <p className="text-xs font-normal opacity-70">{d.description}</p>
                   </button>
                 ))}
+                <button onClick={() => setIsCustomDuration(true)}
+                  className="flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all"
+                  style={isCustomDuration
+                    ? { background: PRIMARY_GRAD, borderColor: 'transparent', color: '#fff' }
+                    : { borderColor: '#c5c5d4', color: '#454652' }}>
+                  Custom
+                  <p className="text-xs font-normal opacity-70">Set seconds</p>
+                </button>
               </div>
+
+              {isCustomDuration && (
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={5}
+                    max={600}
+                    value={customDurationInput}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setCustomDurationInput(val);
+                      const num = parseInt(val, 10);
+                      if (!isNaN(num) && num > 0) setDuration(Math.min(num, 600));
+                    }}
+                    placeholder="e.g. 45"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20"
+                  />
+                  <span className="text-xs font-semibold text-[#757684]">seconds</span>
+                </div>
+              )}
             </div>
 
             {/* Topic Input */}
@@ -334,70 +335,18 @@ useEffect(() => {
                   )}
                 </div>
 
-                {/* Ideas button */}
-              <div className="relative group" ref={ideasRef}>
-  <button onClick={() => {}}
+                {/* Ideas button — Coming Soon */}
+                <div className="relative group" ref={ideasRef}>
+                  <button
                     className="px-3 py-3 rounded-xl border text-sm font-bold transition-all flex items-center gap-1.5"
-                    style={showIdeas ? { background: PRIMARY_GRAD, color: '#fff', borderColor: 'transparent' } : { borderColor: '#c5c5d4', color: SECONDARY, background: SECONDARY_CONTAINER }}>
+                    style={{ borderColor: '#c5c5d4', color: SECONDARY, background: SECONDARY_CONTAINER }}>
                     <Flame className="w-4 h-4" />
                     <span className="hidden sm:inline">Ideas</span>
                   </button>
                   <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-  🚀 Coming Soon
-  <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
-</div>
-                  <AnimatePresence>
-                    {showIdeas && (
-                      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                        className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 border border-[#c5c5d4] dark:border-gray-600 rounded-2xl shadow-xl z-50 overflow-hidden"
-                        style={{ width: 300 }}>
-                        {loadingIdeas ? (
-                          <div className="flex items-center justify-center py-8 gap-2">
-                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                              <Sparkles className="w-4 h-4" style={{ color: SECONDARY }} />
-                            </motion.div>
-                            <span className="text-xs text-[#757684]">Fetching ideas...</span>
-                          </div>
-                        ) : (
-                          <div className="max-h-80 overflow-y-auto">
-                            {ideas.news.length > 0 && (
-                              <div className="p-3 border-b border-[#e1e3e4]">
-                                <div className="flex items-center gap-1.5 mb-2">
-                                  <Newspaper className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: PRIMARY }}>Hot News</p>
-                                </div>
-                                {ideas.news.map((n, i) => (
-                                  <button key={i} onClick={() => { setTopicInput((n.title || n.headline || '').slice(0, 60)); setShowIdeas(false); }}
-                                    className="w-full text-left px-3 py-2 rounded-xl text-xs text-[#191c1d] dark:text-white hover:bg-[#f3f4f5] dark:hover:bg-gray-700 leading-snug flex items-start gap-2">
-                                    <TrendingUp className="w-3 h-3 shrink-0 mt-0.5" style={{ color: PRIMARY }} />
-                                    <span className="line-clamp-2">{n.title || n.headline}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                            <div className="p-3">
-                              <div className="flex items-center gap-1.5 mb-2">
-                                <Flame className="w-3.5 h-3.5 text-orange-500" />
-                                <p className="text-xs font-bold uppercase tracking-wider text-orange-500">Reel Ideas</p>
-                              </div>
-                              {ideas.reelIdeas.map((idea, i) => (
-                                <button key={i} onClick={() => { setTopicInput(idea.replace(/^[🔥📊💡⚡🎯📈🚀❌]\s/, '')); setShowIdeas(false); }}
-                                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-[#191c1d] dark:text-white hover:bg-[#f3f4f5] dark:hover:bg-gray-700 leading-snug">
-                                  {idea}
-                                </button>
-                              ))}
-                            </div>
-                            <div className="px-3 pb-3">
-                              <button onClick={fetchIdeas}
-                                className="w-full py-2 rounded-xl text-xs font-semibold border border-[#c5c5d4] text-[#757684] hover:text-[#191c1d] flex items-center justify-center gap-1.5">
-                                <RefreshCw className="w-3 h-3" /> Refresh
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                    🚀 Coming Soon
+                    <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
+                  </div>
                 </div>
 
                 <button onClick={() => handleGenerate(topicInput)} disabled={generating}
