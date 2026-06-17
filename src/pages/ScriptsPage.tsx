@@ -3,19 +3,34 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square } from "lucide-react";
 import { generateScriptFromMessage, transcribeAudio } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 
 // ── Design tokens ──────────────────────────────────────────────
-// Light, clean surfaces with dark text — minimal borders instead of
-// tinted/colored boxes, single restrained accent.
-const BG = "#f8f9fa";            // page background
-const SURFACE = "#ffffff";       // card / bubble background
-const SURFACE_RAISED = "#ffffff"; // input bar, hover states
-const BORDER = "#e1e3e4";        // hairline borders
-const TEXT = "#191c1d";          // primary text
-const TEXT_MUTED = "#757684";    // secondary / label text
-const ACCENT = "#7C3AED";        // single restrained accent
-const ACCENT_SOLID = "#7C3AED";  // accent for filled buttons
+// Light tokens: clean white surfaces, dark text.
+// Dark tokens: near-black surfaces, off-white text.
+// Single restrained accent in both, minimal borders instead of tinted boxes.
+const LIGHT = {
+  BG: "#f8f9fa",
+  SURFACE: "#ffffff",
+  SURFACE_RAISED: "#ffffff",
+  BORDER: "#e1e3e4",
+  TEXT: "#191c1d",
+  TEXT_MUTED: "#757684",
+  ACCENT: "#7C3AED",
+  ACCENT_SOLID: "#7C3AED",
+};
+
+const DARK = {
+  BG: "#0A0A0B",
+  SURFACE: "#141416",
+  SURFACE_RAISED: "#1A1A1D",
+  BORDER: "#262629",
+  TEXT: "#F5F5F4",
+  TEXT_MUTED: "#8A8A8E",
+  ACCENT: "#A78BFA",
+  ACCENT_SOLID: "#7C3AED",
+};
 
 const SUGGESTIONS = [
   "Write a 30s fitness reel about home workouts",
@@ -66,6 +81,10 @@ function saveHistory(messages: ChatMessage[]) {
 
 export default function ScriptsPage() {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const T = theme === 'dark' ? DARK : LIGHT;
+  const { BG, SURFACE, SURFACE_RAISED, BORDER, TEXT, TEXT_MUTED, ACCENT, ACCENT_SOLID } = T;
+
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
   const userNiche = userNiches.join(', ') || '';
   const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
@@ -303,7 +322,9 @@ export default function ScriptsPage() {
 
                   {msg.error ? (
                     <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm"
-                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                      style={theme === 'dark'
+                        ? { background: '#241616', color: '#F5A3A3', border: '1px solid #3A2222' }
+                        : { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
                       {msg.text}
                     </div>
                   ) : msg.script ? (
@@ -332,7 +353,7 @@ export default function ScriptsPage() {
                         </div>
                         <button onClick={() => copyScript(msg.script, msg.id)}
                           className="flex items-center gap-1 text-xs font-medium transition-colors"
-                          style={{ color: copied === msg.id ? '#16a34a' : TEXT_MUTED }}>
+                          style={{ color: copied === msg.id ? (theme === 'dark' ? '#4ADE80' : '#16a34a') : TEXT_MUTED }}>
                           {copied === msg.id ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                         </button>
                       </div>
@@ -420,7 +441,7 @@ export default function ScriptsPage() {
                 {showContentTypeMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl overflow-hidden z-50 max-h-72 overflow-y-auto"
-                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
                     {CONTENT_TYPES.map(c => (
                       <button key={c.id} onClick={() => { setContentType(c.id); setShowContentTypeMenu(false); }}
                         className="w-full flex items-center px-4 py-2.5 text-sm text-left transition-colors"
@@ -446,7 +467,7 @@ export default function ScriptsPage() {
                 {showAiModelMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="absolute bottom-full left-0 mb-2 w-60 rounded-2xl overflow-hidden z-50"
-                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
                     {AI_MODELS.map(m => (
                       <button key={m.id} onClick={() => { setAiModel(m.id); setShowAiModelMenu(false); }}
                         className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
@@ -486,7 +507,9 @@ export default function ScriptsPage() {
               disabled={transcribing}
               className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all disabled:opacity-50"
               style={isRecording
-                ? { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }
+                ? (theme === 'dark'
+                    ? { background: '#3A1F1F', color: '#F5A3A3', border: '1px solid #5A2A2A' }
+                    : { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' })
                 : { background: SURFACE_RAISED, color: TEXT_MUTED, border: `1px solid ${BORDER}` }}>
               {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4.5 h-4.5" />}
             </button>
