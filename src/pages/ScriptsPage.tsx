@@ -6,15 +6,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
 // ── Design tokens ──────────────────────────────────────────────
-// Near-black surfaces (not pure #000), off-white text (not pure #FFF),
-// one restrained accent, thin borders instead of tinted/colored boxes.
-const BG = "#0A0A0B";            // page background
-const SURFACE = "#141416";       // card / bubble background
-const SURFACE_RAISED = "#1A1A1D"; // input bar, hover states
-const BORDER = "#262629";        // hairline borders
-const TEXT = "#F5F5F4";          // primary text — off-white
-const TEXT_MUTED = "#8A8A8E";    // secondary / label text
-const ACCENT = "#A78BFA";        // single restrained accent (muted violet)
+// Light, clean surfaces with dark text — minimal borders instead of
+// tinted/colored boxes, single restrained accent.
+const BG = "#f8f9fa";            // page background
+const SURFACE = "#ffffff";       // card / bubble background
+const SURFACE_RAISED = "#ffffff"; // input bar, hover states
+const BORDER = "#e1e3e4";        // hairline borders
+const TEXT = "#191c1d";          // primary text
+const TEXT_MUTED = "#757684";    // secondary / label text
+const ACCENT = "#7C3AED";        // single restrained accent
 const ACCENT_SOLID = "#7C3AED";  // accent for filled buttons
 
 const SUGGESTIONS = [
@@ -291,7 +291,7 @@ export default function ScriptsPage() {
                     <User className="w-3.5 h-3.5" style={{ color: TEXT_MUTED }} />
                   </div>
                   <div className="rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm"
-                    style={{ background: SURFACE_RAISED, color: TEXT, border: `1px solid ${BORDER}` }}>
+                    style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
                     {msg.text}
                   </div>
                 </div>
@@ -303,7 +303,7 @@ export default function ScriptsPage() {
 
                   {msg.error ? (
                     <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm"
-                      style={{ background: SURFACE, color: '#F5A3A3', border: '1px solid #3A2222' }}>
+                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
                       {msg.text}
                     </div>
                   ) : msg.script ? (
@@ -332,7 +332,7 @@ export default function ScriptsPage() {
                         </div>
                         <button onClick={() => copyScript(msg.script, msg.id)}
                           className="flex items-center gap-1 text-xs font-medium transition-colors"
-                          style={{ color: copied === msg.id ? '#4ADE80' : TEXT_MUTED }}>
+                          style={{ color: copied === msg.id ? '#16a34a' : TEXT_MUTED }}>
                           {copied === msg.id ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                         </button>
                       </div>
@@ -420,7 +420,7 @@ export default function ScriptsPage() {
                 {showContentTypeMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl overflow-hidden z-50 max-h-72 overflow-y-auto"
-                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
                     {CONTENT_TYPES.map(c => (
                       <button key={c.id} onClick={() => { setContentType(c.id); setShowContentTypeMenu(false); }}
                         className="w-full flex items-center px-4 py-2.5 text-sm text-left transition-colors"
@@ -446,7 +446,7 @@ export default function ScriptsPage() {
                 {showAiModelMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="absolute bottom-full left-0 mb-2 w-60 rounded-2xl overflow-hidden z-50"
-                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
                     {AI_MODELS.map(m => (
                       <button key={m.id} onClick={() => { setAiModel(m.id); setShowAiModelMenu(false); }}
                         className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
@@ -486,14 +486,14 @@ export default function ScriptsPage() {
               disabled={transcribing}
               className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all disabled:opacity-50"
               style={isRecording
-                ? { background: '#3A1F1F', color: '#F5A3A3', border: '1px solid #5A2A2A' }
+                ? { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }
                 : { background: SURFACE_RAISED, color: TEXT_MUTED, border: `1px solid ${BORDER}` }}>
               {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4.5 h-4.5" />}
             </button>
 
             <button onClick={() => handleSend()} disabled={generating || !input.trim() || transcribing}
-              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 disabled:opacity-40 transition-all"
-              style={{ background: TEXT, color: BG }}>
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 disabled:opacity-40 transition-all hover:shadow-md"
+              style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
               <Send className="w-4.5 h-4.5" />
             </button>
           </div>
