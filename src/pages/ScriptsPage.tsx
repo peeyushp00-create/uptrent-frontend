@@ -1,632 +1,314 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Copy, Check, Clock, RefreshCw, Mic, Search, X, ChevronRight, Trash2, Flame, TrendingUp, Newspaper, Wand2, BarChart2, FileText, ChevronDown } from "lucide-react";
-import { generateScript } from "@/lib/api";
+import { Sparkles, Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User } from "lucide-react";
+import { generateScriptFromMessage } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
 const PRIMARY = "#7C3AED";
-const SECONDARY = "#7C3AED";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
 const PRIMARY_CONTAINER = "#ede9fe";
-const SECONDARY_CONTAINER = "#ede9fe";
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
-const CONTENT_TYPES = [
-  { id: "educational", label: "🎓 Educational", description: "Teach something valuable", prompt: "Create an educational script that clearly explains the topic step by step, uses simple language, and ends with a key takeaway." },
-  { id: "storytelling", label: "📖 Storytelling", description: "Personal story or journey", prompt: "Create a storytelling script with a personal narrative arc — setup, conflict, resolution. Make it emotional and relatable." },
-  { id: "trending", label: "🔥 Trending React", description: "React to hot news/trend", prompt: "Create a reaction script to this trending topic. Start with the news, give a strong opinion, and ask audience what they think." },
-  { id: "tips", label: "💡 Tips & Tricks", description: "Quick actionable tips", prompt: "Create a tips and tricks script with numbered points. Each tip should be specific, actionable and immediately useful." },
-  { id: "comedy", label: "🎭 Comedy/Skit", description: "Funny or relatable content", prompt: "Create a funny, relatable comedy script with Indian humor. Use sarcasm, relatable situations, and a punchline ending." },
-  { id: "motivational", label: "💪 Motivational", description: "Inspire the audience", prompt: "Create a powerful motivational script that connects emotionally, uses a real story or example, and ends with a strong call to action." },
-  { id: "opinion", label: "📊 Opinion/Take", description: "Your honest take on a topic", prompt: "Create an opinion script with a strong controversial or unique take on the topic. Be bold, back it up with reasoning, and invite debate." },
-  { id: "review", label: "🛒 Product Review", description: "Review or recommend something", prompt: "Create an honest product or service review script covering pros, cons, who it's for, and a clear recommendation." },
-];
-
-const DURATION_OPTIONS = [
-  { label: "30s", value: 30, description: "Quick Reel" },
-  { label: "60s", value: 60, description: "Standard" },
-  { label: "90s", value: 90, description: "Detailed" },
-];
 
 const SUGGESTIONS = [
-  "Fitness", "Finance", "Cricket", "Bollywood", "Tech", "Food",
-  "Travel", "Gaming", "Motivation", "Skincare", "Yoga", "Crypto",
-  "Business", "Education", "Fashion", "Comedy", "IPL", "AI",
+  "Write a 30s fitness reel about home workouts",
+  "Funny script about Bollywood movie tropes",
+  "Educational reel explaining mutual funds",
+  "Trending reaction script about IPL 2026",
 ];
 
-const SUB_CATEGORIES: Record<string, { label: string; suggestions: string[]; emoji: string }> = {
-  gaming: { emoji: "🎮", label: "Which game?", suggestions: ["BGMI", "Free Fire", "GTA 5", "Minecraft", "Valorant", "Call of Duty", "FIFA", "Chess", "Roblox", "PUBG PC"] },
-  fitness: { emoji: "💪", label: "What fitness topic?", suggestions: ["Home Workout", "Weight Loss", "Muscle Building", "Yoga", "HIIT Training", "Cardio", "Diet Plan", "6 Pack Abs", "Stretching", "Running Tips"] },
-  finance: { emoji: "📈", label: "What finance topic?", suggestions: ["Stock Market", "Mutual Funds SIP", "Crypto Bitcoin", "Budget Tips", "Tax Saving", "Credit Card", "Passive Income", "IPO Investing", "Real Estate", "Forex Trading"] },
-  cricket: { emoji: "🏏", label: "What cricket topic?", suggestions: ["IPL 2026", "India vs Pakistan", "Virat Kohli", "Rohit Sharma", "Batting Tips", "Bowling Tips", "Fantasy Cricket", "Test Match", "T20 Analysis", "Women's Cricket"] },
-  food: { emoji: "🍳", label: "What food topic?", suggestions: ["Biryani Recipe", "Quick Breakfast", "Street Food", "Healthy Meals", "Dessert Recipe", "Vegan Food", "Keto Diet", "Indian Snacks", "Budget Meals", "Meal Prep"] },
-  tech: { emoji: "💻", label: "What tech topic?", suggestions: ["ChatGPT Tutorial", "AI Tools", "Budget Smartphone", "Laptop Review", "Coding Tips", "Cybersecurity", "Electric Vehicles", "Smart Home", "Camera Review", "Gaming PC"] },
-  travel: { emoji: "✈️", label: "Where?", suggestions: ["Goa", "Manali", "Kerala", "Rajasthan", "Dubai", "Thailand", "Bali", "Europe Budget", "Northeast India", "Andaman"] },
-  motivation: { emoji: "🔥", label: "What motivation topic?", suggestions: ["Morning Routine", "Discipline", "Study Tips", "Success Mindset", "Overcoming Failure", "Self Improvement", "Stoicism", "Atomic Habits", "Goal Setting", "Confidence"] },
-  business: { emoji: "💼", label: "What business topic?", suggestions: ["Start a Business", "Freelancing", "Dropshipping", "Instagram Marketing", "YouTube Strategy", "Entrepreneurship", "Digital Marketing", "LinkedIn Growth", "Amazon Selling", "Startup Ideas"] },
-  bollywood: { emoji: "🎬", label: "What Bollywood topic?", suggestions: ["Movie Review", "Celebrity News", "Box Office", "Upcoming Movies", "Actor Ranking", "Best Movies 2026", "Web Series Review", "OTT Platform", "Award Show", "Music Album"] },
-  skincare: { emoji: "✨", label: "What skincare topic?", suggestions: ["Acne Treatment", "Glass Skin", "Anti Aging", "Sunscreen Guide", "Night Routine", "Morning Routine", "Budget Skincare", "Korean Beauty", "Dark Spots", "Oily Skin"] },
-};
-
-function detectNiche(input: string): string | null {
-  const q = input.toLowerCase().trim();
-  const keywords: Record<string, string[]> = {
-    gaming: ["gaming", "game", "bgmi", "free fire", "pubg", "gta", "minecraft", "valorant"],
-    fitness: ["fitness", "gym", "workout", "weight loss", "muscle", "yoga", "exercise"],
-    finance: ["finance", "money", "stock", "invest", "mutual fund", "sip", "trading", "budget"],
-    cricket: ["cricket", "ipl", "kohli", "rohit", "batting", "bowling", "t20"],
-    food: ["food", "recipe", "cooking", "biryani", "meal", "diet", "eat"],
-    tech: ["tech", "technology", "ai", "coding", "smartphone", "laptop", "chatgpt"],
-    travel: ["travel", "trip", "goa", "manali", "kerala", "dubai", "bali"],
-    motivation: ["motivation", "mindset", "discipline", "success", "habit", "routine"],
-    business: ["business", "startup", "entrepreneur", "freelance", "marketing"],
-    bollywood: ["bollywood", "movie", "film", "actor", "actress", "netflix", "ott"],
-    skincare: ["skincare", "skin", "acne", "glow", "beauty", "moisturizer", "serum"],
-  };
-  for (const [niche, words] of Object.entries(keywords)) {
-    if (words.some(w => q.includes(w))) return niche;
-  }
-  return null;
-}
-
-interface HistoryEntry {
+interface ChatMessage {
   id: string;
-  topic: string;
+  role: "user" | "assistant";
+  text?: string;
+  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string };
+  error?: boolean;
   timestamp: number;
-  script: any;
-  mode: string;
-  duration: number;
-  language: string;
 }
 
-function saveHistory(entry: Omit<HistoryEntry, "id" | "timestamp">) {
-  const existing: HistoryEntry[] = JSON.parse(localStorage.getItem("ig_script_history") || "[]");
-  const newEntry = { ...entry, id: `${Date.now()}`, timestamp: Date.now() };
-  localStorage.setItem("ig_script_history", JSON.stringify([newEntry, ...existing].slice(0, 20)));
+function loadHistory(): ChatMessage[] {
+  try {
+    return JSON.parse(localStorage.getItem("script_chat_history") || "[]");
+  } catch {
+    return [];
+  }
 }
 
-function formatTime(ts: number) {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
+function saveHistory(messages: ChatMessage[]) {
+  localStorage.setItem("script_chat_history", JSON.stringify(messages.slice(-50)));
 }
 
 export default function ScriptsPage() {
   const { user } = useAuth();
-const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
-const userNiche = userNiches.join(', ') || '';
-const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
-
-useEffect(() => {
-  supabase.auth.getUser().then(({ data }) => {
-    const fresh = data?.user?.user_metadata?.voice_style || '';
-    if (fresh) setUserVoiceStyle(fresh);
-  });
-}, []);
-
-  const [topicInput, setTopicInput] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
-  const [script, setScript] = useState<any | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState('');
-  const [copied, setCopied] = useState<string | null>(null);
-  const [contentType, setContentType] = useState('educational');
-  const [duration, setDuration] = useState(60);
-  const [isCustomDuration, setIsCustomDuration] = useState(false);
-  const [customDurationInput, setCustomDurationInput] = useState('');
-  const [history, setHistory] = useState<HistoryEntry[]>(() => JSON.parse(localStorage.getItem("ig_script_history") || "[]"));
-  const [showHistory, setShowHistory] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
-  const [detectedNiche, setDetectedNiche] = useState<string | null>(null);
-  const [showSubCategories, setShowSubCategories] = useState(false);
-  const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
-  const [wordCount, setWordCount] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const ideasRef = useRef<HTMLDivElement>(null);
+  const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
+  const userNiche = userNiches.join(', ') || '';
+  const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
 
   useEffect(() => {
-    if (topicInput.trim().length > 0) {
-      const filtered = SUGGESTIONS.filter(s => s.toLowerCase().includes(topicInput.toLowerCase()) && s.toLowerCase() !== topicInput.toLowerCase()).slice(0, 6);
-      setDropdownSuggestions(filtered); setShowDropdown(filtered.length > 0);
-      const niche = detectNiche(topicInput);
-      if (niche && SUB_CATEGORIES[niche]) { setDetectedNiche(niche); setShowSubCategories(true); }
-      else { setDetectedNiche(null); setShowSubCategories(false); }
-    } else { setShowDropdown(false); setDropdownSuggestions([]); setDetectedNiche(null); setShowSubCategories(false); }
-  }, [topicInput]);
-
-  useEffect(() => {
-    if (script) {
-      const text = [script.hook, script.body, script.cta].filter(Boolean).join(' ');
-      setWordCount(text.split(/\s+/).filter(Boolean).length);
-    }
-  }, [script]);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-        inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    supabase.auth.getUser().then(({ data }) => {
+      const fresh = data?.user?.user_metadata?.voice_style || '';
+      if (fresh) setUserVoiceStyle(fresh);
+    });
   }, []);
 
-  const handleGenerate = async (topic: string) => {
-    if (!topic.trim()) return;
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory());
+  const [input, setInput] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, generating]);
+
+  useEffect(() => {
+    saveHistory(messages);
+  }, [messages]);
+
+  const handleSend = async (text?: string) => {
+    const messageText = (text ?? input).trim();
+    if (!messageText || generating) return;
+
     const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
-    setGenerating(true); setError(''); setSelectedTopic(topic);
-    setTopicInput(topic); setShowDropdown(false); setShowSubCategories(false);
+    const userMsg: ChatMessage = { id: `${Date.now()}-u`, role: 'user', text: messageText, timestamp: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setGenerating(true);
+
     try {
-      const selectedContentType = CONTENT_TYPES.find(c => c.id === contentType);
-      const result = await generateScript({
-  topic,
-  niche: userNiche,
-  language: userLanguage,
-  voiceStyle: userVoiceStyle,
-  duration,
-  contentTypePrompt: selectedContentType?.prompt || '',
-  contentType: selectedContentType?.label || '',
-});
-      setScript(result);
-      saveHistory({ topic, script: result, mode: contentType, duration, language: userLanguage });
-      setHistory(JSON.parse(localStorage.getItem("ig_script_history") || "[]"));
-    } catch { setError('Failed to generate. Please try again.'); }
-    finally { setGenerating(false); }
+      const result = await generateScriptFromMessage(messageText, {
+        niche: userNiche,
+        language: userLanguage,
+        voiceStyle: userVoiceStyle,
+      });
+      const assistantMsg: ChatMessage = {
+        id: `${Date.now()}-a`,
+        role: 'assistant',
+        script: result,
+        timestamp: Date.now(),
+      };
+      setMessages(prev => [...prev, assistantMsg]);
+    } catch (err) {
+      const errorMsg: ChatMessage = {
+        id: `${Date.now()}-e`,
+        role: 'assistant',
+        text: 'Sorry, I could not generate that script. Please try again.',
+        error: true,
+        timestamp: Date.now(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setGenerating(false);
+    }
   };
 
-  const handleClear = () => { setTopicInput(''); setScript(null); setSelectedTopic(null); setDetectedNiche(null); setShowSubCategories(false); setWordCount(0); };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
-  const copyText = (text: string, section: string) => { navigator.clipboard.writeText(text); setCopied(section); setTimeout(() => setCopied(null), 2000); };
-
-  const copyAll = (s: any) => {
+  const copyScript = (script: ChatMessage['script'], id: string) => {
+    if (!script) return;
     const parts = [];
-    if (s.hook) parts.push(`HOOK:\n${s.hook}`);
-    if (s.body) parts.push(`BODY:\n${s.body}`);
-    if (s.cta) parts.push(`CTA:\n${s.cta}`);
+    if (script.hook) parts.push(`HOOK:\n${script.hook}`);
+    if (script.body) parts.push(`BODY:\n${script.body}`);
+    if (script.cta) parts.push(`CTA:\n${script.cta}`);
     navigator.clipboard.writeText(parts.join('\n\n'));
-    setCopied('all'); setTimeout(() => setCopied(null), 2000);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
   };
 
-  const deleteHistory = (id: string) => {
-    const updated = history.filter(h => h.id !== id);
-    localStorage.setItem("ig_script_history", JSON.stringify(updated));
-    setHistory(updated);
+  const handleClearChat = () => {
+    setMessages([]);
+    localStorage.removeItem('script_chat_history');
   };
 
-  const subCat = detectedNiche ? SUB_CATEGORIES[detectedNiche] : null;
-  const estimatedSeconds = Math.round(wordCount / 2.5);
+  const findPrecedingUserText = (index: number) => {
+    for (let i = index - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') return messages[i].text || '';
+    }
+    return '';
+  };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col bg-[#f8f9fa] dark:bg-gray-900">
 
       {/* ── Sticky Header ── */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <FileText className="w-5 h-5" style={{ color: PRIMARY }} />
           <h1 className="font-bold text-xl text-[#7C3AED] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
             Script Generator
           </h1>
           {userVoiceStyle && (
-            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: SECONDARY_CONTAINER, color: SECONDARY }}>
+            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
               <Mic className="w-3 h-3" /> Voice
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-            style={showHistory ? { background: PRIMARY_GRAD, color: '#fff' } : { background: PRIMARY_CONTAINER, color: PRIMARY }}>
-            <Clock className="w-3.5 h-3.5" />
-            History {history.length > 0 && <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-xs" style={{ background: 'rgba(255,255,255,0.3)' }}>{history.length}</span>}
+        {messages.length > 0 && (
+          <button onClick={handleClearChat}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#757684] hover:text-red-500 transition-colors">
+            <Trash2 className="w-3.5 h-3.5" /> Clear chat
           </button>
-          {script && (
-            <button onClick={() => copyAll(script)}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-white"
-              style={{ background: PRIMARY_GRAD }}>
-              {copied === 'all' ? '✓ Copied!' : 'Save Script'}
-            </button>
-          )}
-        </div>
+        )}
       </header>
 
-      <div className="max-w-5xl mx-auto px-5 py-5 pb-28">
-       <div className="max-w-2xl mx-auto flex flex-col gap-5">
+      {/* ── Message Thread ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto px-5 py-6 flex flex-col gap-5">
 
-          {/* ── Main Writing Area ── */}
-          <section className="flex flex-col gap-4">
-
-            {/* Content Type Selector */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#757684]">Content Type:</span>
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: PRIMARY_CONTAINER }}>
+                <Sparkles className="w-7 h-7" style={{ color: PRIMARY }} />
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                {CONTENT_TYPES.map(c => (
-                  <button key={c.id} onClick={() => { setContentType(c.id); setScript(null); }}
-                    className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all"
-                    style={contentType === c.id
-                      ? { background: PRIMARY_GRAD, color: '#fff' }
-                      : { background: '#e7e8e9', color: '#454652' }}>
-                    {c.label}
+              <div>
+                <p className="font-bold text-lg text-[#191c1d] dark:text-white">What script do you want to create?</p>
+                <p className="text-sm text-[#757684] mt-1">Just describe it in your own words — topic, vibe, length, anything.</p>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+                {SUGGESTIONS.map(s => (
+                  <button key={s} onClick={() => handleSend(s)}
+                    className="px-3 py-2 rounded-full text-xs font-medium border border-[#c5c5d4] text-[#454652] dark:text-gray-300 hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors text-left">
+                    {s}
                   </button>
                 ))}
               </div>
             </div>
+          )}
 
-            {/* Duration */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <Clock className="w-4 h-4 text-[#757684]" />
-                <span className="text-xs font-bold uppercase tracking-wider text-[#757684]">Duration:</span>
-              </div>
-              <div className="flex gap-2">
-                {DURATION_OPTIONS.map(d => (
-                  <button key={d.value} onClick={() => { setDuration(d.value); setIsCustomDuration(false); }}
-                    className="flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all"
-                    style={!isCustomDuration && duration === d.value
-                      ? { background: PRIMARY_GRAD, borderColor: 'transparent', color: '#fff' }
-                      : { borderColor: '#c5c5d4', color: '#454652' }}>
-                    {d.label}
-                    <p className="text-xs font-normal opacity-70">{d.description}</p>
-                  </button>
-                ))}
-                <button onClick={() => setIsCustomDuration(true)}
-                  className="flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all"
-                  style={isCustomDuration
-                    ? { background: PRIMARY_GRAD, borderColor: 'transparent', color: '#fff' }
-                    : { borderColor: '#c5c5d4', color: '#454652' }}>
-                  Custom
-                  <p className="text-xs font-normal opacity-70">Set seconds</p>
-                </button>
-              </div>
+          {messages.map((msg, idx) => (
+            <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
 
-              {isCustomDuration && (
-                <div className="mt-3 flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={5}
-                    max={600}
-                    value={customDurationInput}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setCustomDurationInput(val);
-                      const num = parseInt(val, 10);
-                      if (!isNaN(num) && num > 0) setDuration(Math.min(num, 600));
-                    }}
-                    placeholder="e.g. 45"
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20"
-                  />
-                  <span className="text-xs font-semibold text-[#757684]">seconds</span>
-                </div>
-              )}
-            </div>
-
-            {/* Topic Input */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <input ref={inputRef} type="text" value={topicInput}
-                    onChange={e => setTopicInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") handleGenerate(topicInput); }}
-                    onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
-                    placeholder="Enter topic (e.g. Gaming, Finance, Cricket)..."
-                    className="w-full px-4 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20" />
-                  {topicInput && (
-                    <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                  {showDropdown && dropdownSuggestions.length > 0 && (
-                    <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-[#c5c5d4] rounded-xl shadow-lg z-50 overflow-hidden">
-                      {dropdownSuggestions.map((s, i) => (
-                        <button key={i} onClick={() => handleGenerate(s)}
-                          className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#191c1d] dark:text-white hover:bg-[#f3f4f5] dark:hover:bg-gray-700 text-left">
-                          <Search className="w-3.5 h-3.5 text-[#757684] shrink-0" />{s}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Ideas button — Coming Soon */}
-                <div className="relative group" ref={ideasRef}>
-                  <button
-                    className="px-3 py-3 rounded-xl border text-sm font-bold transition-all flex items-center gap-1.5"
-                    style={{ borderColor: '#c5c5d4', color: SECONDARY, background: SECONDARY_CONTAINER }}>
-                    <Flame className="w-4 h-4" />
-                    <span className="hidden sm:inline">Ideas</span>
-                  </button>
-                  <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    🚀 Coming Soon
-                    <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
+              {msg.role === 'user' ? (
+                <div className="max-w-[80%] flex items-start gap-2 flex-row-reverse">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: PRIMARY_GRAD }}>
+                    <User className="w-3.5 h-3.5 text-white" />
                   </div>
-                </div>
-
-                <button onClick={() => handleGenerate(topicInput)} disabled={generating}
-                  className="px-5 py-3 rounded-xl text-white font-bold text-sm flex items-center gap-2 disabled:opacity-60 transition-all hover:shadow-lg"
-                  style={{ background: PRIMARY_GRAD }}>
-                  <Sparkles className="w-4 h-4" />
-                  {generating ? '...' : 'Generate'}
-                </button>
-              </div>
-
-              {/* Sub-categories */}
-              <AnimatePresence>
-                {showSubCategories && subCat && !script && (
-                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                    className="mt-3 rounded-xl p-3 space-y-2"
-                    style={{ background: SECONDARY_CONTAINER, border: `1px solid ${SECONDARY}30` }}>
-                    <p className="text-xs font-bold" style={{ color: SECONDARY }}>{subCat.emoji} {subCat.label}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {subCat.suggestions.map(s => (
-                        <button key={s} onClick={() => handleGenerate(s)}
-                          className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                          style={{ background: 'white', color: SECONDARY, border: `1px solid ${SECONDARY}30` }}>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Popular chips */}
-              {!topicInput && !script && (
-                <div className="mt-3 space-y-2">
-                  <p className="text-xs text-[#757684] font-medium">Popular topics:</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {SUGGESTIONS.slice(0, 10).map(s => (
-                      <button key={s} onClick={() => setTopicInput(s)}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold border border-[#c5c5d4] text-[#454652] hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors">
-                        {s}
-                      </button>
-                    ))}
+                  <div className="rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white" style={{ background: PRIMARY_GRAD }}>
+                    {msg.text}
                   </div>
-                </div>
-              )}
-            </div>
-
-            {error && <p className="text-red-500 text-sm px-1">{error}</p>}
-
-            {/* ── Generating state ── */}
-            {generating && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] p-8 flex flex-col items-center gap-3">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-                  <Sparkles className="w-8 h-8" style={{ color: SECONDARY }} />
-                </motion.div>
-                <p className="text-sm font-semibold text-[#191c1d] dark:text-white">Writing script for <span style={{ color: SECONDARY }}>"{selectedTopic}"</span>...</p>
-                <p className="text-xs text-[#757684]">{CONTENT_TYPES.find(c => c.id === contentType)?.label}</p>
-              </div>
-            )}
-
-            {/* ── Script Output (Writing Canvas) ── */}
-            {script && !generating && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 overflow-hidden">
-
-                {/* Canvas header */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-[#e1e3e4] dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#757684]">Format:</span>
-                    <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: PRIMARY_GRAD }}>
-                      {CONTENT_TYPES.find(c => c.id === contentType)?.label}
-                    </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#e7e8e9] text-[#454652]">{duration}s</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => copyAll(script)}
-                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                      style={{ color: PRIMARY }}>
-                      {copied === 'all' ? <><Check className="w-3.5 h-3.5 text-green-500" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy All</>}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Script sections */}
-                <div className="p-5 space-y-4">
-                  {script.hook && (
-                    <div className="rounded-xl p-4" style={{ background: '#ede9fe', border: `1px solid ${SECONDARY}30` }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>🎯 Hook · 0:00–0:05</span>
-                        <button onClick={() => copyText(script.hook, 'hook')}
-                          className="text-xs flex items-center gap-1 font-semibold" style={{ color: SECONDARY }}>
-                          {copied === 'hook' ? <><Check className="w-3 h-3 text-green-500" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
-                        </button>
-                      </div>
-                      <p className="text-sm text-[#191c1d] dark:text-white leading-relaxed">{script.hook}</p>
-                    </div>
-                  )}
-                  {script.body && (
-                    <div className="rounded-xl p-4 border border-[#e1e3e4] dark:border-gray-600 bg-[#f8f9fa] dark:bg-gray-700">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-[#757684]">📝 Body · 0:05–{duration - 5}s</span>
-                        <button onClick={() => copyText(script.body, 'body')}
-                          className="text-xs flex items-center gap-1 font-semibold text-[#757684] hover:text-[#191c1d]">
-                          {copied === 'body' ? <><Check className="w-3 h-3 text-green-500" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
-                        </button>
-                      </div>
-                      <p className="text-sm text-[#454652] dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{script.body}</p>
-                    </div>
-                  )}
-                  {script.cta && (
-                    <div className="rounded-xl p-4" style={{ background: '#e8f5e9', border: '1px solid #a5d6a7' }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-green-700">🚀 CTA · Last 5s</span>
-                        <button onClick={() => copyText(script.cta, 'cta')}
-                          className="text-xs flex items-center gap-1 font-semibold text-green-700">
-                          {copied === 'cta' ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
-                        </button>
-                      </div>
-                      <p className="text-sm text-green-900 leading-relaxed">{script.cta}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Toolbar */}
-                <div className="flex items-center justify-between px-5 py-3 border-t border-[#e1e3e4] dark:border-gray-700">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => handleGenerate(selectedTopic || topicInput)} disabled={generating}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#c5c5d4] text-xs font-semibold text-[#454652] hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors">
-                      <RefreshCw className="w-3.5 h-3.5" /> Regenerate
-                    </button>
-                    <button onClick={handleClear}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#c5c5d4] text-xs font-semibold text-[#454652] hover:border-red-300 hover:text-red-500 transition-colors">
-                      <X className="w-3.5 h-3.5" /> New
-                    </button>
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#757684]">
-                    {wordCount} Words · ~{estimatedSeconds}s
-                  </span>
-                </div>
-              </motion.div>
-            )}
-          </section>
-
-          {/* ── AI Sidebar ── */}
-          <aside className="w-full lg:w-72 flex flex-col gap-4">
-
-            {/* AI Copilot Panel */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Wand2 className="w-5 h-5" style={{ color: SECONDARY }} />
-                <h2 className="font-bold text-base text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                  AI Copilot
-                </h2>
-              </div>
-
-              {script ? (
-                <div className="space-y-3">
-                  {/* Hook suggestion */}
-                  <div className="p-3 rounded-xl border border-[#c5c5d4] hover:border-[#7C3AED] cursor-pointer transition-colors"
-                    onClick={() => handleGenerate(selectedTopic || topicInput)}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Hook Optimization</span>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#757684]" />
-                    </div>
-                    <p className="text-xs text-[#454652] dark:text-gray-300">Try a different hook angle for better stop-scroll rate</p>
-                  </div>
-
-                  {/* Tone check */}
-                  <div className="p-3 rounded-xl border border-[#c5c5d4]">
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Tone Check</span>
-                    <p className="text-xs text-[#454652] dark:text-gray-300 mt-1">
-                      {CONTENT_TYPES.find(c => c.id === contentType)?.description}
-                    </p>
-                    <div className="flex gap-1 mt-2">
-                      {[1,2,3,4].map(i => (
-                        <div key={i} className="h-1 flex-1 rounded-full" style={{ background: i <= 3 ? SECONDARY : '#e1e3e4' }} />
-                      ))}
-                    </div>
-                  </div>
-
-                  <button onClick={() => handleGenerate(selectedTopic || topicInput)} disabled={generating}
-                    className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60 hover:shadow-lg transition-all"
-                    style={{ background: `linear-gradient(135deg, ${SECONDARY}, #6D28D9)` }}>
-                    <Sparkles className="w-4 h-4" /> Rewrite with AI
-                  </button>
                 </div>
               ) : (
-                <div className="text-center py-6">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: SECONDARY_CONTAINER }}>
-                    <Wand2 className="w-6 h-6" style={{ color: SECONDARY }} />
+                <div className="max-w-[85%] flex items-start gap-2">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: PRIMARY_CONTAINER }}>
+                    <Sparkles className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
                   </div>
-                  <p className="text-xs text-[#757684]">Generate a script to get AI suggestions and optimizations</p>
-                </div>
-              )}
-            </div>
 
-            {/* Reach Forecast */}
-            {script && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <BarChart2 className="w-5 h-5 text-green-600" />
-                  <h3 className="font-bold text-sm text-[#191c1d] dark:text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>Reach Forecast</h3>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#757684]">Potential Views</span>
-                    <span className="font-bold text-sm text-green-600">
-                      {wordCount > 100 ? '50k–120k' : wordCount > 50 ? '20k–60k' : '5k–20k'}
-                    </span>
-                  </div>
-                  <div className="w-full bg-[#e7e8e9] h-2 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-600 transition-all"
-                      style={{ width: `${Math.min(90, (wordCount / 150) * 100)}%` }} />
-                  </div>
-                  <p className="text-xs text-[#757684] leading-relaxed">
-                    Based on trending topics in your niche and script quality score.
-                  </p>
-                </div>
-              </div>
-            )}
+                  {msg.error ? (
+                    <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm bg-red-50 text-red-600 border border-red-200">
+                      {msg.text}
+                    </div>
+                  ) : msg.script ? (
+                    <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl rounded-tl-sm border border-[#e1e3e4] dark:border-gray-700 overflow-hidden">
+                      {/* Script meta header */}
+                      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#e1e3e4] dark:border-gray-700 bg-[#fafafa] dark:bg-gray-900/40">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {msg.script.content_type && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: PRIMARY_GRAD }}>
+                              {msg.script.content_type}
+                            </span>
+                          )}
+                          {msg.script.duration_seconds && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#e7e8e9] text-[#454652]">
+                              {msg.script.duration_seconds}s
+                            </span>
+                          )}
+                        </div>
+                        <button onClick={() => copyScript(msg.script, msg.id)}
+                          className="flex items-center gap-1 text-xs font-semibold" style={{ color: PRIMARY }}>
+                          {copied === msg.id ? <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+                        </button>
+                      </div>
 
-            {/* History Panel */}
-            {showHistory && (
-              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#e1e3e4]">
-                  <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Script History</h3>
-                  {history.length > 0 && (
-                    <button onClick={() => { localStorage.removeItem("ig_script_history"); setHistory([]); }}
-                      className="text-xs text-red-400 hover:text-red-600 font-semibold">Clear All</button>
+                      {/* Script body */}
+                      <div className="p-4 space-y-3">
+                        {msg.script.hook && (
+                          <div className="rounded-xl p-3" style={{ background: '#ede9fe', border: `1px solid ${PRIMARY}30` }}>
+                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: PRIMARY }}>🎯 Hook</span>
+                            <p className="text-sm text-[#191c1d] dark:text-white leading-relaxed mt-1">{msg.script.hook}</p>
+                          </div>
+                        )}
+                        {msg.script.body && (
+                          <div className="rounded-xl p-3 border border-[#e1e3e4] dark:border-gray-600 bg-[#f8f9fa] dark:bg-gray-700">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#757684]">📝 Body</span>
+                            <p className="text-sm text-[#454652] dark:text-gray-200 whitespace-pre-wrap leading-relaxed mt-1">{msg.script.body}</p>
+                          </div>
+                        )}
+                        {msg.script.cta && (
+                          <div className="rounded-xl p-3" style={{ background: '#e8f5e9', border: '1px solid #a5d6a7' }}>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">🚀 CTA</span>
+                            <p className="text-sm text-green-900 leading-relaxed mt-1">{msg.script.cta}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Regenerate */}
+                      <div className="px-4 pb-3">
+                        <button onClick={() => handleSend(findPrecedingUserText(idx))} disabled={generating}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#c5c5d4] text-xs font-semibold text-[#454652] hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors disabled:opacity-50">
+                          <RefreshCw className="w-3 h-3" /> Regenerate
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm bg-white dark:bg-gray-800 border border-[#e1e3e4] dark:border-gray-700 text-[#191c1d] dark:text-white">
+                      {msg.text}
+                    </div>
                   )}
                 </div>
-                {history.length === 0 ? (
-                  <div className="py-8 text-center">
-                    <p className="text-xs text-[#757684]">No history yet</p>
+              )}
+            </motion.div>
+          ))}
+
+          {/* Generating indicator */}
+          <AnimatePresence>
+            {generating && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-start">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: PRIMARY_CONTAINER }}>
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                      <Sparkles className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
+                    </motion.div>
                   </div>
-                ) : (
-                  <div className="divide-y divide-[#e1e3e4] max-h-64 overflow-y-auto">
-                    {history.map(entry => (
-                      <div key={entry.id}>
-                        <div className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#f8f9fa] transition-colors"
-                          onClick={() => setExpandedHistory(expandedHistory === entry.id ? null : entry.id)}>
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0"
-                            style={{ background: PRIMARY_GRAD }}>
-                            {entry.topic[0].toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-[#191c1d] dark:text-white truncate">{entry.topic}</p>
-                            <p className="text-[10px] text-[#757684]">{formatTime(entry.timestamp)} · {entry.duration}s</p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button onClick={e => { e.stopPropagation(); deleteHistory(entry.id); }}
-                              className="p-1 rounded hover:bg-red-50 text-[#757684] hover:text-red-400 transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                            <ChevronDown className={`w-4 h-4 text-[#757684] transition-transform ${expandedHistory === entry.id ? 'rotate-180' : ''}`} />
-                          </div>
-                        </div>
-                        <AnimatePresence>
-                          {expandedHistory === entry.id && (
-                            <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
-                              className="overflow-hidden border-t border-[#e1e3e4]">
-                              <div className="px-4 py-3 space-y-2">
-                                {entry.script?.hook && <p className="text-xs text-[#454652] line-clamp-2 leading-relaxed"><span className="font-bold" style={{ color: SECONDARY }}>Hook:</span> {entry.script.hook}</p>}
-                                <button onClick={() => { setTopicInput(entry.topic); handleGenerate(entry.topic); }}
-                                  className="w-full py-2 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-1.5"
-                                  style={{ background: PRIMARY_GRAD }}>
-                                  <RefreshCw className="w-3 h-3" /> Regenerate
-                                </button>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ))}
+                  <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm bg-white dark:bg-gray-800 border border-[#e1e3e4] dark:border-gray-700 text-[#757684]">
+                    Writing your script...
                   </div>
-                )}
+                </div>
               </motion.div>
             )}
-          </aside>
+          </AnimatePresence>
+
+          <div ref={bottomRef} />
         </div>
+      </div>
+
+      {/* ── Input Bar ── */}
+      <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-[#e1e3e4] dark:border-gray-700 px-5 py-4 shrink-0">
+        <div className="max-w-2xl mx-auto flex items-end gap-2">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Describe the script you want... (e.g. 45s funny reel about gym fails)"
+            rows={1}
+            className="flex-1 resize-none px-4 py-3 rounded-2xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-800 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 max-h-32"
+            style={{ minHeight: '48px' }}
+          />
+          <button onClick={() => handleSend()} disabled={generating || !input.trim()}
+            className="w-12 h-12 rounded-2xl text-white flex items-center justify-center shrink-0 disabled:opacity-40 transition-all hover:shadow-lg"
+            style={{ background: PRIMARY_GRAD }}>
+            <Send className="w-4.5 h-4.5" />
+          </button>
+        </div>
+        <p className="text-[10px] text-[#757684] text-center mt-2 max-w-2xl mx-auto">
+          Enter to send · Shift+Enter for new line
+        </p>
       </div>
     </div>
   );

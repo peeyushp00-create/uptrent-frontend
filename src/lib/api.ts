@@ -71,6 +71,27 @@ export const generateScript = (
   });
 };
 
+// ✅ NEW: Chat-style generation — sends raw natural language message,
+// backend (Claude Haiku) infers topic, content type, and duration itself.
+export const generateScriptFromMessage = (
+  userMessage: string,
+  opts?: { niche?: string; language?: string; voiceStyle?: string }
+) => {
+  const savedLanguage = localStorage.getItem('userLanguage') || 'english';
+  const body = {
+    userMessage,
+    niche: opts?.niche,
+    language: opts?.language || savedLanguage,
+    voiceStyle: opts?.voiceStyle,
+  };
+
+  return apiFetch("/api/scripts/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+};
+
 export const generateHooks = (topic: string, niche?: string, language?: string, voiceStyle?: string) => {
   const savedLanguage = localStorage.getItem('userLanguage') || 'english';
   return apiFetch("/api/scripts/hooks", {
