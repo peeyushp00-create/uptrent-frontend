@@ -72,10 +72,10 @@ export const generateScript = (
 };
 
 // ✅ NEW: Chat-style generation — sends raw natural language message,
-// backend (Claude Haiku) infers topic, content type, and duration itself.
+// backend infers topic and duration itself; caller picks content type + AI model.
 export const generateScriptFromMessage = (
   userMessage: string,
-  opts?: { niche?: string; language?: string; voiceStyle?: string }
+  opts?: { niche?: string; language?: string; voiceStyle?: string; contentType?: string; contentTypePrompt?: string; aiModel?: string }
 ) => {
   const savedLanguage = localStorage.getItem('userLanguage') || 'english';
   const body = {
@@ -83,6 +83,9 @@ export const generateScriptFromMessage = (
     niche: opts?.niche,
     language: opts?.language || savedLanguage,
     voiceStyle: opts?.voiceStyle,
+    contentType: opts?.contentType,
+    contentTypePrompt: opts?.contentTypePrompt,
+    aiModel: opts?.aiModel || 'claude',
   };
 
   return apiFetch("/api/scripts/generate", {
@@ -90,6 +93,21 @@ export const generateScriptFromMessage = (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+};
+
+// ✅ NEW: Transcribe a voice recording into text for the chat input box
+export const transcribeAudio = async (audioBlob: Blob, language: string = 'english') => {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'voice.webm');
+  formData.append('language', language);
+
+  const response = await fetch(`${BASE}/api/scripts/transcribe`, {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.error || 'Transcription failed');
+  return data as { text: string };
 };
 
 export const generateHooks = (topic: string, niche?: string, language?: string, voiceStyle?: string) => {
