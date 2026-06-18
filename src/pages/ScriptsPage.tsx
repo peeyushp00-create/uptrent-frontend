@@ -671,7 +671,7 @@ export default function ScriptsPage() {
               <button onClick={() => { setShowAiModelMenu(prev => !prev); setShowContentTypeMenu(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
                 style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-                <Sparkles className="w-3 h-3" style={{ color: ACCENT }} />
+                <img src="/logo.png" alt="SocialRum" className="w-3 h-3 object-contain rounded-full" />
                 {selectedAiModel.label}
                 <ChevronDown className="w-3 h-3" />
               </button>
