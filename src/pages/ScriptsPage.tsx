@@ -52,10 +52,10 @@ const CONTENT_TYPES = [
 ];
 
 const AI_MODELS = [
-  { id: "claude", label: "Claude", description: "Best quality, default" },
-  { id: "gemini", label: "Gemini", description: "Fast & free" },
-  { id: "chatgpt", label: "ChatGPT", description: "GPT-4o mini" },
-  { id: "groq", label: "Groq", description: "Llama 3.3, fastest" },
+  { id: "claude", label: "Claude", description: "Best quality, default", logo: "/ai-logos/claude-logo.png" },
+  { id: "gemini", label: "Gemini", description: "Fast & free", logo: "/ai-logos/gemini-logo.png" },
+  { id: "chatgpt", label: "ChatGPT", description: "GPT-4o mini", logo: "/ai-logos/chatgpt-logo.png" },
+  { id: "groq", label: "Groq", description: "Llama 3.3, fastest", logo: "/ai-logos/groq-logo.png" },
 ];
 
 // ── One-time onboarding flow for first-time users ──────────────
@@ -671,7 +671,7 @@ export default function ScriptsPage() {
               <button onClick={() => { setShowAiModelMenu(prev => !prev); setShowContentTypeMenu(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
                 style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-                <img src="/logo.png" alt="SocialRum" className="w-3 h-3 object-contain rounded-full" />
+                <img src={selectedAiModel.logo} alt={selectedAiModel.label} className="w-3.5 h-3.5 object-contain rounded-full" />
                 {selectedAiModel.label}
                 <ChevronDown className="w-3 h-3" />
               </button>
@@ -684,9 +684,12 @@ export default function ScriptsPage() {
                       <button key={m.id} onClick={() => { setAiModel(m.id); setShowAiModelMenu(false); }}
                         className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
                         style={{ background: aiModel === m.id ? SURFACE : 'transparent' }}>
-                        <div>
-                          <p style={{ color: aiModel === m.id ? TEXT : TEXT_MUTED }}>{m.label}</p>
-                          <p className="text-[10px]" style={{ color: TEXT_MUTED }}>{m.description}</p>
+                        <div className="flex items-center gap-2.5">
+                          <img src={m.logo} alt={m.label} className="w-5 h-5 object-contain rounded-full shrink-0" />
+                          <div>
+                            <p style={{ color: aiModel === m.id ? TEXT : TEXT_MUTED }}>{m.label}</p>
+                            <p className="text-[10px]" style={{ color: TEXT_MUTED }}>{m.description}</p>
+                          </div>
                         </div>
                         {aiModel === m.id && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
                       </button>
