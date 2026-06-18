@@ -149,27 +149,40 @@ export default function ScriptsPage() {
     });
   }, []);
 
-  const handleOnboardingAnswer = async (value: string) => {
+  const [onboardingPhase, setOnboardingPhase] = useState<'questions' | 'confirm'>('questions');
+
+  const handleOnboardingAnswer = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
     const q = ONBOARDING_QUESTIONS[onboardingStep];
-    const updatedAnswers = { ...onboardingAnswers, [q.key]: value };
+    const updatedAnswers = { ...onboardingAnswers, [q.key]: trimmed };
     setOnboardingAnswers(updatedAnswers);
 
     if (onboardingStep < ONBOARDING_QUESTIONS.length - 1) {
       setOnboardingStep(prev => prev + 1);
-      return;
+    } else {
+      // All 5 answered — show confirmation summary before saving
+      setOnboardingPhase('confirm');
     }
+  };
 
-    // Last question answered — save everything to the profile
+  const handleOnboardingRestart = () => {
+    setOnboardingAnswers({});
+    setOnboardingStep(0);
+    setOnboardingPhase('questions');
+  };
+
+  const handleOnboardingConfirm = async () => {
     setSavingOnboarding(true);
     try {
       await supabase.auth.updateUser({
         data: {
-          job: updatedAnswers.job,
-          location_region: updatedAnswers.location,
-          platform: updatedAnswers.platform,
-          niche: updatedAnswers.niche,
-          niches: [updatedAnswers.niche],
-          target_audience: updatedAnswers.audience,
+          job: onboardingAnswers.job,
+          location_region: onboardingAnswers.location,
+          platform: onboardingAnswers.platform,
+          niche: onboardingAnswers.niche,
+          niches: [onboardingAnswers.niche],
+          target_audience: onboardingAnswers.audience,
           onboarding_completed: true,
         },
       });
@@ -225,6 +238,15 @@ export default function ScriptsPage() {
   const handleSend = async (text?: string) => {
     const messageText = (text ?? input).trim();
     if (!messageText || generating) return;
+
+    // During onboarding, typed text answers the current question instead of generating a script
+    if (!onboardingDone) {
+      if (onboardingPhase === 'questions' && onboardingStep < ONBOARDING_QUESTIONS.length) {
+        setInput('');
+        handleOnboardingAnswer(messageText);
+      }
+      return;
+    }
 
     const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
     const userMsg: ChatMessage = { id: `${Date.now()}-u`, role: 'user', text: messageText, timestamp: Date.now() };
@@ -399,7 +421,7 @@ export default function ScriptsPage() {
               ))}
 
               {/* Current question with tappable options */}
-              {onboardingStep < ONBOARDING_QUESTIONS.length && (
+              {onboardingPhase === 'questions' && onboardingStep < ONBOARDING_QUESTIONS.length && (
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-start">
                     <div className="max-w-[85%] flex items-start gap-2.5">
@@ -413,14 +435,55 @@ export default function ScriptsPage() {
                   </div>
                   <div className="flex flex-wrap gap-2 pl-9">
                     {ONBOARDING_QUESTIONS[onboardingStep].options.map(opt => (
-                      <button key={opt} onClick={() => handleOnboardingAnswer(opt)} disabled={savingOnboarding}
-                        className="px-3.5 py-2 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
+                      <button key={opt} onClick={() => handleOnboardingAnswer(opt)}
+                        className="px-3.5 py-2 rounded-full text-xs font-medium transition-colors"
                         style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}
-                        onMouseEnter={e => { if (!savingOnboarding) { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = TEXT; } }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = TEXT; }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT_MUTED; }}>
                         {opt}
                       </button>
                     ))}
+                  </div>
+                  <p className="text-xs pl-9" style={{ color: TEXT_MUTED }}>
+                    Or type your own answer below.
+                  </p>
+                </div>
+              )}
+
+              {/* Confirmation summary before saving */}
+              {onboardingPhase === 'confirm' && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] flex items-start gap-2.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
+                        <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                      </div>
+                      <div className="flex-1 rounded-2xl rounded-tl-sm overflow-hidden" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
+                        <div className="px-4 py-2.5 text-sm" style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}>
+                          Here's what I've got — is this correct?
+                        </div>
+                        <div className="p-4 space-y-2.5">
+                          {ONBOARDING_QUESTIONS.map(q => (
+                            <div key={q.key} className="flex items-center justify-between text-sm">
+                              <span style={{ color: TEXT_MUTED }}>{q.question}</span>
+                              <span className="font-medium" style={{ color: TEXT }}>{onboardingAnswers[q.key]}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pl-9">
+                    <button onClick={handleOnboardingConfirm} disabled={savingOnboarding}
+                      className="px-4 py-2 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
+                      style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
+                      Looks good
+                    </button>
+                    <button onClick={handleOnboardingRestart} disabled={savingOnboarding}
+                      className="px-4 py-2 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
+                      style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                      Start over
+                    </button>
                   </div>
                   {savingOnboarding && (
                     <p className="text-xs pl-9" style={{ color: TEXT_MUTED }}>Saving your preferences...</p>
@@ -575,7 +638,6 @@ export default function ScriptsPage() {
       </div>
 
       {/* ── Input Bar ── */}
-      {onboardingDone && (
       <div className="sticky bottom-0 px-5 py-4 shrink-0" style={{ background: BG, borderTop: `1px solid ${BORDER}` }}>
         <div className="max-w-2xl mx-auto">
 
@@ -644,7 +706,11 @@ export default function ScriptsPage() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={transcribing ? "Transcribing..." : "Describe the script you want..."}
+              placeholder={
+                transcribing ? "Transcribing..." :
+                !onboardingDone ? "Type your answer..." :
+                "Describe the script you want..."
+              }
               rows={1}
               disabled={transcribing}
               className="flex-1 resize-none px-4 py-3 rounded-2xl outline-none text-sm transition-all max-h-32 disabled:opacity-60"
@@ -678,7 +744,6 @@ export default function ScriptsPage() {
           </p>
         </div>
       </div>
-      )}
     </div>
   );
 }
