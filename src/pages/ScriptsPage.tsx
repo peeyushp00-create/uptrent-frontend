@@ -391,7 +391,7 @@ export default function ScriptsPage() {
               <div className="flex justify-start">
                 <div className="max-w-[85%] flex items-start gap-2.5">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
-                    <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                    <img src="/logo.png" alt="SocialRum" className="w-4 h-4 object-contain rounded-full" />
                   </div>
                   <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
                     Before we make your first video, a few quick questions to personalize your scripts.
@@ -405,7 +405,7 @@ export default function ScriptsPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[85%] flex items-start gap-2.5">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
-                        <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                        <img src="/logo.png" alt="SocialRum" className="w-4 h-4 object-contain rounded-full" />
                       </div>
                       <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
                         {q.question}
@@ -426,7 +426,7 @@ export default function ScriptsPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[85%] flex items-start gap-2.5">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
-                        <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                        <img src="/logo.png" alt="SocialRum" className="w-4 h-4 object-contain rounded-full" />
                       </div>
                       <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
                         <p>{ONBOARDING_QUESTIONS[onboardingStep].question}</p>
@@ -454,7 +454,7 @@ export default function ScriptsPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[85%] flex items-start gap-2.5">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
-                        <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                        <img src="/logo.png" alt="SocialRum" className="w-4 h-4 object-contain rounded-full" />
                       </div>
                       <div className="flex-1 rounded-2xl rounded-tl-sm overflow-hidden" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
                         <div className="px-4 py-2.5 text-sm" style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}>
@@ -529,7 +529,7 @@ export default function ScriptsPage() {
               ) : (
                 <div className="max-w-[85%] flex items-start gap-2.5">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
-                    <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                    <img src="/logo.png" alt="SocialRum" className="w-4 h-4 object-contain rounded-full" />
                   </div>
 
                   {msg.error ? (
@@ -618,8 +618,8 @@ export default function ScriptsPage() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-start">
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ border: `1px solid ${BORDER}` }}>
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                      <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                    <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
+                      <img src="/logo.png" alt="SocialRum" className="w-4 h-4 object-contain rounded-full" />
                     </motion.div>
                   </div>
                   <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm"
