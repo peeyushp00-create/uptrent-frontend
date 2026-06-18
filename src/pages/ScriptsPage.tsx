@@ -58,6 +58,47 @@ const AI_MODELS = [
   { id: "groq", label: "Groq", description: "Llama 3.3, fastest" },
 ];
 
+// ── One-time onboarding flow for first-time users ──────────────
+const ONBOARDING_NICHES = [
+  "Fitness", "Finance", "Cricket", "Bollywood", "Tech", "Food",
+  "Travel", "Gaming", "Motivation", "Skincare", "Yoga", "Crypto",
+  "Business", "Education", "Fashion", "Comedy",
+];
+
+interface OnboardingQuestion {
+  key: 'job' | 'location' | 'platform' | 'niche' | 'audience';
+  question: string;
+  options: string[];
+}
+
+const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
+  {
+    key: 'job',
+    question: "What do you do?",
+    options: ["Student", "Working professional", "Freelancer / Creator", "Business owner", "Other"],
+  },
+  {
+    key: 'location',
+    question: "Where are you based?",
+    options: ["North India", "South India", "East India", "West India", "Outside India"],
+  },
+  {
+    key: 'platform',
+    question: "Which platform are you creating for?",
+    options: ["Instagram", "YouTube", "Both"],
+  },
+  {
+    key: 'niche',
+    question: "What's your content niche?",
+    options: ONBOARDING_NICHES,
+  },
+  {
+    key: 'audience',
+    question: "Who's your target audience?",
+    options: ["Gen Z", "Young professionals", "Parents / Family", "General / Everyone"],
+  },
+];
+
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -95,6 +136,51 @@ export default function ScriptsPage() {
       if (fresh) setUserVoiceStyle(fresh);
     });
   }, []);
+
+  // ── Onboarding: only for users who've never completed it ──────
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(!!user?.user_metadata?.onboarding_completed);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>({});
+  const [savingOnboarding, setSavingOnboarding] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setOnboardingDone(!!data?.user?.user_metadata?.onboarding_completed);
+    });
+  }, []);
+
+  const handleOnboardingAnswer = async (value: string) => {
+    const q = ONBOARDING_QUESTIONS[onboardingStep];
+    const updatedAnswers = { ...onboardingAnswers, [q.key]: value };
+    setOnboardingAnswers(updatedAnswers);
+
+    if (onboardingStep < ONBOARDING_QUESTIONS.length - 1) {
+      setOnboardingStep(prev => prev + 1);
+      return;
+    }
+
+    // Last question answered — save everything to the profile
+    setSavingOnboarding(true);
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          job: updatedAnswers.job,
+          location_region: updatedAnswers.location,
+          platform: updatedAnswers.platform,
+          niche: updatedAnswers.niche,
+          niches: [updatedAnswers.niche],
+          target_audience: updatedAnswers.audience,
+          onboarding_completed: true,
+        },
+      });
+      setOnboardingDone(true);
+    } catch {
+      // even if saving fails, let them proceed rather than getting stuck
+      setOnboardingDone(true);
+    } finally {
+      setSavingOnboarding(false);
+    }
+  };
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory());
   const [input, setInput] = useState('');
@@ -277,7 +363,72 @@ export default function ScriptsPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-5 py-8 flex flex-col gap-6">
 
-          {messages.length === 0 && (
+          {!onboardingDone ? (
+            <div className="flex flex-col gap-5">
+              {/* Intro bubble */}
+              <div className="flex justify-start">
+                <div className="max-w-[85%] flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
+                    <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
+                    Before we make your first video, a few quick questions to personalize your scripts.
+                  </div>
+                </div>
+              </div>
+
+              {/* Previously answered questions, shown as completed exchanges */}
+              {ONBOARDING_QUESTIONS.slice(0, onboardingStep).map(q => (
+                <div key={q.key} className="flex flex-col gap-3">
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] flex items-start gap-2.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
+                        <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                      </div>
+                      <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
+                        {q.question}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm" style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
+                      {onboardingAnswers[q.key]}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Current question with tappable options */}
+              {onboardingStep < ONBOARDING_QUESTIONS.length && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] flex items-start gap-2.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ border: `1px solid ${BORDER}` }}>
+                        <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                      </div>
+                      <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
+                        {ONBOARDING_QUESTIONS[onboardingStep].question}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pl-9">
+                    {ONBOARDING_QUESTIONS[onboardingStep].options.map(opt => (
+                      <button key={opt} onClick={() => handleOnboardingAnswer(opt)} disabled={savingOnboarding}
+                        className="px-3.5 py-2 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
+                        style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}
+                        onMouseEnter={e => { if (!savingOnboarding) { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = TEXT; } }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT_MUTED; }}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  {savingOnboarding && (
+                    <p className="text-xs pl-9" style={{ color: TEXT_MUTED }}>Saving your preferences...</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-6 text-center">
               <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ border: `1px solid ${BORDER}` }}>
                 <Sparkles className="w-5 h-5" style={{ color: TEXT_MUTED }} />
@@ -424,6 +575,7 @@ export default function ScriptsPage() {
       </div>
 
       {/* ── Input Bar ── */}
+      {onboardingDone && (
       <div className="sticky bottom-0 px-5 py-4 shrink-0" style={{ background: BG, borderTop: `1px solid ${BORDER}` }}>
         <div className="max-w-2xl mx-auto">
 
@@ -526,6 +678,7 @@ export default function ScriptsPage() {
           </p>
         </div>
       </div>
+      )}
     </div>
   );
 }
