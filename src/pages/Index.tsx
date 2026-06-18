@@ -26,12 +26,13 @@ function toInsightItem(video: any, isIG: boolean, niche?: string) {
   const hashtags = (video.caption || '')
     .match(/#[a-zA-Z0-9_]+/g)?.slice(0, 8) || [];
 
-  return {
+ return {
     id: video.id,
     platform: isIG ? 'instagram' : 'youtube',
     user: video.username || video.channel_title || 'unknown',
     name: video.full_name || video.channel_title || video.username || 'Unknown',
     avatar: (video.full_name || video.username || '?')[0]?.toUpperCase(),
+    profile_pic_url: proxyImg(video.profile_pic_url),
     thumbnail: proxyImg(video.thumbnail),
     caption: video.caption || video.title || '',
     isVideo: true,
