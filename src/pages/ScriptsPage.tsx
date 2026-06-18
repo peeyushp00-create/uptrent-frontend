@@ -429,7 +429,8 @@ export default function ScriptsPage() {
                         <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
                       </div>
                       <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
-                        {ONBOARDING_QUESTIONS[onboardingStep].question}
+                        <p>{ONBOARDING_QUESTIONS[onboardingStep].question}</p>
+                        <p className="text-xs mt-1" style={{ color: TEXT_MUTED }}>Select an option below, or type your own answer.</p>
                       </div>
                     </div>
                   </div>
@@ -444,9 +445,6 @@ export default function ScriptsPage() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs pl-9" style={{ color: TEXT_MUTED }}>
-                    Or type your own answer below.
-                  </p>
                 </div>
               )}
 
