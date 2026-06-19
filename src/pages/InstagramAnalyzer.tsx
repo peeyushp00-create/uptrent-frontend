@@ -54,7 +54,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
-  
+  const [heatmap] = useState(generateHeatmap());
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -465,7 +465,8 @@ export default function InstagramAnalyzer() {
         });
         const data = await res.json();
         if (!res.ok || data.error === 'user_not_found') {
-          setError(`@${clean} not found. The account may not exist, be private, or be unavailable.`);
+          // Don't show error — HikerAPI handles everything now, ScrapeCreators is just a bonus
+          console.log('ScrapeCreators unavailable, relying on HikerAPI');
         } else {
           setResult(data);
         }
@@ -779,8 +780,8 @@ export default function InstagramAnalyzer() {
           </div>
         )}
 
-        {/* Results */}
-        {result && !loading && (
+        {/* Results — show if either ScrapeCreators or HikerAPI has data */}
+        {(result || hiker) && !loading && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
 
             {/* Profile Banner */}
@@ -788,7 +789,7 @@ export default function InstagramAnalyzer() {
               <div className="flex items-center gap-3 mb-3">
                 {(() => {
                   // Use Supabase URL directly, proxy Instagram CDN URLs
-                  const picUrl = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || result.stats?.profile_pic_url;
+                  const picUrl = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || result?.stats?.profile_pic_url;
                   const picSrc = picUrl ? (picUrl.includes('supabase') ? picUrl : `${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}`) : null;
                   return picSrc && !imgError ? (
                     <img src={picSrc} alt={handle}
@@ -796,23 +797,23 @@ export default function InstagramAnalyzer() {
                       onError={() => setImgError(true)} />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
-                      {(result.profile_name || handle)[0].toUpperCase()}
+                      {(result?.profile_name || hiker?.profile?.full_name || handle)[0].toUpperCase()}
                     </div>
                   );
                 })()}
                 <div>
                   <div className="flex items-center gap-1.5">
                     <p className="font-bold text-white">@{handle.replace('@', '')}</p>
-                    {(result.stats?.is_verified || hiker?.profile?.is_verified) && <BadgeCheck className="w-4 h-4 text-blue-300" />}
+                    {(result?.stats?.is_verified || hiker?.profile?.is_verified) && <BadgeCheck className="w-4 h-4 text-blue-300" />}
                   </div>
-                  <p className="text-xs text-white/70">{result.data_source === 'real' ? '✓ Live data' : 'AI Analysis'}</p>
+                  <p className="text-xs text-white/70">{result?.data_source === 'real' ? '✓ Live data' : hiker ? '✓ Live data · HikerAPI' : 'AI Analysis'}</p>
                 </div>
               </div>
-              <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>
+              {result?.summary && <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>}
             </div>
 
             {/* Niche Detection */}
-            {result.niche && (
+            {result?.niche && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -842,40 +843,73 @@ export default function InstagramAnalyzer() {
               </div>
             )}
 
-            {/* Stats — ScrapeCreators for follower/engagement, HikerAPI for views */}
-            {result.stats && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
-                  <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.profile_stats')}</h2>
-                  <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{t('analyzer.live_data')}</span>
+            {/* Stats — HikerAPI primary, ScrapeCreators fallback */}
+            {(() => {
+              const stats = {
+                followers: hiker?.profile?.followers ?? result?.stats?.followers,
+                engagement_rate: hiker?.profile?.engagement_rate ?? result?.stats?.engagement_rate,
+                avg_likes: hiker?.profile?.avg_likes ?? hiker?.stats?.avg_likes ?? result?.stats?.avg_likes,
+                avg_comments: hiker?.profile?.avg_comments ?? hiker?.stats?.avg_comments ?? result?.stats?.avg_comments,
+                avg_views: hiker?.profile?.avg_views ?? hiker?.stats?.avg_views,
+                following: hiker?.profile?.following,
+                total_posts: hiker?.profile?.total_posts ?? result?.stats?.total_posts,
+              };
+              const hasStats = stats.followers != null || stats.avg_likes != null;
+              if (!hasStats) return null;
+              return (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
+                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.profile_stats')}</h2>
+                    <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Live</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {stats.followers != null && (
+                      <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
+                        <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-xs text-[#757684]">{t('analyzer.followers')}</span></div>
+                        <p className="font-bold text-lg" style={{ color: PRIMARY }}>{formatNum(stats.followers)}</p>
+                      </div>
+                    )}
+                    {stats.engagement_rate != null && (
+                      <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
+                        <div className="flex items-center gap-2 mb-1"><TrendingUp className="w-3.5 h-3.5 text-green-600" /><span className="text-xs text-[#757684]">{t('analyzer.engagement')}</span></div>
+                        <p className="font-bold text-lg text-green-700">{stats.engagement_rate}%</p>
+                      </div>
+                    )}
+                    {stats.avg_likes != null && (
+                      <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
+                        <div className="flex items-center gap-2 mb-1"><Heart className="w-3.5 h-3.5 text-pink-600" /><span className="text-xs text-[#757684]">{t('analyzer.avg_likes')}</span></div>
+                        <p className="font-bold text-lg text-pink-700">{formatNum(stats.avg_likes)}</p>
+                      </div>
+                    )}
+                    {stats.avg_comments != null && (
+                      <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
+                        <div className="flex items-center gap-2 mb-1"><MessageCircle className="w-3.5 h-3.5 text-orange-600" /><span className="text-xs text-[#757684]">{t('analyzer.avg_comments')}</span></div>
+                        <p className="font-bold text-lg text-orange-700">{formatNum(stats.avg_comments)}</p>
+                      </div>
+                    )}
+                    {stats.avg_views != null && (
+                      <div className="rounded-xl p-3.5" style={{ background: '#e3f2fd' }}>
+                        <div className="flex items-center gap-2 mb-1"><Eye className="w-3.5 h-3.5 text-blue-600" /><span className="text-xs text-[#757684]">Avg Views</span></div>
+                        <p className="font-bold text-lg text-blue-700">{formatNum(stats.avg_views)}</p>
+                      </div>
+                    )}
+                    {stats.following != null && (
+                      <div className="rounded-xl p-3.5" style={{ background: '#f3e5f5' }}>
+                        <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5 text-purple-600" /><span className="text-xs text-[#757684]">Following</span></div>
+                        <p className="font-bold text-lg text-purple-700">{formatNum(stats.following)}</p>
+                      </div>
+                    )}
+                  </div>
+                  {stats.total_posts && (
+                    <p className="text-xs text-[#757684] mt-3 text-center">{t('analyzer.based_on')} {stats.total_posts.toLocaleString()} {t('analyzer.total_posts')}</p>
+                  )}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
-                    <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-xs text-[#757684]">{t('analyzer.followers')}</span></div>
-                    <p className="font-bold text-lg" style={{ color: PRIMARY }}>{formatNum(result.stats.followers)}</p>
-                  </div>
-                  <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
-                    <div className="flex items-center gap-2 mb-1"><TrendingUp className="w-3.5 h-3.5 text-green-600" /><span className="text-xs text-[#757684]">{t('analyzer.engagement')}</span></div>
-                    <p className="font-bold text-lg text-green-700">{result.stats.engagement_rate}%</p>
-                  </div>
-                  <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
-                    <div className="flex items-center gap-2 mb-1"><Heart className="w-3.5 h-3.5 text-pink-600" /><span className="text-xs text-[#757684]">{t('analyzer.avg_likes')}</span></div>
-                    <p className="font-bold text-lg text-pink-700">{formatNum(result.stats.avg_likes)}</p>
-                  </div>
-                  <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
-                    <div className="flex items-center gap-2 mb-1"><MessageCircle className="w-3.5 h-3.5 text-orange-600" /><span className="text-xs text-[#757684]">{t('analyzer.avg_comments')}</span></div>
-                    <p className="font-bold text-lg text-orange-700">{formatNum(result.stats.avg_comments)}</p>
-                  </div>
-                </div>
-                {result.stats.total_posts && (
-                  <p className="text-xs text-[#757684] mt-3 text-center">{t('analyzer.based_on')} {result.stats.total_posts.toLocaleString()} {t('analyzer.total_posts')}</p>
-                )}
-              </div>
-            )}
+              );
+            })()}
 
             {/* Content Pillars */}
-            {result.content_pillars?.length > 0 && (
+            {result?.content_pillars?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4"><TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.content_pillars')}</h2></div>
                 <div className="flex flex-wrap gap-2">
@@ -888,7 +922,7 @@ export default function InstagramAnalyzer() {
             )}
 
             {/* Reel Ideas */}
-            {result.reel_ideas?.length > 0 && (
+            {result?.reel_ideas?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.reel_ideas')}</h2></div>
                 <div className="space-y-2">
@@ -903,7 +937,7 @@ export default function InstagramAnalyzer() {
             )}
 
             {/* Posting Tips */}
-            {result.posting_tips?.length > 0 && (
+            {result?.posting_tips?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-4"><Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.posting_tips')}</h2></div>
                 <div className="space-y-2.5">
