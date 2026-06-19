@@ -54,6 +54,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
+  
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -805,7 +806,7 @@ export default function InstagramAnalyzer() {
                     <p className="font-bold text-white">@{handle.replace('@', '')}</p>
                     {(result?.stats?.is_verified || hiker?.profile?.is_verified) && <BadgeCheck className="w-4 h-4 text-blue-300" />}
                   </div>
-                  <p className="text-xs text-white/70">{result?.data_source === 'real' ? '✓ Live data' : hiker ? '✓ Live data · HikerAPI' : 'AI Analysis'}</p>
+                  <p className="text-xs text-white/70">{result?.data_source === 'real' || hiker ? '✓ Live data' : 'AI Analysis'}</p>
                 </div>
               </div>
               {result?.summary && <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>}
