@@ -54,7 +54,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
-  
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -645,7 +644,7 @@ export default function InstagramAnalyzer() {
               style={{ background: PRIMARY_GRAD }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('analyzer.analyze_btn')}
             </button>
-            {result && !loading && (
+            {(result || hiker) && !loading && (
               <button
                 onClick={() => quickAddCompetitor(handle.replace('@', '').trim())}
                 disabled={compLoading}
@@ -664,7 +663,7 @@ export default function InstagramAnalyzer() {
         </div>
 
         {/* Competitor Tracker — hidden while viewing search results */}
-        {!(result && !loading) && (
+        {!((result || hiker) && !loading) && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -1290,7 +1289,7 @@ export default function InstagramAnalyzer() {
         )}
 
         {/* Empty state */}
-        {!loading && !result && !error && (
+        {!loading && !result && !hiker && !error && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] p-8 text-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: PRIMARY_CONTAINER }}>
               <User className="w-8 h-8" style={{ color: PRIMARY }} />
