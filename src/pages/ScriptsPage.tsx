@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square } from "lucide-react";
-import { generateScriptFromMessage, transcribeAudio } from "@/lib/api";
+import { generateScriptFromMessage, transcribeAudio, getCredits } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -51,12 +51,72 @@ const CONTENT_TYPES = [
   { id: "review", label: "Product Review", prompt: "Create an honest product or service review script covering pros, cons, who it's for, and a clear recommendation." },
 ];
 
-const AI_MODELS = [
-  { id: "claude", label: "Claude", description: "Best quality, default", logo: "/ai-logos/claude-logo.png" },
-  { id: "gemini", label: "Gemini", description: "Fast & free", logo: "/ai-logos/gemini-logo.png" },
-  { id: "chatgpt", label: "ChatGPT", description: "GPT-4o mini", logo: "/ai-logos/chatgpt-logo.png" },
-  { id: "groq", label: "Groq", description: "Llama 3.3, fastest", logo: "/ai-logos/groq-logo.png" },
+// ── AI providers and their model tiers ─────────────────────────
+// `key` values must exactly match the backend's MODEL_REGISTRY keys.
+interface ModelTier {
+  key: string;
+  label: string;
+  credits: number;
+}
+
+interface Provider {
+  id: string;
+  label: string;
+  logo: string;
+  tiers: ModelTier[];
+}
+
+const PROVIDERS: Provider[] = [
+  {
+    id: "claude",
+    label: "Claude",
+    logo: "/ai-logos/claude-logo.png",
+    tiers: [
+      { key: "claude-haiku", label: "Haiku", credits: 1 },
+      { key: "claude-sonnet", label: "Sonnet", credits: 3 },
+      { key: "claude-opus", label: "Opus", credits: 5 },
+    ],
+  },
+  {
+    id: "gemini",
+    label: "Gemini",
+    logo: "/ai-logos/gemini-logo.png",
+    tiers: [
+      { key: "gemini-flash-lite", label: "Flash-Lite", credits: 1 },
+      { key: "gemini-flash", label: "Flash", credits: 2 },
+      { key: "gemini-pro", label: "Pro", credits: 3 },
+    ],
+  },
+  {
+    id: "groq",
+    label: "Groq",
+    logo: "/ai-logos/groq-logo.png",
+    tiers: [
+      { key: "groq-8b", label: "Llama 8B", credits: 1 },
+      { key: "groq-70b", label: "Llama 70B", credits: 2 },
+      { key: "groq-oss120", label: "GPT-OSS 120B", credits: 2 },
+    ],
+  },
+  {
+    id: "chatgpt",
+    label: "ChatGPT",
+    logo: "/ai-logos/chatgpt-logo.png",
+    tiers: [
+      { key: "chatgpt", label: "GPT-4o mini", credits: 1 },
+    ],
+  },
 ];
+
+const DEFAULT_MODEL_KEY = "claude-sonnet";
+
+function findProviderAndTier(modelKey: string): { provider: Provider; tier: ModelTier } {
+  for (const provider of PROVIDERS) {
+    const tier = provider.tiers.find(t => t.key === modelKey);
+    if (tier) return { provider, tier };
+  }
+  const fallbackProvider = PROVIDERS[0];
+  return { provider: fallbackProvider, tier: fallbackProvider.tiers[1] }; // claude-sonnet
+}
 
 // ── One-time onboarding flow for first-time users ──────────────
 const ONBOARDING_NICHES = [
@@ -103,7 +163,7 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   text?: string;
-  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string };
+  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string; credits_remaining?: number };
   error?: boolean;
   timestamp: number;
 }
@@ -202,8 +262,10 @@ export default function ScriptsPage() {
 
   const [contentType, setContentType] = useState('auto');
   const [showContentTypeMenu, setShowContentTypeMenu] = useState(false);
-  const [aiModel, setAiModel] = useState('claude');
+  const [selectedModelKey, setSelectedModelKey] = useState(DEFAULT_MODEL_KEY);
   const [showAiModelMenu, setShowAiModelMenu] = useState(false);
+  const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -224,16 +286,22 @@ export default function ScriptsPage() {
   }, [messages]);
 
   useEffect(() => {
+    if (user?.id) {
+      getCredits(user.id).then(res => setCredits(res.credits_remaining)).catch(() => {});
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (contentTypeMenuRef.current && !contentTypeMenuRef.current.contains(e.target as Node)) setShowContentTypeMenu(false);
-      if (aiModelMenuRef.current && !aiModelMenuRef.current.contains(e.target as Node)) setShowAiModelMenu(false);
+      if (aiModelMenuRef.current && !aiModelMenuRef.current.contains(e.target as Node)) { setShowAiModelMenu(false); setHoveredProviderId(null); }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   const selectedContentType = CONTENT_TYPES.find(c => c.id === contentType) || CONTENT_TYPES[0];
-  const selectedAiModel = AI_MODELS.find(m => m.id === aiModel) || AI_MODELS[0];
+  const { provider: selectedProvider, tier: selectedTier } = findProviderAndTier(selectedModelKey);
 
   const handleSend = async (text?: string) => {
     const messageText = (text ?? input).trim();
@@ -248,6 +316,22 @@ export default function ScriptsPage() {
       return;
     }
 
+    if (!user?.id) {
+      const errorMsg: ChatMessage = { id: `${Date.now()}-e`, role: 'assistant', text: 'Please sign in to generate scripts.', error: true, timestamp: Date.now() };
+      setMessages(prev => [...prev, errorMsg]);
+      return;
+    }
+
+    if (credits !== null && credits < selectedTier.credits) {
+      const errorMsg: ChatMessage = {
+        id: `${Date.now()}-e`, role: 'assistant',
+        text: `Not enough credits for ${selectedProvider.label} ${selectedTier.label} (needs ${selectedTier.credits}, you have ${credits} left today). Try a cheaper model, or come back tomorrow when credits reset.`,
+        error: true, timestamp: Date.now(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
+      return;
+    }
+
     const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
     const userMsg: ChatMessage = { id: `${Date.now()}-u`, role: 'user', text: messageText, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
@@ -255,14 +339,15 @@ export default function ScriptsPage() {
     setGenerating(true);
 
     try {
-      const result = await generateScriptFromMessage(messageText, {
+      const result = await generateScriptFromMessage(user.id, messageText, {
         niche: userNiche,
         language: userLanguage,
         voiceStyle: userVoiceStyle,
         contentType: selectedContentType.id !== 'auto' ? selectedContentType.label : undefined,
         contentTypePrompt: selectedContentType.id !== 'auto' ? selectedContentType.prompt : undefined,
-        aiModel: selectedAiModel.id,
+        aiModel: selectedModelKey,
       });
+      if (typeof result.credits_remaining === 'number') setCredits(result.credits_remaining);
       const assistantMsg: ChatMessage = {
         id: `${Date.now()}-a`,
         role: 'assistant',
@@ -270,15 +355,18 @@ export default function ScriptsPage() {
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, assistantMsg]);
-    } catch (err) {
+    } catch (err: any) {
+      const isCreditError = err?.message?.toLowerCase().includes('credit');
       const errorMsg: ChatMessage = {
         id: `${Date.now()}-e`,
         role: 'assistant',
-        text: 'Sorry, I could not generate that script. Please try again.',
+        text: isCreditError ? err.message : 'Sorry, I could not generate that script. Please try again.',
         error: true,
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, errorMsg]);
+      // re-sync balance in case it changed server-side (e.g. another tab, or our local count drifted)
+      if (user?.id) getCredits(user.id).then(res => setCredits(res.credits_remaining)).catch(() => {});
     } finally {
       setGenerating(false);
     }
@@ -556,12 +644,15 @@ export default function ScriptsPage() {
                               {msg.script.duration_seconds}s
                             </span>
                           )}
-                          {msg.script.ai_model && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wide capitalize"
-                              style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-                              {msg.script.ai_model}
-                            </span>
-                          )}
+                          {msg.script.ai_model && (() => {
+                            const { provider, tier } = findProviderAndTier(msg.script.ai_model);
+                            return (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wide"
+                                style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                                {provider.label} {tier.label}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <button onClick={() => copyScript(msg.script, msg.id)}
                           className="flex items-center gap-1 text-xs font-medium transition-colors"
@@ -624,7 +715,7 @@ export default function ScriptsPage() {
                   </div>
                   <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm"
                     style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-                    Writing your script with {selectedAiModel.label}...
+                    Writing your script with {selectedProvider.label} {selectedTier.label}...
                   </div>
                 </div>
               </motion.div>
@@ -666,38 +757,69 @@ export default function ScriptsPage() {
               </AnimatePresence>
             </div>
 
-            {/* AI model dropdown */}
+            {/* AI model dropdown — provider, then tier */}
             <div className="relative" ref={aiModelMenuRef}>
               <button onClick={() => { setShowAiModelMenu(prev => !prev); setShowContentTypeMenu(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
                 style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-                <img src={selectedAiModel.logo} alt={selectedAiModel.label} className="w-3.5 h-3.5 object-contain rounded-full" />
-                {selectedAiModel.label}
+                <img src={selectedProvider.logo} alt={selectedProvider.label} className="w-3.5 h-3.5 object-contain rounded-full" />
+                {selectedProvider.label} {selectedTier.label}
+                <span className="text-[10px]" style={{ color: TEXT_MUTED }}>· {selectedTier.credits}cr</span>
                 <ChevronDown className="w-3 h-3" />
               </button>
               <AnimatePresence>
                 {showAiModelMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                    className="absolute bottom-full left-0 mb-2 w-60 rounded-2xl overflow-hidden z-50"
+                    className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl overflow-hidden z-50 max-h-96 overflow-y-auto"
                     style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
-                    {AI_MODELS.map(m => (
-                      <button key={m.id} onClick={() => { setAiModel(m.id); setShowAiModelMenu(false); }}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
-                        style={{ background: aiModel === m.id ? SURFACE : 'transparent' }}>
-                        <div className="flex items-center gap-2.5">
-                          <img src={m.logo} alt={m.label} className="w-5 h-5 object-contain rounded-full shrink-0" />
-                          <div>
-                            <p style={{ color: aiModel === m.id ? TEXT : TEXT_MUTED }}>{m.label}</p>
-                            <p className="text-[10px]" style={{ color: TEXT_MUTED }}>{m.description}</p>
-                          </div>
+                    {PROVIDERS.map(p => {
+                      const isExpanded = hoveredProviderId === p.id || selectedProvider.id === p.id;
+                      return (
+                        <div key={p.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                          <button
+                            onClick={() => setHoveredProviderId(prev => prev === p.id ? null : p.id)}
+                            onMouseEnter={() => setHoveredProviderId(p.id)}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                            style={{ background: selectedProvider.id === p.id ? SURFACE : 'transparent' }}>
+                            <div className="flex items-center gap-2.5">
+                              <img src={p.logo} alt={p.label} className="w-5 h-5 object-contain rounded-full shrink-0" />
+                              <p style={{ color: selectedProvider.id === p.id ? TEXT : TEXT_MUTED }}>{p.label}</p>
+                            </div>
+                            <ChevronDown className="w-3.5 h-3.5 transition-transform" style={{ color: TEXT_MUTED, transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
+                          </button>
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden">
+                                {p.tiers.map(tier => (
+                                  <button key={tier.key}
+                                    onClick={() => { setSelectedModelKey(tier.key); setShowAiModelMenu(false); setHoveredProviderId(null); }}
+                                    className="w-full flex items-center justify-between pl-12 pr-4 py-2 text-sm text-left transition-colors"
+                                    style={{ background: selectedModelKey === tier.key ? SURFACE : 'transparent' }}>
+                                    <p style={{ color: selectedModelKey === tier.key ? TEXT : TEXT_MUTED }}>{tier.label}</p>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px]" style={{ color: TEXT_MUTED }}>{tier.credits} credit{tier.credits > 1 ? 's' : ''}</span>
+                                      {selectedModelKey === tier.key && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
+                                    </div>
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
-                        {aiModel === m.id && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
-                      </button>
-                    ))}
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Credit balance indicator */}
+            {credits !== null && (
+              <span className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                {credits} credits left today
+              </span>
+            )}
           </div>
 
           {/* Input row */}

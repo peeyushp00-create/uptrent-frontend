@@ -54,7 +54,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
-  const [heatmap] = useState(generateHeatmap());
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
