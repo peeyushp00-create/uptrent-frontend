@@ -689,8 +689,7 @@ export default function NewsPage() {
                   <div className="rounded-xl p-4 space-y-2.5" style={{ background: '#ede9fe' }}>
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4" style={{ color: SECONDARY }} />
-                      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Key Highlights</p>
-                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#000000' }}>Key Highlights</p>                    </div>
                     {keyPoints.map((point, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: SECONDARY }} />
