@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil } from "lucide-react";
+import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil } from "lucide-react";
 import {
   generateScriptFromMessage, transcribeAudio,
   listConversations, getConversation, createConversation, appendMessage, renameConversation, deleteConversation,
@@ -752,7 +752,7 @@ export default function ScriptsPage() {
           ) : messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-6 text-center">
               <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ border: `1px solid ${BORDER}` }}>
-                <Sparkles className="w-5 h-5" style={{ color: TEXT_MUTED }} />
+                <img src="/logo.png" alt="SocialRum" className="w-6 h-6 object-contain rounded-full" />
               </div>
               <div>
                 <p className="font-medium text-lg" style={{ color: TEXT }}>What script do you want to create?</p>
