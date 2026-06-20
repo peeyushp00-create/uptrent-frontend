@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square } from "lucide-react";
-import { generateScriptFromMessage, transcribeAudio } from "@/lib/api";
+import { Sparkles, Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil } from "lucide-react";
+import {
+  generateScriptFromMessage, transcribeAudio,
+  listConversations, getConversation, createConversation, appendMessage, renameConversation, deleteConversation,
+  type ConversationSummary, type StoredChatMessage,
+} from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -168,16 +172,16 @@ interface ChatMessage {
   timestamp: number;
 }
 
-function loadHistory(): ChatMessage[] {
-  try {
-    return JSON.parse(localStorage.getItem("script_chat_history") || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(messages: ChatMessage[]) {
-  localStorage.setItem("script_chat_history", JSON.stringify(messages.slice(-50)));
+// Converts a backend-stored message row into the shape the UI renders
+function fromStoredMessage(m: StoredChatMessage): ChatMessage {
+  return {
+    id: m.id,
+    role: m.role,
+    text: m.text || undefined,
+    script: m.script_json || undefined,
+    error: m.is_error,
+    timestamp: new Date(m.created_at).getTime(),
+  };
 }
 
 export default function ScriptsPage() {
@@ -256,7 +260,7 @@ export default function ScriptsPage() {
     }
   };
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory());
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -266,6 +270,14 @@ export default function ScriptsPage() {
   const [selectedModelKey, setSelectedModelKey] = useState(DEFAULT_MODEL_KEY);
   const [showAiModelMenu, setShowAiModelMenu] = useState(false);
   const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
+
+  // ── Conversations (multi-chat) ─────────────────────────────────
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [showConversationPanel, setShowConversationPanel] = useState(false);
+  const [loadingConversation, setLoadingConversation] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const [isRecording, setIsRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -281,9 +293,28 @@ export default function ScriptsPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, generating]);
 
+  // Fetch the conversation list once the user is known (for the slide-over panel)
+  const refreshConversationList = () => {
+    if (!user?.id) return;
+    listConversations(user.id).then(res => setConversations(res.conversations)).catch(() => {});
+  };
+
   useEffect(() => {
-    saveHistory(messages);
-  }, [messages]);
+    refreshConversationList();
+  }, [user?.id]);
+
+  // Load a conversation's messages whenever the active conversationId changes
+  useEffect(() => {
+    if (!user?.id || !conversationId) {
+      setMessages([]);
+      return;
+    }
+    setLoadingConversation(true);
+    getConversation(user.id, conversationId)
+      .then(res => setMessages(res.messages.map(fromStoredMessage)))
+      .catch(() => setMessages([]))
+      .finally(() => setLoadingConversation(false));
+  }, [conversationId, user?.id]);
 
   // Pre-fill the input box from navigation state (e.g. arriving from the news feed
   // via navigate('/scripts', { state: { prompt } })) — without auto-sending, so the
@@ -327,13 +358,26 @@ export default function ScriptsPage() {
       return;
     }
 
-    const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
-    const userMsg: ChatMessage = { id: `${Date.now()}-u`, role: 'user', text: messageText, timestamp: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
     setInput('');
     setGenerating(true);
 
+    // Optimistically show the user's message right away (real id swapped in once saved)
+    const tempUserMsg: ChatMessage = { id: `temp-${Date.now()}`, role: 'user', text: messageText, timestamp: Date.now() };
+    setMessages(prev => [...prev, tempUserMsg]);
+
     try {
+      // Ensure there's an active conversation to write into
+      let activeConversationId = conversationId;
+      if (!activeConversationId) {
+        const { conversation } = await createConversation(user.id);
+        activeConversationId = conversation.id;
+        setConversationId(conversation.id);
+      }
+
+      // Persist the user's message
+      await appendMessage(user.id, activeConversationId, { role: 'user', text: messageText });
+
+      const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
       const result = await generateScriptFromMessage(user.id, messageText, {
         niche: userNiche,
         language: userLanguage,
@@ -342,6 +386,7 @@ export default function ScriptsPage() {
         contentTypePrompt: selectedContentType.id !== 'auto' ? selectedContentType.prompt : undefined,
         aiModel: selectedModelKey,
       });
+
       const assistantMsg: ChatMessage = {
         id: `${Date.now()}-a`,
         role: 'assistant',
@@ -349,6 +394,10 @@ export default function ScriptsPage() {
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, assistantMsg]);
+
+      // Persist the assistant's reply, then refresh the sidebar (title/ordering may have changed)
+      await appendMessage(user.id, activeConversationId, { role: 'assistant', script: result });
+      refreshConversationList();
     } catch (err: any) {
       const errorMsg: ChatMessage = {
         id: `${Date.now()}-e`,
@@ -358,6 +407,11 @@ export default function ScriptsPage() {
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, errorMsg]);
+      // Best-effort: still try to persist the error reply so the conversation history stays accurate
+      if (conversationId || conversations.length === 0) {
+        const cid = conversationId;
+        if (cid) appendMessage(user.id, cid, { role: 'assistant', text: errorMsg.text, isError: true }).catch(() => {});
+      }
     } finally {
       setGenerating(false);
     }
@@ -390,9 +444,49 @@ export default function ScriptsPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleClearChat = () => {
+  const handleNewChat = () => {
+    setConversationId(null);
     setMessages([]);
-    localStorage.removeItem('script_chat_history');
+    setShowConversationPanel(false);
+  };
+
+  const handleSwitchConversation = (id: string) => {
+    if (id === conversationId) { setShowConversationPanel(false); return; }
+    setConversationId(id);
+    setShowConversationPanel(false);
+  };
+
+  const handleDeleteConversation = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!user?.id) return;
+    try {
+      await deleteConversation(user.id, id);
+      setConversations(prev => prev.filter(c => c.id !== id));
+      if (id === conversationId) {
+        setConversationId(null);
+        setMessages([]);
+      }
+    } catch {
+      // leave the list as-is if deletion failed; user can retry
+    }
+  };
+
+  const handleStartRename = (conv: ConversationSummary, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setRenamingId(conv.id);
+    setRenameValue(conv.title);
+  };
+
+  const handleConfirmRename = async (id: string) => {
+    if (!user?.id || !renameValue.trim()) { setRenamingId(null); return; }
+    try {
+      await renameConversation(user.id, id, renameValue.trim());
+      setConversations(prev => prev.map(c => c.id === id ? { ...c, title: renameValue.trim() } : c));
+    } catch {
+      // ignore — title just won't update locally
+    } finally {
+      setRenamingId(null);
+    }
   };
 
   const findPrecedingUserText = (index: number) => {
@@ -458,22 +552,104 @@ export default function ScriptsPage() {
             </span>
           )}
         </div>
-        {messages.length > 0 && (
-          <button onClick={handleClearChat}
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowConversationPanel(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
             style={{ color: TEXT_MUTED }}
             onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
             onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
-            <Trash2 className="w-3.5 h-3.5" /> Clear
+            <MessageSquare className="w-3.5 h-3.5" /> History
           </button>
-        )}
+          <button onClick={handleNewChat}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{ border: `1px solid ${BORDER}`, color: TEXT }}>
+            <Plus className="w-3.5 h-3.5" /> New chat
+          </button>
+        </div>
       </header>
+
+      {/* ── Conversation slide-over panel ── */}
+      <AnimatePresence>
+        {showConversationPanel && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowConversationPanel(false)}
+              className="fixed inset-0 z-50"
+              style={{ background: 'rgba(0,0,0,0.4)' }}
+            />
+            <motion.div
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.2 }}
+              className="fixed top-0 left-0 bottom-0 z-50 w-80 max-w-[85vw] flex flex-col"
+              style={{ background: SURFACE, borderRight: `1px solid ${BORDER}` }}
+            >
+              <div className="flex items-center justify-between px-4 h-16 shrink-0" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <p className="font-semibold text-sm" style={{ color: TEXT }}>Your chats</p>
+                <button onClick={() => setShowConversationPanel(false)} style={{ color: TEXT_MUTED }}>
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              <div className="p-3">
+                <button onClick={handleNewChat}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                  style={{ border: `1px solid ${BORDER}`, color: TEXT }}>
+                  <Plus className="w-4 h-4" /> New chat
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1">
+                {conversations.length === 0 && (
+                  <p className="text-xs text-center mt-8" style={{ color: TEXT_MUTED }}>No past chats yet.</p>
+                )}
+                {conversations.map(conv => (
+                  <div key={conv.id}
+                    onClick={() => handleSwitchConversation(conv.id)}
+                    className="group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm cursor-pointer transition-colors"
+                    style={{ background: conv.id === conversationId ? (theme === 'dark' ? '#1A1A1D' : '#f3f4f5') : 'transparent' }}>
+                    <MessageSquare className="w-3.5 h-3.5 shrink-0" style={{ color: TEXT_MUTED }} />
+                    {renamingId === conv.id ? (
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onClick={e => e.stopPropagation()}
+                        onKeyDown={e => { if (e.key === 'Enter') handleConfirmRename(conv.id); if (e.key === 'Escape') setRenamingId(null); }}
+                        onBlur={() => handleConfirmRename(conv.id)}
+                        className="flex-1 bg-transparent outline-none text-sm"
+                        style={{ color: TEXT, borderBottom: `1px solid ${ACCENT}` }}
+                      />
+                    ) : (
+                      <span className="flex-1 truncate" style={{ color: conv.id === conversationId ? TEXT : TEXT_MUTED }}>{conv.title}</span>
+                    )}
+                    <button onClick={e => handleStartRename(conv, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: TEXT_MUTED }}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={e => handleDeleteConversation(conv.id, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: TEXT_MUTED }}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── Message Thread ── */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-5 py-8 flex flex-col gap-6">
 
-          {!onboardingDone ? (
+          {loadingConversation ? (
+            <div className="flex items-center justify-center py-20">
+              <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
+                <img src="/logo.png" alt="SocialRum" className="w-6 h-6 object-contain rounded-full" />
+              </motion.div>
+            </div>
+          ) : !onboardingDone ? (
             <div className="flex flex-col gap-5">
               {/* Intro bubble */}
               <div className="flex justify-start">

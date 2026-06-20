@@ -162,3 +162,60 @@ export const submitWaitlist = (email: string) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
+
+// ── Conversations (multi-chat support) ──────────────────────────
+
+export interface ConversationSummary {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoredChatMessage {
+  id: string;
+  conversation_id: string;
+  role: "user" | "assistant";
+  text: string | null;
+  script_json: any | null;
+  is_error: boolean;
+  created_at: string;
+}
+
+export const listConversations = (userId: string) =>
+  apiFetch<{ conversations: ConversationSummary[] }>(`/api/conversations?userId=${encodeURIComponent(userId)}`);
+
+export const getConversation = (userId: string, conversationId: string) =>
+  apiFetch<{ conversation: ConversationSummary; messages: StoredChatMessage[] }>(
+    `/api/conversations/${conversationId}?userId=${encodeURIComponent(userId)}`
+  );
+
+export const createConversation = (userId: string, title?: string) =>
+  apiFetch<{ conversation: ConversationSummary }>("/api/conversations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, title }),
+  });
+
+export const appendMessage = (
+  userId: string,
+  conversationId: string,
+  message: { role: "user" | "assistant"; text?: string; script?: any; isError?: boolean }
+) =>
+  apiFetch<{ message: StoredChatMessage; title: string }>(`/api/conversations/${conversationId}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, ...message }),
+  });
+
+export const renameConversation = (userId: string, conversationId: string, title: string) =>
+  apiFetch<{ conversation: ConversationSummary }>(`/api/conversations/${conversationId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, title }),
+  });
+
+export const deleteConversation = (userId: string, conversationId: string) =>
+  apiFetch<{ success: boolean }>(`/api/conversations/${conversationId}?userId=${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
