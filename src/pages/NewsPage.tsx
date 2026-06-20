@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, Bookmark, ArrowUp } from "lucide-react";
+import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, FileText, ArrowUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
 
@@ -130,6 +130,7 @@ const getTagStyle = (topic: string) => {
 
 export default function NewsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useTranslation();
   const initialQuery = (location.state as any)?.query || "";
@@ -153,7 +154,6 @@ export default function NewsPage() {
   const [pickerDay, setPickerDay] = useState('');
   const [pickerMonth, setPickerMonth] = useState('');
   const [pickerYear, setPickerYear] = useState('');
-  const [savedArticles, setSavedArticles] = useState<Set<string>>(new Set());
   const [activeCategory, setActiveCategory] = useState('All News');
   const [region, setRegion] = useState<'in' | 'global'>('in');
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -271,12 +271,10 @@ export default function NewsPage() {
     setRefreshing(false);
   };
 
-  const toggleSave = (id: string) => {
-    setSavedArticles(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const handleGenerateScript = (article: NewsArticle) => {
+    const headline = article.title || article.headline || '';
+    const prompt = `Write a short-form video script based on this news: "${headline}". ${article.summary ? `Context: ${article.summary}` : ''}`;
+    navigate('/scripts', { state: { prompt } });
   };
 
   const impactData = selectedArticle ? getImpact(selectedArticle.topic || '', selectedArticle.summary || '') : null;
@@ -505,7 +503,6 @@ export default function NewsPage() {
               const timeAgo = getTimeAgo(item.published_at || '', t);
               const topic = item.topic || '';
               const tagStyle = getTagStyle(topic);
-              const isSaved = savedArticles.has(item.id || String(i));
               const isFeatured = i === 0;
 
               if (isFeatured) {
@@ -541,9 +538,9 @@ export default function NewsPage() {
                           <Sparkles className="w-3 h-3" /> View Insights
                         </span>
                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => toggleSave(item.id || String(i))}
+                          <button onClick={() => handleGenerateScript(item)}
                             className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                            <FileText className="w-4 h-4" style={{ color: '#757684' }} />
                           </button>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
@@ -583,9 +580,9 @@ export default function NewsPage() {
                           <span className="text-[#757684] text-[10px]">• {timeAgo}</span>
                         </div>
                         <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => toggleSave(item.id || String(i))}
+                          <button onClick={() => handleGenerateScript(item)}
                             className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                            <FileText className="w-3.5 h-3.5" style={{ color: '#757684' }} />
                           </button>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
@@ -628,9 +625,9 @@ export default function NewsPage() {
                           <Sparkles className="w-3 h-3" /> Tap for insights
                         </span>
                         <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => toggleSave(item.id || String(i))}
+                          <button onClick={() => handleGenerateScript(item)}
                             className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} style={{ color: isSaved ? PRIMARY : '#757684' }} />
+                            <FileText className="w-3.5 h-3.5" style={{ color: '#757684' }} />
                           </button>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
@@ -689,12 +686,12 @@ export default function NewsPage() {
                   <div className="rounded-xl p-4 space-y-2.5" style={{ background: '#ede9fe' }}>
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4" style={{ color: SECONDARY }} />
-      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Key Highlights</p>
-                     </div>
+                      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Key Highlights</p>
+                    </div>
                     {keyPoints.map((point, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: SECONDARY }} />
-    <p className="text-sm leading-relaxed" style={{ color: '#000000' }}>{point}.</p>
+                        <p className="text-sm leading-relaxed" style={{ color: '#000000' }}>{point}.</p>
                       </div>
                     ))}
                   </div>
@@ -720,11 +717,10 @@ export default function NewsPage() {
                   </div>
                 )}
                 <div className="flex gap-2 pt-1">
-                  <button onClick={() => toggleSave(selectedArticle.id || '')}
-                    className="flex-1 py-2.5 rounded-xl border border-[#c5c5d4] text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-                    style={savedArticles.has(selectedArticle.id || '') ? { background: PRIMARY_CONTAINER, color: PRIMARY, borderColor: PRIMARY } : { color: '#454652' }}>
-                    <Bookmark className={`w-4 h-4 ${savedArticles.has(selectedArticle.id || '') ? 'fill-current' : ''}`} />
-                    {savedArticles.has(selectedArticle.id || '') ? 'Saved' : t('common.save')}
+                  <button onClick={() => handleGenerateScript(selectedArticle)}
+                    className="flex-1 py-2.5 rounded-xl border border-[#c5c5d4] text-sm font-semibold flex items-center justify-center gap-2 transition-colors text-[#454652]">
+                    <FileText className="w-4 h-4" />
+                    Generate Script
                   </button>
                   {selectedArticle.url && (
                     <button onClick={() => window.open(selectedArticle.url, '_blank')}
