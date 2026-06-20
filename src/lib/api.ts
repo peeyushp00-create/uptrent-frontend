@@ -73,11 +73,28 @@ export const generateScript = (
 
 // ✅ NEW: Chat-style generation — sends raw natural language message,
 // backend infers topic and duration itself; caller picks content type + AI model.
+export interface ScriptResult {
+  hook?: string;
+  body?: string;
+  cta?: string;
+  duration_seconds?: number;
+  content_type?: string;
+  topic?: string;
+  ai_model?: string;
+  needs_clarification?: false;
+}
+
+export interface ClarificationResult {
+  needs_clarification: true;
+  question: string;
+  ai_model?: string;
+}
+
 export const generateScriptFromMessage = (
   userId: string,
   userMessage: string,
   opts?: { niche?: string; language?: string; voiceStyle?: string; contentType?: string; contentTypePrompt?: string; aiModel?: string }
-) => {
+): Promise<ScriptResult | ClarificationResult> => {
   const savedLanguage = localStorage.getItem('userLanguage') || 'english';
   const body = {
     userId,
@@ -90,7 +107,7 @@ export const generateScriptFromMessage = (
     aiModel: opts?.aiModel || 'claude-sonnet',
   };
 
-  return apiFetch("/api/scripts/generate", {
+  return apiFetch<ScriptResult | ClarificationResult>("/api/scripts/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

@@ -37,13 +37,6 @@ const DARK = {
   ACCENT_SOLID: "#7C3AED",
 };
 
-const SUGGESTIONS = [
-  "Write a 30s fitness reel about home workouts",
-  "Funny script about Bollywood movie tropes",
-  "Educational reel explaining mutual funds",
-  "Trending reaction script about IPL 2026",
-];
-
 const CONTENT_TYPES = [
   { id: "auto", label: "Auto", prompt: "" },
   { id: "educational", label: "Educational", prompt: "Create an educational script that clearly explains the topic step by step, uses simple language, and ends with a key takeaway." },
@@ -387,16 +380,19 @@ export default function ScriptsPage() {
         aiModel: selectedModelKey,
       });
 
-      const assistantMsg: ChatMessage = {
-        id: `${Date.now()}-a`,
-        role: 'assistant',
-        script: result,
-        timestamp: Date.now(),
-      };
+      const assistantMsg: ChatMessage = result.needs_clarification
+        ? { id: `${Date.now()}-a`, role: 'assistant', text: result.question, timestamp: Date.now() }
+        : { id: `${Date.now()}-a`, role: 'assistant', script: result, timestamp: Date.now() };
       setMessages(prev => [...prev, assistantMsg]);
 
       // Persist the assistant's reply, then refresh the sidebar (title/ordering may have changed)
-      await appendMessage(user.id, activeConversationId, { role: 'assistant', script: result });
+      await appendMessage(
+        user.id,
+        activeConversationId,
+        result.needs_clarification
+          ? { role: 'assistant', text: result.question }
+          : { role: 'assistant', script: result }
+      );
       refreshConversationList();
     } catch (err: any) {
       const errorMsg: ChatMessage = {
@@ -761,17 +757,6 @@ export default function ScriptsPage() {
               <div>
                 <p className="font-medium text-lg" style={{ color: TEXT }}>What script do you want to create?</p>
                 <p className="text-sm mt-1.5" style={{ color: TEXT_MUTED }}>Describe it in your own words — topic, vibe, length, anything.</p>
-              </div>
-              <div className="flex flex-wrap gap-2 justify-center max-w-lg">
-                {SUGGESTIONS.map(s => (
-                  <button key={s} onClick={() => handleSend(s)}
-                    className="px-3.5 py-2 rounded-full text-xs font-medium transition-colors text-left"
-                    style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = TEXT; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT_MUTED; }}>
-                    {s}
-                  </button>
-                ))}
               </div>
             </div>
           )}
