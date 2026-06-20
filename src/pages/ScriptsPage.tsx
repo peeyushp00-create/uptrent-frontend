@@ -370,6 +370,15 @@ export default function ScriptsPage() {
     }
   };
 
+  // Auto-resize the textarea to fit its content (grows on multi-line input,
+  // shrinks back down after send/clear), capped by max-h-32 in the className below.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
   const copyScript = (script: ChatMessage['script'], id: string) => {
     if (!script) return;
     const parts = [];
@@ -816,7 +825,7 @@ export default function ScriptsPage() {
               }
               rows={1}
               disabled={transcribing}
-              className="flex-1 resize-none px-4 py-3 rounded-2xl outline-none text-sm transition-all max-h-32 disabled:opacity-60"
+              className="flex-1 resize-none px-4 py-3 rounded-2xl outline-none text-sm transition-all max-h-32 overflow-y-auto disabled:opacity-60"
               style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, color: TEXT, minHeight: '48px' }}
               onFocus={e => (e.currentTarget.style.borderColor = ACCENT)}
               onBlur={e => (e.currentTarget.style.borderColor = BORDER)}
