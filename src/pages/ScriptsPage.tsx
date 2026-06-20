@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square } from "lucide-react";
-import { generateScriptFromMessage, transcribeAudio, getCredits } from "@/lib/api";
+import { generateScriptFromMessage, transcribeAudio } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -56,7 +57,6 @@ const CONTENT_TYPES = [
 interface ModelTier {
   key: string;
   label: string;
-  credits: number;
 }
 
 interface Provider {
@@ -72,9 +72,9 @@ const PROVIDERS: Provider[] = [
     label: "Claude",
     logo: "/ai-logos/claude-logo.png",
     tiers: [
-      { key: "claude-haiku", label: "Haiku", credits: 1 },
-      { key: "claude-sonnet", label: "Sonnet", credits: 3 },
-      { key: "claude-opus", label: "Opus", credits: 5 },
+      { key: "claude-haiku", label: "Haiku" },
+      { key: "claude-sonnet", label: "Sonnet" },
+      { key: "claude-opus", label: "Opus" },
     ],
   },
   {
@@ -82,9 +82,9 @@ const PROVIDERS: Provider[] = [
     label: "Gemini",
     logo: "/ai-logos/gemini-logo.png",
     tiers: [
-      { key: "gemini-flash-lite", label: "Flash-Lite", credits: 1 },
-      { key: "gemini-flash", label: "Flash", credits: 2 },
-      { key: "gemini-pro", label: "Pro", credits: 3 },
+      { key: "gemini-flash-lite", label: "Flash-Lite" },
+      { key: "gemini-flash", label: "Flash" },
+      { key: "gemini-pro", label: "Pro" },
     ],
   },
   {
@@ -92,9 +92,9 @@ const PROVIDERS: Provider[] = [
     label: "Groq",
     logo: "/ai-logos/groq-logo.png",
     tiers: [
-      { key: "groq-8b", label: "Llama 8B", credits: 1 },
-      { key: "groq-70b", label: "Llama 70B", credits: 2 },
-      { key: "groq-oss120", label: "GPT-OSS 120B", credits: 2 },
+      { key: "groq-8b", label: "Llama 8B" },
+      { key: "groq-70b", label: "Llama 70B" },
+      { key: "groq-oss120", label: "GPT-OSS 120B" },
     ],
   },
   {
@@ -102,7 +102,7 @@ const PROVIDERS: Provider[] = [
     label: "ChatGPT",
     logo: "/ai-logos/chatgpt-logo.png",
     tiers: [
-      { key: "chatgpt", label: "GPT-4o mini", credits: 1 },
+      { key: "chatgpt", label: "GPT-4o mini" },
     ],
   },
 ];
@@ -163,7 +163,7 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   text?: string;
-  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string; credits_remaining?: number };
+  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string };
   error?: boolean;
   timestamp: number;
 }
@@ -183,6 +183,7 @@ function saveHistory(messages: ChatMessage[]) {
 export default function ScriptsPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const location = useLocation();
   const T = theme === 'dark' ? DARK : LIGHT;
   const { BG, SURFACE, SURFACE_RAISED, BORDER, TEXT, TEXT_MUTED, ACCENT, ACCENT_SOLID } = T;
 
@@ -265,7 +266,6 @@ export default function ScriptsPage() {
   const [selectedModelKey, setSelectedModelKey] = useState(DEFAULT_MODEL_KEY);
   const [showAiModelMenu, setShowAiModelMenu] = useState(false);
   const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
-  const [credits, setCredits] = useState<number | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -285,11 +285,16 @@ export default function ScriptsPage() {
     saveHistory(messages);
   }, [messages]);
 
+  // Pre-fill the input box from navigation state (e.g. arriving from the news feed
+  // via navigate('/scripts', { state: { prompt } })) — without auto-sending, so the
+  // user can review/edit before hitting send.
   useEffect(() => {
-    if (user?.id) {
-      getCredits(user.id).then(res => setCredits(res.credits_remaining)).catch(() => {});
+    const incomingPrompt = (location.state as { prompt?: string } | null)?.prompt;
+    if (incomingPrompt) {
+      setInput(incomingPrompt);
+      textareaRef.current?.focus();
     }
-  }, [user?.id]);
+  }, [location.state]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -322,16 +327,6 @@ export default function ScriptsPage() {
       return;
     }
 
-    if (credits !== null && credits < selectedTier.credits) {
-      const errorMsg: ChatMessage = {
-        id: `${Date.now()}-e`, role: 'assistant',
-        text: `Not enough credits for ${selectedProvider.label} ${selectedTier.label} (needs ${selectedTier.credits}, you have ${credits} left today). Try a cheaper model, or come back tomorrow when credits reset.`,
-        error: true, timestamp: Date.now(),
-      };
-      setMessages(prev => [...prev, errorMsg]);
-      return;
-    }
-
     const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
     const userMsg: ChatMessage = { id: `${Date.now()}-u`, role: 'user', text: messageText, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
@@ -347,7 +342,6 @@ export default function ScriptsPage() {
         contentTypePrompt: selectedContentType.id !== 'auto' ? selectedContentType.prompt : undefined,
         aiModel: selectedModelKey,
       });
-      if (typeof result.credits_remaining === 'number') setCredits(result.credits_remaining);
       const assistantMsg: ChatMessage = {
         id: `${Date.now()}-a`,
         role: 'assistant',
@@ -356,17 +350,14 @@ export default function ScriptsPage() {
       };
       setMessages(prev => [...prev, assistantMsg]);
     } catch (err: any) {
-      const isCreditError = err?.message?.toLowerCase().includes('credit');
       const errorMsg: ChatMessage = {
         id: `${Date.now()}-e`,
         role: 'assistant',
-        text: isCreditError ? err.message : 'Sorry, I could not generate that script. Please try again.',
+        text: 'Sorry, I could not generate that script. Please try again.',
         error: true,
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, errorMsg]);
-      // re-sync balance in case it changed server-side (e.g. another tab, or our local count drifted)
-      if (user?.id) getCredits(user.id).then(res => setCredits(res.credits_remaining)).catch(() => {});
     } finally {
       setGenerating(false);
     }
@@ -764,7 +755,6 @@ export default function ScriptsPage() {
                 style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
                 <img src={selectedProvider.logo} alt={selectedProvider.label} className="w-3.5 h-3.5 object-contain rounded-full" />
                 {selectedProvider.label} {selectedTier.label}
-                <span className="text-[10px]" style={{ color: TEXT_MUTED }}>· {selectedTier.credits}cr</span>
                 <ChevronDown className="w-3 h-3" />
               </button>
               <AnimatePresence>
@@ -797,10 +787,7 @@ export default function ScriptsPage() {
                                     className="w-full flex items-center justify-between pl-12 pr-4 py-2 text-sm text-left transition-colors"
                                     style={{ background: selectedModelKey === tier.key ? SURFACE : 'transparent' }}>
                                     <p style={{ color: selectedModelKey === tier.key ? TEXT : TEXT_MUTED }}>{tier.label}</p>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-[10px]" style={{ color: TEXT_MUTED }}>{tier.credits} credit{tier.credits > 1 ? 's' : ''}</span>
-                                      {selectedModelKey === tier.key && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
-                                    </div>
+                                    {selectedModelKey === tier.key && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
                                   </button>
                                 ))}
                               </motion.div>
@@ -813,13 +800,6 @@ export default function ScriptsPage() {
                 )}
               </AnimatePresence>
             </div>
-
-            {/* Credit balance indicator */}
-            {credits !== null && (
-              <span className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-                {credits} credits left today
-              </span>
-            )}
           </div>
 
           {/* Input row */}
