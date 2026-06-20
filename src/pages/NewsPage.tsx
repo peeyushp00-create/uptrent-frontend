@@ -32,8 +32,8 @@ interface TrendingTopic {
 
 const TOPIC_EMOJIS: Record<string, string> = {
   Finance: "📈", StockMarket: "📊", MutualFunds: "💰", Crypto: "🪙",
-  PersonalFinance: "💵", Tech: "💻", AINews: "🤖", Cricket: "🏏",
-  IPL: "🏆", Bollywood: "🎬", Business: "💼", Fitness: "💪",
+  PersonalFinance: "💵", Tech: "💻", AINews: "🤖", Sports: "🏏",
+  Bollywood: "🎬", Business: "💼", Fitness: "💪",
   WeightLoss: "🔥", Travel: "✈️", Food: "🍳", Gaming: "🎮",
   Education: "📚", Fashion: "👗", Motivation: "🚀", Skincare: "✨",
   Yoga: "🧘", Comedy: "😂", RealEstate: "🏠", Jobs: "💼",
@@ -48,7 +48,7 @@ const DATE_FILTERS = [
 const NICHE_TOPIC_MAP: Record<string, string> = {
   finance: "Finance", "stock market": "StockMarket", crypto: "Crypto",
   fitness: "Fitness", yoga: "Yoga", tech: "Tech", ai: "AINews",
-  business: "Business", cricket: "Cricket", ipl: "IPL",
+  business: "Business", cricket: "Sports", ipl: "Sports", sports: "Sports",
   bollywood: "Bollywood", travel: "Travel", food: "Food",
   gaming: "Gaming", education: "Education", fashion: "Fashion",
   motivation: "Motivation", skincare: "Skincare",
@@ -56,7 +56,7 @@ const NICHE_TOPIC_MAP: Record<string, string> = {
 
 const NICHE_TO_TOPIC: Record<string, string> = {
   "Finance": "Finance", "Fitness": "Fitness", "Tech": "Tech",
-  "Cricket": "Cricket", "Bollywood": "Bollywood", "Business": "Business",
+  "Sports": "Sports", "Bollywood": "Bollywood", "Business": "Business",
   "Food": "Food", "Travel": "Travel", "Gaming": "Gaming",
   "Education": "Education", "Fashion": "Fashion", "Motivation": "Motivation",
   "Skincare": "Skincare", "Yoga": "Yoga", "Crypto": "Crypto",
@@ -65,7 +65,7 @@ const NICHE_TO_TOPIC: Record<string, string> = {
 
 const getCategoryImage = (headline: string) => {
   const h = headline.toLowerCase();
-  if (h.includes('cricket') || h.includes('ipl')) return 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=600';
+  if (h.includes('cricket') || h.includes('sports') || h.includes('match')) return 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=600';
   if (h.includes('fitness') || h.includes('workout')) return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600';
   if (h.includes('ai') || h.includes('tech')) return 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600';
   if (h.includes('bollywood') || h.includes('movie')) return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600';
@@ -101,9 +101,9 @@ const getImpact = (topic: string, summary: string): { level: 'high' | 'medium' |
     if (isHigh) return { level: 'high', text: 'Major market movement — content about this could go viral in finance niche' };
     return { level: 'medium', text: 'Good finance content opportunity — your audience will want to know about this' };
   }
-  if (topic === 'Cricket' || topic === 'IPL') {
-    if (isHigh) return { level: 'high', text: 'Big cricket news — perfect timing for reaction/analysis Reels' };
-    return { level: 'medium', text: 'Cricket update — good for engagement with sports audience' };
+  if (topic === 'Sports') {
+    if (isHigh) return { level: 'high', text: 'Big sports news — perfect timing for reaction/analysis Reels' };
+    return { level: 'medium', text: 'Sports update — good for engagement with sports audience' };
   }
   if (topic === 'Tech' || topic === 'AINews') {
     if (isHigh) return { level: 'high', text: 'Major tech development — explainer content will get high views' };
@@ -117,7 +117,7 @@ const getTagStyle = (topic: string) => {
   const colors: Record<string, { bg: string; text: string }> = {
     Finance: { bg: '#e8f5e9', text: '#2e7d32' },
     Tech: { bg: '#e3f2fd', text: '#1565c0' },
-    Cricket: { bg: '#fff3e0', text: '#e65100' },
+    Sports: { bg: '#fff3e0', text: '#e65100' },
     Bollywood: { bg: '#fce4ec', text: '#880e4f' },
     Fitness: { bg: '#f3e5f5', text: '#6a1b9a' },
     Gaming: { bg: '#e8eaf6', text: '#283593' },
@@ -453,7 +453,7 @@ export default function NewsPage() {
               ))}
             </>
           ) : (
-            ['All News', 'Finance', 'Tech', 'Cricket', 'Bollywood', 'Fitness'].map(cat => (
+            ['All News', 'Finance', 'Tech', 'Sports', 'Bollywood', 'Fitness'].map(cat => (
               <button key={cat}
                 onClick={() => { setActiveCategory(cat); if (cat !== 'All News') handleTrendingFilter(cat); else { setTrendingFilter(null); fetchNews(dateFilter, undefined, null); } }}
                 className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
