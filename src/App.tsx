@@ -11,7 +11,7 @@ import NewsPage from "./pages/NewsPage";
 import ScriptsPage from "./pages/ScriptsPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
-import CreatorLeaderboard from "./pages/CreatorLeaderboard";
+// import CreatorLeaderboard from "./pages/CreatorLeaderboard"; // hidden for now — route disabled below, code kept for later
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import YouTubeSEO from "./pages/YouTubeSEO";
@@ -55,7 +55,8 @@ const App = () => (
               <Route path="/insight" element={<InsightPage />} />
               <Route path="/news" element={<NewsPage />} />
               <Route path="/scripts" element={<ScriptsPage />} />
-              <Route path="/trending" element={<CreatorLeaderboard />} />
+              {/* /trending route hidden for now — uncomment below + import above to re-enable */}
+              {/* <Route path="/trending" element={<CreatorLeaderboard />} /> */}
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
