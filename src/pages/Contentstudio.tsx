@@ -143,7 +143,7 @@ export default function ContentStudio() {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-1">Content Studio</h1>
       <p className="text-gray-500 mb-6">
-        Upload an image and get a ready-to-post kit — caption, hook, B-roll clips, hashtags and audio.
+        Turn one photo into a full reel — AI captions, a scroll-stopping hook, matching B-roll, hashtags, audio ideas, and a ready-to-post video.
       </p>
 
       {/* Upload */}
