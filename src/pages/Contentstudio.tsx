@@ -104,6 +104,30 @@ export default function ContentStudio() {
         </button>
       </div>
 
+      {/* User manual — hidden once a kit is generated to keep results clean */}
+      {!kit && (
+        <div className="mt-6 rounded-xl bg-gray-50 border border-gray-100 p-5">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">How it works</h2>
+          <ol className="space-y-2.5 text-sm text-gray-600">
+            <li className="flex gap-3">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center">1</span>
+              <span>Upload a photo — a product shot, selfie, screenshot, or any frame from your video.</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center">2</span>
+              <span>Tap <strong>Generate content kit</strong>. The AI reads your image and uses your saved niche, language and voice style.</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center">3</span>
+              <span>Get back a ready-to-post kit: a hook, caption options, matching B-roll clips, hashtags, audio ideas and posting tips.</span>
+            </li>
+          </ol>
+          <p className="mt-4 text-xs text-gray-400">
+            Tip: a clear, well-lit image gives sharper captions and better-matched B-roll. Set your niche and language in Settings for results tuned to your style. First run after a quiet period may take a few extra seconds while the server wakes up.
+          </p>
+        </div>
+      )}
+
       {error && <p className="text-red-500 mt-4">{error}</p>}
 
       {/* Results */}
