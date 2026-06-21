@@ -188,6 +188,14 @@ export default function ScriptsPage() {
   const userNiche = userNiches.join(', ') || '';
   const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
 
+  // Same fallback chain as the sidebar avatar: YouTube channel pic → Google account pic → initials
+  const userAvatarUrl: string | null =
+    user?.user_metadata?.youtube_channel?.channel_thumbnail ||
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    null;
+  const [avatarError, setAvatarError] = useState(false);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const fresh = data?.user?.user_metadata?.voice_style || '';
@@ -768,7 +776,11 @@ export default function ScriptsPage() {
               {msg.role === 'user' ? (
                 <div className="max-w-[80%] flex items-start gap-2.5 flex-row-reverse">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-                    <User className="w-3.5 h-3.5" style={{ color: TEXT_MUTED }} />
+                    {userAvatarUrl && !avatarError ? (
+                      <img src={userAvatarUrl} alt="You" className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
+                    ) : (
+                      <User className="w-3.5 h-3.5" style={{ color: TEXT_MUTED }} />
+                    )}
                   </div>
                   <div className="rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm"
                     style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
