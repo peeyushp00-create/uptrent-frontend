@@ -90,10 +90,21 @@ export interface ClarificationResult {
   ai_model?: string;
 }
 
+export interface ConversationTurn {
+  role: "user" | "assistant";
+  text?: string;
+  question?: string;
+  script?: ScriptResult;
+}
+
 export const generateScriptFromMessage = (
   userId: string,
   userMessage: string,
-  opts?: { niche?: string; language?: string; voiceStyle?: string; contentType?: string; contentTypePrompt?: string; aiModel?: string }
+  opts?: {
+    niche?: string; language?: string; voiceStyle?: string;
+    contentType?: string; contentTypePrompt?: string; aiModel?: string;
+    conversationHistory?: ConversationTurn[];
+  }
 ): Promise<ScriptResult | ClarificationResult> => {
   const savedLanguage = localStorage.getItem('userLanguage') || 'english';
   const body = {
@@ -105,6 +116,7 @@ export const generateScriptFromMessage = (
     contentType: opts?.contentType,
     contentTypePrompt: opts?.contentTypePrompt,
     aiModel: opts?.aiModel || 'claude-sonnet',
+    conversationHistory: opts?.conversationHistory || [],
   };
 
   return apiFetch<ScriptResult | ClarificationResult>("/api/scripts/generate", {

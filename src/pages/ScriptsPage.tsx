@@ -5,7 +5,7 @@ import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown,
 import {
   generateScriptFromMessage, transcribeAudio,
   listConversations, getConversation, createConversation, appendMessage, renameConversation, deleteConversation,
-  type ConversationSummary, type StoredChatMessage,
+  type ConversationSummary, type StoredChatMessage, type ConversationTurn,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -378,6 +378,17 @@ export default function ScriptsPage() {
       // Persist the user's message
       await appendMessage(user.id, activeConversationId, { role: 'user', text: messageText });
 
+      // Build conversation history (prior turns only, not the message we're about to send)
+      // so the AI can see what it already asked/learned and avoid repeating questions.
+      const conversationHistory: ConversationTurn[] = messages
+        .filter(m => !m.error)
+        .map(m => m.role === 'user'
+          ? { role: 'user' as const, text: m.text }
+          : m.script
+            ? { role: 'assistant' as const, script: m.script }
+            : { role: 'assistant' as const, question: m.text }
+        );
+
       const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
       const result = await generateScriptFromMessage(user.id, messageText, {
         niche: userNiche,
@@ -386,6 +397,7 @@ export default function ScriptsPage() {
         contentType: selectedContentType.id !== 'auto' ? selectedContentType.label : undefined,
         contentTypePrompt: selectedContentType.id !== 'auto' ? selectedContentType.prompt : undefined,
         aiModel: selectedModelKey,
+        conversationHistory,
       });
 
       const assistantMsg: ChatMessage = result.needs_clarification
