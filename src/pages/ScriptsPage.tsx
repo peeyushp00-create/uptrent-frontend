@@ -279,6 +279,10 @@ export default function ScriptsPage() {
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  // When handleSend creates a brand-new conversation mid-send, it sets this ref so the
+  // conversationId-watching effect below skips its reload (handleSend already owns local
+  // state for that turn) — otherwise the fetch races the save and wipes the user's message.
+  const skipNextConversationLoadRef = useRef(false);
 
   const [isRecording, setIsRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -306,6 +310,10 @@ export default function ScriptsPage() {
 
   // Load a conversation's messages whenever the active conversationId changes
   useEffect(() => {
+    if (skipNextConversationLoadRef.current) {
+      skipNextConversationLoadRef.current = false;
+      return;
+    }
     if (!user?.id || !conversationId) {
       setMessages([]);
       return;
@@ -372,11 +380,13 @@ export default function ScriptsPage() {
       if (!activeConversationId) {
         const { conversation } = await createConversation(user.id);
         activeConversationId = conversation.id;
+        skipNextConversationLoadRef.current = true;
         setConversationId(conversation.id);
       }
 
-      // Persist the user's message
-      await appendMessage(user.id, activeConversationId, { role: 'user', text: messageText });
+      // Persist the user's message, then swap the optimistic temp id for the real saved one
+      const { message: savedUserMsg } = await appendMessage(user.id, activeConversationId, { role: 'user', text: messageText });
+      setMessages(prev => prev.map(m => m.id === tempUserMsg.id ? { ...m, id: savedUserMsg.id } : m));
 
       // Build conversation history (prior turns only, not the message we're about to send)
       // so the AI can see what it already asked/learned and avoid repeating questions.
