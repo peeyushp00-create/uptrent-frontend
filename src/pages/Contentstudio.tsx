@@ -153,7 +153,8 @@ export default function ContentStudio() {
         ) : (
           <p className="text-gray-400">No image yet</p>
         )}
-        <label className="cursor-pointer px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <label className="cursor-pointer px-4 py-2 rounded-lg text-white font-semibold transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}>
           Choose image
           <input type="file" accept="image/*" onChange={onPick} className="hidden" />
         </label>
