@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Newspaper, FileText,
   PanelLeftClose, PanelLeft, LogOut, Settings,
   Sun, Moon, ChevronUp, Crown, Youtube, Instagram,
-  Search, Tag,
+  Search, Tag, Clapperboard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -30,14 +30,15 @@ export default function AppSidebar() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  // ── Nav arrays inside component so they re-render on language change ──
+  // -- Nav arrays inside component so they re-render on language change --
   const instagramNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
-    // Trending hidden for now — re-add this line to bring it back:
+    // Trending hidden for now -- re-add this line to bring it back:
     // { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
     { icon: Newspaper, label: t('nav.news'), path: "/news" },
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
     { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
+    { icon: Clapperboard, label: "Studio", path: "/studio" },
   ];
 
   const youtubeNav = [
@@ -82,7 +83,7 @@ export default function AppSidebar() {
     ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : user?.email?.[0].toUpperCase() || 'U';
 
-  // ── Real YouTube channel picture, fetched during OAuth connect ──
+  // -- Real YouTube channel picture, fetched during OAuth connect --
   const youtubeChannel = user?.user_metadata?.youtube_channel;
   const channelThumbnail = youtubeChannel?.channel_thumbnail;
   const showChannelPic = !!channelThumbnail && !avatarError;
