@@ -33,7 +33,8 @@ export default function AppSidebar() {
   // ── Nav arrays inside component so they re-render on language change ──
   const instagramNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
-    { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
+    // Trending hidden for now — re-add this line to bring it back:
+    // { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
     { icon: Newspaper, label: t('nav.news'), path: "/news" },
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
     { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
