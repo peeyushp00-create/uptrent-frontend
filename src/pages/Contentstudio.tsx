@@ -28,17 +28,21 @@ export default function ContentStudio() {
   const [kit, setKit] = useState<Kit | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string>("");
+  const [file, setFile] = useState<File | null>(null);
+  const [videoStatus, setVideoStatus] = useState<"idle" | "uploading" | "rendering" | "done" | "error">("idle");
+  const [videoUrl, setVideoUrl] = useState<string>("");
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const picked = e.target.files?.[0];
+    if (!picked) return;
+    setFile(picked); // keep the File for the video upload step
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
       setPreview(result);
       setImageData(result.split(",")[1]); // strip data-url prefix
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(picked);
   }
 
   async function generate() {
@@ -75,6 +79,64 @@ export default function ContentStudio() {
     navigator.clipboard.writeText(text);
     setCopied(tag);
     setTimeout(() => setCopied(""), 1500);
+  }
+
+  // ---- Assemble a video from the image + B-roll clips via Shotstack ----
+  async function makeVideo() {
+    if (!file || !kit) return;
+    setVideoStatus("uploading");
+    setVideoUrl("");
+    setError("");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Please sign in again.");
+
+      // 1. Shotstack renders from URLs, so host the image first.
+      const path = `studio/${session.user.id}/${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("insta-media")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("insta-media").getPublicUrl(path);
+      const imageUrl = pub.publicUrl;
+
+      // 2. Kick off the render with image + the B-roll clips we already found.
+      setVideoStatus("rendering");
+      const clips = (kit.broll || [])
+        .map((b) => b.clip)
+        .filter((c): c is NonNullable<Clip> => !!c?.url);
+
+      const startRes = await fetch(`${API}/api/content-kit/render`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ imageUrl, clips, caption: kit.captions?.[0] || "" }),
+      });
+      const { renderId } = await startRes.json();
+      if (!renderId) throw new Error("Render did not start");
+
+      // 3. Poll until done (Shotstack: queued -> rendering -> done/failed).
+      for (let i = 0; i < 40; i++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const sRes = await fetch(`${API}/api/content-kit/render/${renderId}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const s = await sRes.json();
+        if (s.status === "done" && s.url) {
+          setVideoUrl(s.url);
+          setVideoStatus("done");
+          return;
+        }
+        if (s.status === "failed") throw new Error("Render failed");
+      }
+      throw new Error("Render timed out");
+    } catch (err) {
+      setVideoStatus("error");
+      setError("Couldn't build the video — please try again.");
+    }
   }
 
   return (
@@ -133,6 +195,35 @@ export default function ContentStudio() {
       {/* Results */}
       {kit && (
         <div className="mt-8 space-y-8">
+          {/* Video */}
+          <Section title="Video">
+            {videoUrl ? (
+              <div className="space-y-3">
+                <video src={videoUrl} controls className="w-full max-w-xs rounded-lg" />
+                <a href={videoUrl} download className="inline-block text-sm text-blue-600">
+                  Download video
+                </a>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  onClick={makeVideo}
+                  disabled={videoStatus === "uploading" || videoStatus === "rendering" || !file}
+                  className="px-5 py-2 bg-black text-white rounded-lg disabled:opacity-40"
+                >
+                  {videoStatus === "uploading"
+                    ? "Uploading…"
+                    : videoStatus === "rendering"
+                    ? "Building video… (~1 min)"
+                    : "Create video"}
+                </button>
+                <p className="text-xs text-gray-400">
+                  Stitches your image and the B-roll clips below into a 9:16 reel with your caption. The sandbox render is watermarked and SD — fine for testing; switch to a Shotstack production key for clean output.
+                </p>
+              </div>
+            )}
+          </Section>
+
           {kit.hook && (
             <Section title="Hook">
               <p className="text-lg font-medium">{kit.hook}</p>
