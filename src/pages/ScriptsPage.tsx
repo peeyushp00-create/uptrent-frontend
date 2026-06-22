@@ -106,6 +106,12 @@ const PROVIDERS: Provider[] = [
 
 const DEFAULT_MODEL_KEY = "claude-sonnet";
 
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = seconds / 60;
+  return mins % 1 === 0 ? `${mins}min` : `${mins.toFixed(1)}min`;
+}
+
 function findProviderAndTier(modelKey: string): { provider: Provider; tier: ModelTier } {
   for (const provider of PROVIDERS) {
     const tier = provider.tiers.find(t => t.key === modelKey);
@@ -843,7 +849,7 @@ export default function ScriptsPage() {
                           {msg.script.duration_seconds && (
                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wide"
                               style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-                              {msg.script.duration_seconds}s
+                              {formatDuration(msg.script.duration_seconds)}
                             </span>
                           )}
                           {msg.script.ai_model && (() => {
@@ -964,7 +970,7 @@ export default function ScriptsPage() {
               <button onClick={() => { setShowDurationMenu(prev => !prev); setShowContentTypeMenu(false); setShowAiModelMenu(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
                 style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
-                {selectedDuration === 'auto' ? 'Duration: Auto' : `${selectedDuration}s`}
+                {selectedDuration === 'auto' ? 'Duration: Auto' : formatDuration(selectedDuration)}
                 <ChevronDown className="w-3 h-3" />
               </button>
               <AnimatePresence>
@@ -976,7 +982,7 @@ export default function ScriptsPage() {
                       <button key={d} onClick={() => { setSelectedDuration(d); setShowCustomDurationInput(false); setShowDurationMenu(false); }}
                         className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
                         style={{ color: selectedDuration === d && !showCustomDurationInput ? TEXT : TEXT_MUTED, background: selectedDuration === d && !showCustomDurationInput ? SURFACE : 'transparent' }}>
-                        {d === 'auto' ? 'Auto (AI decides)' : `${d} seconds`}
+                        {d === 'auto' ? 'Auto (AI decides)' : formatDuration(d)}
                         {selectedDuration === d && !showCustomDurationInput && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
                       </button>
                     ))}
