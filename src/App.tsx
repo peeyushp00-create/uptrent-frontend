@@ -22,6 +22,7 @@ import InstagramAnalyzer from "./pages/InstagramAnalyzer";
 import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
 import ContentStudio from "./pages/Contentstudio";
+import VideoCaptioner from "./pages/VideoCaptioner";
 import LandingPage from "./pages/LandingPage";
 import BlogPage from "@/pages/BlogPage";
 import AdminBlogPage from "@/pages/AdminBlogPage";
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
               <Route path="/studio" element={<ContentStudio />} />
+              <Route path="/captions" element={<VideoCaptioner />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

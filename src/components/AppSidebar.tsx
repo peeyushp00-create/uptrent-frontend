@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Newspaper, FileText,
   PanelLeftClose, PanelLeft, LogOut, Settings,
   Sun, Moon, ChevronUp, Crown, Youtube, Instagram,
-  Search, Tag, Clapperboard,
+  Search, Tag, Clapperboard, Captions,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -39,6 +39,7 @@ export default function AppSidebar() {
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
     { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
     { icon: Clapperboard, label: "Studio", path: "/studio" },
+    { icon: Captions, label: "Captions", path: "/captions" },
   ];
 
   const youtubeNav = [
