@@ -103,6 +103,7 @@ export const generateScriptFromMessage = (
   opts?: {
     niche?: string; language?: string; voiceStyle?: string;
     contentType?: string; contentTypePrompt?: string; aiModel?: string;
+    duration?: number;
     conversationHistory?: ConversationTurn[];
   }
 ): Promise<ScriptResult | ClarificationResult> => {
@@ -116,6 +117,7 @@ export const generateScriptFromMessage = (
     contentType: opts?.contentType,
     contentTypePrompt: opts?.contentTypePrompt,
     aiModel: opts?.aiModel || 'claude-sonnet',
+    duration: opts?.duration,
     conversationHistory: opts?.conversationHistory || [],
   };
 

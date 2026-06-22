@@ -270,6 +270,10 @@ export default function ScriptsPage() {
   const [showContentTypeMenu, setShowContentTypeMenu] = useState(false);
   const [selectedModelKey, setSelectedModelKey] = useState(DEFAULT_MODEL_KEY);
   const [showAiModelMenu, setShowAiModelMenu] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState<number | 'auto'>('auto');
+  const [showDurationMenu, setShowDurationMenu] = useState(false);
+  const [customDuration, setCustomDuration] = useState('');
+  const [showCustomDurationInput, setShowCustomDurationInput] = useState(false);
   const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
 
   // ── Conversations (multi-chat) ─────────────────────────────────
@@ -293,6 +297,7 @@ export default function ScriptsPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const contentTypeMenuRef = useRef<HTMLDivElement>(null);
   const aiModelMenuRef = useRef<HTMLDivElement>(null);
+  const durationMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -340,6 +345,7 @@ export default function ScriptsPage() {
     const handleClick = (e: MouseEvent) => {
       if (contentTypeMenuRef.current && !contentTypeMenuRef.current.contains(e.target as Node)) setShowContentTypeMenu(false);
       if (aiModelMenuRef.current && !aiModelMenuRef.current.contains(e.target as Node)) { setShowAiModelMenu(false); setHoveredProviderId(null); }
+      if (durationMenuRef.current && !durationMenuRef.current.contains(e.target as Node)) setShowDurationMenu(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -407,6 +413,7 @@ export default function ScriptsPage() {
         contentType: selectedContentType.id !== 'auto' ? selectedContentType.label : undefined,
         contentTypePrompt: selectedContentType.id !== 'auto' ? selectedContentType.prompt : undefined,
         aiModel: selectedModelKey,
+        duration: selectedDuration !== 'auto' ? selectedDuration : undefined,
         conversationHistory,
       });
 
@@ -929,7 +936,7 @@ export default function ScriptsPage() {
           <div className="flex items-center gap-2 mb-2.5">
             {/* Content type dropdown */}
             <div className="relative" ref={contentTypeMenuRef}>
-              <button onClick={() => { setShowContentTypeMenu(prev => !prev); setShowAiModelMenu(false); }}
+              <button onClick={() => { setShowContentTypeMenu(prev => !prev); setShowAiModelMenu(false); setShowDurationMenu(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
                 style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
                 {selectedContentType.label}
@@ -952,9 +959,61 @@ export default function ScriptsPage() {
               </AnimatePresence>
             </div>
 
+            {/* Duration dropdown */}
+            <div className="relative" ref={durationMenuRef}>
+              <button onClick={() => { setShowDurationMenu(prev => !prev); setShowContentTypeMenu(false); setShowAiModelMenu(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                {selectedDuration === 'auto' ? 'Duration: Auto' : `${selectedDuration}s`}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              <AnimatePresence>
+                {showDurationMenu && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                    className="absolute bottom-full left-0 mb-2 w-48 rounded-2xl overflow-hidden z-50"
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+                    {(['auto', 15, 30, 60, 90, 120] as const).map(d => (
+                      <button key={d} onClick={() => { setSelectedDuration(d); setShowCustomDurationInput(false); setShowDurationMenu(false); }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                        style={{ color: selectedDuration === d && !showCustomDurationInput ? TEXT : TEXT_MUTED, background: selectedDuration === d && !showCustomDurationInput ? SURFACE : 'transparent' }}>
+                        {d === 'auto' ? 'Auto (AI decides)' : `${d} seconds`}
+                        {selectedDuration === d && !showCustomDurationInput && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
+                      </button>
+                    ))}
+                    <button onClick={() => { setShowCustomDurationInput(true); }}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                      style={{ borderTop: `1px solid ${BORDER}`, color: showCustomDurationInput ? TEXT : TEXT_MUTED, background: showCustomDurationInput ? SURFACE : 'transparent' }}>
+                      Custom
+                      {showCustomDurationInput && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
+                    </button>
+                    {showCustomDurationInput && (
+                      <div className="px-4 pb-3 pt-1 flex items-center gap-2">
+                        <input
+                          autoFocus
+                          type="number"
+                          min={5} max={600}
+                          value={customDuration}
+                          onChange={e => {
+                            setCustomDuration(e.target.value);
+                            const n = parseInt(e.target.value, 10);
+                            if (!isNaN(n) && n >= 5) setSelectedDuration(Math.min(n, 600));
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter') setShowDurationMenu(false); }}
+                          placeholder="e.g. 45"
+                          className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
+                          style={{ background: BORDER, color: TEXT, border: `1px solid ${BORDER}` }}
+                        />
+                        <span className="text-xs" style={{ color: TEXT_MUTED }}>sec</span>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* AI model dropdown — provider, then tier */}
             <div className="relative" ref={aiModelMenuRef}>
-              <button onClick={() => { setShowAiModelMenu(prev => !prev); setShowContentTypeMenu(false); }}
+              <button onClick={() => { setShowAiModelMenu(prev => !prev); setShowContentTypeMenu(false); setShowDurationMenu(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
                 style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
                 <img src={selectedProvider.logo} alt={selectedProvider.label} className="w-3.5 h-3.5 object-contain rounded-full" />
