@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil } from "lucide-react";
+import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil, Download, Star, MoreHorizontal } from "lucide-react";
 import {
   generateScriptFromMessage, transcribeAudio,
   listConversations, getConversation, createConversation, appendMessage, renameConversation, deleteConversation,
-  type ConversationSummary, type StoredChatMessage, type ConversationTurn,
+  rewriteSection, toggleSaveScript, listSavedScripts,
+  type ConversationSummary, type StoredChatMessage, type ConversationTurn, type SavedScriptMessage,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -190,7 +191,7 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   text?: string;
-  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string };
+  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string; is_saved?: boolean };
   error?: boolean;
   timestamp: number;
 }
@@ -201,7 +202,7 @@ function fromStoredMessage(m: StoredChatMessage): ChatMessage {
     id: m.id,
     role: m.role,
     text: m.text || undefined,
-    script: m.script_json || undefined,
+    script: m.script_json ? { ...m.script_json, is_saved: (m as any).is_saved || false } : undefined,
     error: m.is_error,
     timestamp: new Date(m.created_at).getTime(),
   };
@@ -315,6 +316,13 @@ export default function ScriptsPage() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleEditValue, setTitleEditValue] = useState('');
   const [currentConvTitle, setCurrentConvTitle] = useState<string | null>(null);
+
+  // Batch 2 state
+  const [rewritingMsgId, setRewritingMsgId] = useState<string | null>(null); // which card has dropdown open
+  const [rewritingSection, setRewritingSection] = useState(false); // loading state for rewrite
+  const [showSavedPanel, setShowSavedPanel] = useState(false);
+  const [savedScripts, setSavedScripts] = useState<SavedScriptMessage[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
   const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
 
   // ── Conversations (multi-chat) ─────────────────────────────────
@@ -408,6 +416,7 @@ export default function ScriptsPage() {
       if (aiModelMenuRef.current && !aiModelMenuRef.current.contains(e.target as Node)) { setShowAiModelMenu(false); setHoveredProviderId(null); }
       if (durationMenuRef.current && !durationMenuRef.current.contains(e.target as Node)) setShowDurationMenu(false);
       if (languageMenuRef.current && !languageMenuRef.current.contains(e.target as Node)) setShowLanguageMenu(false);
+      setRewritingMsgId(null);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -549,6 +558,105 @@ export default function ScriptsPage() {
     } catch { /* leave title as-is if rename fails */ }
   };
 
+  // ── Batch 2 handlers ───────────────────────────────────────────
+
+  const handleDownloadScript = (script: ChatMessage['script'], topic?: string) => {
+    if (!script) return;
+    const parts: string[] = [];
+    if (topic) parts.push(`TOPIC: ${topic}\n`);
+    if (script.content_type) parts.push(`FORMAT: ${script.content_type}\n`);
+    if (script.duration_seconds) parts.push(`DURATION: ${formatDuration(script.duration_seconds)}\n`);
+    parts.push('');
+    if (script.hook) parts.push(`HOOK:\n${script.hook}\n`);
+    if (script.body) parts.push(`BODY:\n${script.body}\n`);
+    if (script.cta) parts.push(`CTA:\n${script.cta}\n`);
+    const blob = new Blob([parts.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(topic || 'script').replace(/\s+/g, '-').toLowerCase()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopyAll = (script: ChatMessage['script'], id: string) => {
+    if (!script) return;
+    const parts = [];
+    if (script.hook) parts.push(`HOOK:\n${script.hook}`);
+    if (script.body) parts.push(`BODY:\n${script.body}`);
+    if (script.cta) parts.push(`CTA:\n${script.cta}`);
+    navigator.clipboard.writeText(parts.join('\n\n'));
+    setCopied(`all-${id}`);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const handleRewriteSection = async (
+    msgId: string,
+    section: 'hook' | 'body' | 'cta',
+    instruction: string,
+    existingScript: ChatMessage['script']
+  ) => {
+    if (!user?.id || !existingScript) return;
+    setRewritingMsgId(null);
+    setRewritingSection(true);
+    try {
+      const result = await rewriteSection({
+        userId: user.id,
+        section,
+        instruction,
+        existingScript,
+        niche: userNiche,
+        language: selectedLanguage,
+        voiceStyle: userVoiceStyle,
+        aiModel: selectedModelKey,
+      });
+      // Update the message in local state with the rewritten section
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, script: { ...m.script, ...result } } : m
+      ));
+      // Persist the updated script to the database
+      if (conversationId) {
+        await appendMessage(user.id, conversationId, { role: 'assistant', text: `✏️ Rewrote ${section}: "${instruction}"` });
+      }
+    } catch {
+      // silently ignore — the original script stays intact
+    } finally {
+      setRewritingSection(false);
+    }
+  };
+
+  const handleToggleSave = async (msgId: string, currentlySaved: boolean) => {
+    if (!user?.id) return;
+    // Optimistically flip the star
+    setMessages(prev => prev.map(m =>
+      m.id === msgId ? { ...m, script: m.script ? { ...m.script, is_saved: !currentlySaved } : m.script } : m
+    ));
+    try {
+      await toggleSaveScript(user.id, msgId, !currentlySaved);
+      // Refresh saved panel if it's open
+      if (showSavedPanel) loadSavedScripts();
+    } catch {
+      // Revert on failure
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, script: m.script ? { ...m.script, is_saved: currentlySaved } : m.script } : m
+      ));
+    }
+  };
+
+  const loadSavedScripts = () => {
+    if (!user?.id) return;
+    setLoadingSaved(true);
+    listSavedScripts(user.id)
+      .then(res => setSavedScripts(res.saved))
+      .catch(() => {})
+      .finally(() => setLoadingSaved(false));
+  };
+
+  const handleOpenSavedPanel = () => {
+    setShowSavedPanel(true);
+    loadSavedScripts();
+  };
+
   const handleNewChat = () => {    setConversationId(null);
     setMessages([]);
     setShowConversationPanel(false);
@@ -688,6 +796,13 @@ export default function ScriptsPage() {
             onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
             <MessageSquare className="w-3.5 h-3.5" /> History <span className="opacity-50 text-[10px]">⌘K</span>
           </button>
+          <button onClick={handleOpenSavedPanel}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{ color: TEXT_MUTED }}
+            onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
+            onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
+            <Star className="w-3.5 h-3.5" /> Saved
+          </button>
           <button onClick={handleNewChat}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
             style={{ border: `1px solid ${BORDER}`, color: TEXT }}>
@@ -695,6 +810,75 @@ export default function ScriptsPage() {
           </button>
         </div>
       </header>
+
+      {/* ── Saved Scripts slide-over panel ── */}
+      <AnimatePresence>
+        {showSavedPanel && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowSavedPanel(false)}
+              className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.4)' }} />
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.2 }}
+              className="fixed top-0 right-0 bottom-0 z-50 w-96 max-w-[90vw] flex flex-col"
+              style={{ background: SURFACE, borderLeft: `1px solid ${BORDER}` }}>
+              <div className="flex items-center justify-between px-4 h-16 shrink-0" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4" style={{ color: ACCENT }} />
+                  <p className="font-semibold text-sm" style={{ color: TEXT }}>Saved Scripts</p>
+                </div>
+                <button onClick={() => setShowSavedPanel(false)} style={{ color: TEXT_MUTED }}>
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {loadingSaved ? (
+                  <div className="flex justify-center pt-12">
+                    <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
+                      <img src="/logo.png" alt="" className="w-6 h-6 object-cover rounded-full" />
+                    </motion.div>
+                  </div>
+                ) : savedScripts.length === 0 ? (
+                  <div className="text-center pt-12">
+                    <Star className="w-8 h-8 mx-auto mb-3" style={{ color: BORDER }} />
+                    <p className="text-sm" style={{ color: TEXT_MUTED }}>No saved scripts yet.</p>
+                    <p className="text-xs mt-1" style={{ color: TEXT_MUTED }}>Star any script to save it here.</p>
+                  </div>
+                ) : (
+                  savedScripts.map(s => (
+                    <div key={s.id} className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                      <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: `1px solid ${BORDER}`, background: SURFACE_RAISED }}>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-medium truncate" style={{ color: TEXT }}>{s.script_json?.topic || s.conversation_title}</span>
+                          <span className="text-[10px]" style={{ color: TEXT_MUTED }}>{s.conversation_title}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => handleDownloadScript(s.script_json, s.script_json?.topic)} style={{ color: TEXT_MUTED }}>
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => {
+                            const parts = [];
+                            if (s.script_json?.hook) parts.push(`HOOK:\n${s.script_json.hook}`);
+                            if (s.script_json?.body) parts.push(`BODY:\n${s.script_json.body}`);
+                            if (s.script_json?.cta) parts.push(`CTA:\n${s.script_json.cta}`);
+                            navigator.clipboard.writeText(parts.join('\n\n'));
+                          }} style={{ color: TEXT_MUTED }}>
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-3 space-y-2">
+                        {s.script_json?.hook && <p className="text-xs leading-relaxed" style={{ color: TEXT_MUTED }}><span className="font-medium" style={{ color: TEXT }}>Hook: </span>{s.script_json.hook}</p>}
+                        {s.script_json?.cta && <p className="text-xs leading-relaxed" style={{ color: TEXT_MUTED }}><span className="font-medium" style={{ color: TEXT }}>CTA: </span>{s.script_json.cta}</p>}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── Conversation slide-over panel ── */}
       <AnimatePresence>
@@ -957,11 +1141,60 @@ export default function ScriptsPage() {
                             );
                           })()}
                         </div>
-                        <button onClick={() => copyScript(msg.script, msg.id)}
-                          className="flex items-center gap-1 text-xs font-medium transition-colors"
-                          style={{ color: copied === msg.id ? (theme === 'dark' ? '#4ADE80' : '#16a34a') : TEXT_MUTED }}>
-                          {copied === msg.id ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* Star / Save */}
+                          <button onClick={() => handleToggleSave(msg.id, !!msg.script.is_saved)}
+                            title={msg.script.is_saved ? 'Remove from saved' : 'Save script'}
+                            style={{ color: msg.script.is_saved ? '#F59E0B' : TEXT_MUTED }}>
+                            <Star className="w-3.5 h-3.5" fill={msg.script.is_saved ? '#F59E0B' : 'none'} />
+                          </button>
+                          {/* Download */}
+                          <button onClick={() => handleDownloadScript(msg.script, msg.script.topic)}
+                            title="Download as .txt" style={{ color: TEXT_MUTED }}>
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          {/* Copy All */}
+                          <button onClick={() => handleCopyAll(msg.script, msg.id)}
+                            className="flex items-center gap-1 text-xs font-medium transition-colors"
+                            style={{ color: copied === `all-${msg.id}` ? (theme === 'dark' ? '#4ADE80' : '#16a34a') : TEXT_MUTED }}>
+                            {copied === `all-${msg.id}` ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+                          </button>
+                          {/* Rewrite section dropdown */}
+                          <div className="relative">
+                            <button onClick={() => setRewritingMsgId(prev => prev === msg.id ? null : msg.id)}
+                              title="Rewrite a section" style={{ color: TEXT_MUTED }}>
+                              <MoreHorizontal className="w-3.5 h-3.5" />
+                            </button>
+                            <AnimatePresence>
+                              {rewritingMsgId === msg.id && (
+                                <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                                  className="absolute right-0 top-full mt-1 w-52 rounded-2xl overflow-hidden z-50"
+                                  style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+                                  <p className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: TEXT_MUTED, borderBottom: `1px solid ${BORDER}` }}>Rewrite section</p>
+                                  {[
+                                    { section: 'hook' as const, label: 'Make hook more shocking' },
+                                    { section: 'hook' as const, label: 'Make hook a question' },
+                                    { section: 'body' as const, label: 'Make it funnier' },
+                                    { section: 'body' as const, label: 'Make it shorter' },
+                                    { section: 'body' as const, label: 'Add more detail' },
+                                    { section: 'cta' as const, label: 'Stronger CTA' },
+                                    { section: 'cta' as const, label: 'More casual CTA' },
+                                  ].map(opt => (
+                                    <button key={opt.label}
+                                      disabled={rewritingSection}
+                                      onClick={() => handleRewriteSection(msg.id, opt.section, opt.label, msg.script)}
+                                      className="w-full text-left px-4 py-2 text-xs transition-colors disabled:opacity-40"
+                                      style={{ color: TEXT_MUTED }}
+                                      onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
+                                      onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
+                                      {opt.label}
+                                    </button>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Script body */}

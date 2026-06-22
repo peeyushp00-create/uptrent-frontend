@@ -250,3 +250,43 @@ export const deleteConversation = (userId: string, conversationId: string) =>
   apiFetch<{ success: boolean }>(`/api/conversations/${conversationId}?userId=${encodeURIComponent(userId)}`, {
     method: "DELETE",
   });
+
+
+// ── Batch 2 features ─────────────────────────────────────────────
+
+export const rewriteSection = (params: {
+  userId: string;
+  section: 'hook' | 'body' | 'cta';
+  instruction: string;
+  existingScript: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string };
+  niche?: string;
+  language?: string;
+  voiceStyle?: string;
+  aiModel?: string;
+}) =>
+  apiFetch<{ hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string }>(
+    '/api/scripts/rewrite',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    }
+  );
+
+export const toggleSaveScript = (userId: string, messageId: string, saved: boolean) =>
+  apiFetch<{ success: boolean; is_saved: boolean }>('/api/scripts/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, messageId, saved }),
+  });
+
+export interface SavedScriptMessage {
+  id: string;
+  conversation_id: string;
+  conversation_title: string;
+  script_json: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string };
+  created_at: string;
+}
+
+export const listSavedScripts = (userId: string) =>
+  apiFetch<{ saved: SavedScriptMessage[] }>(`/api/scripts/saved?userId=${encodeURIComponent(userId)}`);
