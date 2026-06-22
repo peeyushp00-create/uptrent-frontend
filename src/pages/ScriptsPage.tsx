@@ -49,7 +49,31 @@ const CONTENT_TYPES = [
   { id: "review", label: "Product Review", prompt: "Create an honest product or service review script covering pros, cons, who it's for, and a clear recommendation." },
 ];
 
-// ── AI providers and their model tiers ─────────────────────────
+// ── Language options (must match backend's languageInstructions keys) ──
+const LANGUAGES = [
+  { id: 'english', label: 'English' },
+  { id: 'hindi', label: 'Hindi' },
+  { id: 'hinglish', label: 'Hinglish' },
+  { id: 'tamil', label: 'Tamil' },
+  { id: 'telugu', label: 'Telugu' },
+  { id: 'malayalam', label: 'Malayalam' },
+  { id: 'manglish', label: 'Manglish' },
+];
+
+function getWordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function getScriptWordCount(script: { hook?: string; body?: string; cta?: string }): number {
+  return getWordCount([script.hook, script.body, script.cta].filter(Boolean).join(' '));
+}
+
+function formatReadTime(words: number): string {
+  const seconds = Math.round(words / 2.5);
+  return seconds < 60 ? `~${seconds}s read` : `~${(seconds / 60).toFixed(1)}min read`;
+}
+
+
 // `key` values must exactly match the backend's MODEL_REGISTRY keys.
 interface ModelTier {
   key: string;
@@ -280,6 +304,17 @@ export default function ScriptsPage() {
   const [showDurationMenu, setShowDurationMenu] = useState(false);
   const [customDuration, setCustomDuration] = useState('');
   const [showCustomDurationInput, setShowCustomDurationInput] = useState(false);
+
+  // Language switcher — initialised from localStorage so it persists across sessions
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    () => localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english'
+  );
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+
+  // Title editing from inside the chat header
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleEditValue, setTitleEditValue] = useState('');
+  const [currentConvTitle, setCurrentConvTitle] = useState<string | null>(null);
   const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
 
   // ── Conversations (multi-chat) ─────────────────────────────────
@@ -304,6 +339,7 @@ export default function ScriptsPage() {
   const contentTypeMenuRef = useRef<HTMLDivElement>(null);
   const aiModelMenuRef = useRef<HTMLDivElement>(null);
   const durationMenuRef = useRef<HTMLDivElement>(null);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -314,6 +350,25 @@ export default function ScriptsPage() {
     if (!user?.id) return;
     listConversations(user.id).then(res => setConversations(res.conversations)).catch(() => {});
   };
+
+  // Cmd/Ctrl+K opens the History panel
+  useEffect(() => {
+    const handleKeyboard = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowConversationPanel(prev => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyboard);
+    return () => document.removeEventListener('keydown', handleKeyboard);
+  }, []);
+
+  // Sync the current conversation's title into local state (for header display + editing)
+  useEffect(() => {
+    if (!conversationId) { setCurrentConvTitle(null); return; }
+    const conv = conversations.find(c => c.id === conversationId);
+    if (conv) setCurrentConvTitle(conv.title);
+  }, [conversationId, conversations]);
 
   useEffect(() => {
     refreshConversationList();
@@ -352,6 +407,7 @@ export default function ScriptsPage() {
       if (contentTypeMenuRef.current && !contentTypeMenuRef.current.contains(e.target as Node)) setShowContentTypeMenu(false);
       if (aiModelMenuRef.current && !aiModelMenuRef.current.contains(e.target as Node)) { setShowAiModelMenu(false); setHoveredProviderId(null); }
       if (durationMenuRef.current && !durationMenuRef.current.contains(e.target as Node)) setShowDurationMenu(false);
+      if (languageMenuRef.current && !languageMenuRef.current.contains(e.target as Node)) setShowLanguageMenu(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -411,7 +467,7 @@ export default function ScriptsPage() {
             : { role: 'assistant' as const, question: m.text }
         );
 
-      const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
+      const userLanguage = selectedLanguage;
       const result = await generateScriptFromMessage(user.id, messageText, {
         niche: userNiche,
         language: userLanguage,
@@ -483,8 +539,17 @@ export default function ScriptsPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleNewChat = () => {
-    setConversationId(null);
+  const handleConfirmTitleEdit = async () => {
+    setEditingTitle(false);
+    if (!user?.id || !conversationId || !titleEditValue.trim()) return;
+    try {
+      await renameConversation(user.id, conversationId, titleEditValue.trim());
+      setCurrentConvTitle(titleEditValue.trim());
+      setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, title: titleEditValue.trim() } : c));
+    } catch { /* leave title as-is if rename fails */ }
+  };
+
+  const handleNewChat = () => {    setConversationId(null);
     setMessages([]);
     setShowConversationPanel(false);
   };
@@ -548,7 +613,7 @@ export default function ScriptsPage() {
       recorder.onstop = async () => {
         stream.getTracks().forEach(track => track.stop());
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const userLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
+        const userLanguage = selectedLanguage;
         setTranscribing(true);
         try {
           const { text } = await transcribeAudio(audioBlob, userLanguage);
@@ -579,13 +644,37 @@ export default function ScriptsPage() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 px-5 h-16 flex items-center justify-between shrink-0"
         style={{ background: BG, borderBottom: `1px solid ${BORDER}` }}>
-        <div className="flex items-center gap-3">
-          <FileText className="w-5 h-5" style={{ color: TEXT }} />
-          <h1 className="font-semibold text-lg tracking-tight" style={{ color: TEXT, fontFamily: 'Inter, sans-serif' }}>
-            Script Generator
-          </h1>
+        <div className="flex items-center gap-3 min-w-0">
+          <FileText className="w-5 h-5 shrink-0" style={{ color: TEXT }} />
+          {conversationId && currentConvTitle ? (
+            editingTitle ? (
+              <input
+                autoFocus
+                value={titleEditValue}
+                onChange={e => setTitleEditValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleConfirmTitleEdit(); if (e.key === 'Escape') setEditingTitle(false); }}
+                onBlur={handleConfirmTitleEdit}
+                className="font-semibold text-base tracking-tight bg-transparent outline-none border-b min-w-0 w-48"
+                style={{ color: TEXT, borderColor: ACCENT, fontFamily: 'Inter, sans-serif' }}
+              />
+            ) : (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="font-semibold text-base tracking-tight truncate max-w-[160px]" style={{ color: TEXT, fontFamily: 'Inter, sans-serif' }}>
+                  {currentConvTitle}
+                </h1>
+                <button onClick={() => { setTitleEditValue(currentConvTitle); setEditingTitle(true); }}
+                  style={{ color: TEXT_MUTED }} className="shrink-0">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          ) : (
+            <h1 className="font-semibold text-lg tracking-tight" style={{ color: TEXT, fontFamily: 'Inter, sans-serif' }}>
+              Script Generator
+            </h1>
+          )}
           {userVoiceStyle && (
-            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium"
+            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
               style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
               <Mic className="w-3 h-3" /> Voice
             </span>
@@ -597,7 +686,7 @@ export default function ScriptsPage() {
             style={{ color: TEXT_MUTED }}
             onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
             onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
-            <MessageSquare className="w-3.5 h-3.5" /> History
+            <MessageSquare className="w-3.5 h-3.5" /> History <span className="opacity-50 text-[10px]">⌘K</span>
           </button>
           <button onClick={handleNewChat}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
@@ -852,6 +941,12 @@ export default function ScriptsPage() {
                               {formatDuration(msg.script.duration_seconds)}
                             </span>
                           )}
+                          {(msg.script.hook || msg.script.body || msg.script.cta) && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wide"
+                              style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                              {formatReadTime(getScriptWordCount(msg.script))}
+                            </span>
+                          )}
                           {msg.script.ai_model && (() => {
                             const { provider, tier } = findProviderAndTier(msg.script.ai_model);
                             return (
@@ -1065,6 +1160,36 @@ export default function ScriptsPage() {
                         </div>
                       );
                     })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Language switcher */}
+            <div className="relative" ref={languageMenuRef}>
+              <button onClick={() => { setShowLanguageMenu(prev => !prev); setShowContentTypeMenu(false); setShowAiModelMenu(false); setShowDurationMenu(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                {LANGUAGES.find(l => l.id === selectedLanguage)?.label || 'English'}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              <AnimatePresence>
+                {showLanguageMenu && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                    className="absolute bottom-full left-0 mb-2 w-44 rounded-2xl overflow-hidden z-50"
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+                    {LANGUAGES.map(l => (
+                      <button key={l.id} onClick={() => {
+                        setSelectedLanguage(l.id);
+                        localStorage.setItem('userLanguage', l.id);
+                        setShowLanguageMenu(false);
+                      }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                        style={{ color: selectedLanguage === l.id ? TEXT : TEXT_MUTED, background: selectedLanguage === l.id ? SURFACE : 'transparent' }}>
+                        {l.label}
+                        {selectedLanguage === l.id && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
+                      </button>
+                    ))}
                   </motion.div>
                 )}
               </AnimatePresence>
