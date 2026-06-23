@@ -1,15 +1,16 @@
-// VideoCaptioner.tsx — timeline caption editor
-// Route at /captions. Upload video -> transcribe -> edit on a multi-track
-// timeline (video layer + word layer) -> pick font/music -> export.
+// VideoCaptioner.tsx — transcript-style caption editor
+// Route at /captions. Upload video -> transcribe -> edit captions as a
+// document next to the preview -> style font & music -> export.
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // <-- adjust import to your project
 
 const API = import.meta.env.VITE_API_URL;
-const PX_PER_SEC = 90; // timeline zoom
+const PURPLE = "#7C3AED";
+const GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
 
 type Word = { id: number; start: number; end: number; text: string };
-type Line = { start: number; end: number; text: string };
+type Segment = { id: number; start: number; end: number; text: string };
 
 const FONTS = [
   { key: "Poppins", label: "Poppins", css: "'Poppins', sans-serif" },
@@ -19,7 +20,7 @@ const FONTS = [
   { key: "Inter", label: "Inter", css: "'Inter', sans-serif" },
 ];
 
-// Curated background music. Paste your own hosted royalty-free MP3 URLs here.
+// Curated background music — paste your own hosted royalty-free MP3 URLs.
 const MUSIC = [
   { key: "none", label: "No music", url: "" },
   { key: "upbeat", label: "Upbeat", url: "" },
@@ -27,53 +28,67 @@ const MUSIC = [
   { key: "cinematic", label: "Cinematic", url: "" },
 ];
 
+const fmt = (s: number) => {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
+
+// Group words into readable caption lines.
+function buildSegments(words: Word[]): Segment[] {
+  const out: Segment[] = [];
+  let cur: Word[] = [];
+  const flush = () => {
+    if (!cur.length) return;
+    out.push({ id: out.length, start: cur[0].start, end: cur[cur.length - 1].end, text: cur.map(w => w.text).join(" ") });
+    cur = [];
+  };
+  for (let i = 0; i < words.length; i++) {
+    cur.push(words[i]);
+    const next = words[i + 1];
+    const gap = next ? next.start - words[i].end : 99;
+    if (gap > 0.6 || cur.length >= 8) flush();
+  }
+  flush();
+  return out;
+}
+
 export default function VideoCaptioner() {
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState("");
   const [hostedUrl, setHostedUrl] = useState("");
-  const [words, setWords] = useState<Word[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([]);
   const [font, setFont] = useState(FONTS[0]);
   const [music, setMusic] = useState(MUSIC[0]);
-  const [tab, setTab] = useState<"tracks" | "font" | "music">("tracks");
   const [time, setTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [status, setStatus] = useState<"idle" | "uploading" | "transcribing" | "ready" | "rendering" | "done">("idle");
   const [exportUrl, setExportUrl] = useState("");
   const [error, setError] = useState("");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const timelineRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
-  // Caption lines derived from words (single source of truth). Group by gaps.
-  const lines: Line[] = useMemo(() => {
-    if (!words.length) return [];
-    const out: Line[] = [];
-    let cur: Word[] = [];
-    const flush = () => {
-      if (!cur.length) return;
-      out.push({ start: cur[0].start, end: cur[cur.length - 1].end, text: cur.map(w => w.text).join(" ") });
-      cur = [];
-    };
-    for (let i = 0; i < words.length; i++) {
-      cur.push(words[i]);
-      const next = words[i + 1];
-      const gap = next ? next.start - words[i].end : 99;
-      if (gap > 0.6 || cur.length >= 7) flush();
-    }
-    flush();
-    return out;
-  }, [words]);
+  const activeId = useMemo(() => {
+    const seg = segments.find(s => time >= s.start && time < s.end);
+    return seg ? seg.id : null;
+  }, [segments, time]);
 
-  const activeLine = lines.find(l => time >= l.start && time < l.end);
+  const activeText = activeId != null ? segments.find(s => s.id === activeId)?.text : "";
+
+  // Auto-scroll the active caption into view
+  useEffect(() => {
+    if (activeId != null) rowRefs.current[activeId]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeId]);
+
+  useEffect(() => { if (music.url && audioRef.current) audioRef.current.volume = 0.25; }, [music]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0];
     if (!picked) return;
     setFile(picked);
     setVideoUrl(URL.createObjectURL(picked));
-    setWords([]); setExportUrl(""); setStatus("idle");
+    setSegments([]); setExportUrl(""); setStatus("idle"); setError("");
   }
 
   async function transcribe() {
@@ -91,7 +106,6 @@ export default function VideoCaptioner() {
       setHostedUrl(pub.publicUrl);
 
       setStatus("transcribing");
-      // Submit the job (backend hands the URL to AssemblyAI)
       const res = await fetch(`${API}/api/captioner/transcribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
@@ -104,25 +118,22 @@ export default function VideoCaptioner() {
       const { transcriptId } = await res.json();
       if (!transcriptId) throw new Error("Transcription did not start");
 
-      // Poll until completed (long videos take a while)
       for (let i = 0; i < 120; i++) {
         await new Promise(r => setTimeout(r, 3000));
         const sRes = await fetch(`${API}/api/captioner/transcribe/${transcriptId}`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         const s = await sRes.json();
-        if (s.status === "completed") { setWords(s.words || []); setStatus("ready"); return; }
+        if (s.status === "completed") { setSegments(buildSegments(s.words || [])); setStatus("ready"); return; }
         if (s.status === "error") throw new Error("Transcription failed");
       }
       throw new Error("Transcription timed out");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong. Keep clips under 25MB and try again.";
-      setError(msg);
-      setStatus("idle");
+      const msg = err instanceof Error ? err.message : "Something went wrong. Try a shorter clip.";
+      setError(msg); setStatus("idle");
     }
   }
 
-  // Keep playhead + music in sync with the video
   function onTimeUpdate() {
     const v = videoRef.current; if (!v) return;
     setTime(v.currentTime);
@@ -133,21 +144,13 @@ export default function VideoCaptioner() {
   function onPlay()  { if (music.url && audioRef.current) audioRef.current.play().catch(() => {}); }
   function onPause() { if (audioRef.current) audioRef.current.pause(); }
 
-  // Seek by clicking the timeline
-  function onTimelineClick(e: React.MouseEvent<HTMLDivElement>) {
-    const el = timelineRef.current; const v = videoRef.current;
-    if (!el || !v) return;
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left + el.scrollLeft;
-    v.currentTime = Math.max(0, Math.min(duration, x / PX_PER_SEC));
-  }
-
-  function editWord(id: number, text: string) {
-    setWords(prev => prev.map(w => (w.id === id ? { ...w, text } : w)));
+  function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; }
+  function editSeg(id: number, text: string) {
+    setSegments(prev => prev.map(s => (s.id === id ? { ...s, text } : s)));
   }
 
   async function exportVideo() {
-    if (!hostedUrl || lines.length === 0) return;
+    if (!hostedUrl || segments.length === 0) return;
     setError(""); setStatus("rendering"); setExportUrl("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -156,7 +159,7 @@ export default function VideoCaptioner() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
-          videoUrl: hostedUrl, segments: lines, font: font.key,
+          videoUrl: hostedUrl, segments, font: font.key,
           music: music.url || undefined, duration: videoRef.current?.duration,
         }),
       });
@@ -174,185 +177,136 @@ export default function VideoCaptioner() {
       throw new Error("Export timed out");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Export failed, please try again.";
-      setError(msg);
-      setStatus("ready");
+      setError(msg); setStatus("ready");
     }
   }
 
-  useEffect(() => { if (music.url && audioRef.current) audioRef.current.volume = 0.25; }, [music]);
-
-  const hasProject = words.length > 0;
+  const hasProject = segments.length > 0;
 
   return (
     <div className="max-w-5xl mx-auto p-6">
       <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&display=swap" />
 
-      <h1 className="text-2xl font-bold mb-1">Captions Editor</h1>
+      <h1 className="text-2xl font-bold mb-1">Captions</h1>
       <p className="text-gray-500 mb-6">
-        Upload a video, auto-transcribe it, then edit captions word by word on the timeline, style the font, add music, and export.
+        Upload a video, auto-transcribe it, fix the words like a doc, style it, and export with captions burned in.
       </p>
 
+      {/* Upload screen */}
       {!hasProject && (
-        <div className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-4">
+        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 flex flex-col items-center gap-4 bg-gray-50/50">
           {videoUrl
-            ? <video ref={videoRef} src={videoUrl} controls onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
-                className="w-full max-w-xs rounded-lg bg-black aspect-[9/16] object-contain" />
-            : <p className="text-gray-400">No video yet</p>}
-          <label className="cursor-pointer px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}>
+            ? <video ref={videoRef} src={videoUrl} controls onLoadedMetadata={e => setTime(0)}
+                className="w-48 rounded-xl bg-black aspect-[9/16] object-contain shadow-lg" />
+            : <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl" style={{ background: GRAD }}>▶</div>}
+          <label className="cursor-pointer px-5 py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition" style={{ background: GRAD }}>
             Choose video
             <input type="file" accept="video/*" onChange={onPick} className="hidden" />
           </label>
           <button onClick={transcribe} disabled={!file || status === "uploading" || status === "transcribing"}
-            className="px-6 py-2 bg-black text-white rounded-lg disabled:opacity-40">
+            className="px-6 py-2.5 bg-gray-900 text-white rounded-xl font-semibold disabled:opacity-40 transition">
             {status === "uploading" ? "Uploading…" : status === "transcribing" ? "Transcribing…" : "Transcribe"}
           </button>
-          <p className="text-xs text-gray-400">Short clips under 25MB work best.</p>
+          <p className="text-xs text-gray-400">Most short reels work in well under a minute.</p>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
       )}
 
-      {error && <p className="text-red-500 mt-4">{error}</p>}
-
+      {/* Editor */}
       {hasProject && (
-        <div className="space-y-5">
-          {/* Preview */}
-          <div className="flex justify-center">
-            <div className="relative w-full max-w-xs">
+        <div className="grid md:grid-cols-[300px_1fr] gap-6 items-start">
+
+          {/* Left: preview + style (sticky on desktop) */}
+          <div className="md:sticky md:top-6 space-y-4">
+            <div className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
               <video ref={videoRef} src={videoUrl} controls
                 onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause}
-                onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
-                className="w-full rounded-lg bg-black aspect-[9/16] object-contain" />
-              {activeLine && (
-                <div className="absolute bottom-12 left-0 right-0 px-3 text-center pointer-events-none">
-                  <span className="inline-block px-2 py-1 rounded text-white"
-                    style={{ fontFamily: font.css, background: "rgba(0,0,0,0.55)", lineHeight: 1.2 }}>
-                    {activeLine.text}
+                className="w-full aspect-[9/16] object-contain" />
+              {activeText && (
+                <div className="absolute bottom-10 left-0 right-0 px-3 text-center pointer-events-none">
+                  <span className="inline-block px-2.5 py-1 rounded-md text-white text-sm"
+                    style={{ fontFamily: font.css, background: "rgba(0,0,0,0.6)", lineHeight: 1.25 }}>
+                    {activeText}
                   </span>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Explore bar: tabs */}
-          <div className="flex gap-1 border-b">
-            {(["tracks", "font", "music"] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)}
-                className="px-4 py-2 text-sm font-semibold capitalize -mb-px border-b-2"
-                style={tab === t ? { borderColor: "#7C3AED", color: "#7C3AED" } : { borderColor: "transparent", color: "#6b7280" }}>
-                {t}
-              </button>
-            ))}
-          </div>
-
-          {/* TRACKS tab — the timeline */}
-          {tab === "tracks" && (
-            <div className="border rounded-lg overflow-hidden">
-              <div ref={timelineRef} onClick={onTimelineClick}
-                className="relative overflow-x-auto bg-gray-50 cursor-pointer select-none"
-                style={{ minHeight: 130 }}>
-                <div style={{ width: Math.max(duration * PX_PER_SEC, 300), position: "relative" }}>
-
-                  {/* time ruler */}
-                  <div className="h-5 border-b text-[10px] text-gray-400 relative">
-                    {Array.from({ length: Math.ceil(duration) + 1 }).map((_, s) => (
-                      <span key={s} className="absolute top-0.5" style={{ left: s * PX_PER_SEC }}>{s}s</span>
-                    ))}
-                  </div>
-
-                  {/* Video track */}
-                  <div className="px-1 py-1">
-                    <div className="text-[10px] text-gray-400 mb-0.5">Video</div>
-                    <div className="h-9 rounded bg-purple-200 border border-purple-300 flex items-center px-2 text-xs text-purple-800 overflow-hidden"
-                      style={{ width: Math.max(duration * PX_PER_SEC - 4, 60) }}>
-                      {file?.name || "clip.mp4"}
-                    </div>
-                  </div>
-
-                  {/* Words track */}
-                  <div className="px-1 pb-2">
-                    <div className="text-[10px] text-gray-400 mb-0.5">Captions (tap a word to edit)</div>
-                    <div className="relative h-9">
-                      {words.map(w => {
-                        const left = w.start * PX_PER_SEC;
-                        const width = Math.max((w.end - w.start) * PX_PER_SEC, 24);
-                        const active = time >= w.start && time < w.end;
-                        return editingId === w.id ? (
-                          <input key={w.id} autoFocus defaultValue={w.text}
-                            onClick={e => e.stopPropagation()}
-                            onBlur={e => { editWord(w.id, e.target.value.trim()); setEditingId(null); }}
-                            onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                            className="absolute top-0 h-9 text-xs border border-purple-500 rounded px-1"
-                            style={{ left, width: Math.max(width, 60) }} />
-                        ) : (
-                          <button key={w.id}
-                            onClick={e => { e.stopPropagation(); setEditingId(w.id); }}
-                            className="absolute top-0 h-9 rounded border text-xs px-1 overflow-hidden whitespace-nowrap"
-                            style={{ left, width,
-                              background: active ? "#7C3AED" : "#ffffff",
-                              color: active ? "#fff" : "#374151",
-                              borderColor: active ? "#6D28D9" : "#e5e7eb" }}>
-                            {w.text}
-                          </button>
-                        );
-                      })}
-
-                      {/* playhead */}
-                      <div className="absolute top-[-44px] bottom-0 w-0.5 bg-red-500 pointer-events-none"
-                        style={{ left: time * PX_PER_SEC, height: 96 }} />
-                    </div>
-                  </div>
+            <div className="rounded-2xl border border-gray-100 p-4 space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
+                <div className="flex flex-wrap gap-2">
+                  {FONTS.map(f => (
+                    <button key={f.key} onClick={() => setFont(f)}
+                      className="px-3 py-1.5 rounded-lg border text-sm transition"
+                      style={font.key === f.key
+                        ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF", fontFamily: f.css }
+                        : { borderColor: "#e5e7eb", fontFamily: f.css }}>
+                      {f.label}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Music</p>
+                <div className="flex flex-wrap gap-2">
+                  {MUSIC.map(m => (
+                    <button key={m.key} onClick={() => setMusic(m)}
+                      className="px-3 py-1.5 rounded-lg border text-sm transition"
+                      style={music.key === m.key
+                        ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
+                        : { borderColor: "#e5e7eb" }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
+              </div>
             </div>
-          )}
 
-          {/* FONT tab */}
-          {tab === "font" && (
-            <div className="flex flex-wrap gap-2">
-              {FONTS.map(f => (
-                <button key={f.key} onClick={() => setFont(f)}
-                  className="px-3 py-1.5 rounded-lg border text-sm"
-                  style={font.key === f.key
-                    ? { borderColor: "#7C3AED", color: "#7C3AED", fontFamily: f.css }
-                    : { borderColor: "#e5e7eb", fontFamily: f.css }}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* MUSIC tab */}
-          {tab === "music" && (
-            <div className="flex flex-wrap gap-2">
-              {MUSIC.map(m => (
-                <button key={m.key} onClick={() => setMusic(m)}
-                  className="px-3 py-1.5 rounded-lg border text-sm"
-                  style={music.key === m.key ? { borderColor: "#7C3AED", color: "#7C3AED" } : { borderColor: "#e5e7eb" }}>
-                  {m.label}
-                </button>
-              ))}
-              {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
-            </div>
-          )}
-
-          {/* Export */}
-          <div className="space-y-2 pt-2 border-t">
             {exportUrl ? (
               <div className="space-y-2">
-                <video src={exportUrl} controls className="w-full max-w-xs rounded-lg" />
-                <a href={exportUrl} download className="inline-block text-sm text-blue-600">Download captioned video</a>
+                <video src={exportUrl} controls className="w-full rounded-xl" />
+                <a href={exportUrl} download className="block text-center text-sm font-semibold text-purple-700">Download video ↓</a>
               </div>
             ) : (
               <button onClick={exportVideo} disabled={status === "rendering"}
-                className="px-6 py-2 rounded-lg text-white font-semibold disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}>
+                className="w-full py-3 rounded-xl text-white font-semibold disabled:opacity-40 transition" style={{ background: GRAD }}>
                 {status === "rendering" ? "Exporting… (~1 min)" : "Export video"}
               </button>
             )}
-            <p className="text-xs text-gray-400">
-              Preview uses your font and music live. Export burns captions in via the cloud renderer (sandbox output is watermarked + SD).
-            </p>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+          </div>
+
+          {/* Right: transcript editor */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-gray-700">Transcript</h2>
+              <span className="text-xs text-gray-400">{segments.length} lines · tap a time to jump</span>
+            </div>
+            <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
+              {segments.map(s => {
+                const active = s.id === activeId;
+                return (
+                  <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
+                    className="flex gap-3 p-3 rounded-xl border transition"
+                    style={active
+                      ? { borderColor: PURPLE, background: "#F5F2FF", boxShadow: "0 0 0 1px #7C3AED" }
+                      : { borderColor: "#f0f0f0" }}>
+                    <button onClick={() => seek(s.start)}
+                      className="shrink-0 text-xs font-mono mt-1 px-1.5 py-0.5 rounded transition"
+                      style={active ? { color: PURPLE } : { color: "#9ca3af" }}>
+                      {fmt(s.start)}
+                    </button>
+                    <textarea value={s.text} onChange={e => editSeg(s.id, e.target.value)} rows={1}
+                      className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed"
+                      style={{ minHeight: 24 }}
+                      onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
