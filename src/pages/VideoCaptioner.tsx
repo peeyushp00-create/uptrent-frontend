@@ -1,6 +1,5 @@
-// VideoCaptioner.tsx — transcript-style caption editor
-// Route at /captions. Upload video -> transcribe -> edit captions as a
-// document next to the preview -> style font & music -> export.
+// VideoCaptioner.tsx — transcript-style caption editor + music sync
+// Upload video -> transcribe -> edit captions -> style font -> add & sync music -> export.
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // <-- adjust import to your project
@@ -20,12 +19,13 @@ const FONTS = [
   { key: "Inter", label: "Inter", css: "'Inter', sans-serif" },
 ];
 
-// Curated background music — paste your own hosted royalty-free MP3 URLs.
+// Preset music library — paste your own hosted royalty-free MP3 URLs.
 const MUSIC = [
   { key: "none", label: "No music", url: "" },
   { key: "upbeat", label: "Upbeat", url: "" },
   { key: "chill", label: "Chill", url: "" },
   { key: "cinematic", label: "Cinematic", url: "" },
+  { key: "lofi", label: "Lo-fi", url: "" },
 ];
 
 const fmt = (s: number) => {
@@ -34,7 +34,6 @@ const fmt = (s: number) => {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 };
 
-// Group words into readable caption lines.
 function buildSegments(words: Word[]): Segment[] {
   const out: Segment[] = [];
   let cur: Word[] = [];
@@ -61,27 +60,52 @@ export default function VideoCaptioner() {
   const [font, setFont] = useState(FONTS[0]);
   const [music, setMusic] = useState(MUSIC[0]);
   const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState<"idle" | "uploading" | "transcribing" | "ready" | "rendering" | "done">("idle");
   const [exportUrl, setExportUrl] = useState("");
   const [error, setError] = useState("");
 
+  // Music sync controls
+  const [musicStart, setMusicStart] = useState(0); // seconds into the video where music begins
+  const [songTrim, setSongTrim] = useState(0);     // seconds skipped into the song
+  const [volume, setVolume] = useState(0.25);      // 0..1
+  const [fadeIn, setFadeIn] = useState(true);
+  const [fadeOut, setFadeOut] = useState(true);
+  const [dragging, setDragging] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  const hasMusic = music.key !== "none";
 
   const activeId = useMemo(() => {
     const seg = segments.find(s => time >= s.start && time < s.end);
     return seg ? seg.id : null;
   }, [segments, time]);
-
   const activeText = activeId != null ? segments.find(s => s.id === activeId)?.text : "";
 
-  // Auto-scroll the active caption into view
   useEffect(() => {
     if (activeId != null) rowRefs.current[activeId]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [activeId]);
 
-  useEffect(() => { if (music.url && audioRef.current) audioRef.current.volume = 0.25; }, [music]);
+  useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume, music]);
+
+  // Dragging the music block on the mini timeline
+  useEffect(() => {
+    if (!dragging) return;
+    const move = (e: PointerEvent) => {
+      const el = trackRef.current; if (!el || !duration) return;
+      const rect = el.getBoundingClientRect();
+      const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      setMusicStart(Math.round(ratio * duration * 10) / 10);
+    };
+    const up = () => setDragging(false);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [dragging, duration]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0];
@@ -135,13 +159,19 @@ export default function VideoCaptioner() {
   }
 
   function onTimeUpdate() {
-    const v = videoRef.current; if (!v) return;
+    const v = videoRef.current; const a = audioRef.current; if (!v) return;
     setTime(v.currentTime);
-    if (audioRef.current && Math.abs(audioRef.current.currentTime - v.currentTime) > 0.3) {
-      audioRef.current.currentTime = v.currentTime;
+    if (a && hasMusic && music.url) {
+      if (v.currentTime >= musicStart) {
+        const target = songTrim + (v.currentTime - musicStart);
+        if (Math.abs(a.currentTime - target) > 0.3) a.currentTime = target;
+        if (a.paused && !v.paused) a.play().catch(() => {});
+      } else if (!a.paused) {
+        a.pause();
+      }
     }
   }
-  function onPlay()  { if (music.url && audioRef.current) audioRef.current.play().catch(() => {}); }
+  function onPlay()  { const v = videoRef.current, a = audioRef.current; if (a && hasMusic && music.url && v && v.currentTime >= musicStart) a.play().catch(() => {}); }
   function onPause() { if (audioRef.current) audioRef.current.pause(); }
 
   function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; }
@@ -159,8 +189,10 @@ export default function VideoCaptioner() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
-          videoUrl: hostedUrl, segments, font: font.key,
-          music: music.url || undefined, duration: videoRef.current?.duration,
+          videoUrl: hostedUrl, segments, font: font.key, duration: videoRef.current?.duration,
+          music: hasMusic && music.url
+            ? { url: music.url, startInVideo: musicStart, songTrim, volume, fadeIn, fadeOut }
+            : undefined,
         }),
       });
       const { renderId } = await res.json();
@@ -190,14 +222,13 @@ export default function VideoCaptioner() {
 
       <h1 className="text-2xl font-bold mb-1">Captions</h1>
       <p className="text-gray-500 mb-6">
-        Upload a video, auto-transcribe it, fix the words like a doc, style it, and export with captions burned in.
+        Upload a video, auto-transcribe it, fix the words like a doc, style it, sync music, and export.
       </p>
 
-      {/* Upload screen */}
       {!hasProject && (
         <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 flex flex-col items-center gap-4 bg-gray-50/50">
           {videoUrl
-            ? <video ref={videoRef} src={videoUrl} controls onLoadedMetadata={e => setTime(0)}
+            ? <video ref={videoRef} src={videoUrl} controls onLoadedMetadata={e => { setTime(0); setDuration(e.currentTarget.duration); }}
                 className="w-48 rounded-xl bg-black aspect-[9/16] object-contain shadow-lg" />
             : <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl" style={{ background: GRAD }}>▶</div>}
           <label className="cursor-pointer px-5 py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition" style={{ background: GRAD }}>
@@ -213,15 +244,15 @@ export default function VideoCaptioner() {
         </div>
       )}
 
-      {/* Editor */}
       {hasProject && (
-        <div className="grid md:grid-cols-[300px_1fr] gap-6 items-start">
+        <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
 
-          {/* Left: preview + style (sticky on desktop) */}
+          {/* Left: preview + style + music sync */}
           <div className="md:sticky md:top-6 space-y-4">
             <div className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
               <video ref={videoRef} src={videoUrl} controls
                 onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause}
+                onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
                 className="w-full aspect-[9/16] object-contain" />
               {activeText && (
                 <div className="absolute bottom-10 left-0 right-0 px-3 text-center pointer-events-none">
@@ -233,21 +264,24 @@ export default function VideoCaptioner() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-gray-100 p-4 space-y-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
-                <div className="flex flex-wrap gap-2">
-                  {FONTS.map(f => (
-                    <button key={f.key} onClick={() => setFont(f)}
-                      className="px-3 py-1.5 rounded-lg border text-sm transition"
-                      style={font.key === f.key
-                        ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF", fontFamily: f.css }
-                        : { borderColor: "#e5e7eb", fontFamily: f.css }}>
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
+            {/* Font */}
+            <div className="rounded-2xl border border-gray-100 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
+              <div className="flex flex-wrap gap-2">
+                {FONTS.map(f => (
+                  <button key={f.key} onClick={() => setFont(f)}
+                    className="px-3 py-1.5 rounded-lg border text-sm transition"
+                    style={font.key === f.key
+                      ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF", fontFamily: f.css }
+                      : { borderColor: "#e5e7eb", fontFamily: f.css }}>
+                    {f.label}
+                  </button>
+                ))}
               </div>
+            </div>
+
+            {/* Music */}
+            <div className="rounded-2xl border border-gray-100 p-4 space-y-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Music</p>
                 <div className="flex flex-wrap gap-2">
@@ -263,6 +297,61 @@ export default function VideoCaptioner() {
                 </div>
                 {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
               </div>
+
+              {/* Sync controls — only when a track is chosen */}
+              {hasMusic && (
+                <div className="space-y-4 pt-1">
+                  {/* Mini timeline: drag where music starts */}
+                  <div>
+                    <div className="flex justify-between text-[11px] text-gray-400 mb-1">
+                      <span>Starts at {fmt(musicStart)}</span><span>drag →</span>
+                    </div>
+                    <div ref={trackRef} className="relative h-8 rounded-lg bg-gray-100 overflow-hidden">
+                      {/* music block */}
+                      <div
+                        onPointerDown={() => setDragging(true)}
+                        className="absolute top-0 bottom-0 rounded-lg cursor-grab active:cursor-grabbing flex items-center justify-center text-[10px] text-white font-semibold"
+                        style={{
+                          left: `${duration ? (musicStart / duration) * 100 : 0}%`,
+                          width: `${duration ? ((duration - musicStart) / duration) * 100 : 100}%`,
+                          background: GRAD,
+                        }}>
+                        ♪ {music.label}
+                      </div>
+                      {/* playhead */}
+                      <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none"
+                        style={{ left: `${duration ? (time / duration) * 100 : 0}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Volume */}
+                  <label className="block">
+                    <span className="text-[11px] text-gray-400">Volume {Math.round(volume * 100)}%</span>
+                    <input type="range" min={0} max={1} step={0.05} value={volume}
+                      onChange={e => setVolume(parseFloat(e.target.value))}
+                      className="w-full accent-purple-600" />
+                  </label>
+
+                  {/* Song trim */}
+                  <label className="block">
+                    <span className="text-[11px] text-gray-400">Start song from {fmt(songTrim)}</span>
+                    <input type="range" min={0} max={60} step={1} value={songTrim}
+                      onChange={e => setSongTrim(parseInt(e.target.value))}
+                      className="w-full accent-purple-600" />
+                  </label>
+
+                  {/* Fades */}
+                  <div className="flex gap-2">
+                    {[{ k: "in", v: fadeIn, set: setFadeIn }, { k: "out", v: fadeOut, set: setFadeOut }].map(f => (
+                      <button key={f.k} onClick={() => f.set(!f.v)}
+                        className="flex-1 px-3 py-1.5 rounded-lg border text-sm transition"
+                        style={f.v ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                        Fade {f.k}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {exportUrl ? (
