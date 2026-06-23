@@ -280,80 +280,6 @@ export default function VideoCaptioner() {
               </div>
             </div>
 
-            {/* Music */}
-            <div className="rounded-2xl border border-gray-100 p-4 space-y-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Music</p>
-                <div className="flex flex-wrap gap-2">
-                  {MUSIC.map(m => (
-                    <button key={m.key} onClick={() => setMusic(m)}
-                      className="px-3 py-1.5 rounded-lg border text-sm transition"
-                      style={music.key === m.key
-                        ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
-                        : { borderColor: "#e5e7eb" }}>
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-                {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
-              </div>
-
-              {/* Sync controls — only when a track is chosen */}
-              {hasMusic && (
-                <div className="space-y-4 pt-1">
-                  {/* Mini timeline: drag where music starts */}
-                  <div>
-                    <div className="flex justify-between text-[11px] text-gray-400 mb-1">
-                      <span>Starts at {fmt(musicStart)}</span><span>drag →</span>
-                    </div>
-                    <div ref={trackRef} className="relative h-8 rounded-lg bg-gray-100 overflow-hidden">
-                      {/* music block */}
-                      <div
-                        onPointerDown={() => setDragging(true)}
-                        className="absolute top-0 bottom-0 rounded-lg cursor-grab active:cursor-grabbing flex items-center justify-center text-[10px] text-white font-semibold"
-                        style={{
-                          left: `${duration ? (musicStart / duration) * 100 : 0}%`,
-                          width: `${duration ? ((duration - musicStart) / duration) * 100 : 100}%`,
-                          background: GRAD,
-                        }}>
-                        ♪ {music.label}
-                      </div>
-                      {/* playhead */}
-                      <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none"
-                        style={{ left: `${duration ? (time / duration) * 100 : 0}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Volume */}
-                  <label className="block">
-                    <span className="text-[11px] text-gray-400">Volume {Math.round(volume * 100)}%</span>
-                    <input type="range" min={0} max={1} step={0.05} value={volume}
-                      onChange={e => setVolume(parseFloat(e.target.value))}
-                      className="w-full accent-purple-600" />
-                  </label>
-
-                  {/* Song trim */}
-                  <label className="block">
-                    <span className="text-[11px] text-gray-400">Start song from {fmt(songTrim)}</span>
-                    <input type="range" min={0} max={60} step={1} value={songTrim}
-                      onChange={e => setSongTrim(parseInt(e.target.value))}
-                      className="w-full accent-purple-600" />
-                  </label>
-
-                  {/* Fades */}
-                  <div className="flex gap-2">
-                    {[{ k: "in", v: fadeIn, set: setFadeIn }, { k: "out", v: fadeOut, set: setFadeOut }].map(f => (
-                      <button key={f.k} onClick={() => f.set(!f.v)}
-                        className="flex-1 px-3 py-1.5 rounded-lg border text-sm transition"
-                        style={f.v ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
-                        Fade {f.k}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {exportUrl ? (
               <div className="space-y-2">
                 <video src={exportUrl} controls className="w-full rounded-xl" />
@@ -368,33 +294,109 @@ export default function VideoCaptioner() {
             {error && <p className="text-red-500 text-sm">{error}</p>}
           </div>
 
-          {/* Right: transcript editor */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-700">Transcript</h2>
-              <span className="text-xs text-gray-400">{segments.length} lines · tap a time to jump</span>
+          {/* Right: transcript editor + music studio */}
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-gray-700">Transcript</h2>
+                <span className="text-xs text-gray-400">{segments.length} lines · tap a time to jump</span>
+              </div>
+              <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+                {segments.map(s => {
+                  const active = s.id === activeId;
+                  return (
+                    <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
+                      className="flex gap-3 p-3 rounded-xl border transition"
+                      style={active
+                        ? { borderColor: PURPLE, background: "#F5F2FF", boxShadow: "0 0 0 1px #7C3AED" }
+                        : { borderColor: "#f0f0f0" }}>
+                      <button onClick={() => seek(s.start)}
+                        className="shrink-0 text-xs font-mono mt-1 px-1.5 py-0.5 rounded transition"
+                        style={active ? { color: PURPLE } : { color: "#9ca3af" }}>
+                        {fmt(s.start)}
+                      </button>
+                      <textarea value={s.text} onChange={e => editSeg(s.id, e.target.value)} rows={1}
+                        className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed"
+                        style={{ minHeight: 24 }}
+                        onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
-              {segments.map(s => {
-                const active = s.id === activeId;
-                return (
-                  <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
-                    className="flex gap-3 p-3 rounded-xl border transition"
-                    style={active
-                      ? { borderColor: PURPLE, background: "#F5F2FF", boxShadow: "0 0 0 1px #7C3AED" }
-                      : { borderColor: "#f0f0f0" }}>
-                    <button onClick={() => seek(s.start)}
-                      className="shrink-0 text-xs font-mono mt-1 px-1.5 py-0.5 rounded transition"
-                      style={active ? { color: PURPLE } : { color: "#9ca3af" }}>
-                      {fmt(s.start)}
-                    </button>
-                    <textarea value={s.text} onChange={e => editSeg(s.id, e.target.value)} rows={1}
-                      className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed"
-                      style={{ minHeight: 24 }}
-                      onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
+
+            {/* Music studio — fills the wide space */}
+            <div className="rounded-2xl border border-gray-100 p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-gray-700">Music</h2>
+                {hasMusic && <span className="text-xs text-gray-400">drag the bar to set where music starts</span>}
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                {MUSIC.map(m => (
+                  <button key={m.key} onClick={() => setMusic(m)}
+                    className="px-3 py-1.5 rounded-lg border text-sm transition"
+                    style={music.key === m.key
+                      ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
+                      : { borderColor: "#e5e7eb" }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
+
+              {hasMusic && (
+                <div className="space-y-5">
+                  {/* Mini timeline */}
+                  <div>
+                    <div className="flex justify-between text-[11px] text-gray-400 mb-1">
+                      <span>Music starts at {fmt(musicStart)}</span>
+                      <span>video {fmt(duration)}</span>
+                    </div>
+                    <div ref={trackRef} className="relative h-10 rounded-lg bg-gray-100 overflow-hidden">
+                      <div
+                        onPointerDown={() => setDragging(true)}
+                        className="absolute top-0 bottom-0 rounded-lg cursor-grab active:cursor-grabbing flex items-center px-3 text-xs text-white font-semibold"
+                        style={{
+                          left: `${duration ? (musicStart / duration) * 100 : 0}%`,
+                          width: `${duration ? ((duration - musicStart) / duration) * 100 : 100}%`,
+                          background: GRAD,
+                        }}>
+                        ♪ {music.label}
+                      </div>
+                      <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none"
+                        style={{ left: `${duration ? (time / duration) * 100 : 0}%` }} />
+                    </div>
                   </div>
-                );
-              })}
+
+                  {/* Sliders side by side */}
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <label className="block">
+                      <span className="text-[11px] text-gray-400">Volume {Math.round(volume * 100)}%</span>
+                      <input type="range" min={0} max={1} step={0.05} value={volume}
+                        onChange={e => setVolume(parseFloat(e.target.value))}
+                        className="w-full accent-purple-600" />
+                    </label>
+                    <label className="block">
+                      <span className="text-[11px] text-gray-400">Start song from {fmt(songTrim)}</span>
+                      <input type="range" min={0} max={60} step={1} value={songTrim}
+                        onChange={e => setSongTrim(parseInt(e.target.value))}
+                        className="w-full accent-purple-600" />
+                    </label>
+                  </div>
+
+                  {/* Fades */}
+                  <div className="flex gap-2 max-w-xs">
+                    {[{ k: "in", v: fadeIn, set: setFadeIn }, { k: "out", v: fadeOut, set: setFadeOut }].map(f => (
+                      <button key={f.k} onClick={() => f.set(!f.v)}
+                        className="flex-1 px-3 py-1.5 rounded-lg border text-sm transition"
+                        style={f.v ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                        Fade {f.k}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
