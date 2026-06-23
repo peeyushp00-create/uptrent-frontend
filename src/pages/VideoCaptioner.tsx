@@ -72,6 +72,7 @@ export default function VideoCaptioner() {
   const [fadeIn, setFadeIn] = useState(true);
   const [fadeOut, setFadeOut] = useState(true);
   const [dragging, setDragging] = useState(false);
+  const [muteOriginal, setMuteOriginal] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -91,6 +92,7 @@ export default function VideoCaptioner() {
   }, [activeId]);
 
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume, music]);
+  useEffect(() => { if (videoRef.current) videoRef.current.muted = muteOriginal; }, [muteOriginal]);
 
   // Dragging the music block on the mini timeline
   useEffect(() => {
@@ -190,6 +192,7 @@ export default function VideoCaptioner() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
           videoUrl: hostedUrl, segments, font: font.key, duration: videoRef.current?.duration,
+          muteOriginal,
           music: hasMusic && music.url
             ? { url: music.url, startInVideo: musicStart, songTrim, volume, fadeIn, fadeOut }
             : undefined,
@@ -331,6 +334,15 @@ export default function VideoCaptioner() {
                 <h2 className="font-semibold text-gray-700">Music</h2>
                 {hasMusic && <span className="text-xs text-gray-400">drag the bar to set where music starts</span>}
               </div>
+
+              {/* Mute original audio — independent of music choice */}
+              <button onClick={() => setMuteOriginal(v => !v)}
+                className="mb-4 px-3 py-1.5 rounded-lg border text-sm transition flex items-center gap-2"
+                style={muteOriginal
+                  ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
+                  : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                {muteOriginal ? "🔇 Original audio muted" : "🔊 Original audio on"}
+              </button>
 
               <div className="flex flex-wrap gap-2 mb-4">
                 {MUSIC.map(m => (
