@@ -1,9 +1,8 @@
 // VideoCaptioner.tsx — timeline caption editor
 // Route at /captions. Upload video -> transcribe -> edit on a multi-track
 // timeline (video layer + word layer) -> pick font/music -> export.
-// Captions preview live in the browser; only Export hits the cloud renderer.
 
-import { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // <-- adjust import to your project
 
 const API = import.meta.env.VITE_API_URL;
@@ -20,12 +19,12 @@ const FONTS = [
   { key: "Inter", label: "Inter", css: "'Inter', sans-serif" },
 ];
 
-// Curated background music. Replace url with your own hosted royalty-free MP3s.
+// Curated background music. Paste your own hosted royalty-free MP3 URLs here.
 const MUSIC = [
   { key: "none", label: "No music", url: "" },
-  { key: "upbeat", label: "Upbeat", url: process.env.MUSIC_UPBEAT || "" },
-  { key: "chill", label: "Chill", url: process.env.MUSIC_CHILL || "" },
-  { key: "cinematic", label: "Cinematic", url: process.env.MUSIC_CINEMATIC || "" },
+  { key: "upbeat", label: "Upbeat", url: "" },
+  { key: "chill", label: "Chill", url: "" },
+  { key: "cinematic", label: "Cinematic", url: "" },
 ];
 
 export default function VideoCaptioner() {
@@ -92,6 +91,7 @@ export default function VideoCaptioner() {
       setHostedUrl(pub.publicUrl);
 
       setStatus("transcribing");
+      // Submit the job (backend hands the URL to AssemblyAI)
       const res = await fetch(`${API}/api/captioner/transcribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
@@ -101,11 +101,23 @@ export default function VideoCaptioner() {
         const e = await res.json().catch(() => ({}));
         throw new Error(e.error || "Transcription failed");
       }
-      const data = await res.json();
-      setWords(data.words || []);
-      setStatus("ready");
-    } catch (err: any) {
-      setError(err.message || "Something went wrong. Keep clips under 25MB and try again.");
+      const { transcriptId } = await res.json();
+      if (!transcriptId) throw new Error("Transcription did not start");
+
+      // Poll until completed (long videos take a while)
+      for (let i = 0; i < 120; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const sRes = await fetch(`${API}/api/captioner/transcribe/${transcriptId}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const s = await sRes.json();
+        if (s.status === "completed") { setWords(s.words || []); setStatus("ready"); return; }
+        if (s.status === "error") throw new Error("Transcription failed");
+      }
+      throw new Error("Transcription timed out");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong. Keep clips under 25MB and try again.";
+      setError(msg);
       setStatus("idle");
     }
   }
@@ -122,7 +134,7 @@ export default function VideoCaptioner() {
   function onPause() { if (audioRef.current) audioRef.current.pause(); }
 
   // Seek by clicking the timeline
-  function onTimelineClick(e: React.MouseEvent) {
+  function onTimelineClick(e: React.MouseEvent<HTMLDivElement>) {
     const el = timelineRef.current; const v = videoRef.current;
     if (!el || !v) return;
     const rect = el.getBoundingClientRect();
@@ -160,8 +172,9 @@ export default function VideoCaptioner() {
         if (s.status === "failed") throw new Error("Export failed");
       }
       throw new Error("Export timed out");
-    } catch (err: any) {
-      setError(err.message || "Export failed, please try again.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Export failed, please try again.";
+      setError(msg);
       setStatus("ready");
     }
   }
@@ -180,7 +193,6 @@ export default function VideoCaptioner() {
         Upload a video, auto-transcribe it, then edit captions word by word on the timeline, style the font, add music, and export.
       </p>
 
-      {/* Upload (before a project exists) */}
       {!hasProject && (
         <div className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-4">
           {videoUrl
@@ -202,7 +214,6 @@ export default function VideoCaptioner() {
 
       {error && <p className="text-red-500 mt-4">{error}</p>}
 
-      {/* Editor */}
       {hasProject && (
         <div className="space-y-5">
           {/* Preview */}
