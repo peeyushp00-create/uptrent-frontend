@@ -73,6 +73,7 @@ export default function VideoCaptioner() {
   const [fadeOut, setFadeOut] = useState(true);
   const [dragging, setDragging] = useState(false);
   const [muteOriginal, setMuteOriginal] = useState(false);
+  const [uploadingMusic, setUploadingMusic] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -179,6 +180,28 @@ export default function VideoCaptioner() {
   function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; }
   function editSeg(id: number, text: string) {
     setSegments(prev => prev.map(s => (s.id === id ? { ...s, text } : s)));
+  }
+
+  // Upload the user's own music to Supabase and select it
+  async function uploadMusic(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setUploadingMusic(true); setError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Please sign in again.");
+      const path = `music/${session.user.id}/${Date.now()}-${f.name.replace(/[^\w.]/g, "_")}`;
+      const { error: upErr } = await supabase.storage
+        .from("insta-media").upload(path, f, { upsert: true, contentType: f.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("insta-media").getPublicUrl(path);
+      setMusic({ key: "custom", label: f.name.slice(0, 18), url: pub.publicUrl });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Couldn't upload that track.";
+      setError(msg);
+    } finally {
+      setUploadingMusic(false);
+    }
   }
 
   async function exportVideo() {
@@ -344,7 +367,7 @@ export default function VideoCaptioner() {
                 {muteOriginal ? "🔇 Original audio muted" : "🔊 Original audio on"}
               </button>
 
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-2">
                 {MUSIC.map(m => (
                   <button key={m.key} onClick={() => setMusic(m)}
                     className="px-3 py-1.5 rounded-lg border text-sm transition"
@@ -354,7 +377,22 @@ export default function VideoCaptioner() {
                     {m.label}
                   </button>
                 ))}
+                {/* custom track pill, shown once uploaded */}
+                {music.key === "custom" && (
+                  <span className="px-3 py-1.5 rounded-lg border text-sm"
+                    style={{ borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }}>
+                    ♪ {music.label}
+                  </span>
+                )}
+                <label className="px-3 py-1.5 rounded-lg border border-dashed text-sm cursor-pointer text-gray-500 hover:border-gray-400 transition"
+                  style={{ borderColor: "#d1d5db" }}>
+                  {uploadingMusic ? "Uploading…" : "+ Upload your own"}
+                  <input type="file" accept="audio/*" onChange={uploadMusic} className="hidden" disabled={uploadingMusic} />
+                </label>
               </div>
+              <p className="text-[11px] text-gray-400 mb-4">
+                Only upload music you have the rights to use. You're responsible for what you add.
+              </p>
               {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
 
               {hasMusic && (
