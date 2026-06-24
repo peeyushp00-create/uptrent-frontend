@@ -165,6 +165,7 @@ export default function VideoCaptioner() {
     const v = videoRef.current; const a = audioRef.current; if (!v) return;
     setTime(v.currentTime);
     if (a && hasMusic && music.url) {
+      a.volume = volume; // keep music volume in sync every tick
       if (v.currentTime >= musicStart) {
         const target = songTrim + (v.currentTime - musicStart);
         if (Math.abs(a.currentTime - target) > 0.3) a.currentTime = target;
@@ -174,7 +175,7 @@ export default function VideoCaptioner() {
       }
     }
   }
-  function onPlay()  { const v = videoRef.current, a = audioRef.current; if (a && hasMusic && music.url && v && v.currentTime >= musicStart) a.play().catch(() => {}); }
+  function onPlay()  { const v = videoRef.current, a = audioRef.current; if (a && hasMusic && music.url && v && v.currentTime >= musicStart) { a.volume = volume; a.play().catch(() => {}); } }
   function onPause() { if (audioRef.current) audioRef.current.pause(); }
 
   function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; }
@@ -423,9 +424,9 @@ export default function VideoCaptioner() {
                   {/* Sliders side by side */}
                   <div className="grid sm:grid-cols-2 gap-5">
                     <label className="block">
-                      <span className="text-[11px] text-gray-400">Volume {Math.round(volume * 100)}%</span>
+                      <span className="text-[11px] text-gray-400">Music volume {Math.round(volume * 100)}%</span>
                       <input type="range" min={0} max={1} step={0.05} value={volume}
-                        onChange={e => setVolume(parseFloat(e.target.value))}
+                        onChange={e => { const val = parseFloat(e.target.value); setVolume(val); if (audioRef.current) audioRef.current.volume = val; }}
                         className="w-full accent-purple-600" />
                     </label>
                     <label className="block">
