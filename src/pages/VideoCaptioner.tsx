@@ -216,6 +216,7 @@ export default function VideoCaptioner() {
         body: JSON.stringify({
           videoUrl: hostedUrl, segments, font: font.key, duration: videoRef.current?.duration,
           muteOriginal,
+          watermark: true, // free tier — flip to false for paid users later
           music: hasMusic && /^https?:\/\//.test(music.url || "")
             ? { url: music.url, startInVideo: musicStart, songTrim, volume, fadeIn, fadeOut }
             : undefined,
