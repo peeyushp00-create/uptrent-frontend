@@ -52,6 +52,22 @@ function buildSegments(words: Word[]): Segment[] {
   return out;
 }
 
+// Build an SRT subtitle file from the edited segments
+function srtTime(sec: number): string {
+  const ms = Math.floor((sec % 1) * 1000);
+  const s = Math.floor(sec) % 60;
+  const m = Math.floor(sec / 60) % 60;
+  const h = Math.floor(sec / 3600);
+  const p = (n: number, l = 2) => String(n).padStart(l, "0");
+  return `${p(h)}:${p(m)}:${p(s)},${p(ms, 3)}`;
+}
+function buildSRT(segs: Segment[]): string {
+  return segs
+    .filter(s => s.text.trim() && s.end > s.start)
+    .map((s, i) => `${i + 1}\n${srtTime(s.start)} --> ${srtTime(s.end)}\n${s.text.trim()}`)
+    .join("\n\n") + "\n";
+}
+
 export default function VideoCaptioner() {
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState("");
@@ -215,11 +231,21 @@ export default function VideoCaptioner() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Please sign in again.");
+
+      // Build an SRT from the edited captions and host it for Shotstack
+      const srt = buildSRT(segments);
+      const srtPath = `captions/${session.user.id}/${Date.now()}.srt`;
+      const { error: srtErr } = await supabase.storage
+        .from("insta-media").upload(srtPath, new Blob([srt], { type: "text/plain" }),
+          { upsert: true, contentType: "text/plain" });
+      if (srtErr) throw srtErr;
+      const { data: srtPub } = supabase.storage.from("insta-media").getPublicUrl(srtPath);
+
       const res = await fetch(`${API}/api/captioner/render`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
-          videoUrl: hostedUrl, segments, font: font.key, duration: videoRef.current?.duration,
+          videoUrl: hostedUrl, srtUrl: srtPub.publicUrl, duration: videoRef.current?.duration,
           muteOriginal,
           captionPos, showBox, textColor, boxColor,
           watermark: true, // free tier — flip to false for paid users later
