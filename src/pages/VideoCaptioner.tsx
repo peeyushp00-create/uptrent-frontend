@@ -74,6 +74,10 @@ export default function VideoCaptioner() {
   const [dragging, setDragging] = useState(false);
   const [muteOriginal, setMuteOriginal] = useState(false);
   const [uploadingMusic, setUploadingMusic] = useState(false);
+  const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">("bottom");
+  const [showBox, setShowBox] = useState(true);
+  const [textColor, setTextColor] = useState("#ffffff");
+  const [boxColor, setBoxColor] = useState("#000000");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -217,6 +221,7 @@ export default function VideoCaptioner() {
         body: JSON.stringify({
           videoUrl: hostedUrl, segments, font: font.key, duration: videoRef.current?.duration,
           muteOriginal,
+          captionPos, showBox, textColor, boxColor,
           watermark: true, // free tier — flip to false for paid users later
           music: hasMusic && /^https?:\/\//.test(music.url || "")
             ? { url: music.url, startInVideo: musicStart, songTrim, volume, fadeIn, fadeOut }
@@ -283,28 +288,74 @@ export default function VideoCaptioner() {
                 onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
                 className="w-full aspect-[9/16] object-contain" />
               {activeText && (
-                <div className="absolute bottom-10 left-0 right-0 px-3 text-center pointer-events-none">
-                  <span className="inline-block px-2.5 py-1 rounded-md text-white text-sm"
-                    style={{ fontFamily: font.css, background: "rgba(0,0,0,0.6)", lineHeight: 1.25 }}>
+                <div className="absolute left-0 right-0 px-3 text-center pointer-events-none"
+                  style={captionPos === "top" ? { top: "10%" } : captionPos === "middle" ? { top: "45%" } : { bottom: "10%" }}>
+                  <span className="inline-block px-2.5 py-1 rounded-md text-sm"
+                    style={{
+                      fontFamily: font.css,
+                      color: textColor,
+                      background: showBox ? boxColor : "transparent",
+                      lineHeight: 1.25,
+                    }}>
                     {activeText}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Font */}
-            <div className="rounded-2xl border border-gray-100 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
-              <div className="flex flex-wrap gap-2">
-                {FONTS.map(f => (
-                  <button key={f.key} onClick={() => setFont(f)}
+            {/* Font + caption position */}
+            <div className="rounded-2xl border border-gray-100 p-4 space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
+                <div className="flex flex-wrap gap-2">
+                  {FONTS.map(f => (
+                    <button key={f.key} onClick={() => setFont(f)}
+                      className="px-3 py-1.5 rounded-lg border text-sm transition"
+                      style={font.key === f.key
+                        ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF", fontFamily: f.css }
+                        : { borderColor: "#e5e7eb", fontFamily: f.css }}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Caption position</p>
+                <div className="flex gap-2">
+                  {(["top", "middle", "bottom"] as const).map(p => (
+                    <button key={p} onClick={() => setCaptionPos(p)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border text-sm capitalize transition"
+                      style={captionPos === p
+                        ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
+                        : { borderColor: "#e5e7eb" }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Caption style</p>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <button onClick={() => setShowBox(v => !v)}
                     className="px-3 py-1.5 rounded-lg border text-sm transition"
-                    style={font.key === f.key
-                      ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF", fontFamily: f.css }
-                      : { borderColor: "#e5e7eb", fontFamily: f.css }}>
-                    {f.label}
+                    style={showBox
+                      ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
+                      : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                    {showBox ? "Box: on" : "Box: off"}
                   </button>
-                ))}
+                  <label className="flex items-center gap-1.5 text-xs text-gray-500">
+                    Text
+                    <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)}
+                      className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
+                  </label>
+                  {showBox && (
+                    <label className="flex items-center gap-1.5 text-xs text-gray-500">
+                      Box
+                      <input type="color" value={boxColor} onChange={e => setBoxColor(e.target.value)}
+                        className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
 
