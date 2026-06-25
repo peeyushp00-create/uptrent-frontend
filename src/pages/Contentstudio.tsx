@@ -1,6 +1,6 @@
-// ContentStudio.tsx — Studio editor (Stage 3: captions + Pexels overlays)
-// Upload -> transcribe/edit/style captions -> add Pexels image/video overlays
-// (drag to position, PiP or full-frame). Music + export come next.
+// ContentStudio.tsx — Studio editor (Stage 4: captions + overlays + music)
+// Upload -> transcribe/edit/style captions -> Pexels overlays -> music kit.
+// Export comes in Stage 5. Uses /api/captioner and /api/studio backends.
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // adjust path if needed
@@ -14,6 +14,7 @@ type Word = { id: number; start: number; end: number; text: string };
 type Segment = { id: number; start: number; end: number; text: string };
 type Overlay = { id: string; kind: "image" | "video"; url: string; thumb: string; start: number; length: number; mode: "pip" | "full" };
 type PexItem = { id: number; kind: "image" | "video"; thumb: string; url: string };
+type Music = { key: string; label: string; url: string };
 
 const FONTS = [
   { key: "Poppins", label: "Poppins", css: "'Poppins', sans-serif" },
@@ -21,6 +22,15 @@ const FONTS = [
   { key: "Anton", label: "Anton", css: "'Anton', sans-serif" },
   { key: "BebasNeue", label: "Bebas Neue", css: "'Bebas Neue', sans-serif" },
   { key: "Inter", label: "Inter", css: "'Inter', sans-serif" },
+];
+
+// Preset music — paste your own hosted royalty-free MP3 URLs.
+const MUSIC: Music[] = [
+  { key: "none", label: "No music", url: "" },
+  { key: "upbeat", label: "Upbeat", url: "" },
+  { key: "chill", label: "Chill", url: "" },
+  { key: "cinematic", label: "Cinematic", url: "" },
+  { key: "lofi", label: "Lo-fi", url: "" },
 ];
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
@@ -56,16 +66,30 @@ export default function ContentStudio() {
   const [selOverlay, setSelOverlay] = useState<string | null>(null);
   const [dragOverlay, setDragOverlay] = useState<{ id: string; dx: number } | null>(null);
 
-  // pexels browser
+  // pexels
   const [showPex, setShowPex] = useState(false);
   const [pexQ, setPexQ] = useState("");
   const [pexType, setPexType] = useState<"photo" | "video">("photo");
   const [pexItems, setPexItems] = useState<PexItem[]>([]);
   const [pexLoading, setPexLoading] = useState(false);
+
+  // music
+  const [music, setMusic] = useState<Music>(MUSIC[0]);
+  const [musicStart, setMusicStart] = useState(0);
+  const [songTrim, setSongTrim] = useState(0);
+  const [volume, setVolume] = useState(0.25);
+  const [fadeIn, setFadeIn] = useState(true);
+  const [fadeOut, setFadeOut] = useState(true);
+  const [muteOriginal, setMuteOriginal] = useState(false);
+  const [uploadingMusic, setUploadingMusic] = useState(false);
+  const [dragMusic, setDragMusic] = useState(false);
+
+  // save
   const [savedAt, setSavedAt] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const tracksRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -73,6 +97,7 @@ export default function ContentStudio() {
 
   const hasVideo = !!videoUrl;
   const hasCaptions = segments.length > 0;
+  const hasMusic = music.key !== "none";
   const trackWidth = Math.max(duration * PX_PER_SEC, 400);
 
   const activeId = useMemo(() => { const seg = segments.find(s => time >= s.start && time < s.end); return seg ? seg.id : null; }, [segments, time]);
@@ -80,8 +105,10 @@ export default function ContentStudio() {
   const activeOverlays = useMemo(() => overlays.filter(o => time >= o.start && time < o.start + o.length), [overlays, time]);
 
   useEffect(() => { if (activeId != null) rowRefs.current[activeId]?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, [activeId]);
+  useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume, music]);
+  useEffect(() => { if (videoRef.current) videoRef.current.muted = muteOriginal; }, [muteOriginal]);
 
-  // overlay drag on the timeline
+  // overlay drag
   useEffect(() => {
     if (!dragOverlay) return;
     const move = (e: PointerEvent) => {
@@ -95,6 +122,20 @@ export default function ContentStudio() {
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [dragOverlay, duration]);
+
+  // music drag
+  useEffect(() => {
+    if (!dragMusic) return;
+    const move = (e: PointerEvent) => {
+      const el = tracksRef.current; if (!el || !duration) return;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left + el.scrollLeft;
+      setMusicStart(Math.max(0, Math.min(duration, Math.round((x / PX_PER_SEC) * 10) / 10)));
+    };
+    const up = () => setDragMusic(false);
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [dragMusic, duration]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0]; if (!picked) return;
@@ -132,9 +173,23 @@ export default function ContentStudio() {
     } catch (err) { setError(err instanceof Error ? err.message : "Something went wrong."); setStatus("idle"); }
   }
 
-  function onTimeUpdate() { const v = videoRef.current; if (v) setTime(v.currentTime); }
+  function onTimeUpdate() {
+    const v = videoRef.current; const a = audioRef.current; if (!v) return;
+    setTime(v.currentTime);
+    if (a && hasMusic && music.url) {
+      a.volume = volume;
+      if (v.currentTime >= musicStart) {
+        const target = songTrim + (v.currentTime - musicStart);
+        if (Math.abs(a.currentTime - target) > 0.3) a.currentTime = target;
+        if (a.paused && !v.paused) a.play().catch(() => {});
+      } else if (!a.paused) a.pause();
+    }
+  }
+  function onPlay() { const v = videoRef.current, a = audioRef.current; if (a && hasMusic && music.url && v && v.currentTime >= musicStart) { a.volume = volume; a.play().catch(() => {}); } }
+  function onPause() { if (audioRef.current) audioRef.current.pause(); }
+
   function onTimelineClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (dragOverlay) return;
+    if (dragOverlay || dragMusic) return;
     const el = timelineRef.current; const v = videoRef.current;
     if (!el || !v || !duration) return;
     const rect = el.getBoundingClientRect();
@@ -164,14 +219,10 @@ export default function ContentStudio() {
     setSegments(reindex(next));
   }
 
-  // ---- Pexels ----
   async function searchPexels() {
     setPexLoading(true);
-    try {
-      const r = await fetch(`${API}/api/studio/pexels?q=${encodeURIComponent(pexQ || "trending")}&type=${pexType}`);
-      const data = await r.json();
-      setPexItems(data.items || []);
-    } catch { setPexItems([]); } finally { setPexLoading(false); }
+    try { const r = await fetch(`${API}/api/studio/pexels?q=${encodeURIComponent(pexQ || "trending")}&type=${pexType}`); const data = await r.json(); setPexItems(data.items || []); }
+    catch { setPexItems([]); } finally { setPexLoading(false); }
   }
   function addOverlay(it: PexItem) {
     const len = it.kind === "video" ? 4 : 3;
@@ -182,7 +233,21 @@ export default function ContentStudio() {
   function updateOverlay(id: string, patch: Partial<Overlay>) { setOverlays(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o)); }
   function deleteOverlay(id: string) { setOverlays(prev => prev.filter(o => o.id !== id)); if (selOverlay === id) setSelOverlay(null); }
 
-  // ---- Save project ----
+  async function uploadMusic(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f) return;
+    setUploadingMusic(true); setError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Please sign in again.");
+      const path = `music/${session.user.id}/${Date.now()}-${f.name.replace(/[^\w.]/g, "_")}`;
+      const { error: upErr } = await supabase.storage.from("insta-media").upload(path, f, { upsert: true, contentType: f.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("insta-media").getPublicUrl(path);
+      setMusic({ key: "custom", label: f.name.slice(0, 18), url: pub.publicUrl });
+    } catch (err) { setError(err instanceof Error ? err.message : "Couldn't upload track."); }
+    finally { setUploadingMusic(false); }
+  }
+
   async function saveProject() {
     if (!hostedUrl) { setError("Transcribe first so the video is uploaded, then save."); return; }
     const { data: { session } } = await supabase.auth.getSession();
@@ -191,26 +256,25 @@ export default function ContentStudio() {
       user_id: session.user.id,
       name: (segments[0]?.text || file?.name || "Studio project").slice(0, 40),
       video_url: hostedUrl,
-      data: { segments, font: font.key, captionPos, showBox, textColor, boxColor, overlays },
+      data: { segments, font: font.key, captionPos, showBox, textColor, boxColor, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal },
       updated_at: new Date().toISOString(),
     };
-    if (projectId) {
-      await supabase.from("studio_projects").update(payload).eq("id", projectId);
-    } else {
-      const { data: ins } = await supabase.from("studio_projects").insert(payload).select("id").single();
-      if (ins) setProjectId(ins.id);
-    }
+    if (projectId) await supabase.from("studio_projects").update(payload).eq("id", projectId);
+    else { const { data: ins } = await supabase.from("studio_projects").insert(payload).select("id").single(); if (ins) setProjectId(ins.id); }
     setSavedAt(new Date().toLocaleTimeString());
   }
 
   const capTop = captionPos === "top" ? { top: "10%" } : captionPos === "middle" ? { top: "45%" } : { bottom: "10%" };
   const sel = overlays.find(o => o.id === selOverlay) || null;
 
+  // dark timeline styles
+  const TL_BG = "#1e1e24", TL_LINE = "#3a3a44", TL_TEXT = "#cbd5e1";
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&display=swap" />
       <h1 className="text-2xl font-bold mb-1">Studio</h1>
-      <p className="text-gray-500 mb-6">Upload a video, add captions and overlays on the timeline.</p>
+      <p className="text-gray-500 mb-6">Upload a video, add captions, overlays and music on the timeline.</p>
 
       {!hasVideo && (
         <div className="border-2 border-dashed border-gray-200 rounded-2xl p-12 flex flex-col items-center gap-4 bg-gray-50/50">
@@ -225,32 +289,30 @@ export default function ContentStudio() {
       {hasVideo && (
         <div className="space-y-5">
           <div className="flex items-center justify-between">
-            <button onClick={() => { setFile(null); setVideoUrl(""); setSegments([]); setOverlays([]); }} className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition">← New</button>
+            <button onClick={() => { setFile(null); setVideoUrl(""); setSegments([]); setOverlays([]); setMusic(MUSIC[0]); }} className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition">← New</button>
             <div className="flex items-center gap-3">
               {savedAt && <span className="text-xs text-gray-400">Saved {savedAt}</span>}
               <button onClick={saveProject} className="text-sm font-semibold px-3 py-2 rounded-xl border transition" style={{ borderColor: PURPLE, color: PURPLE }}>Save</button>
-              <button disabled className="text-sm font-semibold px-4 py-2 rounded-xl text-white opacity-40 cursor-not-allowed" style={{ background: GRAD }}>Export (coming soon)</button>
+              <button disabled className="text-sm font-semibold px-4 py-2 rounded-xl text-white opacity-40 cursor-not-allowed" style={{ background: GRAD }}>Export (soon)</button>
             </div>
           </div>
 
           <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
             <div className="space-y-4">
               <div className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
-                <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onLoadedMetadata={e => setDuration(e.currentTarget.duration)} className="w-full aspect-[9/16] object-contain" />
-                {/* overlays (approx preview) */}
+                <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)} className="w-full aspect-[9/16] object-contain" />
                 {activeOverlays.map(o => (
                   <img key={o.id} src={o.thumb} alt="" className="absolute object-cover pointer-events-none"
                     style={o.mode === "full" ? { inset: 0, width: "100%", height: "100%" } : { right: "6%", bottom: "16%", width: "38%", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }} />
                 ))}
-                {/* caption */}
                 {activeText && (
                   <div className="absolute left-0 right-0 px-3 text-center pointer-events-none" style={capTop}>
                     <span className="inline-block px-2.5 py-1 rounded-md text-sm" style={{ fontFamily: font.css, color: textColor, background: showBox ? boxColor : "transparent", lineHeight: 1.25 }}>{activeText}</span>
                   </div>
                 )}
               </div>
+              {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
 
-              {/* selected overlay controls */}
               {sel && (
                 <div className="rounded-2xl border border-gray-100 p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -258,17 +320,10 @@ export default function ContentStudio() {
                     <button onClick={() => deleteOverlay(sel.id)} className="text-xs text-red-500">Delete</button>
                   </div>
                   <div className="flex gap-2">
-                    {(["full", "pip"] as const).map(m => (
-                      <button key={m} onClick={() => updateOverlay(sel.id, { mode: m })} className="flex-1 px-3 py-1.5 rounded-lg border text-sm transition"
-                        style={sel.mode === m ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>
-                        {m === "full" ? "Full frame" : "Picture-in-picture"}
-                      </button>
-                    ))}
+                    {(["full", "pip"] as const).map(m => (<button key={m} onClick={() => updateOverlay(sel.id, { mode: m })} className="flex-1 px-3 py-1.5 rounded-lg border text-sm transition" style={sel.mode === m ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{m === "full" ? "Full frame" : "Picture-in-picture"}</button>))}
                   </div>
-                  <label className="block">
-                    <span className="text-[11px] text-gray-400">Duration {sel.length.toFixed(1)}s</span>
-                    <input type="range" min={1} max={10} step={0.5} value={sel.length} onChange={e => updateOverlay(sel.id, { length: parseFloat(e.target.value) })} className="w-full accent-purple-600" />
-                  </label>
+                  <label className="block"><span className="text-[11px] text-gray-400">Duration {sel.length.toFixed(1)}s</span>
+                    <input type="range" min={1} max={10} step={0.5} value={sel.length} onChange={e => updateOverlay(sel.id, { length: parseFloat(e.target.value) })} className="w-full accent-purple-600" /></label>
                 </div>
               )}
 
@@ -282,18 +337,13 @@ export default function ContentStudio() {
                 </div>
               ) : (
                 <div className="rounded-2xl border border-gray-100 p-4 space-y-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
-                    <div className="flex flex-wrap gap-2">
-                      {FONTS.map(f => (<button key={f.key} onClick={() => setFont(f)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={font.key === f.key ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF", fontFamily: f.css } : { borderColor: "#e5e7eb", fontFamily: f.css }}>{f.label}</button>))}
-                    </div>
+                  <div><p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
+                    <div className="flex flex-wrap gap-2">{FONTS.map(f => (<button key={f.key} onClick={() => setFont(f)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={font.key === f.key ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF", fontFamily: f.css } : { borderColor: "#e5e7eb", fontFamily: f.css }}>{f.label}</button>))}</div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Position</p>
+                  <div><p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Position</p>
                     <div className="flex gap-2">{(["top", "middle", "bottom"] as const).map(p => (<button key={p} onClick={() => setCaptionPos(p)} className="flex-1 px-3 py-1.5 rounded-lg border text-sm capitalize transition" style={captionPos === p ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{p}</button>))}</div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Style</p>
+                  <div><p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Style</p>
                     <div className="flex items-center gap-4 flex-wrap">
                       <button onClick={() => setShowBox(v => !v)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={showBox ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>{showBox ? "Box: on" : "Box: off"}</button>
                       <label className="flex items-center gap-1.5 text-xs text-gray-500">Text<input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" /></label>
@@ -304,10 +354,10 @@ export default function ContentStudio() {
               )}
             </div>
 
-            {/* transcript */}
-            <div>
+            {/* right column: transcript + music */}
+            <div className="space-y-6">
               {hasCaptions ? (
-                <>
+                <div>
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="font-semibold text-gray-700">Transcript</h2>
                     <div className="flex items-center gap-3">
@@ -315,7 +365,7 @@ export default function ContentStudio() {
                       <span className="text-xs text-gray-400">{segments.length} lines</span>
                     </div>
                   </div>
-                  <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
                     {segments.map(s => { const active = s.id === activeId; return (
                       <div key={s.id} ref={el => (rowRefs.current[s.id] = el)} className="group flex gap-3 p-3 rounded-xl border transition" style={active ? { borderColor: PURPLE, background: "#F5F2FF", boxShadow: "0 0 0 1px #7C3AED" } : { borderColor: "#f0f0f0" }}>
                         <button onClick={() => seek(s.start)} className="shrink-0 text-xs font-mono mt-1 px-1.5 py-0.5 rounded transition" style={active ? { color: PURPLE } : { color: "#9ca3af" }}>{fmt(s.start)}</button>
@@ -326,55 +376,99 @@ export default function ContentStudio() {
                         </div>
                       </div>); })}
                   </div>
-                </>
+                </div>
               ) : (
-                <div className="h-full rounded-2xl border border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400 p-10 text-center">Transcribe to edit captions here.</div>
+                <div className="rounded-2xl border border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400 p-10 text-center">Transcribe to edit captions here.</div>
               )}
+
+              {/* Music kit */}
+              <div className="rounded-2xl border border-gray-100 p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-semibold text-gray-700">Music</h2>
+                  {hasMusic && <span className="text-xs text-gray-400">drag the bar on the timeline</span>}
+                </div>
+                <button onClick={() => setMuteOriginal(v => !v)} className="mb-4 px-3 py-1.5 rounded-lg border text-sm transition" style={muteOriginal ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                  {muteOriginal ? "🔇 Original audio muted" : "🔊 Original audio on"}
+                </button>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {MUSIC.map(m => (<button key={m.key} onClick={() => setMusic(m)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={music.key === m.key ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{m.label}</button>))}
+                  {music.key === "custom" && <span className="px-3 py-1.5 rounded-lg border text-sm" style={{ borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }}>♪ {music.label}</span>}
+                  <label className="px-3 py-1.5 rounded-lg border border-dashed text-sm cursor-pointer text-gray-500 hover:border-gray-400 transition" style={{ borderColor: "#d1d5db" }}>
+                    {uploadingMusic ? "Uploading…" : "+ Upload your own"}
+                    <input type="file" accept="audio/*" onChange={uploadMusic} className="hidden" disabled={uploadingMusic} />
+                  </label>
+                </div>
+                <p className="text-[11px] text-gray-400 mb-4">Only upload music you have the rights to use.</p>
+
+                {hasMusic && (
+                  <div className="space-y-5">
+                    <div className="grid sm:grid-cols-2 gap-5">
+                      <label className="block"><span className="text-[11px] text-gray-400">Music volume {Math.round(volume * 100)}%</span>
+                        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => { const v = parseFloat(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v; }} className="w-full accent-purple-600" /></label>
+                      <label className="block"><span className="text-[11px] text-gray-400">Start song from {fmt(songTrim)}</span>
+                        <input type="range" min={0} max={60} step={1} value={songTrim} onChange={e => setSongTrim(parseInt(e.target.value))} className="w-full accent-purple-600" /></label>
+                    </div>
+                    <div className="flex gap-2 max-w-xs">
+                      {[{ k: "in", v: fadeIn, set: setFadeIn }, { k: "out", v: fadeOut, set: setFadeOut }].map(f => (
+                        <button key={f.k} onClick={() => f.set(!f.v)} className="flex-1 px-3 py-1.5 rounded-lg border text-sm transition" style={f.v ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>Fade {f.k}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Timeline */}
-          <div className="rounded-2xl border border-gray-100 overflow-hidden bg-white text-gray-900">
-            <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">Timeline</span>
-              <span className="text-xs text-gray-500">{fmt(time)} / {fmt(duration)}</span>
+          {/* Timeline (dark) */}
+          <div className="rounded-2xl overflow-hidden border" style={{ background: TL_BG, borderColor: TL_LINE }}>
+            <div className="px-4 py-2 flex items-center justify-between" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
+              <span className="text-sm font-semibold" style={{ color: "#fff" }}>Timeline</span>
+              <span className="text-xs" style={{ color: TL_TEXT }}>{fmt(time)} / {fmt(duration)}</span>
             </div>
             <div className="flex">
-              <div className="shrink-0 w-20 border-r border-gray-100 bg-gray-50/50 text-[11px] text-gray-500">
-                <div className="h-5 border-b border-gray-100" />
-                <div className="h-10 flex items-center px-3 border-b border-gray-100">Video</div>
-                <div className="h-10 flex items-center px-3 border-b border-gray-100">Captions</div>
-                <div className="h-10 flex items-center px-3 border-b border-gray-100 gap-1">
-                  <button onClick={() => { setShowPex(true); if (!pexItems.length) searchPexels(); }} className="text-[10px] text-purple-600 font-semibold">+ Add</button>
+              <div className="shrink-0 w-20 text-[11px]" style={{ borderRight: `1px solid ${TL_LINE}`, color: TL_TEXT }}>
+                <div className="h-5" style={{ borderBottom: `1px solid ${TL_LINE}` }} />
+                <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Video</div>
+                <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Captions</div>
+                <div className="h-10 flex items-center px-3 gap-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
+                  <button onClick={() => { setShowPex(true); if (!pexItems.length) searchPexels(); }} className="text-[10px] font-semibold" style={{ color: "#a78bfa" }}>+ Add</button>
                 </div>
                 <div className="h-10 flex items-center px-3">Music</div>
               </div>
-              <div ref={timelineRef} onClick={onTimelineClick} className="relative overflow-x-auto cursor-pointer select-none flex-1 bg-gray-50/30">
+              <div ref={timelineRef} onClick={onTimelineClick} className="relative overflow-x-auto cursor-pointer select-none flex-1">
                 <div ref={tracksRef} style={{ width: trackWidth, position: "relative" }}>
-                  <div className="h-5 border-b border-gray-100 relative text-[10px] text-gray-400">
+                  <div className="h-5 relative text-[10px]" style={{ borderBottom: `1px solid ${TL_LINE}`, color: TL_TEXT }}>
                     {Array.from({ length: Math.ceil(duration) + 1 }).map((_, s) => (<span key={s} className="absolute top-0.5" style={{ left: s * PX_PER_SEC }}>{s}s</span>))}
                   </div>
-                  <div className="h-10 border-b border-gray-100 p-1">
+                  {/* Video */}
+                  <div className="h-10 p-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
                     <div className="h-full rounded-lg flex items-center px-3 text-xs text-white font-medium overflow-hidden" style={{ width: Math.max(trackWidth - 8, 60), background: GRAD }}>{file?.name || "video.mp4"}</div>
                   </div>
-                  <div className="h-10 border-b border-gray-100 relative">
-                    {segments.map(s => (<div key={s.id} className="absolute top-1 bottom-1 rounded bg-purple-200 border border-purple-300 overflow-hidden text-[9px] text-purple-800 px-1 flex items-center" style={{ left: s.start * PX_PER_SEC, width: Math.max((s.end - s.start) * PX_PER_SEC, 10) }}>{s.text.slice(0, 12)}</div>))}
+                  {/* Captions */}
+                  <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
+                    {segments.map(s => (<div key={s.id} className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center" style={{ left: s.start * PX_PER_SEC, width: Math.max((s.end - s.start) * PX_PER_SEC, 10), background: "#4c1d95", color: "#ede9fe" }}>{s.text.slice(0, 12)}</div>))}
                   </div>
-                  {/* Overlays track */}
-                  <div className="h-10 border-b border-gray-100 relative">
+                  {/* Overlays */}
+                  <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
                     {overlays.map(o => (
                       <div key={o.id} onPointerDown={e => { e.stopPropagation(); const el = tracksRef.current!; const rect = el.getBoundingClientRect(); const blockX = o.start * PX_PER_SEC; setDragOverlay({ id: o.id, dx: (e.clientX - rect.left + el.scrollLeft) - blockX }); setSelOverlay(o.id); }}
-                        className="absolute top-1 bottom-1 rounded overflow-hidden cursor-grab active:cursor-grabbing border-2 group/ov"
-                        style={{ left: o.start * PX_PER_SEC, width: Math.max(o.length * PX_PER_SEC, 16), borderColor: selOverlay === o.id ? PURPLE : "transparent" }}>
+                        className="absolute top-1 bottom-1 rounded overflow-hidden cursor-grab active:cursor-grabbing border-2" style={{ left: o.start * PX_PER_SEC, width: Math.max(o.length * PX_PER_SEC, 16), borderColor: selOverlay === o.id ? PURPLE : "transparent" }}>
                         <img src={o.thumb} alt="" className="w-full h-full object-cover pointer-events-none" />
                         {o.kind === "video" && <span className="absolute top-0.5 left-0.5 text-[8px] bg-black/60 text-white px-1 rounded">▶</span>}
-                        <button onClick={e => { e.stopPropagation(); deleteOverlay(o.id); }}
-                          onPointerDown={e => e.stopPropagation()}
-                          className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black/70 text-white text-[9px] leading-none hover:bg-red-500">✕</button>
+                        <button onClick={e => { e.stopPropagation(); deleteOverlay(o.id); }} onPointerDown={e => e.stopPropagation()} className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black/70 text-white text-[9px] leading-none hover:bg-red-500">✕</button>
                       </div>
                     ))}
                   </div>
-                  <div className="h-10 p-1"><div className="h-full rounded-lg border border-dashed border-gray-200 flex items-center justify-center text-[11px] text-gray-300">music — next stage</div></div>
+                  {/* Music */}
+                  <div className="h-10 relative">
+                    {hasMusic && (
+                      <div onPointerDown={e => { e.stopPropagation(); setDragMusic(true); }}
+                        className="absolute top-1 bottom-1 rounded cursor-grab active:cursor-grabbing flex items-center px-2 text-[10px] text-white font-semibold overflow-hidden"
+                        style={{ left: musicStart * PX_PER_SEC, width: Math.max((duration - musicStart) * PX_PER_SEC, 40), background: GRAD }}>
+                        ♪ {music.label}
+                      </div>
+                    )}
+                  </div>
                   <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none" style={{ left: time * PX_PER_SEC }} />
                 </div>
               </div>
@@ -389,25 +483,18 @@ export default function ContentStudio() {
           <div className="bg-white text-gray-900 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-gray-100 flex items-center gap-2">
               <input value={pexQ} onChange={e => setPexQ(e.target.value)} onKeyDown={e => e.key === "Enter" && searchPexels()} placeholder="Search Pexels…" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 outline-none text-sm text-gray-900 placeholder-gray-400 bg-white" />
-              <div className="flex gap-1">
-                {(["photo", "video"] as const).map(t => (<button key={t} onClick={() => { setPexType(t); }} className="px-3 py-2 rounded-lg border text-sm capitalize" style={pexType === t ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{t}</button>))}
-              </div>
+              <div className="flex gap-1">{(["photo", "video"] as const).map(t => (<button key={t} onClick={() => setPexType(t)} className="px-3 py-2 rounded-lg border text-sm capitalize" style={pexType === t ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{t}</button>))}</div>
               <button onClick={searchPexels} className="px-4 py-2 rounded-lg text-white text-sm font-semibold" style={{ background: GRAD }}>Search</button>
               <button onClick={() => setShowPex(false)} className="px-2 text-gray-400 text-xl">✕</button>
             </div>
             <div className="p-4 overflow-y-auto">
               {pexLoading ? <p className="text-center text-gray-400 text-sm py-10">Searching…</p> : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {pexItems.map(it => (
-                    <button key={it.id} onClick={() => addOverlay(it)} className="relative aspect-[9/16] rounded-lg overflow-hidden border border-gray-100 hover:border-purple-400 transition">
-                      <img src={it.thumb} alt="" className="w-full h-full object-cover" />
-                      {it.kind === "video" && <span className="absolute top-1 left-1 text-[9px] bg-black/60 text-white px-1 rounded">▶ video</span>}
-                    </button>
-                  ))}
+                  {pexItems.map(it => (<button key={it.id} onClick={() => addOverlay(it)} className="relative aspect-[9/16] rounded-lg overflow-hidden border border-gray-100 hover:border-purple-400 transition"><img src={it.thumb} alt="" className="w-full h-full object-cover" />{it.kind === "video" && <span className="absolute top-1 left-1 text-[9px] bg-black/60 text-white px-1 rounded">▶ video</span>}</button>))}
                   {!pexItems.length && <p className="col-span-full text-center text-gray-400 text-sm py-10">Search Pexels for images or videos to overlay.</p>}
                 </div>
               )}
-              <p className="text-[11px] text-gray-400 mt-3">Media from Pexels — free to use. Picture-in-picture or full-frame is set per overlay after adding.</p>
+              <p className="text-[11px] text-gray-400 mt-3">Media from Pexels — free to use. PiP or full-frame is set per overlay after adding.</p>
             </div>
           </div>
         </div>
