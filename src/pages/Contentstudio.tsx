@@ -337,10 +337,13 @@ export default function ContentStudio() {
                   <div className="h-10 border-b border-gray-100 relative">
                     {overlays.map(o => (
                       <div key={o.id} onPointerDown={e => { e.stopPropagation(); const el = tracksRef.current!; const rect = el.getBoundingClientRect(); const blockX = o.start * PX_PER_SEC; setDragOverlay({ id: o.id, dx: (e.clientX - rect.left + el.scrollLeft) - blockX }); setSelOverlay(o.id); }}
-                        className="absolute top-1 bottom-1 rounded overflow-hidden cursor-grab active:cursor-grabbing border-2"
+                        className="absolute top-1 bottom-1 rounded overflow-hidden cursor-grab active:cursor-grabbing border-2 group/ov"
                         style={{ left: o.start * PX_PER_SEC, width: Math.max(o.length * PX_PER_SEC, 16), borderColor: selOverlay === o.id ? PURPLE : "transparent" }}>
                         <img src={o.thumb} alt="" className="w-full h-full object-cover pointer-events-none" />
                         {o.kind === "video" && <span className="absolute top-0.5 left-0.5 text-[8px] bg-black/60 text-white px-1 rounded">▶</span>}
+                        <button onClick={e => { e.stopPropagation(); deleteOverlay(o.id); }}
+                          onPointerDown={e => e.stopPropagation()}
+                          className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black/70 text-white text-[9px] leading-none hover:bg-red-500">✕</button>
                       </div>
                     ))}
                   </div>
