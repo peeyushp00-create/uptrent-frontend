@@ -62,6 +62,8 @@ export default function ContentStudio() {
   const [pexType, setPexType] = useState<"photo" | "video">("photo");
   const [pexItems, setPexItems] = useState<PexItem[]>([]);
   const [pexLoading, setPexLoading] = useState(false);
+  const [savedAt, setSavedAt] = useState("");
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -180,6 +182,27 @@ export default function ContentStudio() {
   function updateOverlay(id: string, patch: Partial<Overlay>) { setOverlays(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o)); }
   function deleteOverlay(id: string) { setOverlays(prev => prev.filter(o => o.id !== id)); if (selOverlay === id) setSelOverlay(null); }
 
+  // ---- Save project ----
+  async function saveProject() {
+    if (!hostedUrl) { setError("Transcribe first so the video is uploaded, then save."); return; }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const payload = {
+      user_id: session.user.id,
+      name: (segments[0]?.text || file?.name || "Studio project").slice(0, 40),
+      video_url: hostedUrl,
+      data: { segments, font: font.key, captionPos, showBox, textColor, boxColor, overlays },
+      updated_at: new Date().toISOString(),
+    };
+    if (projectId) {
+      await supabase.from("studio_projects").update(payload).eq("id", projectId);
+    } else {
+      const { data: ins } = await supabase.from("studio_projects").insert(payload).select("id").single();
+      if (ins) setProjectId(ins.id);
+    }
+    setSavedAt(new Date().toLocaleTimeString());
+  }
+
   const capTop = captionPos === "top" ? { top: "10%" } : captionPos === "middle" ? { top: "45%" } : { bottom: "10%" };
   const sel = overlays.find(o => o.id === selOverlay) || null;
 
@@ -203,7 +226,11 @@ export default function ContentStudio() {
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <button onClick={() => { setFile(null); setVideoUrl(""); setSegments([]); setOverlays([]); }} className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition">← New</button>
-            <button disabled className="text-sm font-semibold px-4 py-2 rounded-xl text-white opacity-40 cursor-not-allowed" style={{ background: GRAD }}>Export (coming soon)</button>
+            <div className="flex items-center gap-3">
+              {savedAt && <span className="text-xs text-gray-400">Saved {savedAt}</span>}
+              <button onClick={saveProject} className="text-sm font-semibold px-3 py-2 rounded-xl border transition" style={{ borderColor: PURPLE, color: PURPLE }}>Save</button>
+              <button disabled className="text-sm font-semibold px-4 py-2 rounded-xl text-white opacity-40 cursor-not-allowed" style={{ background: GRAD }}>Export (coming soon)</button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
@@ -307,10 +334,10 @@ export default function ContentStudio() {
           </div>
 
           {/* Timeline */}
-          <div className="rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="rounded-2xl border border-gray-100 overflow-hidden bg-white text-gray-900">
             <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700">Timeline</span>
-              <span className="text-xs text-gray-400">{fmt(time)} / {fmt(duration)}</span>
+              <span className="text-xs text-gray-500">{fmt(time)} / {fmt(duration)}</span>
             </div>
             <div className="flex">
               <div className="shrink-0 w-20 border-r border-gray-100 bg-gray-50/50 text-[11px] text-gray-500">
@@ -359,9 +386,9 @@ export default function ContentStudio() {
       {/* Pexels browser */}
       {showPex && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowPex(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white text-gray-900 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-gray-100 flex items-center gap-2">
-              <input value={pexQ} onChange={e => setPexQ(e.target.value)} onKeyDown={e => e.key === "Enter" && searchPexels()} placeholder="Search Pexels…" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 outline-none text-sm" />
+              <input value={pexQ} onChange={e => setPexQ(e.target.value)} onKeyDown={e => e.key === "Enter" && searchPexels()} placeholder="Search Pexels…" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 outline-none text-sm text-gray-900 placeholder-gray-400 bg-white" />
               <div className="flex gap-1">
                 {(["photo", "video"] as const).map(t => (<button key={t} onClick={() => { setPexType(t); }} className="px-3 py-2 rounded-lg border text-sm capitalize" style={pexType === t ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{t}</button>))}
               </div>
