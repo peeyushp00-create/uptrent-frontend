@@ -82,6 +82,7 @@ export default function ContentStudio() {
   const [fadeOut, setFadeOut] = useState(true);
   const [muteOriginal, setMuteOriginal] = useState(false);
   const [uploadingMusic, setUploadingMusic] = useState(false);
+  const [uploadedMusic, setUploadedMusic] = useState<Music[]>([]);
   const [dragMusic, setDragMusic] = useState(false);
 
   // save
@@ -243,7 +244,9 @@ export default function ContentStudio() {
       const { error: upErr } = await supabase.storage.from("insta-media").upload(path, f, { upsert: true, contentType: f.type });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("insta-media").getPublicUrl(path);
-      setMusic({ key: "custom", label: f.name.slice(0, 18), url: pub.publicUrl });
+      const track: Music = { key: `up-${uid()}`, label: f.name.slice(0, 18), url: pub.publicUrl };
+      setUploadedMusic(prev => [...prev, track]);
+      setMusic(track);
     } catch (err) { setError(err instanceof Error ? err.message : "Couldn't upload track."); }
     finally { setUploadingMusic(false); }
   }
@@ -392,7 +395,14 @@ export default function ContentStudio() {
                 </button>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {MUSIC.map(m => (<button key={m.key} onClick={() => setMusic(m)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={music.key === m.key ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{m.label}</button>))}
-                  {music.key === "custom" && <span className="px-3 py-1.5 rounded-lg border text-sm" style={{ borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }}>♪ {music.label}</span>}
+                  {uploadedMusic.map(m => (
+                    <span key={m.key} className="inline-flex items-center rounded-lg border text-sm overflow-hidden"
+                      style={music.key === m.key ? { borderColor: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>
+                      <button onClick={() => setMusic(m)} className="px-3 py-1.5" style={{ color: music.key === m.key ? PURPLE : "#374151" }}>♪ {m.label}</button>
+                      <button onClick={() => { setUploadedMusic(prev => prev.filter(t => t.key !== m.key)); if (music.key === m.key) setMusic(MUSIC[0]); }}
+                        className="px-2 py-1.5 text-gray-400 hover:text-red-500 border-l" style={{ borderColor: "#e5e7eb" }}>✕</button>
+                    </span>
+                  ))}
                   <label className="px-3 py-1.5 rounded-lg border border-dashed text-sm cursor-pointer text-gray-500 hover:border-gray-400 transition" style={{ borderColor: "#d1d5db" }}>
                     {uploadingMusic ? "Uploading…" : "+ Upload your own"}
                     <input type="file" accept="audio/*" onChange={uploadMusic} className="hidden" disabled={uploadingMusic} />
