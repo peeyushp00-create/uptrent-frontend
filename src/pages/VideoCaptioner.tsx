@@ -52,7 +52,7 @@ function buildSegments(words: Word[]): Segment[] {
   return out;
 }
 
-// Build an SRT subtitle file from the edited segments
+// Build an SRT subtitle file from the edited segments, rebased for trimming
 function srtTime(sec: number): string {
   const ms = Math.floor((sec % 1) * 1000);
   const s = Math.floor(sec) % 60;
@@ -61,11 +61,20 @@ function srtTime(sec: number): string {
   const p = (n: number, l = 2) => String(n).padStart(l, "0");
   return `${p(h)}:${p(m)}:${p(s)},${p(ms, 3)}`;
 }
-function buildSRT(segs: Segment[]): string {
+function buildSRT(segs: Segment[], trimStart = 0, trimEnd = Infinity): string {
   return segs
-    .filter(s => s.text.trim() && s.end > s.start)
-    .map((s, i) => `${i + 1}\n${srtTime(s.start)} --> ${srtTime(s.end)}\n${s.text.trim()}`)
+    .filter(s => s.text.trim() && s.end > s.start && s.end > trimStart && s.start < trimEnd)
+    .map((s) => {
+      const st = Math.max(0, s.start - trimStart);
+      const en = Math.max(st + 0.1, Math.min(s.end, trimEnd) - trimStart);
+      return { st, en, text: s.text.trim() };
+    })
+    .map((s, i) => `${i + 1}\n${srtTime(s.st)} --> ${srtTime(s.en)}\n${s.text}`)
     .join("\n\n") + "\n";
+}
+// Re-number segment ids after structural edits (split/merge)
+function reindex(segs: Segment[]): Segment[] {
+  return segs.map((s, i) => ({ ...s, id: i }));
 }
 
 export default function VideoCaptioner() {
@@ -94,11 +103,17 @@ export default function VideoCaptioner() {
   const [showBox, setShowBox] = useState(true);
   const [textColor, setTextColor] = useState("#ffffff");
   const [boxColor, setBoxColor] = useState("#000000");
+  const [history, setHistory] = useState<Segment[][]>([]);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [trimDrag, setTrimDrag] = useState<"start" | "end" | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const trackRef = useRef<HTMLDivElement>(null);
+  const trimRef = useRef<HTMLDivElement>(null);
+  const caretRef = useRef<{ id: number; pos: number } | null>(null);
 
   const hasMusic = music.key !== "none";
 
@@ -183,6 +198,9 @@ export default function VideoCaptioner() {
 
   function onTimeUpdate() {
     const v = videoRef.current; const a = audioRef.current; if (!v) return;
+    // Keep playback inside the trimmed region
+    if (trimEnd > 0 && v.currentTime > trimEnd) { v.currentTime = trimStart; }
+    if (v.currentTime < trimStart - 0.1) { v.currentTime = trimStart; }
     setTime(v.currentTime);
     if (a && hasMusic && music.url) {
       a.volume = volume; // keep music volume in sync every tick
@@ -202,6 +220,75 @@ export default function VideoCaptioner() {
   function editSeg(id: number, text: string) {
     setSegments(prev => prev.map(s => (s.id === id ? { ...s, text } : s)));
   }
+
+  // ---- Undo ----
+  function pushHistory() {
+    setHistory(h => {
+      const snap = JSON.stringify(segments);
+      if (h.length && JSON.stringify(h[h.length - 1]) === snap) return h;
+      return [...h.slice(-49), JSON.parse(snap)];
+    });
+  }
+  function undo() {
+    setHistory(h => {
+      if (!h.length) return h;
+      setSegments(h[h.length - 1]);
+      return h.slice(0, -1);
+    });
+  }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  // ---- Split / merge caption lines ----
+  function splitSeg(id: number) {
+    const seg = segments.find(s => s.id === id); if (!seg) return;
+    const pos = caretRef.current && caretRef.current.id === id
+      ? caretRef.current.pos : Math.floor(seg.text.length / 2);
+    const before = seg.text.slice(0, pos).trim();
+    const after = seg.text.slice(pos).trim();
+    if (!before || !after) return;
+    pushHistory();
+    const ratio = pos / seg.text.length;
+    const mid = seg.start + (seg.end - seg.start) * ratio;
+    const idx = segments.findIndex(s => s.id === id);
+    const next = [...segments];
+    next.splice(idx, 1,
+      { ...seg, text: before, end: mid },
+      { id: -1, start: mid, end: seg.end, text: after });
+    setSegments(reindex(next));
+  }
+  function mergeUp(id: number) {
+    const idx = segments.findIndex(s => s.id === id);
+    if (idx <= 0) return;
+    pushHistory();
+    const prev = segments[idx - 1], cur = segments[idx];
+    const merged = { ...prev, text: `${prev.text} ${cur.text}`.trim(), end: cur.end };
+    const next = [...segments];
+    next.splice(idx - 1, 2, merged);
+    setSegments(reindex(next));
+  }
+
+  // ---- Trim ----
+  useEffect(() => { if (duration && trimEnd === 0) setTrimEnd(duration); }, [duration]);
+  useEffect(() => {
+    if (!trimDrag) return;
+    const move = (e: PointerEvent) => {
+      const el = trimRef.current; if (!el || !duration) return;
+      const rect = el.getBoundingClientRect();
+      const t = Math.min(duration, Math.max(0, ((e.clientX - rect.left) / rect.width) * duration));
+      if (trimDrag === "start") setTrimStart(Math.min(t, trimEnd - 0.5));
+      else setTrimEnd(Math.max(t, trimStart + 0.5));
+    };
+    const up = () => setTrimDrag(null);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [trimDrag, duration, trimStart, trimEnd]);
 
   // Upload the user's own music to Supabase and select it
   async function uploadMusic(e: React.ChangeEvent<HTMLInputElement>) {
@@ -232,8 +319,9 @@ export default function VideoCaptioner() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Please sign in again.");
 
-      // Build an SRT from the edited captions and host it for Shotstack
-      const srt = buildSRT(segments);
+      // Build an SRT from the edited captions (rebased for trim) and host it
+      const tEnd = trimEnd || videoRef.current?.duration || 0;
+      const srt = buildSRT(segments, trimStart, tEnd);
       const srtPath = `captions/${session.user.id}/${Date.now()}.srt`;
       const { error: srtErr } = await supabase.storage
         .from("insta-media").upload(srtPath, new Blob([srt], { type: "text/plain" }),
@@ -245,7 +333,9 @@ export default function VideoCaptioner() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
-          videoUrl: hostedUrl, srtUrl: srtPub.publicUrl, duration: videoRef.current?.duration,
+          videoUrl: hostedUrl, srtUrl: srtPub.publicUrl,
+          duration: videoRef.current?.duration,
+          trimStart, trimEnd: tEnd,
           muteOriginal,
           captionPos, showBox, textColor, boxColor,
           watermark: true, // free tier — flip to false for paid users later
@@ -329,7 +419,33 @@ export default function VideoCaptioner() {
               )}
             </div>
 
-            {/* Font + caption position */}
+            {/* Trim */}
+            <div className="rounded-2xl border border-gray-100 p-4">
+              <div className="flex justify-between text-[11px] text-gray-400 mb-1">
+                <span>Trim {fmt(trimStart)} – {fmt(trimEnd || duration)}</span>
+                <span>drag ends</span>
+              </div>
+              <div ref={trimRef} className="relative h-8 rounded-lg bg-gray-100 overflow-hidden select-none">
+                {/* kept region */}
+                <div className="absolute top-0 bottom-0"
+                  style={{
+                    left: `${duration ? (trimStart / duration) * 100 : 0}%`,
+                    width: `${duration ? (((trimEnd || duration) - trimStart) / duration) * 100 : 100}%`,
+                    background: "rgba(124,58,237,0.18)", border: "1px solid #7C3AED",
+                  }} />
+                {/* start handle */}
+                <div onPointerDown={() => setTrimDrag("start")}
+                  className="absolute top-0 bottom-0 w-2 rounded cursor-ew-resize"
+                  style={{ left: `${duration ? (trimStart / duration) * 100 : 0}%`, background: PURPLE }} />
+                {/* end handle */}
+                <div onPointerDown={() => setTrimDrag("end")}
+                  className="absolute top-0 bottom-0 w-2 rounded cursor-ew-resize -ml-2"
+                  style={{ left: `${duration ? ((trimEnd || duration) / duration) * 100 : 100}%`, background: PURPLE }} />
+                {/* playhead */}
+                <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none"
+                  style={{ left: `${duration ? (time / duration) * 100 : 0}%` }} />
+              </div>
+            </div>
             <div className="rounded-2xl border border-gray-100 p-4 space-y-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
@@ -404,14 +520,21 @@ export default function VideoCaptioner() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold text-gray-700">Transcript</h2>
-                <span className="text-xs text-gray-400">{segments.length} lines · tap a time to jump</span>
+                <div className="flex items-center gap-3">
+                  <button onClick={undo} disabled={!history.length}
+                    className="text-xs font-semibold px-2 py-1 rounded-lg border transition disabled:opacity-40"
+                    style={{ borderColor: "#e5e7eb", color: history.length ? PURPLE : "#9ca3af" }}>
+                    ↺ Undo
+                  </button>
+                  <span className="text-xs text-gray-400">{segments.length} lines</span>
+                </div>
               </div>
               <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
                 {segments.map(s => {
                   const active = s.id === activeId;
                   return (
                     <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
-                      className="flex gap-3 p-3 rounded-xl border transition"
+                      className="group flex gap-3 p-3 rounded-xl border transition"
                       style={active
                         ? { borderColor: PURPLE, background: "#F5F2FF", boxShadow: "0 0 0 1px #7C3AED" }
                         : { borderColor: "#f0f0f0" }}>
@@ -420,10 +543,20 @@ export default function VideoCaptioner() {
                         style={active ? { color: PURPLE } : { color: "#9ca3af" }}>
                         {fmt(s.start)}
                       </button>
-                      <textarea value={s.text} onChange={e => editSeg(s.id, e.target.value)} rows={1}
+                      <textarea value={s.text}
+                        onFocus={pushHistory}
+                        onChange={e => editSeg(s.id, e.target.value)}
+                        onSelect={e => { caretRef.current = { id: s.id, pos: e.currentTarget.selectionStart }; }}
+                        rows={1}
                         className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed"
                         style={{ minHeight: 24 }}
                         onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
+                      <div className="shrink-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
+                        <button onClick={() => splitSeg(s.id)} title="Split at cursor"
+                          className="text-[10px] px-1.5 py-0.5 rounded border text-gray-500 hover:text-purple-600">Split</button>
+                        <button onClick={() => mergeUp(s.id)} title="Merge into line above" disabled={s.id === 0}
+                          className="text-[10px] px-1.5 py-0.5 rounded border text-gray-500 hover:text-purple-600 disabled:opacity-30">Merge↑</button>
+                      </div>
                     </div>
                   );
                 })}
