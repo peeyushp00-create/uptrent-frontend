@@ -12,7 +12,7 @@ const PX_PER_SEC = 80;
 
 type Word = { id: number; start: number; end: number; text: string };
 type Segment = { id: number; start: number; end: number; text: string };
-type Overlay = { id: string; kind: "image" | "video"; url: string; thumb: string; start: number; length: number; mode: "pip" | "full" | "half"; half: "top" | "bottom" };
+type Overlay = { id: string; kind: "image" | "video"; url: string; thumb: string; start: number; length: number; mode: "pip" | "full" | "half"; half: "top" | "bottom"; x: number; y: number };
 type PexItem = { id: number; kind: "image" | "video"; thumb: string; url: string };
 type Music = { key: string; label: string; url: string };
 
@@ -84,12 +84,14 @@ export default function ContentStudio() {
   const [uploadingMusic, setUploadingMusic] = useState(false);
   const [uploadedMusic, setUploadedMusic] = useState<Music[]>([]);
   const [dragMusic, setDragMusic] = useState(false);
+  const [dragPip, setDragPip] = useState<{ id: string; dx: number; dy: number } | null>(null);
 
   // save
   const [savedAt, setSavedAt] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const tracksRef = useRef<HTMLDivElement>(null);
@@ -137,6 +139,21 @@ export default function ContentStudio() {
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [dragMusic, duration]);
+
+  // PiP drag in preview
+  useEffect(() => {
+    if (!dragPip) return;
+    const move = (e: PointerEvent) => {
+      const el = previewRef.current; if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left - dragPip.dx) / rect.width;
+      const y = (e.clientY - rect.top - dragPip.dy) / rect.height;
+      setOverlays(prev => prev.map(o => o.id === dragPip.id ? { ...o, x: Math.max(0, Math.min(0.95, x)), y: Math.max(0, Math.min(0.95, y)) } : o));
+    };
+    const up = () => setDragPip(null);
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [dragPip]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0]; if (!picked) return;
@@ -228,7 +245,7 @@ export default function ContentStudio() {
   function addOverlay(it: PexItem) {
     const len = it.kind === "video" ? 4 : 3;
     const start = Math.min(time, Math.max(0, duration - len));
-    const o: Overlay = { id: uid(), kind: it.kind, url: it.url, thumb: it.thumb, start, length: len, mode: "full", half: "top" };
+    const o: Overlay = { id: uid(), kind: it.kind, url: it.url, thumb: it.thumb, start, length: len, mode: "full", half: "top", x: 0.56, y: 0.68 };
     setOverlays(prev => [...prev, o]); setSelOverlay(o.id); setShowPex(false);
   }
   function updateOverlay(id: string, patch: Partial<Overlay>) { setOverlays(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o)); }
@@ -302,15 +319,18 @@ export default function ContentStudio() {
 
           <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
             <div className="space-y-4">
-              <div className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
+              <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
                 <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)} className="w-full aspect-[9/16] object-contain" />
                 {activeOverlays.map(o => (
-                  <img key={o.id} src={o.thumb} alt="" className="absolute object-cover pointer-events-none"
-                    style={
-                      o.mode === "full" ? { inset: 0, width: "100%", height: "100%" }
-                      : o.mode === "half" ? { left: 0, width: "100%", height: "50%", [o.half === "bottom" ? "bottom" : "top"]: 0 }
-                      : { right: "6%", bottom: "16%", width: "38%", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }
-                    } />
+                  o.mode === "pip" ? (
+                    <img key={o.id} src={o.thumb} alt="" draggable={false}
+                      onPointerDown={e => { const el = previewRef.current!; const rect = el.getBoundingClientRect(); setDragPip({ id: o.id, dx: e.clientX - (rect.left + o.x * rect.width), dy: e.clientY - (rect.top + o.y * rect.height) }); setSelOverlay(o.id); }}
+                      className="absolute object-cover cursor-move"
+                      style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%`, width: "32%", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.4)", border: selOverlay === o.id ? `2px solid ${PURPLE}` : "none" }} />
+                  ) : (
+                    <img key={o.id} src={o.thumb} alt="" className="absolute object-cover pointer-events-none"
+                      style={o.mode === "full" ? { inset: 0, width: "100%", height: "100%" } : { left: 0, width: "100%", height: "50%", [o.half === "bottom" ? "bottom" : "top"]: 0 }} />
+                  )
                 ))}
                 {activeText && (
                   <div className="absolute left-0 right-0 px-3 text-center pointer-events-none" style={capTop}>
