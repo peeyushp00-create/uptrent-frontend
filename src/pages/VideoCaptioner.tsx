@@ -10,6 +10,7 @@ const GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
 
 type Word = { id: number; start: number; end: number; text: string };
 type Segment = { id: number; start: number; end: number; text: string };
+type Project = { id: string; name: string; video_url: string; updated_at: string };
 
 const FONTS = [
   { key: "Poppins", label: "Poppins", css: "'Poppins', sans-serif" },
@@ -107,6 +108,9 @@ export default function VideoCaptioner() {
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
   const [trimDrag, setTrimDrag] = useState<"start" | "end" | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<string>("");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -186,7 +190,21 @@ export default function VideoCaptioner() {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         const s = await sRes.json();
-        if (s.status === "completed") { setSegments(buildSegments(s.words || [])); setStatus("ready"); return; }
+        if (s.status === "completed") {
+          const segs = buildSegments(s.words || []);
+          setSegments(segs);
+          setStatus("ready");
+          // Persist as a new project right away
+          const { data: ins } = await supabase.from("caption_projects").insert({
+            user_id: session.user.id,
+            name: (segs[0]?.text || "Untitled").slice(0, 40),
+            video_url: pub.publicUrl,
+            data: { segments: segs, font: font.key, captionPos, showBox, textColor, boxColor,
+              music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd },
+          }).select("id").single();
+          if (ins) { setCurrentProjectId(ins.id); loadProjects(); }
+          return;
+        }
         if (s.status === "error") throw new Error("Transcription failed");
       }
       throw new Error("Transcription timed out");
@@ -364,6 +382,80 @@ export default function VideoCaptioner() {
 
   const hasProject = segments.length > 0;
 
+  // ---- Projects: load list, open, new, delete, autosave ----
+  async function loadProjects() {
+    const { data } = await supabase.from("caption_projects")
+      .select("id,name,video_url,updated_at").order("updated_at", { ascending: false });
+    setProjects(data || []);
+  }
+  useEffect(() => { loadProjects(); }, []);
+
+  function currentData() {
+    return {
+      segments, font: font.key, captionPos, showBox, textColor, boxColor,
+      music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd,
+    };
+  }
+
+  async function saveProject(silent = false) {
+    if (!hostedUrl || !segments.length) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const payload = {
+      user_id: session.user.id,
+      name: (segments[0]?.text || "Untitled").slice(0, 40),
+      video_url: hostedUrl,
+      data: currentData(),
+      updated_at: new Date().toISOString(),
+    };
+    if (currentProjectId) {
+      await supabase.from("caption_projects").update(payload).eq("id", currentProjectId);
+    } else {
+      const { data: ins } = await supabase.from("caption_projects").insert(payload).select("id").single();
+      if (ins) setCurrentProjectId(ins.id);
+    }
+    setSavedAt(new Date().toLocaleTimeString());
+    if (!silent) loadProjects();
+  }
+
+  // Autosave edits to the open project (debounced)
+  useEffect(() => {
+    if (!currentProjectId || !hasProject) return;
+    const t = setTimeout(() => saveProject(true), 1500);
+    return () => clearTimeout(t);
+  }, [segments, font, captionPos, showBox, textColor, boxColor, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd]);
+
+  async function openProject(id: string) {
+    const { data: p } = await supabase.from("caption_projects").select("*").eq("id", id).single();
+    if (!p) return;
+    const d = p.data || {};
+    setCurrentProjectId(p.id);
+    setHostedUrl(p.video_url); setVideoUrl(p.video_url); setFile(null);
+    setSegments(d.segments || []);
+    setFont(FONTS.find(f => f.key === d.font) || FONTS[0]);
+    setCaptionPos(d.captionPos || "bottom");
+    setShowBox(d.showBox ?? true);
+    setTextColor(d.textColor || "#ffffff"); setBoxColor(d.boxColor || "#000000");
+    setMusic(d.music || MUSIC[0]); setMusicStart(d.musicStart || 0); setSongTrim(d.songTrim || 0);
+    setVolume(d.volume ?? 0.25); setFadeIn(d.fadeIn ?? true); setFadeOut(d.fadeOut ?? true);
+    setMuteOriginal(d.muteOriginal || false);
+    setTrimStart(d.trimStart || 0); setTrimEnd(d.trimEnd || 0);
+    setHistory([]); setExportUrl(""); setError(""); setStatus("ready");
+  }
+
+  function newProject() {
+    setCurrentProjectId(null); setFile(null); setVideoUrl(""); setHostedUrl("");
+    setSegments([]); setExportUrl(""); setStatus("idle"); setError("");
+    setTrimStart(0); setTrimEnd(0); setHistory([]); setMusic(MUSIC[0]);
+  }
+
+  async function deleteProject(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    await supabase.from("caption_projects").delete().eq("id", id);
+    if (id === currentProjectId) newProject();
+    loadProjects();
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       <link rel="stylesheet"
@@ -393,8 +485,46 @@ export default function VideoCaptioner() {
         </div>
       )}
 
+      {/* Saved projects list (shown on the start screen) */}
+      {!hasProject && projects.length > 0 && (
+        <div className="mt-8">
+          <h2 className="font-semibold text-gray-700 mb-3">Your projects</h2>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {projects.map(p => (
+              <div key={p.id} onClick={() => openProject(p.id)}
+                className="group relative rounded-xl border border-gray-100 p-3 cursor-pointer hover:border-purple-300 transition">
+                <div className="aspect-video rounded-lg bg-black mb-2 overflow-hidden">
+                  <video src={p.video_url} className="w-full h-full object-cover" muted preload="metadata" />
+                </div>
+                <p className="text-sm font-medium truncate">{p.name || "Untitled"}</p>
+                <p className="text-[11px] text-gray-400">{new Date(p.updated_at).toLocaleDateString()}</p>
+                <button onClick={e => deleteProject(p.id, e)}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 border text-gray-400 text-xs opacity-0 group-hover:opacity-100 transition hover:text-red-500">
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {hasProject && (
-        <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <button onClick={newProject}
+              className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition">
+              ← Projects
+            </button>
+            <div className="flex items-center gap-3">
+              {savedAt && <span className="text-xs text-gray-400">Saved {savedAt}</span>}
+              <button onClick={() => saveProject(false)}
+                className="text-sm font-semibold px-3 py-1.5 rounded-lg border transition"
+                style={{ borderColor: PURPLE, color: PURPLE }}>
+                Save
+              </button>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
 
           {/* Left: preview + style + music sync */}
           <div className="md:sticky md:top-6 space-y-4">
@@ -661,6 +791,7 @@ export default function VideoCaptioner() {
               )}
             </div>
           </div>
+        </div>
         </div>
       )}
     </div>
