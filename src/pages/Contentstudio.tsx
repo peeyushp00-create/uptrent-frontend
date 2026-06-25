@@ -12,7 +12,7 @@ const PX_PER_SEC = 80;
 
 type Word = { id: number; start: number; end: number; text: string };
 type Segment = { id: number; start: number; end: number; text: string };
-type Overlay = { id: string; kind: "image" | "video"; url: string; thumb: string; start: number; length: number; mode: "pip" | "full" | "half" };
+type Overlay = { id: string; kind: "image" | "video"; url: string; thumb: string; start: number; length: number; mode: "pip" | "full" | "half"; half: "top" | "bottom" };
 type PexItem = { id: number; kind: "image" | "video"; thumb: string; url: string };
 type Music = { key: string; label: string; url: string };
 
@@ -228,7 +228,7 @@ export default function ContentStudio() {
   function addOverlay(it: PexItem) {
     const len = it.kind === "video" ? 4 : 3;
     const start = Math.min(time, Math.max(0, duration - len));
-    const o: Overlay = { id: uid(), kind: it.kind, url: it.url, thumb: it.thumb, start, length: len, mode: "full" };
+    const o: Overlay = { id: uid(), kind: it.kind, url: it.url, thumb: it.thumb, start, length: len, mode: "full", half: "top" };
     setOverlays(prev => [...prev, o]); setSelOverlay(o.id); setShowPex(false);
   }
   function updateOverlay(id: string, patch: Partial<Overlay>) { setOverlays(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o)); }
@@ -308,7 +308,7 @@ export default function ContentStudio() {
                   <img key={o.id} src={o.thumb} alt="" className="absolute object-cover pointer-events-none"
                     style={
                       o.mode === "full" ? { inset: 0, width: "100%", height: "100%" }
-                      : o.mode === "half" ? { top: 0, left: 0, width: "100%", height: "50%" }
+                      : o.mode === "half" ? { left: 0, width: "100%", height: "50%", [o.half === "bottom" ? "bottom" : "top"]: 0 }
                       : { right: "6%", bottom: "16%", width: "38%", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }
                     } />
                 ))}
@@ -329,6 +329,11 @@ export default function ContentStudio() {
                   <div className="grid grid-cols-3 gap-2">
                     {([["full", "Full"], ["half", "Half"], ["pip", "PiP"]] as const).map(([m, label]) => (<button key={m} onClick={() => updateOverlay(sel.id, { mode: m })} className="px-2 py-1.5 rounded-lg border text-sm transition" style={sel.mode === m ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{label}</button>))}
                   </div>
+                  {sel.mode === "half" && (
+                    <div className="flex gap-2">
+                      {(["top", "bottom"] as const).map(h => (<button key={h} onClick={() => updateOverlay(sel.id, { half: h })} className="flex-1 px-3 py-1.5 rounded-lg border text-sm capitalize transition" style={sel.half === h ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{h}</button>))}
+                    </div>
+                  )}
                   <label className="block"><span className="text-[11px] text-gray-400">Duration {sel.length.toFixed(1)}s</span>
                     <input type="range" min={1} max={10} step={0.5} value={sel.length} onChange={e => updateOverlay(sel.id, { length: parseFloat(e.target.value) })} className="w-full accent-purple-600" /></label>
                 </div>
