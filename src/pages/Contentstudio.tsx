@@ -83,6 +83,7 @@ export default function ContentStudio() {
   const [fadeIn, setFadeIn] = useState(true);
   const [fadeOut, setFadeOut] = useState(true);
   const [muteOriginal, setMuteOriginal] = useState(false);
+  const [originalVolume, setOriginalVolume] = useState(1);
   const [uploadingMusic, setUploadingMusic] = useState(false);
   const [uploadedMusic, setUploadedMusic] = useState<Music[]>([]);
   const [dragMusic, setDragMusic] = useState(false);
@@ -122,6 +123,7 @@ export default function ContentStudio() {
   useEffect(() => { if (activeId != null) rowRefs.current[activeId]?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, [activeId]);
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume, music]);
   useEffect(() => { if (videoRef.current) videoRef.current.muted = muteOriginal; }, [muteOriginal]);
+  useEffect(() => { if (videoRef.current && !muteOriginal) videoRef.current.volume = originalVolume; }, [originalVolume, muteOriginal]);
 
   // overlay drag
   useEffect(() => {
@@ -305,7 +307,7 @@ export default function ContentStudio() {
       user_id: session.user.id,
       name: (segments[0]?.text || file?.name || "Studio project").slice(0, 40),
       video_url: hostedUrl,
-      data: { segments, font: font.key, captionPos, showBox, textColor, boxColor, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal },
+      data: { segments, font: font.key, captionPos, showBox, textColor, boxColor, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume },
       updated_at: new Date().toISOString(),
     };
     if (projectId) await supabase.from("studio_projects").update(payload).eq("id", projectId);
@@ -352,7 +354,9 @@ export default function ContentStudio() {
       if (!muteOriginal) {
         const vs = (v as any).captureStream?.() || (v as any).mozCaptureStream?.();
         if (vs?.getAudioTracks().length) {
-          audioCtx.createMediaStreamSource(new MediaStream(vs.getAudioTracks())).connect(mixDest);
+          const src = audioCtx.createMediaStreamSource(new MediaStream(vs.getAudioTracks()));
+          const gain = audioCtx.createGain(); gain.gain.value = originalVolume;
+          src.connect(gain); gain.connect(mixDest);
         }
       }
       let musicAudioEl: HTMLAudioElement | null = null;
@@ -626,9 +630,26 @@ export default function ContentStudio() {
                   <h2 className="font-semibold text-gray-700">Music</h2>
                   {hasMusic && <span className="text-xs text-gray-400">drag the bar on the timeline</span>}
                 </div>
-                <button onClick={() => setMuteOriginal(v => !v)} className="mb-4 px-3 py-1.5 rounded-lg border text-sm transition" style={muteOriginal ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
-                  {muteOriginal ? "🔇 Original audio muted" : "🔊 Original audio on"}
-                </button>
+                <div className="mb-4 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setMuteOriginal(v => !v)} className="shrink-0 px-3 py-1.5 rounded-lg border text-sm transition" style={muteOriginal ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                      {muteOriginal ? "🔇" : "🔊"}
+                    </button>
+                    <div className="flex-1">
+                      <div className="flex justify-between text-[11px] text-gray-400 mb-1">
+                        <span>Original audio</span><span>{Math.round(originalVolume * 100)}%</span>
+                      </div>
+                      <input type="range" min={0} max={1} step={0.05} value={originalVolume}
+                        disabled={muteOriginal}
+                        onChange={e => {
+                          const v = parseFloat(e.target.value);
+                          setOriginalVolume(v);
+                          if (videoRef.current) videoRef.current.volume = v;
+                        }}
+                        className="w-full accent-purple-600 disabled:opacity-40" />
+                    </div>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {MUSIC.map(m => (<button key={m.key} onClick={() => setMusic(m)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={music.key === m.key ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{m.label}</button>))}
                   {uploadedMusic.map(m => (
