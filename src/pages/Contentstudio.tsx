@@ -347,7 +347,7 @@ export default function ContentStudio() {
                     top: activeHalfOverlay?.half === "top" ? "50%" : 0,
                   }}>
                   <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
-                    className={`w-full h-full ${activeHalfOverlay ? "object-contain" : "object-cover"}`} />
+                    className="w-full h-full object-cover" />
                 </div>
                 {activeOverlays.map(o => (
                   o.mode === "pip" ? (
@@ -361,7 +361,7 @@ export default function ContentStudio() {
                     // Half mode — overlay fills its half with contain (no crop), video fills the other half
                     <div key={o.id} className="absolute left-0 w-full overflow-hidden"
                       style={{ height: "50%", top: o.half === "top" ? 0 : "50%" }}>
-                      <img src={o.thumb} alt="" className="w-full h-full object-contain" />
+                      <img src={o.thumb} alt="" className="w-full h-full object-cover" />
                     </div>
                   )
                 ))}
