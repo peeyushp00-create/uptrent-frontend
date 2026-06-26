@@ -350,7 +350,7 @@ export default function ContentStudio() {
                     <img key={o.id} src={o.thumb} alt="" className="absolute left-0 w-full pointer-events-none"
                       style={o.mode === "full"
                         ? { top: 0, height: "100%", objectFit: "cover" }
-                        : { height: "50%", top: o.half === "bottom" ? "50%" : 0, objectFit: "contain", background: "#000" }} />
+                        : { height: "50%", top: o.half === "bottom" ? "50%" : 0, objectFit: "cover" }} />
                   )
                 ))}
                 {activeText && (
