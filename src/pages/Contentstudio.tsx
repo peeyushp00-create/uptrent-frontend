@@ -328,10 +328,10 @@ export default function ContentStudio() {
                       className="absolute object-cover cursor-move"
                       style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%`, width: "32%", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.4)", border: selOverlay === o.id ? `2px solid ${PURPLE}` : "none" }} />
                   ) : (
-                    <img key={o.id} src={o.thumb} alt="" className="absolute left-0 w-full object-cover pointer-events-none"
+                    <img key={o.id} src={o.thumb} alt="" className="absolute left-0 w-full pointer-events-none"
                       style={o.mode === "full"
-                        ? { top: 0, height: "100%" }
-                        : { height: "50%", top: o.half === "bottom" ? "50%" : 0 }} />
+                        ? { top: 0, height: "100%", objectFit: "cover" }
+                        : { height: "50%", top: o.half === "bottom" ? "50%" : 0, objectFit: "contain", background: "#000" }} />
                   )
                 ))}
                 {activeText && (
