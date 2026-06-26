@@ -320,7 +320,7 @@ export default function ContentStudio() {
           <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
             <div className="space-y-4">
               <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
-                <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)} className="w-full aspect-[9/16] object-contain" />
+                <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)} className="w-full aspect-[9/16] object-cover" />
                 {activeOverlays.map(o => (
                   o.mode === "pip" ? (
                     <img key={o.id} src={o.thumb} alt="" draggable={false}
@@ -328,8 +328,10 @@ export default function ContentStudio() {
                       className="absolute object-cover cursor-move"
                       style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%`, width: "32%", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.4)", border: selOverlay === o.id ? `2px solid ${PURPLE}` : "none" }} />
                   ) : (
-                    <img key={o.id} src={o.thumb} alt="" className="absolute object-cover pointer-events-none"
-                      style={o.mode === "full" ? { inset: 0, width: "100%", height: "100%" } : { left: 0, width: "100%", height: "50%", [o.half === "bottom" ? "bottom" : "top"]: 0 }} />
+                    <img key={o.id} src={o.thumb} alt="" className="absolute left-0 w-full object-cover pointer-events-none"
+                      style={o.mode === "full"
+                        ? { top: 0, height: "100%" }
+                        : { height: "50%", top: o.half === "bottom" ? "50%" : 0 }} />
                   )
                 ))}
                 {activeText && (
