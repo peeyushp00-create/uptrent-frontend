@@ -92,6 +92,12 @@ export default function ContentStudio() {
   const [savedAt, setSavedAt] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
 
+  // export
+  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportPreviewUrl, setExportPreviewUrl] = useState<string | null>(null);
+  const exportCancelRef = useRef(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -304,6 +310,134 @@ export default function ContentStudio() {
     setSavedAt(new Date().toLocaleTimeString());
   }
 
+  // Draw image/video with object-cover behaviour onto canvas
+  function drawCover(ctx: CanvasRenderingContext2D, src: HTMLImageElement | HTMLVideoElement, dx: number, dy: number, dw: number, dh: number) {
+    const sw = src instanceof HTMLVideoElement ? src.videoWidth : src.naturalWidth;
+    const sh = src instanceof HTMLVideoElement ? src.videoHeight : src.naturalHeight;
+    if (!sw || !sh) return;
+    const srcRatio = sw / sh, dstRatio = dw / dh;
+    let sx = 0, sy = 0, cropW = sw, cropH = sh;
+    if (srcRatio > dstRatio) { cropW = sh * dstRatio; sx = (sw - cropW) / 2; }
+    else { cropH = sw / dstRatio; sy = (sh - cropH) / 2; }
+    ctx.drawImage(src, sx, sy, cropW, cropH, dx, dy, dw, dh);
+  }
+
+  async function exportVideo() {
+    const v = videoRef.current;
+    if (!v || !videoUrl) return;
+    setExporting(true); setExportProgress(0); exportCancelRef.current = false;
+
+    const W = 1080, H = 1920;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d")!;
+
+    // Preload overlay images
+    const imgCache: Record<string, HTMLImageElement> = {};
+    await Promise.all(overlays.filter(o => o.kind === "image").map(o => new Promise<void>(res => {
+      const img = new Image(); img.crossOrigin = "anonymous";
+      img.onload = () => { imgCache[o.id] = img; res(); };
+      img.onerror = () => res();
+      img.src = o.url;
+    })));
+    await document.fonts.ready;
+
+    // Audio setup
+    const audioCtx = new AudioContext();
+    const mixDest = audioCtx.createMediaStreamDestination();
+    try {
+      if (!muteOriginal) {
+        const vs = (v as any).captureStream?.() || (v as any).mozCaptureStream?.();
+        if (vs?.getAudioTracks().length) {
+          audioCtx.createMediaStreamSource(new MediaStream(vs.getAudioTracks())).connect(mixDest);
+        }
+      }
+      let musicAudioEl: HTMLAudioElement | null = null;
+      if (hasMusic && music.url) {
+        musicAudioEl = new Audio(); musicAudioEl.crossOrigin = "anonymous";
+        musicAudioEl.src = music.url; musicAudioEl.loop = true;
+        musicAudioEl.volume = volume; musicAudioEl.currentTime = songTrim;
+        const ms = audioCtx.createMediaElementSource(musicAudioEl);
+        const gainNode = audioCtx.createGain(); gainNode.gain.value = volume;
+        ms.connect(gainNode); gainNode.connect(mixDest);
+      }
+
+      const canvasStream = canvas.captureStream(30);
+      const outStream = new MediaStream([...canvasStream.getVideoTracks(), ...mixDest.stream.getAudioTracks()]);
+      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm";
+      const rec = new MediaRecorder(outStream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+      const chunks: Blob[] = [];
+      rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+      // Seek to start
+      v.pause(); v.currentTime = 0;
+      await new Promise(r => setTimeout(r, 200));
+      rec.start(200);
+      await v.play();
+      if (musicAudioEl) { musicAudioEl.currentTime = songTrim; musicAudioEl.play().catch(() => {}); }
+
+      await new Promise<void>(resolve => {
+        rec.onstop = () => resolve();
+        const draw = () => {
+          if (exportCancelRef.current) { v.pause(); musicAudioEl?.pause(); rec.stop(); return; }
+          const t = v.currentTime;
+          setExportProgress(duration > 0 ? Math.min(99, Math.round((t / duration) * 100)) : 0);
+
+          ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+
+          // Find active half overlay
+          const halfOv = overlays.find(o => t >= o.start && t < o.start + o.length && o.mode === "half");
+          if (halfOv) {
+            const vidY = halfOv.half === "top" ? H / 2 : 0;
+            const imgY = halfOv.half === "top" ? 0 : H / 2;
+            drawCover(ctx, v, 0, vidY, W, H / 2);
+            const img = imgCache[halfOv.id];
+            if (img) drawCover(ctx, img, 0, imgY, W, H / 2);
+          } else {
+            drawCover(ctx, v, 0, 0, W, H);
+            for (const o of overlays) {
+              if (t < o.start || t >= o.start + o.length || o.mode === "half") continue;
+              const img = imgCache[o.id]; if (!img) continue;
+              if (o.mode === "full") drawCover(ctx, img, 0, 0, W, H);
+              else if (o.mode === "pip") { const pw = W * 0.32; drawCover(ctx, img, o.x * W, o.y * H, pw, pw); }
+            }
+          }
+
+          // Captions
+          const seg = segments.find(s => t >= s.start && t < s.end);
+          if (seg?.text) {
+            const fs = Math.round(W * 0.044);
+            ctx.font = `600 ${fs}px ${font.css}`;
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            const x = W / 2;
+            const y = captionPos === "top" ? H * 0.1 : captionPos === "middle" ? H * 0.5 : H * 0.88;
+            const pad = fs * 0.5;
+            const tw = ctx.measureText(seg.text).width;
+            if (showBox) {
+              ctx.fillStyle = boxColor;
+              ctx.beginPath(); ctx.roundRect(x - tw / 2 - pad, y - fs / 2 - pad / 2, tw + pad * 2, fs + pad, 8); ctx.fill();
+            }
+            ctx.fillStyle = textColor; ctx.fillText(seg.text, x, y);
+          }
+
+          if (v.ended || v.currentTime >= duration - 0.05) {
+            v.pause(); musicAudioEl?.pause(); rec.stop();
+          } else { requestAnimationFrame(draw); }
+        };
+        requestAnimationFrame(draw);
+      });
+
+      if (!exportCancelRef.current && chunks.length > 0) {
+        const blob = new Blob(chunks, { type: mime });
+        const url = URL.createObjectURL(blob);
+        setExportPreviewUrl(url);
+      }
+      setExportProgress(100);
+    } finally {
+      audioCtx.close(); setExporting(false); setExportProgress(0);
+    }
+  }
+
   const capTop = captionPos === "top" ? { top: "10%" } : captionPos === "middle" ? { top: "45%" } : { bottom: "10%" };
   const sel = overlays.find(o => o.id === selOverlay) || null;
 
@@ -333,7 +467,17 @@ export default function ContentStudio() {
             <div className="flex items-center gap-3">
               {savedAt && <span className="text-xs text-gray-400">Saved {savedAt}</span>}
               <button onClick={saveProject} className="text-sm font-semibold px-3 py-2 rounded-xl border transition" style={{ borderColor: PURPLE, color: PURPLE }}>Save</button>
-              <button disabled className="text-sm font-semibold px-4 py-2 rounded-xl text-white opacity-40 cursor-not-allowed" style={{ background: GRAD }}>Export (soon)</button>
+              {exporting ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-28 h-2 rounded-full bg-gray-200 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-200" style={{ width: `${exportProgress}%`, background: GRAD }} />
+                  </div>
+                  <span className="text-xs text-gray-500">{exportProgress}%</span>
+                  <button onClick={() => { exportCancelRef.current = true; }} className="text-xs text-red-500 font-semibold">Cancel</button>
+                </div>
+              ) : (
+                <button onClick={exportVideo} className="text-sm font-semibold px-4 py-2 rounded-xl text-white transition hover:opacity-90" style={{ background: GRAD }}>Export</button>
+              )}
             </div>
           </div>
 
@@ -599,6 +743,33 @@ export default function ContentStudio() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Export preview modal */}
+      {exportPreviewUrl && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col items-center gap-4 p-6 w-full max-w-sm">
+            <p className="font-bold text-gray-800 text-lg">Export Preview</p>
+            <video src={exportPreviewUrl} controls autoPlay className="w-full rounded-xl" style={{ maxHeight: "60vh" }} />
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => {
+                  const a = document.createElement("a"); a.href = exportPreviewUrl;
+                  a.download = `studio-export-${Date.now()}.webm`; a.click();
+                }}
+                className="flex-1 py-2.5 rounded-xl text-white font-semibold text-sm"
+                style={{ background: GRAD }}>
+                Download
+              </button>
+              <button
+                onClick={() => { URL.revokeObjectURL(exportPreviewUrl); setExportPreviewUrl(null); }}
+                className="flex-1 py-2.5 rounded-xl border text-sm font-semibold text-gray-600"
+                style={{ borderColor: "#e5e7eb" }}>
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
