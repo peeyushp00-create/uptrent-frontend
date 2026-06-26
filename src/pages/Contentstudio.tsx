@@ -108,6 +108,7 @@ export default function ContentStudio() {
   const activeId = useMemo(() => { const seg = segments.find(s => time >= s.start && time < s.end); return seg ? seg.id : null; }, [segments, time]);
   const activeText = activeId != null ? segments.find(s => s.id === activeId)?.text : "";
   const activeOverlays = useMemo(() => overlays.filter(o => time >= o.start && time < o.start + o.length), [overlays, time]);
+  const activeHalfOverlay = useMemo(() => activeOverlays.find(o => o.mode === "half") || null, [activeOverlays]);
 
   useEffect(() => { if (activeId != null) rowRefs.current[activeId]?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, [activeId]);
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume, music]);
@@ -338,19 +339,30 @@ export default function ContentStudio() {
 
           <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
             <div className="space-y-4">
-              <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
-                <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)} className="w-full aspect-[9/16] object-cover" />
+              <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16]">
+                {/* Video — shrinks to its half when a half overlay is active */}
+                <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
+                  style={{
+                    height: activeHalfOverlay ? "50%" : "100%",
+                    top: activeHalfOverlay?.half === "top" ? "50%" : 0,
+                  }}>
+                  <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+                    className={`w-full h-full ${activeHalfOverlay ? "object-contain" : "object-cover"}`} />
+                </div>
                 {activeOverlays.map(o => (
                   o.mode === "pip" ? (
                     <img key={o.id} src={o.thumb} alt="" draggable={false}
                       onPointerDown={e => { const el = previewRef.current!; const rect = el.getBoundingClientRect(); setDragPip({ id: o.id, dx: e.clientX - (rect.left + o.x * rect.width), dy: e.clientY - (rect.top + o.y * rect.height) }); setSelOverlay(o.id); }}
                       className="absolute object-cover cursor-move"
                       style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%`, width: "32%", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.4)", border: selOverlay === o.id ? `2px solid ${PURPLE}` : "none" }} />
+                  ) : o.mode === "full" ? (
+                    <img key={o.id} src={o.thumb} alt="" className="absolute left-0 w-full h-full pointer-events-none" style={{ top: 0, objectFit: "cover" }} />
                   ) : (
-                    <img key={o.id} src={o.thumb} alt="" className="absolute left-0 w-full pointer-events-none"
-                      style={o.mode === "full"
-                        ? { top: 0, height: "100%", objectFit: "cover" }
-                        : { height: "50%", top: o.half === "bottom" ? "50%" : 0, objectFit: "cover" }} />
+                    // Half mode — overlay fills its half with contain (no crop), video fills the other half
+                    <div key={o.id} className="absolute left-0 w-full overflow-hidden"
+                      style={{ height: "50%", top: o.half === "top" ? 0 : "50%" }}>
+                      <img src={o.thumb} alt="" className="w-full h-full object-contain" />
+                    </div>
                   )
                 ))}
                 {activeText && (
