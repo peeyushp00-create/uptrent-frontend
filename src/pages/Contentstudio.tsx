@@ -96,6 +96,9 @@ export default function ContentStudio() {
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportPreviewUrl, setExportPreviewUrl] = useState<string | null>(null);
+  const [exportBlob, setExportBlob] = useState<Blob | null>(null);
+  const [converting, setConverting] = useState(false);
+  const [convertProgress, setConvertProgress] = useState(0);
   const exportCancelRef = useRef(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -429,12 +432,39 @@ export default function ContentStudio() {
 
       if (!exportCancelRef.current && chunks.length > 0) {
         const blob = new Blob(chunks, { type: mime });
-        const url = URL.createObjectURL(blob);
-        setExportPreviewUrl(url);
+        setExportBlob(blob);
+        setExportPreviewUrl(URL.createObjectURL(blob));
       }
       setExportProgress(100);
     } finally {
       audioCtx.close(); setExporting(false); setExportProgress(0);
+    }
+  }
+
+  async function convertToMp4() {
+    if (!exportBlob) return;
+    setConverting(true); setConvertProgress(0);
+    try {
+      const { FFmpeg } = await import("@ffmpeg/ffmpeg");
+      const { fetchFile, toBlobURL } = await import("@ffmpeg/util");
+      const ffmpeg = new FFmpeg();
+      ffmpeg.on("progress", ({ progress }) => setConvertProgress(Math.round(progress * 100)));
+      await ffmpeg.load({
+        coreURL: await toBlobURL("https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js", "text/javascript"),
+        wasmURL: await toBlobURL("https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm", "application/wasm"),
+      });
+      await ffmpeg.writeFile("input.webm", await fetchFile(exportBlob));
+      await ffmpeg.exec(["-i", "input.webm", "-c:v", "libx264", "-preset", "fast", "-crf", "23", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", "output.mp4"]);
+      const data = await ffmpeg.readFile("output.mp4");
+      const mp4Blob = new Blob([data as Uint8Array], { type: "video/mp4" });
+      const url = URL.createObjectURL(mp4Blob);
+      const a = document.createElement("a"); a.href = url;
+      a.download = `studio-export-${Date.now()}.mp4`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      setError("MP4 conversion failed. Try downloading as WebM instead.");
+    } finally {
+      setConverting(false); setConvertProgress(0);
     }
   }
 
@@ -752,21 +782,42 @@ export default function ContentStudio() {
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col items-center gap-4 p-6 w-full max-w-sm">
             <p className="font-bold text-gray-800 text-lg">Export Preview</p>
-            <video src={exportPreviewUrl} controls autoPlay className="w-full rounded-xl" style={{ maxHeight: "60vh" }} />
-            <div className="flex gap-3 w-full">
+            <video src={exportPreviewUrl} controls autoPlay className="w-full rounded-xl" style={{ maxHeight: "55vh" }} />
+
+            {/* MP4 conversion progress */}
+            {converting && (
+              <div className="w-full space-y-1">
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Converting to MP4…</span><span>{convertProgress}%</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-200" style={{ width: `${convertProgress}%`, background: GRAD }} />
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2 w-full">
+              <button
+                onClick={convertToMp4}
+                disabled={converting}
+                className="w-full py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-50 transition hover:opacity-90"
+                style={{ background: GRAD }}>
+                {converting ? `Converting… ${convertProgress}%` : "Download as MP4"}
+              </button>
               <button
                 onClick={() => {
                   const a = document.createElement("a"); a.href = exportPreviewUrl;
                   a.download = `studio-export-${Date.now()}.webm`; a.click();
                 }}
-                className="flex-1 py-2.5 rounded-xl text-white font-semibold text-sm"
-                style={{ background: GRAD }}>
-                Download
+                disabled={converting}
+                className="w-full py-2.5 rounded-xl border text-sm font-semibold text-gray-600 disabled:opacity-50"
+                style={{ borderColor: "#e5e7eb" }}>
+                Download as WebM
               </button>
               <button
-                onClick={() => { URL.revokeObjectURL(exportPreviewUrl); setExportPreviewUrl(null); }}
-                className="flex-1 py-2.5 rounded-xl border text-sm font-semibold text-gray-600"
-                style={{ borderColor: "#e5e7eb" }}>
+                onClick={() => { URL.revokeObjectURL(exportPreviewUrl); setExportPreviewUrl(null); setExportBlob(null); }}
+                disabled={converting}
+                className="w-full py-2 text-xs text-gray-400 disabled:opacity-50">
                 Close
               </button>
             </div>
