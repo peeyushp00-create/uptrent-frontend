@@ -68,10 +68,12 @@ export default function ContentStudio() {
 
   // pexels
   const [showPex, setShowPex] = useState(false);
+  const [pexTab, setPexTab] = useState<"pexels" | "upload">("pexels");
   const [pexQ, setPexQ] = useState("");
   const [pexType, setPexType] = useState<"photo" | "video">("photo");
   const [pexItems, setPexItems] = useState<PexItem[]>([]);
   const [pexLoading, setPexLoading] = useState(false);
+  const [uploadingOverlay, setUploadingOverlay] = useState(false);
 
   // music
   const [music, setMusic] = useState<Music>(MUSIC[0]);
@@ -250,6 +252,23 @@ export default function ContentStudio() {
   }
   function updateOverlay(id: string, patch: Partial<Overlay>) { setOverlays(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o)); }
   function deleteOverlay(id: string) { setOverlays(prev => prev.filter(o => o.id !== id)); if (selOverlay === id) setSelOverlay(null); }
+
+  async function uploadOverlayFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setUploadingOverlay(true); setError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Please sign in again.");
+      const isVideo = f.type.startsWith("video/");
+      const path = `overlays/${session.user.id}/${Date.now()}-${f.name.replace(/[^\w.]/g, "_")}`;
+      const { error: upErr } = await supabase.storage.from("insta-media").upload(path, f, { upsert: true, contentType: f.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("insta-media").getPublicUrl(path);
+      addOverlay({ id: Date.now(), kind: isVideo ? "video" : "image", url: pub.publicUrl, thumb: pub.publicUrl });
+    } catch (err) { setError(err instanceof Error ? err.message : "Upload failed."); }
+    finally { setUploadingOverlay(false); e.target.value = ""; }
+  }
 
   async function uploadMusic(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return;
@@ -472,7 +491,7 @@ export default function ContentStudio() {
                 <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Video</div>
                 <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Captions</div>
                 <div className="h-10 flex items-center px-3 gap-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
-                  <button onClick={() => { setShowPex(true); if (!pexItems.length) searchPexels(); }} className="text-[10px] font-semibold" style={{ color: "#a78bfa" }}>+ Add</button>
+                  <button onClick={() => { setShowPex(true); setPexTab("pexels"); if (!pexItems.length) searchPexels(); }} className="text-[10px] font-semibold" style={{ color: "#a78bfa" }}>+ Add</button>
                 </div>
                 <div className="h-10 flex items-center px-3">Music</div>
               </div>
@@ -518,25 +537,56 @@ export default function ContentStudio() {
         </div>
       )}
 
-      {/* Pexels browser */}
+      {/* Media browser (Pexels + Upload) */}
       {showPex && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowPex(false)}>
           <div className="bg-white text-gray-900 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="p-4 border-b border-gray-100 flex items-center gap-2">
-              <input value={pexQ} onChange={e => setPexQ(e.target.value)} onKeyDown={e => e.key === "Enter" && searchPexels()} placeholder="Search Pexels…" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 outline-none text-sm text-gray-900 placeholder-gray-400 bg-white" />
-              <div className="flex gap-1">{(["photo", "video"] as const).map(t => (<button key={t} onClick={() => setPexType(t)} className="px-3 py-2 rounded-lg border text-sm capitalize" style={pexType === t ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{t}</button>))}</div>
-              <button onClick={searchPexels} className="px-4 py-2 rounded-lg text-white text-sm font-semibold" style={{ background: GRAD }}>Search</button>
-              <button onClick={() => setShowPex(false)} className="px-2 text-gray-400 text-xl">✕</button>
+
+            {/* Tab bar */}
+            <div className="px-4 pt-4 flex items-center gap-2 border-b border-gray-100 pb-0">
+              {(["pexels", "upload"] as const).map(tab => (
+                <button key={tab} onClick={() => setPexTab(tab)}
+                  className="px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition capitalize"
+                  style={pexTab === tab ? { borderColor: PURPLE, color: PURPLE } : { borderColor: "transparent", color: "#9ca3af" }}>
+                  {tab === "pexels" ? "Pexels" : "Upload yours"}
+                </button>
+              ))}
+              <button onClick={() => setShowPex(false)} className="ml-auto px-2 text-gray-400 text-xl pb-2">✕</button>
             </div>
-            <div className="p-4 overflow-y-auto">
-              {pexLoading ? <p className="text-center text-gray-400 text-sm py-10">Searching…</p> : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {pexItems.map(it => (<button key={it.id} onClick={() => addOverlay(it)} className="relative aspect-[9/16] rounded-lg overflow-hidden border border-gray-100 hover:border-purple-400 transition"><img src={it.thumb} alt="" className="w-full h-full object-cover" />{it.kind === "video" && <span className="absolute top-1 left-1 text-[9px] bg-black/60 text-white px-1 rounded">▶ video</span>}</button>))}
-                  {!pexItems.length && <p className="col-span-full text-center text-gray-400 text-sm py-10">Search Pexels for images or videos to overlay.</p>}
+
+            {pexTab === "pexels" && (
+              <>
+                <div className="p-4 border-b border-gray-100 flex items-center gap-2">
+                  <input value={pexQ} onChange={e => setPexQ(e.target.value)} onKeyDown={e => e.key === "Enter" && searchPexels()} placeholder="Search Pexels…" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 outline-none text-sm text-gray-900 placeholder-gray-400 bg-white" />
+                  <div className="flex gap-1">{(["photo", "video"] as const).map(t => (<button key={t} onClick={() => setPexType(t)} className="px-3 py-2 rounded-lg border text-sm capitalize" style={pexType === t ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{t}</button>))}</div>
+                  <button onClick={searchPexels} className="px-4 py-2 rounded-lg text-white text-sm font-semibold" style={{ background: GRAD }}>Search</button>
                 </div>
-              )}
-              <p className="text-[11px] text-gray-400 mt-3">Media from Pexels — free to use. PiP or full-frame is set per overlay after adding.</p>
-            </div>
+                <div className="p-4 overflow-y-auto">
+                  {pexLoading ? <p className="text-center text-gray-400 text-sm py-10">Searching…</p> : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {pexItems.map(it => (<button key={it.id} onClick={() => addOverlay(it)} className="relative aspect-[9/16] rounded-lg overflow-hidden border border-gray-100 hover:border-purple-400 transition"><img src={it.thumb} alt="" className="w-full h-full object-cover" />{it.kind === "video" && <span className="absolute top-1 left-1 text-[9px] bg-black/60 text-white px-1 rounded">▶ video</span>}</button>))}
+                      {!pexItems.length && <p className="col-span-full text-center text-gray-400 text-sm py-10">Search Pexels for images or videos to overlay.</p>}
+                    </div>
+                  )}
+                  <p className="text-[11px] text-gray-400 mt-3">Media from Pexels — free to use. PiP or full-frame is set per overlay after adding.</p>
+                </div>
+              </>
+            )}
+
+            {pexTab === "upload" && (
+              <div className="p-8 flex flex-col items-center justify-center gap-4 flex-1">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl" style={{ background: "#F5F2FF" }}>🖼️</div>
+                <p className="font-semibold text-gray-700">Upload an image or video</p>
+                <p className="text-sm text-gray-400 text-center max-w-xs">It will be added to the timeline at the current playhead position as an overlay.</p>
+                <label className="cursor-pointer px-6 py-3 rounded-xl text-white font-semibold hover:opacity-90 transition" style={{ background: uploadingOverlay ? "#a78bfa" : GRAD }}>
+                  {uploadingOverlay ? "Uploading…" : "Choose file"}
+                  <input type="file" accept="image/*,video/*" onChange={uploadOverlayFile} className="hidden" disabled={uploadingOverlay} />
+                </label>
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <p className="text-[11px] text-gray-400">Supports JPG, PNG, GIF, MP4, MOV and more.</p>
+              </div>
+            )}
+
           </div>
         </div>
       )}
