@@ -39,7 +39,7 @@ export default function AppSidebar() {
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
     { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
     { icon: Clapperboard, label: "Studio", path: "/studio" },
-    { icon: Captions, label: "Captions", path: "/captions" },
+    // { icon: Captions, label: "Captions", path: "/captions" }, // temporarily hidden
   ];
 
   const youtubeNav = [
