@@ -533,141 +533,113 @@ export default function NewsPage() {
 
         {/* Articles */}
         {!loading && !error && articles.length > 0 && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {articles.map((item, i) => {
               const headline = item.title || item.headline || "Untitled";
               const timeAgo = getTimeAgo(item.published_at || '', t);
               const topic = item.topic || '';
               const tagStyle = getTagStyle(topic);
-              const isFeatured = i === 0;
+              const imgSrc = item.image_url || getCategoryImage(headline, topic, item.id);
 
-              if (isFeatured) {
+              /* ── Hero card (first article) ── */
+              if (i === 0) {
                 return (
                   <motion.article key={item.id || i}
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer transition-transform active:scale-[0.98]"
+                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer active:scale-[0.99] transition-transform"
                     onClick={() => setSelectedArticle(item)}>
-                    <div className="relative h-52 w-full">
-                      <img src={item.image_url || getCategoryImage(headline, topic, item.id)} alt={headline}
+                    {/* Image with gradient overlay */}
+                    <div className="relative w-full" style={{ height: 220 }}>
+                      <img src={imgSrc} alt={headline}
                         className="w-full h-full object-cover"
                         onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                      {/* Topic badge top-left */}
                       {topic && (
-                        <div className="absolute top-4 left-4">
-                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase" style={{ background: SECONDARY_CONTAINER, color: '#491d8a' }}>
-                            {TOPIC_EMOJIS[topic] || '📰'} {topic}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4 flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold" style={{ color: PRIMARY }}>{item.source}</span>
-                        <span className="text-[#757684] text-[10px]">• {timeAgo}</span>
-                      </div>
-                      <h2 className="font-bold text-lg text-[#191c1d] dark:text-white leading-tight" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                        {headline}
-                      </h2>
-                      {item.summary && <p className="text-sm text-[#454652] dark:text-gray-300 line-clamp-2">{item.summary}</p>}
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs flex items-center gap-1 font-semibold" style={{ color: PRIMARY }}>
-                          <Sparkles className="w-3 h-3" /> View Insights
+                        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase"
+                          style={{ background: tagStyle.bg, color: tagStyle.text }}>
+                          {TOPIC_EMOJIS[topic] || '📰'} {topic}
                         </span>
-                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => handleGenerateScript(item)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <FileText className="w-4 h-4" style={{ color: '#757684' }} />
+                      )}
+                      {/* Title over gradient */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <h2 className="font-bold text-[17px] text-white leading-snug line-clamp-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                          {headline}
+                        </h2>
+                      </div>
+                    </div>
+                    {/* Footer row */}
+                    <div className="px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-semibold truncate" style={{ color: PRIMARY }}>{item.source}</span>
+                        <span className="text-[#757684] text-[11px] shrink-0">· {timeAgo}</span>
+                        {item.summary && (
+                          <span className="hidden sm:block text-xs text-[#757684] line-clamp-1 ml-1">— {item.summary}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => handleGenerateScript(item)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors"
+                          style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                          <FileText className="w-3 h-3" /> Script
+                        </button>
+                        {item.url && (
+                          <button onClick={() => window.open(item.url, '_blank')}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                            style={{ background: '#f3f4f5' }}>
+                            <ExternalLink className="w-3.5 h-3.5 text-[#757684]" />
                           </button>
-                          {item.url && (
-                            <button onClick={() => window.open(item.url, '_blank')}
-                              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                              <ExternalLink className="w-4 h-4 text-[#757684]" />
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
                   </motion.article>
                 );
               }
 
+              /* ── Regular cards ── */
               return (
                 <motion.article key={item.id || i}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.02 }}
-                  whileHover={{ scale: 1.02, boxShadow: '0 8px 32px rgba(36,56,156,0.12)' }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-[#e1e3e4] dark:border-gray-700 cursor-pointer transition-all duration-300 group"
+                  transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-[#e1e3e4] dark:border-gray-700 cursor-pointer active:scale-[0.99] transition-transform"
                   onClick={() => setSelectedArticle(item)}>
-                  <div className="flex gap-0 p-4 group-hover:hidden">
-                    <div className="flex-1 flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
+                  <div className="flex gap-3 p-3">
+                    {/* Thumbnail */}
+                    <div className="shrink-0 rounded-xl overflow-hidden bg-gray-100" style={{ width: 88, height: 88 }}>
+                      <img src={imgSrc} alt=""
+                        className="w-full h-full object-cover"
+                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
+                    </div>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      {/* Topic + time */}
+                      <div className="flex items-center gap-2 mb-1">
                         {topic && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase" style={{ background: tagStyle.bg, color: tagStyle.text }}>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase shrink-0"
+                            style={{ background: tagStyle.bg, color: tagStyle.text }}>
                             {TOPIC_EMOJIS[topic] || '📰'} {topic}
                           </span>
                         )}
+                        <span className="text-[#757684] text-[10px] ml-auto shrink-0">{timeAgo}</span>
                       </div>
-                      <h3 className="font-semibold text-sm text-[#191c1d] dark:text-white leading-snug line-clamp-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                      {/* Headline */}
+                      <h3 className="font-semibold text-[13px] text-[#191c1d] dark:text-white leading-snug line-clamp-2"
+                        style={{ fontFamily: 'Montserrat, sans-serif' }}>
                         {headline}
                       </h3>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold" style={{ color: PRIMARY }}>{item.source}</span>
-                          <span className="text-[#757684] text-[10px]">• {timeAgo}</span>
-                        </div>
-                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      {/* Source + actions */}
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="text-[11px] font-semibold truncate" style={{ color: PRIMARY }}>{item.source}</span>
+                        <div className="flex items-center gap-0.5 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
                           <button onClick={() => handleGenerateScript(item)}
-                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <FileText className="w-3.5 h-3.5" style={{ color: '#757684' }} />
+                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors active:bg-purple-50"
+                            style={{ background: '#f5f3ff' }}>
+                            <FileText className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
                           </button>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
-                              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                              <ExternalLink className="w-3.5 h-3.5 text-[#757684]" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 ml-3">
-                      <img src={item.image_url || getCategoryImage(headline, topic, item.id)} alt=""
-                        className="w-full h-full object-cover"
-                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
-                    </div>
-                  </div>
-                  <div className="hidden group-hover:block">
-                    <div className="relative h-40 w-full">
-                      <img src={item.image_url || getCategoryImage(headline, topic, item.id)} alt={headline}
-                        className="w-full h-full object-cover"
-                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      {topic && (
-                        <div className="absolute top-3 left-3">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase" style={{ background: SECONDARY_CONTAINER, color: '#491d8a' }}>
-                            {TOPIC_EMOJIS[topic] || '📰'} {topic}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4 flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold" style={{ color: PRIMARY }}>{item.source}</span>
-                        <span className="text-[#757684] text-[10px]">• {timeAgo}</span>
-                      </div>
-                      <h3 className="font-bold text-base text-[#191c1d] dark:text-white leading-snug" style={{ fontFamily: 'Montserrat, sans-serif' }}>{headline}</h3>
-                      {item.summary && <p className="text-sm text-[#454652] dark:text-gray-300 line-clamp-3 leading-relaxed">{item.summary}</p>}
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs font-semibold flex items-center gap-1" style={{ color: PRIMARY }}>
-                          <Sparkles className="w-3 h-3" /> Tap for insights
-                        </span>
-                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => handleGenerateScript(item)}
-                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
-                            <FileText className="w-3.5 h-3.5" style={{ color: '#757684' }} />
-                          </button>
-                          {item.url && (
-                            <button onClick={() => window.open(item.url, '_blank')}
-                              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] transition-colors">
+                              className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors active:bg-gray-100"
+                              style={{ background: '#f3f4f5' }}>
                               <ExternalLink className="w-3.5 h-3.5 text-[#757684]" />
                             </button>
                           )}
