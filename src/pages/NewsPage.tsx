@@ -548,12 +548,13 @@ export default function NewsPage() {
                 return (
                   <motion.article key={item.id || i}
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer active:scale-[0.99] transition-transform"
+                    whileHover={{ y: -2, boxShadow: '0 8px 32px rgba(124,58,237,0.13)' }}
+                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer active:scale-[0.99] transition-all duration-200 group"
                     onClick={() => setSelectedArticle(item)}>
                     {/* Image with gradient overlay */}
-                    <div className="relative w-full" style={{ height: 220 }}>
+                    <div className="relative w-full overflow-hidden" style={{ height: 220 }}>
                       <img src={imgSrc} alt={headline}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                       {/* Topic badge top-left */}
@@ -603,13 +604,14 @@ export default function NewsPage() {
                 <motion.article key={item.id || i}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-[#e1e3e4] dark:border-gray-700 cursor-pointer active:scale-[0.99] transition-transform"
+                  whileHover={{ y: -2, boxShadow: '0 6px 24px rgba(124,58,237,0.10)' }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-[#e1e3e4] dark:border-gray-700 cursor-pointer active:scale-[0.99] transition-all duration-200 group hover:border-purple-200"
                   onClick={() => setSelectedArticle(item)}>
                   <div className="flex gap-3 p-3">
-                    {/* Thumbnail */}
+                    {/* Thumbnail with zoom on hover */}
                     <div className="shrink-0 rounded-xl overflow-hidden bg-gray-100" style={{ width: 88, height: 88 }}>
                       <img src={imgSrc} alt=""
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
                     </div>
                     {/* Content */}
@@ -625,7 +627,7 @@ export default function NewsPage() {
                         <span className="text-[#757684] text-[10px] ml-auto shrink-0">{timeAgo}</span>
                       </div>
                       {/* Headline */}
-                      <h3 className="font-semibold text-[13px] text-[#191c1d] dark:text-white leading-snug line-clamp-2"
+                      <h3 className="font-semibold text-[13px] text-[#191c1d] dark:text-white leading-snug line-clamp-2 transition-colors group-hover:text-purple-700"
                         style={{ fontFamily: 'Montserrat, sans-serif' }}>
                         {headline}
                       </h3>
@@ -634,13 +636,13 @@ export default function NewsPage() {
                         <span className="text-[11px] font-semibold truncate" style={{ color: PRIMARY }}>{item.source}</span>
                         <div className="flex items-center gap-0.5 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
                           <button onClick={() => handleGenerateScript(item)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors active:bg-purple-50"
+                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-purple-100 active:bg-purple-50"
                             style={{ background: '#f5f3ff' }}>
                             <FileText className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
                           </button>
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors active:bg-gray-100"
+                              className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 active:bg-gray-100"
                               style={{ background: '#f3f4f5' }}>
                               <ExternalLink className="w-3.5 h-3.5 text-[#757684]" />
                             </button>
