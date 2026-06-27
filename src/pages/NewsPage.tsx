@@ -63,19 +63,55 @@ const NICHE_TO_TOPIC: Record<string, string> = {
   "Comedy": "Comedy", "Other": "Business",
 };
 
-const getCategoryImage = (headline: string) => {
-  const h = headline.toLowerCase();
-  if (h.includes('cricket') || h.includes('sports') || h.includes('match')) return 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=600';
-  if (h.includes('fitness') || h.includes('workout')) return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600';
-  if (h.includes('ai') || h.includes('tech')) return 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600';
-  if (h.includes('bollywood') || h.includes('movie')) return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600';
-  if (h.includes('travel')) return 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600';
-  if (h.includes('food') || h.includes('recipe')) return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600';
-  if (h.includes('stock') || h.includes('finance') || h.includes('market')) return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600';
-  if (h.includes('crypto') || h.includes('bitcoin')) return 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=600';
-  if (h.includes('gaming') || h.includes('game')) return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600';
-  return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600';
+const TOPIC_IMAGES: Record<string, string[]> = {
+  Finance:       ['photo-1611974789855-9c2a0a7236a3','photo-1590283603385-17ffb3a7f29f','photo-1579532537598-459ecdaf39cc','photo-1460925895917-afdab827c52f'],
+  StockMarket:   ['photo-1611974789855-9c2a0a7236a3','photo-1590283603385-17ffb3a7f29f','photo-1535320903710-d993d3d77d29','photo-1642543348745-03b1219733d9'],
+  MutualFunds:   ['photo-1579532537598-459ecdaf39cc','photo-1460925895917-afdab827c52f','photo-1611974789855-9c2a0a7236a3','photo-1590283603385-17ffb3a7f29f'],
+  Crypto:        ['photo-1518546305927-5a555bb7020d','photo-1622630998477-20aa696ecb05','photo-1639762681485-074b7f938ba0','photo-1642790551116-18e150f248e3'],
+  PersonalFinance:['photo-1579621970563-ebec7560ff3e','photo-1450101499163-c8848c66ca85','photo-1554224155-6726b3ff858f','photo-1556742044-3c52d6e88c62'],
+  Tech:          ['photo-1677442135703-1787eea5ce01','photo-1518770660439-4636190af475','photo-1531297484001-80022131f5a1','photo-1504384308090-c894fdcc538d'],
+  AINews:        ['photo-1677442135703-1787eea5ce01','photo-1620712943543-bcc4688e7485','photo-1655720828018-edd2daec9349','photo-1676401869516-7e935b3fec35'],
+  Sports:        ['photo-1540747913346-19e32dc3e97e','photo-1461896836934-ffe607ba8211','photo-1517649763962-0c623066013b','photo-1574629810360-7efbbe195018'],
+  Bollywood:     ['photo-1489599849927-2ee91cede3ba','photo-1478720568477-152d9b164e26','photo-1524985069026-dd778a71c7b4','photo-1615986201152-7686a4867f30'],
+  Business:      ['photo-1507003211169-0a1dd7228f2d','photo-1454165804606-c3d57bc86b40','photo-1486406146926-c627a92ad1ab','photo-1664575600796-ffa828c5cb6e'],
+  Fitness:       ['photo-1534438327276-14e5300c3a48','photo-1571019613454-1cb2f99b2d8b','photo-1517836357463-d25dfeac3438','photo-1490645935967-10de6ba17061'],
+  WeightLoss:    ['photo-1571019613454-1cb2f99b2d8b','photo-1534438327276-14e5300c3a48','photo-1490645935967-10de6ba17061','photo-1544367567-0f2fcb009e0b'],
+  Travel:        ['photo-1476514525535-07fb3b4ae5f1','photo-1501854140801-50d01698950b','photo-1488646953014-85cb44e25828','photo-1503220317375-aaad61436b1b'],
+  Food:          ['photo-1504674900247-0877df9cc836','photo-1546069901-ba9599a7e63c','photo-1555396273-367ea4eb4db5','photo-1565299624946-b28f40a0ae38'],
+  Gaming:        ['photo-1542751371-adc38448a05e','photo-1493711662062-fa541adb3fc8','photo-1559963110-71b394e7494d','photo-1518644961665-ed172691aaa1'],
+  Education:     ['photo-1503676260728-1c00da094a0b','photo-1456513080510-7bf3a84b82f8','photo-1522202176988-66273c2fd55f','photo-1571260899304-425eee4c7efc'],
+  Fashion:       ['photo-1558618666-fcd25c85cd64','photo-1469334031218-e382a71b716b','photo-1483985988355-763728e1935b','photo-1445205170230-053b83016050'],
+  Motivation:    ['photo-1519834785169-98be25ec3f84','photo-1499728603263-13726abce5fd','photo-1548506651-e329ed07a75f','photo-1593642632559-0c6d3fc62b89'],
+  Skincare:      ['photo-1556228578-0d85b1a4d571','photo-1596755389378-c31d21fd1273','photo-1570172619644-dfd03ed5d881','photo-1552693673-1bf958298935'],
+  Yoga:          ['photo-1506126613408-eca07ce68773','photo-1545205597-3d9d02c29597','photo-1599901860904-17e6ed7083a0','photo-1575052814086-f385e2e2ad1b'],
+  Comedy:        ['photo-1527224857830-43a7acc85260','photo-1516280440614-37939bbacd81','photo-1543465077-db45d34b88a5','photo-1489278353717-f64c6ee8a4d2'],
+  RealEstate:    ['photo-1560518883-ce09059eeffa','photo-1570129477492-45c003edd2be','photo-1448630360428-65456885c650','photo-1512917774080-9991f1c4c750'],
+  Jobs:          ['photo-1507003211169-0a1dd7228f2d','photo-1454165804606-c3d57bc86b40','photo-1521737852567-6949f3f9f2b5','photo-1499750310107-5fef28a66643'],
 };
+
+const GENERIC_IMAGES = [
+  'photo-1504711434969-e33886168f5c','photo-1495020689067-958852a7765e',
+  'photo-1504465073898-4d85a65c61d1','photo-1557858310-9052820906f7',
+];
+
+function getCategoryImage(headline: string, topic?: string, seed?: string): string {
+  const pool = (topic && TOPIC_IMAGES[topic]) || (() => {
+    const h = headline.toLowerCase();
+    if (h.includes('cricket') || h.includes('sports') || h.includes('match')) return TOPIC_IMAGES.Sports;
+    if (h.includes('fitness') || h.includes('workout')) return TOPIC_IMAGES.Fitness;
+    if (h.includes('ai') || h.includes('tech')) return TOPIC_IMAGES.Tech;
+    if (h.includes('bollywood') || h.includes('movie')) return TOPIC_IMAGES.Bollywood;
+    if (h.includes('travel')) return TOPIC_IMAGES.Travel;
+    if (h.includes('food') || h.includes('recipe')) return TOPIC_IMAGES.Food;
+    if (h.includes('stock') || h.includes('finance') || h.includes('market')) return TOPIC_IMAGES.Finance;
+    if (h.includes('crypto') || h.includes('bitcoin')) return TOPIC_IMAGES.Crypto;
+    if (h.includes('gaming') || h.includes('game')) return TOPIC_IMAGES.Gaming;
+    return GENERIC_IMAGES;
+  })();
+  const key = seed || headline;
+  const idx = key.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % pool.length;
+  return `https://images.unsplash.com/${pool[idx]}?w=600&auto=format&fit=crop`;
+}
 
 const getTimeAgo = (dateStr: string, t: any) => {
   if (!dateStr) return '';
@@ -512,9 +548,9 @@ export default function NewsPage() {
                     className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer transition-transform active:scale-[0.98]"
                     onClick={() => setSelectedArticle(item)}>
                     <div className="relative h-52 w-full">
-                      <img src={item.image_url || getCategoryImage(headline)} alt={headline}
+                      <img src={item.image_url || getCategoryImage(headline, topic, item.id)} alt={headline}
                         className="w-full h-full object-cover"
-                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
+                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                       {topic && (
                         <div className="absolute top-4 left-4">
@@ -594,16 +630,16 @@ export default function NewsPage() {
                       </div>
                     </div>
                     <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 ml-3">
-                      <img src={item.image_url || getCategoryImage(headline)} alt=""
+                      <img src={item.image_url || getCategoryImage(headline, topic, item.id)} alt=""
                         className="w-full h-full object-cover"
-                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
+                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
                     </div>
                   </div>
                   <div className="hidden group-hover:block">
                     <div className="relative h-40 w-full">
-                      <img src={item.image_url || getCategoryImage(headline)} alt={headline}
+                      <img src={item.image_url || getCategoryImage(headline, topic, item.id)} alt={headline}
                         className="w-full h-full object-cover"
-                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline); }} />
+                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       {topic && (
                         <div className="absolute top-3 left-3">
@@ -658,9 +694,9 @@ export default function NewsPage() {
               onClick={e => e.stopPropagation()}
               className="bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="relative h-44">
-                <img src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '')}
+                <img src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '', selectedArticle.topic, selectedArticle.id)}
                   alt="" className="w-full h-full object-cover"
-                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600'; }} />
+                  onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(selectedArticle.title || selectedArticle.headline || '', selectedArticle.topic, selectedArticle.id); }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <button onClick={() => setSelectedArticle(null)}
                   className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60">
