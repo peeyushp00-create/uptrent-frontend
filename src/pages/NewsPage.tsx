@@ -654,90 +654,135 @@ export default function NewsPage() {
         )}
       </main>
 
-      {/* Article Detail Popup */}
+      {/* Article Detail — mobile bottom sheet */}
       <AnimatePresence>
         {selectedArticle && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center"
             onClick={() => setSelectedArticle(null)}>
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              drag="y" dragConstraints={{ top: 0 }} dragElastic={0.15}
+              onDragEnd={(_, info) => { if (info.offset.y > 120) setSelectedArticle(null); }}
               onClick={e => e.stopPropagation()}
-              className="bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="relative h-44">
-                <img src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '', selectedArticle.topic, selectedArticle.id)}
-                  alt="" className="w-full h-full object-cover"
-                  onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(selectedArticle.title || selectedArticle.headline || '', selectedArticle.topic, selectedArticle.id); }} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <button onClick={() => setSelectedArticle(null)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60">
-                  <X className="w-4 h-4" />
-                </button>
-                {selectedArticle.topic && (
-                  <div className="absolute bottom-4 left-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase text-white" style={{ background: SECONDARY }}>
+              className="bg-white dark:bg-gray-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col"
+              style={{ maxHeight: '92vh' }}>
+
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1 shrink-0 cursor-grab active:cursor-grabbing">
+                <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+              </div>
+
+              {/* Scrollable content */}
+              <div className="overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+
+                {/* Hero image with title overlay */}
+                <div className="relative w-full" style={{ height: 200 }}>
+                  <img
+                    src={selectedArticle.image_url || getCategoryImage(selectedArticle.title || selectedArticle.headline || '', selectedArticle.topic, selectedArticle.id)}
+                    alt="" className="w-full h-full object-cover"
+                    onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(selectedArticle.title || selectedArticle.headline || '', selectedArticle.topic, selectedArticle.id); }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  {/* Close button */}
+                  <button onClick={() => setSelectedArticle(null)}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-sm">
+                    <X className="w-4 h-4" />
+                  </button>
+                  {/* Topic badge */}
+                  {selectedArticle.topic && (() => { const ts = getTagStyle(selectedArticle.topic); return (
+                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase"
+                      style={{ background: ts.bg, color: ts.text }}>
                       {TOPIC_EMOJIS[selectedArticle.topic] || '📰'} {selectedArticle.topic}
                     </span>
+                  ); })()}
+                  {/* Title over image */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h2 className="font-bold text-[18px] text-white leading-snug"
+                      style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                      {selectedArticle.title || selectedArticle.headline}
+                    </h2>
                   </div>
-                )}
-              </div>
-              <div className="p-5 space-y-4">
-                <h2 className="font-bold text-lg text-[#191c1d] dark:text-white leading-snug" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                  {selectedArticle.title || selectedArticle.headline}
-                </h2>
-                <div className="flex items-center gap-3 text-xs text-[#757684]">
-                  {selectedArticle.source && <span className="font-semibold" style={{ color: PRIMARY }}>{selectedArticle.source}</span>}
-                  {selectedArticle.published_at && <span>{getTimeAgo(selectedArticle.published_at, t)}</span>}
                 </div>
-                {keyPoints.length > 0 && (
-                  <div className="rounded-xl p-4 space-y-2.5" style={{ background: '#ede9fe' }}>
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" style={{ color: SECONDARY }} />
-                      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: SECONDARY }}>Key Highlights</p>
+
+                {/* Body */}
+                <div className="p-4 space-y-4">
+
+                  {/* Source + time row */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                      style={{ background: PRIMARY }}>
+                      {(selectedArticle.source || 'N')[0].toUpperCase()}
                     </div>
-                    {keyPoints.map((point, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: SECONDARY }} />
-                        <p className="text-sm leading-relaxed" style={{ color: '#000000' }}>{point}.</p>
-                      </div>
-                    ))}
+                    <span className="text-sm font-semibold" style={{ color: PRIMARY }}>{selectedArticle.source}</span>
+                    {selectedArticle.published_at && (
+                      <span className="text-xs text-[#757684] ml-auto shrink-0">{getTimeAgo(selectedArticle.published_at, t)}</span>
+                    )}
                   </div>
-                )}
-                {keyPoints.length === 0 && selectedArticle.summary && (
-                  <p className="text-sm text-[#454652] dark:text-gray-300 leading-relaxed">{selectedArticle.summary}</p>
-                )}
-                {impactData && (
-                  <div className="rounded-xl p-4"
-                    style={{ background: impactData.level === 'high' ? '#fff3e0' : impactData.level === 'medium' ? '#e8f5e9' : '#f3e5f5', border: `1px solid ${impactData.level === 'high' ? '#ffcc80' : impactData.level === 'medium' ? '#a5d6a7' : '#ce93d8'}` }}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      {impactData.level === 'high' ? <AlertTriangle className="w-4 h-4 text-orange-500" />
-                        : impactData.level === 'medium' ? <TrendingUp className="w-4 h-4 text-green-600" />
-                        : <ArrowUpRight className="w-4 h-4 text-purple-600" />}
-                      <p className="text-xs font-bold uppercase tracking-wider"
-                        style={{ color: impactData.level === 'high' ? '#e65100' : impactData.level === 'medium' ? '#2e7d32' : '#6a1b9a' }}>
-                        {impactData.level === 'high' ? '🔥 High Impact' : impactData.level === 'medium' ? '📈 Medium Impact' : '✅ Low Impact'} for Creators
+
+                  {/* Key highlights */}
+                  {keyPoints.length > 0 && (
+                    <div className="rounded-2xl p-4 space-y-3" style={{ background: '#f5f3ff' }}>
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 shrink-0" style={{ color: PRIMARY }} />
+                        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: PRIMARY }}>Key Highlights</p>
+                      </div>
+                      {keyPoints.map((point, idx) => (
+                        <div key={idx} className="flex items-start gap-3">
+                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
+                            style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{idx + 1}</span>
+                          <p className="text-[13px] leading-relaxed text-gray-700 dark:text-gray-300">{point}.</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Summary fallback */}
+                  {keyPoints.length === 0 && selectedArticle.summary && (
+                    <p className="text-[13px] text-[#454652] dark:text-gray-300 leading-relaxed">{selectedArticle.summary}</p>
+                  )}
+
+                  {/* Creator impact */}
+                  {impactData && (
+                    <div className="rounded-2xl p-4 space-y-1.5" style={{
+                      background: impactData.level === 'high' ? '#fff8f0' : impactData.level === 'medium' ? '#f0fdf4' : '#faf5ff',
+                      border: `1.5px solid ${impactData.level === 'high' ? '#fed7aa' : impactData.level === 'medium' ? '#bbf7d0' : '#e9d5ff'}`
+                    }}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">
+                          {impactData.level === 'high' ? '🔥' : impactData.level === 'medium' ? '📈' : '✅'}
+                        </span>
+                        <p className="text-xs font-bold" style={{ color: impactData.level === 'high' ? '#c2410c' : impactData.level === 'medium' ? '#15803d' : '#7c3aed' }}>
+                          {impactData.level === 'high' ? 'High' : impactData.level === 'medium' ? 'Medium' : 'Low'} Impact for Creators
+                        </p>
+                      </div>
+                      <p className="text-[13px] leading-relaxed"
+                        style={{ color: impactData.level === 'high' ? '#9a3412' : impactData.level === 'medium' ? '#166534' : '#6d28d9' }}>
+                        {impactData.text}
                       </p>
                     </div>
-                    <p className="text-sm" style={{ color: impactData.level === 'high' ? '#bf360c' : impactData.level === 'medium' ? '#1b5e20' : '#4a148c' }}>
-                      {impactData.text}
-                    </p>
-                  </div>
-                )}
-                <div className="flex gap-2 pt-1">
-                  <button onClick={() => handleGenerateScript(selectedArticle)}
-                    className="flex-1 py-2.5 rounded-xl border border-[#c5c5d4] text-sm font-semibold flex items-center justify-center gap-2 transition-colors text-[#454652]">
-                    <FileText className="w-4 h-4" />
-                    Generate Script
-                  </button>
-                  {selectedArticle.url && (
-                    <button onClick={() => window.open(selectedArticle.url, '_blank')}
-                      className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2"
-                      style={{ background: PRIMARY_GRAD }}>
-                      {t('news.read_more')} <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
                   )}
+
+                  {/* Bottom padding so content clears the fixed CTA */}
+                  <div className="h-2" />
                 </div>
+              </div>
+
+              {/* Fixed CTA bar */}
+              <div className="shrink-0 px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 flex gap-2.5">
+                <button onClick={() => handleGenerateScript(selectedArticle)}
+                  className="flex-1 py-3 rounded-2xl border-2 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                  style={{ borderColor: PRIMARY, color: PRIMARY }}>
+                  <FileText className="w-4 h-4" /> Generate Script
+                </button>
+                {selectedArticle.url && (
+                  <button onClick={() => window.open(selectedArticle.url, '_blank')}
+                    className="flex-1 py-3 rounded-2xl text-white text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                    style={{ background: PRIMARY }}>
+                    Read Article <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </motion.div>
           </motion.div>
