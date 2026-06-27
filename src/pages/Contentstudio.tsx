@@ -369,6 +369,18 @@ export default function ContentStudio() {
     setShowProjects(false);
   }
 
+  async function deleteProject(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!window.confirm("Delete this project? This cannot be undone.")) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await supabase.from("studio_projects").delete().eq("id", id).eq("user_id", session.user.id);
+      setProjects(prev => prev.filter(p => p.id !== id));
+      if (projectId === id) { setProjectId(null); setSavedAt(""); }
+    } catch { /* ignore */ }
+  }
+
   // Draw image/video with object-cover behaviour onto canvas
   function drawCover(ctx: CanvasRenderingContext2D, src: HTMLImageElement | HTMLVideoElement, dx: number, dy: number, dw: number, dh: number) {
     const sw = src instanceof HTMLVideoElement ? src.videoWidth : src.naturalWidth;
@@ -904,22 +916,29 @@ export default function ContentStudio() {
             ) : (
               <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
                 {projects.map(p => (
-                  <button key={p.id} onClick={() => loadProject(p)}
-                    className="w-full p-4 text-left hover:bg-purple-50 transition flex gap-3 items-center">
-                    <div className="w-12 shrink-0 rounded-lg overflow-hidden bg-gray-100" style={{ aspectRatio: "9/16" }}>
-                      <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 text-sm truncate">{p.name}</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        {new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                      </p>
-                      {p.data?.segments?.length > 0 && (
-                        <p className="text-[10px] text-purple-400 mt-0.5">{p.data.segments.length} caption lines</p>
-                      )}
-                    </div>
-                    <span className="shrink-0 text-xs font-semibold" style={{ color: PURPLE }}>Open →</span>
-                  </button>
+                  <div key={p.id} className="flex items-center hover:bg-purple-50 transition group">
+                    <button onClick={() => loadProject(p)} className="flex-1 p-4 text-left flex gap-3 items-center min-w-0">
+                      <div className="w-12 shrink-0 rounded-lg overflow-hidden bg-gray-100" style={{ aspectRatio: "9/16" }}>
+                        <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-800 text-sm truncate">{p.name}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          {new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                        {p.data?.segments?.length > 0 && (
+                          <p className="text-[10px] text-purple-400 mt-0.5">{p.data.segments.length} caption lines</p>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold" style={{ color: PURPLE }}>Open →</span>
+                    </button>
+                    <button
+                      onClick={e => deleteProject(p.id, e)}
+                      className="shrink-0 mr-3 w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition opacity-0 group-hover:opacity-100"
+                      title="Delete project">
+                      🗑
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
