@@ -99,6 +99,8 @@ export default function ContentStudio() {
   const [showProjects, setShowProjects] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string; video_url: string; data: any; updated_at: string }[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   // export
   const [exporting, setExporting] = useState(false);
@@ -379,6 +381,18 @@ export default function ContentStudio() {
       setProjects(prev => prev.filter(p => p.id !== id));
       if (projectId === id) { setProjectId(null); setSavedAt(""); }
     } catch { /* ignore */ }
+  }
+
+  async function renameProject(id: string, newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed) { setRenamingId(null); return; }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await supabase.from("studio_projects").update({ name: trimmed }).eq("id", id).eq("user_id", session.user.id);
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, name: trimmed } : p));
+    } catch { /* ignore */ }
+    finally { setRenamingId(null); }
   }
 
   // Draw image/video with object-cover behaviour onto canvas
@@ -917,12 +931,26 @@ export default function ContentStudio() {
               <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
                 {projects.map(p => (
                   <div key={p.id} className="flex items-center hover:bg-purple-50 transition group">
-                    <button onClick={() => loadProject(p)} className="flex-1 p-4 text-left flex gap-3 items-center min-w-0">
+                    <button onClick={() => renamingId !== p.id && loadProject(p)} className="flex-1 p-4 text-left flex gap-3 items-center min-w-0">
                       <div className="w-12 shrink-0 rounded-lg overflow-hidden bg-gray-100" style={{ aspectRatio: "9/16" }}>
                         <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-800 text-sm truncate">{p.name}</p>
+                        {renamingId === p.id ? (
+                          <input
+                            autoFocus
+                            value={renameValue}
+                            onChange={e => setRenameValue(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === "Enter") renameProject(p.id, renameValue);
+                              if (e.key === "Escape") setRenamingId(null);
+                            }}
+                            onClick={e => e.stopPropagation()}
+                            className="w-full text-sm font-semibold text-gray-800 border-b border-purple-400 outline-none bg-transparent"
+                          />
+                        ) : (
+                          <p className="font-semibold text-gray-800 text-sm truncate">{p.name}</p>
+                        )}
                         <p className="text-[11px] text-gray-400 mt-0.5">
                           {new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                         </p>
@@ -930,14 +958,25 @@ export default function ContentStudio() {
                           <p className="text-[10px] text-purple-400 mt-0.5">{p.data.segments.length} caption lines</p>
                         )}
                       </div>
-                      <span className="shrink-0 text-xs font-semibold" style={{ color: PURPLE }}>Open →</span>
+                      {renamingId !== p.id && <span className="shrink-0 text-xs font-semibold" style={{ color: PURPLE }}>Open →</span>}
                     </button>
-                    <button
-                      onClick={e => deleteProject(p.id, e)}
-                      className="shrink-0 mr-3 w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition opacity-0 group-hover:opacity-100"
-                      title="Delete project">
-                      🗑
-                    </button>
+                    <div className="shrink-0 mr-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                      {renamingId === p.id ? (
+                        <button
+                          onClick={e => { e.stopPropagation(); renameProject(p.id, renameValue); }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-purple-500 hover:bg-purple-100 transition"
+                          title="Save name">✓</button>
+                      ) : (
+                        <button
+                          onClick={e => { e.stopPropagation(); setRenamingId(p.id); setRenameValue(p.name); }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-purple-500 hover:bg-purple-50 transition"
+                          title="Rename">✏️</button>
+                      )}
+                      <button
+                        onClick={e => deleteProject(p.id, e)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition"
+                        title="Delete project">🗑</button>
+                    </div>
                   </div>
                 ))}
               </div>
