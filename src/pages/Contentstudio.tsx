@@ -92,6 +92,8 @@ export default function ContentStudio() {
   // save
   const [savedAt, setSavedAt] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // export
   const [exporting, setExporting] = useState(false);
@@ -300,19 +302,38 @@ export default function ContentStudio() {
   }
 
   async function saveProject() {
-    if (!hostedUrl) { setError("Transcribe first so the video is uploaded, then save."); return; }
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const payload = {
-      user_id: session.user.id,
-      name: (segments[0]?.text || file?.name || "Studio project").slice(0, 40),
-      video_url: hostedUrl,
-      data: { segments, font: font.key, captionPos, showBox, textColor, boxColor, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume },
-      updated_at: new Date().toISOString(),
-    };
-    if (projectId) await supabase.from("studio_projects").update(payload).eq("id", projectId);
-    else { const { data: ins } = await supabase.from("studio_projects").insert(payload).select("id").single(); if (ins) setProjectId(ins.id); }
-    setSavedAt(new Date().toLocaleTimeString());
+    if (!file && !hostedUrl) { setSaveError("No video loaded."); return; }
+    setSaving(true); setSaveError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setSaveError("Please sign in again."); return; }
+
+      // Upload video to Supabase if not already done
+      let url = hostedUrl;
+      if (!url && file) {
+        const path = `studio/${session.user.id}/${Date.now()}.mp4`;
+        const { error: upErr } = await supabase.storage.from("insta-media").upload(path, file, { upsert: true, contentType: file.type });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("insta-media").getPublicUrl(path);
+        url = pub.publicUrl;
+        setHostedUrl(url);
+      }
+
+      const payload = {
+        user_id: session.user.id,
+        name: (segments[0]?.text || file?.name || "Studio project").slice(0, 40),
+        video_url: url,
+        data: { segments, font: font.key, captionPos, showBox, textColor, boxColor, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume },
+        updated_at: new Date().toISOString(),
+      };
+      if (projectId) await supabase.from("studio_projects").update(payload).eq("id", projectId);
+      else { const { data: ins } = await supabase.from("studio_projects").insert(payload).select("id").single(); if (ins) setProjectId(ins.id); }
+      setSavedAt(new Date().toLocaleTimeString());
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Save failed.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   // Draw image/video with object-cover behaviour onto canvas
@@ -499,8 +520,11 @@ export default function ContentStudio() {
           <div className="flex items-center justify-between">
             <button onClick={() => { setFile(null); setVideoUrl(""); setSegments([]); setOverlays([]); setMusic(MUSIC[0]); }} className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition">← New</button>
             <div className="flex items-center gap-3">
-              {savedAt && <span className="text-xs text-gray-400">Saved {savedAt}</span>}
-              <button onClick={saveProject} className="text-sm font-semibold px-3 py-2 rounded-xl border transition" style={{ borderColor: PURPLE, color: PURPLE }}>Save</button>
+              {saveError && <span className="text-xs text-red-500">{saveError}</span>}
+              {savedAt && !saveError && <span className="text-xs text-gray-400">Saved {savedAt}</span>}
+              <button onClick={saveProject} disabled={saving} className="text-sm font-semibold px-3 py-2 rounded-xl border transition disabled:opacity-50" style={{ borderColor: PURPLE, color: PURPLE }}>
+                {saving ? "Saving…" : "Save"}
+              </button>
               {exporting ? (
                 <div className="flex items-center gap-2">
                   <div className="w-28 h-2 rounded-full bg-gray-200 overflow-hidden">
