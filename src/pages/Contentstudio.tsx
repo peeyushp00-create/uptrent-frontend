@@ -95,6 +95,11 @@ export default function ContentStudio() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  // projects panel
+  const [showProjects, setShowProjects] = useState(false);
+  const [projects, setProjects] = useState<{ id: string; name: string; video_url: string; data: any; updated_at: string }[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+
   // export
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
@@ -126,6 +131,7 @@ export default function ContentStudio() {
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume, music]);
   useEffect(() => { if (videoRef.current) videoRef.current.muted = muteOriginal; }, [muteOriginal]);
   useEffect(() => { if (videoRef.current && !muteOriginal) videoRef.current.volume = originalVolume; }, [originalVolume, muteOriginal]);
+  useEffect(() => { fetchProjects(); }, []);
 
   // overlay drag
   useEffect(() => {
@@ -336,6 +342,33 @@ export default function ContentStudio() {
     }
   }
 
+  async function fetchProjects() {
+    setLoadingProjects(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("studio_projects").select("id, name, video_url, data, updated_at").eq("user_id", session.user.id).order("updated_at", { ascending: false }).limit(20);
+      setProjects(data || []);
+    } catch { /* ignore */ }
+    finally { setLoadingProjects(false); }
+  }
+
+  function loadProject(p: { id: string; name: string; video_url: string; data: any }) {
+    const d = p.data || {};
+    setVideoUrl(p.video_url); setHostedUrl(p.video_url); setFile(null);
+    setSegments(d.segments || []); setHistory([]);
+    setFont(FONTS.find(f => f.key === d.font) || FONTS[0]);
+    setCaptionPos(d.captionPos || "bottom"); setShowBox(d.showBox ?? true);
+    setTextColor(d.textColor || "#ffffff"); setBoxColor(d.boxColor || "#000000");
+    setOverlays(d.overlays || []);
+    setMusic(d.music || MUSIC[0]); setMusicStart(d.musicStart || 0);
+    setSongTrim(d.songTrim || 0); setVolume(d.volume ?? 0.25);
+    setFadeIn(d.fadeIn ?? true); setFadeOut(d.fadeOut ?? true);
+    setMuteOriginal(d.muteOriginal ?? false); setOriginalVolume(d.originalVolume ?? 1);
+    setProjectId(p.id); setStatus("ready"); setError(""); setSavedAt("");
+    setShowProjects(false);
+  }
+
   // Draw image/video with object-cover behaviour onto canvas
   function drawCover(ctx: CanvasRenderingContext2D, src: HTMLImageElement | HTMLVideoElement, dx: number, dy: number, dw: number, dh: number) {
     const sw = src instanceof HTMLVideoElement ? src.videoWidth : src.naturalWidth;
@@ -506,19 +539,48 @@ export default function ContentStudio() {
       <p className="text-gray-500 mb-6">Upload a video, add captions, overlays and music on the timeline.</p>
 
       {!hasVideo && (
-        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-12 flex flex-col items-center gap-4 bg-gray-50/50">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl" style={{ background: GRAD }}>▶</div>
-          <p className="text-gray-500">Start by uploading a video</p>
-          <label className="cursor-pointer px-5 py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition" style={{ background: GRAD }}>
-            Choose video<input type="file" accept="video/*" onChange={onPick} className="hidden" />
-          </label>
+        <div className="space-y-6">
+          <div className="border-2 border-dashed border-gray-200 rounded-2xl p-12 flex flex-col items-center gap-4 bg-gray-50/50">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl" style={{ background: GRAD }}>▶</div>
+            <p className="text-gray-500">Start by uploading a video</p>
+            <label className="cursor-pointer px-5 py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition" style={{ background: GRAD }}>
+              Choose video<input type="file" accept="video/*" onChange={onPick} className="hidden" />
+            </label>
+          </div>
+
+          {/* Recent projects on the empty screen */}
+          {projects.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Recent Projects</h2>
+                <button onClick={() => setShowProjects(true)} className="text-xs font-semibold" style={{ color: PURPLE }}>See all →</button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {projects.slice(0, 8).map(p => (
+                  <button key={p.id} onClick={() => loadProject(p)}
+                    className="rounded-xl border border-gray-100 p-3 text-left transition hover:shadow-md group"
+                    style={{ background: "#fff" }}>
+                    <div className="w-full rounded-lg overflow-hidden mb-2 bg-gray-100 flex items-center justify-center" style={{ aspectRatio: "9/16", maxHeight: 140 }}>
+                      <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-purple-600 transition">{p.name}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {loadingProjects && <p className="text-center text-sm text-gray-400">Loading projects…</p>}
         </div>
       )}
 
       {hasVideo && (
         <div className="space-y-5">
           <div className="flex items-center justify-between">
-            <button onClick={() => { setFile(null); setVideoUrl(""); setSegments([]); setOverlays([]); setMusic(MUSIC[0]); }} className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition">← New</button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => { setFile(null); setVideoUrl(""); setSegments([]); setOverlays([]); setMusic(MUSIC[0]); }} className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition">← New</button>
+              <button onClick={() => { fetchProjects(); setShowProjects(true); }} className="text-sm font-semibold px-3 py-2 rounded-xl border transition" style={{ borderColor: "#e5e7eb", color: "#6b7280" }}>Projects</button>
+            </div>
             <div className="flex items-center gap-3">
               {saveError && <span className="text-xs text-red-500">{saveError}</span>}
               {savedAt && !saveError && <span className="text-xs text-gray-400">Saved {savedAt}</span>}
@@ -818,6 +880,49 @@ export default function ContentStudio() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Projects slide-over panel */}
+      {showProjects && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-black/40" onClick={() => setShowProjects(false)} />
+          <div className="w-80 bg-white h-full shadow-2xl flex flex-col overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <h2 className="font-bold text-gray-800">My Projects</h2>
+              <button onClick={() => setShowProjects(false)} className="text-gray-400 text-xl hover:text-gray-600">✕</button>
+            </div>
+            {loadingProjects ? (
+              <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
+            ) : projects.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-2 text-gray-400 text-sm px-6 text-center">
+                <span className="text-3xl">📁</span>
+                <p>No saved projects yet.</p>
+                <p className="text-xs">Save a project from the editor and it will appear here.</p>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+                {projects.map(p => (
+                  <button key={p.id} onClick={() => loadProject(p)}
+                    className="w-full p-4 text-left hover:bg-purple-50 transition flex gap-3 items-center">
+                    <div className="w-12 shrink-0 rounded-lg overflow-hidden bg-gray-100" style={{ aspectRatio: "9/16" }}>
+                      <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm truncate">{p.name}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                      {p.data?.segments?.length > 0 && (
+                        <p className="text-[10px] text-purple-400 mt-0.5">{p.data.segments.length} caption lines</p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-xs font-semibold" style={{ color: PURPLE }}>Open →</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
