@@ -93,18 +93,18 @@ export default function AppSidebar() {
     <aside className={`flex flex-col h-screen border-r border-border bg-card transition-all duration-300 relative ${collapsed ? "w-16" : "w-60"}`}>
 
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 h-16 border-b border-border">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: ag }}>
+      <div className="flex items-center gap-2.5 px-4 h-16 border-b border-border shrink-0">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: ag }}>
           <img src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
         {!collapsed && (
-          <span className="font-bold text-lg tracking-tight" style={{ fontFamily: 'Montserrat, sans-serif', color: ac }}>
+          <span className="font-extrabold text-lg tracking-tight" style={{ fontFamily: 'Montserrat, sans-serif', color: ac }}>
             SocialRum
           </span>
         )}
         <button onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-accent">
+          className="ml-auto text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-accent">
           {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
       </div>
@@ -152,52 +152,46 @@ export default function AppSidebar() {
       )}
 
       {/* Nav items */}
-      <nav className="flex-1 py-1 px-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 py-2 px-2 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const active = location.pathname === item.path;
           return (
             <button key={item.path} onClick={() => navigate(item.path)}
               title={collapsed ? item.label : undefined}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={active ? { background: acContainer, color: ac } : { color: 'hsl(var(--foreground)/0.7)' }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}>
-              <item.icon className="w-4 h-4 shrink-0" style={active ? { color: ac } : { color: 'hsl(var(--muted-foreground))' }} />
-              {!collapsed && <span>{item.label}</span>}
-              {active && !collapsed && <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ac }} />}
+              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${!active ? 'hover:bg-accent' : ''}`}
+              style={active ? { background: acContainer, color: ac } : { color: 'hsl(var(--muted-foreground))' }}>
+              <item.icon className="w-4 h-4 shrink-0 transition-colors" style={{ color: active ? ac : undefined }} />
+              {!collapsed && <span className="transition-colors">{item.label}</span>}
+              {active && !collapsed && (
+                <div className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ac }} />
+              )}
             </button>
           );
         })}
       </nav>
 
       {/* Bottom section */}
-      <div className="p-2 border-t border-border space-y-1">
+      <div className="p-2 border-t border-border space-y-0.5 shrink-0">
 
         {/* Theme toggle */}
         <button onClick={toggleTheme}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground/80 transition-all"
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-          {theme === "dark" ? <Sun className="w-4 h-4 shrink-0 text-muted-foreground" /> : <Moon className="w-4 h-4 shrink-0 text-muted-foreground" />}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-150">
+          {theme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
           {!collapsed && <span>{theme === "dark" ? t('nav.light_mode') : t('nav.dark_mode')}</span>}
         </button>
 
         {/* Settings */}
         <button onClick={() => navigate('/settings')}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground/80 transition-all"
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-          <Settings className="w-4 h-4 shrink-0 text-muted-foreground" />
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-150">
+          <Settings className="w-4 h-4 shrink-0" />
           {!collapsed && <span>{t('nav.settings')}</span>}
         </button>
 
         {/* Profile */}
         <div className="relative">
           <button onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all"
-            style={showProfileMenu ? { background: acContainer } : {}}
-            onMouseEnter={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent))"; }}
-            onMouseLeave={e => { if (!showProfileMenu) (e.currentTarget as HTMLElement).style.background = ''; }}>
+            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-150 ${!showProfileMenu ? 'hover:bg-accent' : ''}`}
+            style={showProfileMenu ? { background: acContainer } : {}}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white overflow-hidden"
               style={!showChannelPic ? { background: ag } : undefined}>
               {showChannelPic ? (
@@ -235,17 +229,13 @@ export default function AppSidebar() {
               </div>
               <div className="p-1.5 space-y-0.5">
                 <button onClick={() => { navigate('/pricing'); setShowProfileMenu(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-bold transition-all"
-                  style={{ color: ac }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = acContainer}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-80"
+                  style={{ color: ac, background: `${acContainer}80` }}>
                   <Crown className="w-4 h-4" /> {t('nav.upgrade')}
                 </button>
                 <div className="border-t border-border my-1" />
                 <button onClick={() => { handleLogout(); setShowProfileMenu(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-semibold text-red-500 transition-all"
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#fef2f2'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-semibold text-red-500 transition-all hover:bg-red-50 dark:hover:bg-red-950/30">
                   <LogOut className="w-4 h-4" /> {t('nav.logout')}
                 </button>
               </div>
