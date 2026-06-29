@@ -558,9 +558,14 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
               {filterReels(hiker.reels).map((reel: any, i: number) => (
                 <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
                   className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
-                  <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Play className="w-6 h-6 text-white/15" />
+                  </div>
+                  {reel.thumbnail && (
+                    <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                     style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.3) 0%, transparent 60%, rgba(124,58,237,0.15) 100%)' }} />
@@ -1443,9 +1448,14 @@ export default function InstagramAnalyzer() {
                       {filterReels(hiker.reels).map((reel: any, i: number) => (
                         <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
                           className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
-                          <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Play className="w-6 h-6 text-white/15" />
+                          </div>
+                          {reel.thumbnail && (
+                            <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
+                          )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
                           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                             style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.3) 0%, transparent 60%, rgba(124,58,237,0.15) 100%)' }} />
