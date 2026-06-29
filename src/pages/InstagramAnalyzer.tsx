@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb,
   User, Users, Heart, MessageCircle, BarChart2, BadgeCheck, Eye,
-  Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target,
+  Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target, Image,
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
@@ -590,11 +590,15 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
               {filterPosts(postsExpanded ? hiker.posts : hiker.posts.slice(0, 9)).map((post: any, i: number) => (
                 <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
                   className="relative rounded-xl overflow-hidden group block bg-[#1a1a2e]" style={{ aspectRatio: '1/1' }}>
+                  {/* Placeholder — visible when thumbnail is missing or transparent */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Image className="w-6 h-6 text-white/15" />
+                  </div>
                   {post.thumbnail && (
                     <img
                       src={post.thumbnail.includes('supabase') ? post.thumbnail : `${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
                       alt={post.caption?.slice(0, 40) || ''}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -1447,10 +1451,13 @@ export default function InstagramAnalyzer() {
                         {filterPosts(displayPosts).map((post: any, i: number) => (
                           <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
                             className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Image className="w-5 h-5 text-white/15" />
+                            </div>
                             {post.thumbnail && (
-                              <img src={post.thumbnail ? `${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}` : ''}
+                              <img src={post.thumbnail.includes('supabase') ? post.thumbnail : `${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
                                 alt={post.caption?.slice(0, 40) || ''}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                 onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
                             )}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
