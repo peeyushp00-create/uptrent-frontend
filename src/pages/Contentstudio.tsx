@@ -110,6 +110,7 @@ export default function ContentStudio() {
   const [converting, setConverting] = useState(false);
   const [convertProgress, setConvertProgress] = useState(0);
   const exportCancelRef = useRef(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -133,7 +134,17 @@ export default function ContentStudio() {
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume, music]);
   useEffect(() => { if (videoRef.current) videoRef.current.muted = muteOriginal; }, [muteOriginal]);
   useEffect(() => { if (videoRef.current && !muteOriginal) videoRef.current.volume = originalVolume; }, [originalVolume, muteOriginal]);
-  useEffect(() => { fetchProjects(); }, []);
+  useEffect(() => { fetchProjects(); autoLoadLastProject(); }, []);
+
+  // Auto-save 5 seconds after any edit (only when video is hosted in Supabase)
+  useEffect(() => {
+    if (!hostedUrl) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => saveProject(), 5000);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostedUrl, segments, font, captionPos, showBox, textColor, boxColor,
+      overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume]);
 
   // overlay drag
   useEffect(() => {
@@ -342,6 +353,21 @@ export default function ContentStudio() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function autoLoadLastProject() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase
+        .from("studio_projects")
+        .select("id, name, video_url, data, updated_at")
+        .eq("user_id", session.user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (data) loadProject(data);
+    } catch { /* no saved projects yet */ }
   }
 
   async function fetchProjects() {
@@ -635,7 +661,7 @@ export default function ContentStudio() {
             </div>
             <div className="flex items-center gap-2">
               {saveError && <span className="text-xs text-red-500">{saveError}</span>}
-              {savedAt && !saveError && <span className="text-xs text-muted-foreground">Saved {savedAt}</span>}
+              {savedAt && !saveError && <span className="text-xs text-muted-foreground">Auto-saved {savedAt}</span>}
               <button onClick={saveProject} disabled={saving}
                 className="text-sm font-semibold px-3 py-1.5 rounded-lg border transition disabled:opacity-50"
                 style={{ borderColor: PURPLE, color: PURPLE }}>

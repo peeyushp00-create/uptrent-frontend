@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/layouts/AppLayout";
-import AppSidebar from "@/components/AppSidebar";
-import BottomNav from "@/components/BottomNav";
 import Index from "./pages/Index";
 import NewsPage from "./pages/NewsPage";
 import ScriptsPage from "./pages/ScriptsPage";
@@ -33,36 +30,6 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 
 const queryClient = new QueryClient();
 
-// Always mounted — keeps Studio state alive across navigation (File refs, blob URLs survive)
-function StudioKeepAlive() {
-  const location = useLocation();
-  const { session, loading } = useAuth();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  if (loading || !session) return null;
-
-  return (
-    <div style={{
-      display: location.pathname === "/studio" ? "flex" : "none",
-      position: "fixed", inset: 0, zIndex: 10,
-      background: "hsl(var(--background))",
-      height: "100vh", overflow: "hidden",
-    }}>
-      {!isMobile && <AppSidebar />}
-      <main style={{ flex: 1, overflowY: "auto", paddingBottom: isMobile ? "70px" : "0" }}>
-        <ContentStudio />
-      </main>
-      {isMobile && <BottomNav />}
-    </div>
-  );
-}
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -70,7 +37,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <>
           <Routes>
 
             {/* ── Public pages (no auth required) ── */}
@@ -100,15 +66,13 @@ const App = () => (
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
-              <Route path="/studio" element={<></>} />
+              <Route path="/studio" element={<ContentStudio />} />
               {/* <Route path="/captions" element={<VideoCaptioner />} /> */}
             </Route>
 
             <Route path="*" element={<NotFound />} />
 
           </Routes>
-          <StudioKeepAlive />
-          </>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
