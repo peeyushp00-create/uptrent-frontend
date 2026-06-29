@@ -42,6 +42,22 @@ interface CompetitorCard {
   hikerData?: any;
 }
 
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+const getBoostType = (item: any, avgViews?: number, avgLikes?: number): string | null => {
+  const caption = (item.caption || '').toLowerCase();
+  const views = Number(item.views) || 0;
+  const likes = Number(item.likes) || 0;
+  const comments = Number(item.comments) || 0;
+  const adKeywords = ['#ad', '#sponsored', '#collab', '#paid', '#gifted', '#partnership', '#brandpartner', 'paid partnership', '#promotion', '#promo'];
+  if (adKeywords.some(k => caption.includes(k))) return 'paid';
+  if (views > 50000 && (likes + comments) / views < 0.005) return 'low_eng';
+  if (avgViews && avgLikes && views > avgViews * 5 && likes < avgLikes * 0.5) return 'low_eng';
+  return null;
+};
+
+const isBoosted = (item: any, avgViews?: number, avgLikes?: number) =>
+  getBoostType(item, avgViews, avgLikes) !== null;
+
 // ─── Competitor Detail Page ───────────────────────────────────────────────────
 function CompetitorDetail({ competitor, onBack, onUpdate }: {
   competitor: CompetitorCard;
@@ -57,6 +73,25 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [aiPillars, setAiPillars] = useState<string[]>([]);
   const [pillarsLoading, setPillarsLoading] = useState(false);
   const [postsExpanded, setPostsExpanded] = useState(false);
+  const [reelsFilter, setReelsFilter] = useState<'top' | 'latest' | 'liked' | 'viral'>('top');
+  const [postsFilter, setPostsFilter] = useState<'top' | 'latest' | 'liked'>('top');
+
+  const filterReels = (reels: any[]) => {
+    const r = [...reels];
+    if (reelsFilter === 'top') return r.sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0));
+    if (reelsFilter === 'latest') return r.sort((a, b) => new Date(b.posted_at || 0).getTime() - new Date(a.posted_at || 0).getTime());
+    if (reelsFilter === 'liked') return r.sort((a, b) => (Number(b.likes) || 0) - (Number(a.likes) || 0));
+    if (reelsFilter === 'viral') return r.sort((a, b) => (b.virality?.score || 0) - (a.virality?.score || 0));
+    return r;
+  };
+
+  const filterPosts = (posts: any[]) => {
+    const p = [...posts];
+    if (postsFilter === 'top') return p.sort((a, b) => (Number(b.views) || Number(b.likes) || 0) - (Number(a.views) || Number(a.likes) || 0));
+    if (postsFilter === 'latest') return p.sort((a, b) => new Date(b.posted_at || 0).getTime() - new Date(a.posted_at || 0).getTime());
+    if (postsFilter === 'liked') return p.sort((a, b) => (Number(b.likes) || 0) - (Number(a.likes) || 0));
+    return p;
+  };
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -255,6 +290,23 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
           );
         })()}
 
+        {/* Posting Tips */}
+        {result?.posting_tips?.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+            <div className="flex items-center gap-2 mb-4"><Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posting Tips</h2></div>
+            <div className="space-y-2.5">
+              {result.posting_tips.map((tip: string, i: number) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: PRIMARY_CONTAINER }}>
+                    <span className="text-[9px] font-bold" style={{ color: PRIMARY }}>{i + 1}</span>
+                  </div>
+                  <p className="text-sm text-[#454652] dark:text-gray-200 leading-relaxed">{tip}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* What they post */}
         {result?.reel_ideas?.length > 0 && (result?.stats?.total_posts ?? 0) > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
@@ -381,11 +433,51 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
             <p className="text-xs text-[#757684]">Fetching latest reels & posts…</p>
           </div>
         )}
+
+        {/* Top Audio */}
+        {!hikerLoading && hiker?.top_audio?.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+            <div className="flex items-center gap-2 mb-3"><Music className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Top Audio</h2></div>
+            <div className="space-y-1.5">
+              {hiker.top_audio.map((a: any, i: number) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="text-[#454652] dark:text-gray-200 truncate mr-2">🎵 {a.title}</span>
+                  <span className="text-xs text-[#757684] shrink-0">×{a.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Best Hooks */}
+        {!hikerLoading && hiker?.top_hooks?.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+            <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Best Hooks</h2></div>
+            <div className="space-y-2.5">
+              {hiker.top_hooks.map((h: any, i: number) => (
+                <div key={i} onClick={() => h.permalink && window.open(h.permalink, '_blank')} className="cursor-pointer p-2 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-gray-700">
+                  <p className="text-sm text-[#191c1d] dark:text-white leading-snug">"{h.hook}"</p>
+                  <p className="text-[10px] text-[#757684] mt-0.5">{formatNum(h.views || 0)} views · {formatNum(h.likes || 0)} likes</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {!hikerLoading && hiker?.reels?.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
             <div className="flex items-center gap-2 mb-3"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Their Reels ({hiker.reels.length})</h2></div>
+            <div className="flex gap-1.5 mb-3 flex-wrap">
+              {([['top', 'Top Views'], ['latest', 'Latest'], ['liked', 'Most Liked'], ['viral', 'Viral']] as const).map(([val, label]) => (
+                <button key={val} onClick={() => setReelsFilter(val)}
+                  className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+                  style={reelsFilter === val ? { background: PRIMARY, color: '#fff' } : { background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
-              {hiker.reels.map((reel: any, i: number) => (
+              {filterReels(hiker.reels).map((reel: any, i: number) => (
                 <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
                   className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
                   <img src={proxyImg(reel.thumbnail)} alt={reel.caption} referrerPolicy="no-referrer"
@@ -399,10 +491,21 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                       <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
                     </div>
                   </div>
-                  {reel.virality?.label && (
-                    <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
-                      style={{ background: reel.virality.score >= 65 ? '#16a34a' : PRIMARY }}>{reel.virality.label}</div>
-                  )}
+                  <div className="absolute top-1.5 right-1.5 flex flex-col gap-0.5 items-end">
+                    {(() => {
+                      const boostType = getBoostType(reel, hiker.stats?.avg_views, hiker.stats?.avg_likes);
+                      if (!boostType) return null;
+                      return boostType === 'paid' ? (
+                        <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold" style={{ background: '#7c3aed' }}>💰 Paid</div>
+                      ) : (
+                        <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold" style={{ background: '#f59e0b' }}>⚠️ Low Eng</div>
+                      );
+                    })()}
+                    {reel.virality?.label && (
+                      <div className="px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
+                        style={{ background: reel.virality.score >= 65 ? '#16a34a' : PRIMARY }}>{reel.virality.label}</div>
+                    )}
+                  </div>
                   <div className="absolute bottom-0 left-0 right-0 p-1.5">
                     <div className="flex items-center gap-1.5">
                       <Eye className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.views) || 0)}</span>
@@ -412,7 +515,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                 </div>
               ))}
             </div>
-
           </div>
         )}
 
@@ -430,8 +532,17 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                 </button>
               )}
             </div>
+            <div className="flex gap-1.5 mb-3 flex-wrap">
+              {([['top', 'Top'], ['latest', 'Latest'], ['liked', 'Most Liked']] as const).map(([val, label]) => (
+                <button key={val} onClick={() => setPostsFilter(val)}
+                  className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+                  style={postsFilter === val ? { background: PRIMARY, color: '#fff' } : { background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="grid grid-cols-3 gap-1.5">
-              {(postsExpanded ? hiker.posts : hiker.posts.slice(0, 9)).map((post: any, i: number) => (
+              {filterPosts(postsExpanded ? hiker.posts : hiker.posts.slice(0, 9)).map((post: any, i: number) => (
                 <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
                   className="relative rounded-xl overflow-hidden group block bg-[#1a1a2e]" style={{ aspectRatio: '1/1' }}>
                   {post.thumbnail && (
@@ -491,6 +602,8 @@ export default function InstagramAnalyzer() {
   const [reelsVisible, setReelsVisible] = useState(9);
   const [reelsFilter, setReelsFilter] = useState<'top' | 'latest' | 'liked' | 'viral'>('top');
   const [postsFilter, setPostsFilter] = useState<'top' | 'latest' | 'liked'>('top');
+  const [aiPillars, setAiPillars] = useState<string[]>([]);
+  const [pillarsLoading, setPillarsLoading] = useState(false);
   const [competitors, setCompetitors] = useState<CompetitorCard[]>(() => {
     try { return JSON.parse(localStorage.getItem('ig_competitors') || '[]'); } catch { return []; }
   });
@@ -510,11 +623,39 @@ export default function InstagramAnalyzer() {
     return `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`;
   };
 
+  useEffect(() => {
+    if (result?.content_pillars?.length > 0) return;
+    if (hikerLoading || !hiker) return;
+    if (aiPillars.length > 0) return;
+    const captions = (hiker.reels || [])
+      .slice(0, 20)
+      .map((r: any) => (r.caption || '').split('\n')[0].trim().slice(0, 120))
+      .filter(Boolean);
+    const hashtags = (hiker.top_hashtags || []).slice(0, 25).map((h: any) => h.tag);
+    if (captions.length === 0 && hashtags.length === 0) return;
+    const fetchPillars = async () => {
+      setPillarsLoading(true);
+      try {
+        const res = await fetch(`${BASE}/api/hiker/pillars`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: handle.replace('@', '').trim(), captions, hashtags }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.pillars?.length > 0) setAiPillars(data.pillars);
+        }
+      } catch (e) { console.error(e); }
+      finally { setPillarsLoading(false); }
+    };
+    fetchPillars();
+  }, [handle, result, hiker, hikerLoading]);
+
   const analyze = async () => {
     if (!handle.trim()) return;
     const clean = handle.replace('@', '').trim();
     setLoading(true); setHikerLoading(true);
-    setError(''); setResult(null); setHiker(null); setImgError(false); setReelsVisible(9);
+    setError(''); setResult(null); setHiker(null); setImgError(false); setReelsVisible(9); setAiPillars([]);
 
     (async () => {
       try {
@@ -616,29 +757,6 @@ export default function InstagramAnalyzer() {
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
-
-  const getBoostType = (item: any, avgViews?: number, avgLikes?: number): string | null => {
-    const caption = (item.caption || '').toLowerCase();
-    const views = Number(item.views) || 0;
-    const likes = Number(item.likes) || 0;
-    const comments = Number(item.comments) || 0;
-
-    // 1. Paid promotion — caption keywords
-    const adKeywords = ['#ad', '#sponsored', '#collab', '#paid', '#gifted', '#partnership', '#brandpartner', 'paid partnership', '#promotion', '#promo'];
-    if (adKeywords.some(k => caption.includes(k))) return 'paid';
-
-    // 2. View anomaly — bought views (high views, low engagement)
-    if (views > 50000) {
-      const engRate = (likes + comments) / views;
-      if (engRate < 0.005) return 'low_eng'; // under 0.5%
-    }
-    if (avgViews && avgLikes && views > avgViews * 5 && likes < avgLikes * 0.5) return 'low_eng';
-
-    return null;
-  };
-
-  const isBoosted = (item: any, avgViews?: number, avgLikes?: number) =>
-    getBoostType(item, avgViews, avgLikes) !== null;
 
   const filterReels = (reels: any[]) => {
     const r = [...reels];
@@ -969,18 +1087,36 @@ export default function InstagramAnalyzer() {
               );
             })()}
 
-            {/* Content Pillars */}
-            {result?.content_pillars?.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-                <div className="flex items-center gap-2 mb-4"><TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.content_pillars')}</h2></div>
-                <div className="flex flex-wrap gap-2">
-                  {result.content_pillars.map((pillar: string, i: number) => {
-                    const s = PILLAR_COLORS[i % PILLAR_COLORS.length];
-                    return <span key={i} className="px-4 py-2 rounded-full text-xs font-bold" style={{ background: s.bg, color: s.text }}>{pillar}</span>;
-                  })}
+            {/* Content Pillars — ScrapeCreators or AI fallback */}
+            {(() => {
+              const pillars = result?.content_pillars?.length > 0 ? result.content_pillars : aiPillars;
+              const isAI = !(result?.content_pillars?.length > 0) && aiPillars.length > 0;
+              if (pillars.length === 0 && !pillarsLoading) return null;
+              return (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
+                      <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.content_pillars')}</h2>
+                    </div>
+                    {isAI && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>AI</span>}
+                  </div>
+                  {pillarsLoading && pillars.length === 0 ? (
+                    <div className="flex items-center gap-2 py-1">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: PRIMARY }} />
+                      <span className="text-xs text-[#757684]">Analysing content themes…</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {pillars.map((pillar: string, i: number) => {
+                        const s = PILLAR_COLORS[i % PILLAR_COLORS.length];
+                        return <span key={i} className="px-4 py-2 rounded-full text-xs font-bold" style={{ background: s.bg, color: s.text }}>{pillar}</span>;
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Reel Ideas */}
             {result?.reel_ideas?.length > 0 && (
