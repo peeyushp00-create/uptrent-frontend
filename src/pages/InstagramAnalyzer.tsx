@@ -837,9 +837,16 @@ export default function InstagramAnalyzer() {
   };
 
   const updateCompetitorData = (username: string, hikerData: any) => {
-    setCompetitors(prev => prev.map(c => 
+    setCompetitors(prev => prev.map(c =>
       c.username.toLowerCase() === username.toLowerCase()
-        ? { ...c, hikerData, updatedAt: Date.now() }
+        ? {
+            ...c,
+            hikerData,
+            updatedAt: Date.now(),
+            is_verified: hikerData?.profile?.is_verified ?? c.is_verified,
+            followers: hikerData?.profile?.followers ?? c.followers,
+            profile_pic_url: hikerData?.profile?.profile_pic_url ?? c.profile_pic_url,
+          }
         : c
     ));
   };
