@@ -44,30 +44,25 @@ function buildSegments(words: Word[]): Segment[] {
 }
 function reindex(segs: Segment[]): Segment[] { return segs.map((s, i) => ({ ...s, id: i })); }
 
-const STUDIO_SESSION = "studio_session";
-const getSS = () => { try { const r = sessionStorage.getItem(STUDIO_SESSION); return r ? JSON.parse(r) : null; } catch { return null; } };
-
 export default function ContentStudio() {
-  const ss = getSS();
-
   const [file, setFile] = useState<File | null>(null);
-  const [videoUrl, setVideoUrl] = useState(ss?.hostedUrl || "");
-  const [hostedUrl, setHostedUrl] = useState(ss?.hostedUrl || "");
-  const [duration, setDuration] = useState(ss?.duration || 0);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [hostedUrl, setHostedUrl] = useState("");
+  const [duration, setDuration] = useState(0);
   const [time, setTime] = useState(0);
-  const [segments, setSegments] = useState<Segment[]>(ss?.segments || []);
-  const [status, setStatus] = useState<"idle" | "uploading" | "transcribing" | "ready">(ss?.hostedUrl ? "ready" : "idle");
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [status, setStatus] = useState<"idle" | "uploading" | "transcribing" | "ready">("idle");
   const [error, setError] = useState("");
 
-  const [font, setFont] = useState(() => FONTS.find(f => f.key === ss?.fontKey) || FONTS[0]);
-  const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">(ss?.captionPos || "bottom");
-  const [showBox, setShowBox] = useState(ss?.showBox ?? true);
-  const [textColor, setTextColor] = useState(ss?.textColor || "#ffffff");
-  const [boxColor, setBoxColor] = useState(ss?.boxColor || "#000000");
+  const [font, setFont] = useState(FONTS[0]);
+  const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">("bottom");
+  const [showBox, setShowBox] = useState(true);
+  const [textColor, setTextColor] = useState("#ffffff");
+  const [boxColor, setBoxColor] = useState("#000000");
   const [history, setHistory] = useState<Segment[][]>([]);
 
   // overlays
-  const [overlays, setOverlays] = useState<Overlay[]>(ss?.overlays || []);
+  const [overlays, setOverlays] = useState<Overlay[]>([]);
   const [selOverlay, setSelOverlay] = useState<string | null>(null);
   const [dragOverlay, setDragOverlay] = useState<{ id: string; dx: number } | null>(null);
 
@@ -81,22 +76,22 @@ export default function ContentStudio() {
   const [uploadingOverlay, setUploadingOverlay] = useState(false);
 
   // music
-  const [music, setMusic] = useState<Music>(() => MUSIC.find(m => m.key === ss?.musicKey) || MUSIC[0]);
-  const [musicStart, setMusicStart] = useState(ss?.musicStart || 0);
-  const [songTrim, setSongTrim] = useState(ss?.songTrim || 0);
-  const [volume, setVolume] = useState(ss?.volume ?? 0.25);
-  const [fadeIn, setFadeIn] = useState(ss?.fadeIn ?? true);
-  const [fadeOut, setFadeOut] = useState(ss?.fadeOut ?? true);
-  const [muteOriginal, setMuteOriginal] = useState(ss?.muteOriginal || false);
-  const [originalVolume, setOriginalVolume] = useState(ss?.originalVolume ?? 1);
+  const [music, setMusic] = useState<Music>(MUSIC[0]);
+  const [musicStart, setMusicStart] = useState(0);
+  const [songTrim, setSongTrim] = useState(0);
+  const [volume, setVolume] = useState(0.25);
+  const [fadeIn, setFadeIn] = useState(true);
+  const [fadeOut, setFadeOut] = useState(true);
+  const [muteOriginal, setMuteOriginal] = useState(false);
+  const [originalVolume, setOriginalVolume] = useState(1);
   const [uploadingMusic, setUploadingMusic] = useState(false);
-  const [uploadedMusic, setUploadedMusic] = useState<Music[]>(ss?.uploadedMusic || []);
+  const [uploadedMusic, setUploadedMusic] = useState<Music[]>([]);
   const [dragMusic, setDragMusic] = useState(false);
   const [dragPip, setDragPip] = useState<{ id: string; dx: number; dy: number } | null>(null);
 
   // save
-  const [savedAt, setSavedAt] = useState(ss?.savedAt || "");
-  const [projectId, setProjectId] = useState<string | null>(ss?.projectId || null);
+  const [savedAt, setSavedAt] = useState("");
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
@@ -139,22 +134,6 @@ export default function ContentStudio() {
   useEffect(() => { if (videoRef.current) videoRef.current.muted = muteOriginal; }, [muteOriginal]);
   useEffect(() => { if (videoRef.current && !muteOriginal) videoRef.current.volume = originalVolume; }, [originalVolume, muteOriginal]);
   useEffect(() => { fetchProjects(); }, []);
-
-  // Persist studio state to sessionStorage so navigating away and back restores the session
-  useEffect(() => {
-    if (!hostedUrl) { try { sessionStorage.removeItem(STUDIO_SESSION); } catch {} return; }
-    try {
-      sessionStorage.setItem(STUDIO_SESSION, JSON.stringify({
-        hostedUrl, duration, segments,
-        fontKey: font.key, captionPos, showBox, textColor, boxColor,
-        overlays, musicKey: music.key, musicStart, songTrim,
-        volume, fadeIn, fadeOut, muteOriginal, originalVolume,
-        uploadedMusic, projectId, savedAt,
-      }));
-    } catch {}
-  }, [hostedUrl, duration, segments, font, captionPos, showBox, textColor, boxColor,
-      overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal,
-      originalVolume, uploadedMusic, projectId, savedAt]);
 
   // overlay drag
   useEffect(() => {
@@ -647,7 +626,6 @@ export default function ContentStudio() {
               <button onClick={() => {
                 setFile(null); setVideoUrl(""); setHostedUrl(""); setSegments([]);
                 setOverlays([]); setMusic(MUSIC[0]); setStatus("idle"); setHistory([]);
-                try { sessionStorage.removeItem(STUDIO_SESSION); } catch {}
               }} className="text-sm font-semibold text-muted-foreground hover:text-foreground transition">← New</button>
               <div className="w-px h-4 bg-border mx-1" />
               <button onClick={() => { fetchProjects(); setShowProjects(true); }}
