@@ -561,68 +561,94 @@ export default function ContentStudio() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&display=swap" />
-      <h1 className="text-2xl font-bold mb-1">Studio</h1>
-      <p className="text-gray-500 mb-6">Upload a video, add captions, overlays and music on the timeline.</p>
+
+      {/* Page header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm" style={{ background: GRAD }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div>
+          <h1 className="text-xl font-extrabold text-foreground leading-tight" style={{ fontFamily: 'Space Grotesk, Montserrat, sans-serif' }}>Studio</h1>
+          <p className="text-[11px] text-muted-foreground">Upload · Caption · Overlay · Music · Export</p>
+        </div>
+      </div>
 
       {!hasVideo && (
         <div className="space-y-6">
-          <div className="border-2 border-dashed border-gray-200 rounded-2xl p-12 flex flex-col items-center gap-4 bg-gray-50/50">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl" style={{ background: GRAD }}>▶</div>
-            <p className="text-gray-500">Start by uploading a video</p>
-            <label className="cursor-pointer px-5 py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition" style={{ background: GRAD }}>
-              Choose video<input type="file" accept="video/*" onChange={onPick} className="hidden" />
+          {/* Upload zone */}
+          <div className="relative rounded-3xl p-12 flex flex-col items-center gap-5 overflow-hidden border-2 border-dashed transition-all"
+            style={{ borderColor: `${PURPLE}40`, background: `linear-gradient(135deg, ${PURPLE}06, #6D28D906)` }}>
+            <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 0%, ${PURPLE}12 0%, transparent 70%)` }} />
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-white shadow-lg relative" style={{ background: GRAD }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <div className="text-center relative">
+              <p className="text-base font-bold text-foreground">Start with a video</p>
+              <p className="text-sm text-muted-foreground mt-1">Upload a short-form video to add captions, overlays and music</p>
+            </div>
+            <label className="relative cursor-pointer px-6 py-3 rounded-xl text-white font-semibold text-sm hover:opacity-90 transition shadow-md" style={{ background: GRAD }}>
+              Choose video
+              <input type="file" accept="video/*" onChange={onPick} className="hidden" />
             </label>
+            <p className="text-xs text-muted-foreground/60 relative">Supports MP4, MOV, WebM and more</p>
           </div>
 
-          {/* Recent projects on the empty screen */}
+          {/* Recent projects */}
           {projects.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Recent Projects</h2>
-                <button onClick={() => setShowProjects(true)} className="text-xs font-semibold" style={{ color: PURPLE }}>See all →</button>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Recent Projects</p>
+                <button onClick={() => setShowProjects(true)} className="text-xs font-semibold hover:opacity-80 transition" style={{ color: PURPLE }}>See all →</button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {projects.slice(0, 8).map(p => (
                   <button key={p.id} onClick={() => loadProject(p)}
-                    className="rounded-xl border border-gray-100 p-3 text-left transition hover:shadow-md group"
-                    style={{ background: "#fff" }}>
-                    <div className="w-full rounded-lg overflow-hidden mb-2 bg-gray-100 flex items-center justify-center" style={{ aspectRatio: "9/16", maxHeight: 140 }}>
+                    className="rounded-2xl border border-border bg-card p-3 text-left transition hover:shadow-md group">
+                    <div className="w-full rounded-xl overflow-hidden mb-2 bg-muted" style={{ aspectRatio: "9/16", maxHeight: 140 }}>
                       <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
                     </div>
-                    <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-purple-600 transition">{p.name}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    <p className="text-sm font-semibold text-foreground truncate group-hover:text-purple-500 transition">{p.name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
                   </button>
                 ))}
               </div>
             </div>
           )}
-          {loadingProjects && <p className="text-center text-sm text-gray-400">Loading projects…</p>}
+          {loadingProjects && <p className="text-center text-sm text-muted-foreground">Loading projects…</p>}
         </div>
       )}
 
       {hasVideo && (
         <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={() => { setFile(null); setVideoUrl(""); setSegments([]); setOverlays([]); setMusic(MUSIC[0]); }} className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition">← New</button>
-              <button onClick={() => { fetchProjects(); setShowProjects(true); }} className="text-sm font-semibold px-3 py-2 rounded-xl border transition" style={{ borderColor: "#e5e7eb", color: "#6b7280" }}>Projects</button>
+          {/* Editor toolbar */}
+          <div className="flex items-center justify-between bg-card rounded-2xl border border-border px-4 py-3">
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setFile(null); setVideoUrl(""); setSegments([]); setOverlays([]); setMusic(MUSIC[0]); }}
+                className="text-sm font-semibold text-muted-foreground hover:text-foreground transition">← New</button>
+              <div className="w-px h-4 bg-border mx-1" />
+              <button onClick={() => { fetchProjects(); setShowProjects(true); }}
+                className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition">
+                Projects
+              </button>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {saveError && <span className="text-xs text-red-500">{saveError}</span>}
-              {savedAt && !saveError && <span className="text-xs text-gray-400">Saved {savedAt}</span>}
-              <button onClick={saveProject} disabled={saving} className="text-sm font-semibold px-3 py-2 rounded-xl border transition disabled:opacity-50" style={{ borderColor: PURPLE, color: PURPLE }}>
+              {savedAt && !saveError && <span className="text-xs text-muted-foreground">Saved {savedAt}</span>}
+              <button onClick={saveProject} disabled={saving}
+                className="text-sm font-semibold px-3 py-1.5 rounded-lg border transition disabled:opacity-50"
+                style={{ borderColor: PURPLE, color: PURPLE }}>
                 {saving ? "Saving…" : "Save"}
               </button>
               {exporting ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-28 h-2 rounded-full bg-gray-200 overflow-hidden">
+                  <div className="w-24 h-1.5 rounded-full bg-accent overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-200" style={{ width: `${exportProgress}%`, background: GRAD }} />
                   </div>
-                  <span className="text-xs text-gray-500">{exportProgress}%</span>
+                  <span className="text-xs text-muted-foreground">{exportProgress}%</span>
                   <button onClick={() => { exportCancelRef.current = true; }} className="text-xs text-red-500 font-semibold">Cancel</button>
                 </div>
               ) : (
-                <button onClick={exportVideo} className="text-sm font-semibold px-4 py-2 rounded-xl text-white transition hover:opacity-90" style={{ background: GRAD }}>Export</button>
+                <button onClick={exportVideo} className="text-sm font-semibold px-4 py-1.5 rounded-lg text-white transition hover:opacity-90" style={{ background: GRAD }}>Export</button>
               )}
             </div>
           </div>
@@ -664,45 +690,95 @@ export default function ContentStudio() {
               {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
 
               {sel && (
-                <div className="rounded-2xl border border-gray-100 p-4 space-y-3">
+                <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Overlay</p>
-                    <button onClick={() => deleteOverlay(sel.id)} className="text-xs text-red-500">Delete</button>
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Overlay</p>
+                    </div>
+                    <button onClick={() => deleteOverlay(sel.id)} className="text-xs font-semibold text-red-500 hover:text-red-600 transition">Delete</button>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    {([["full", "Full"], ["half", "Half"], ["pip", "PiP"]] as const).map(([m, label]) => (<button key={m} onClick={() => updateOverlay(sel.id, { mode: m })} className="px-2 py-1.5 rounded-lg border text-sm transition" style={sel.mode === m ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{label}</button>))}
+                    {([["full", "Full"], ["half", "Half"], ["pip", "PiP"]] as const).map(([m, label]) => (
+                      <button key={m} onClick={() => updateOverlay(sel.id, { mode: m })}
+                        className="px-2 py-1.5 rounded-lg border border-border text-sm font-medium transition"
+                        style={sel.mode === m ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                        {label}
+                      </button>
+                    ))}
                   </div>
                   {sel.mode === "half" && (
                     <div className="flex gap-2">
-                      {(["top", "bottom"] as const).map(h => (<button key={h} onClick={() => updateOverlay(sel.id, { half: h })} className="flex-1 px-3 py-1.5 rounded-lg border text-sm capitalize transition" style={sel.half === h ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{h}</button>))}
+                      {(["top", "bottom"] as const).map(h => (
+                        <button key={h} onClick={() => updateOverlay(sel.id, { half: h })}
+                          className="flex-1 px-3 py-1.5 rounded-lg border border-border text-sm capitalize font-medium transition"
+                          style={sel.half === h ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                          {h}
+                        </button>
+                      ))}
                     </div>
                   )}
-                  <label className="block"><span className="text-[11px] text-gray-400">Duration {sel.length.toFixed(1)}s</span>
-                    <input type="range" min={1} max={10} step={0.5} value={sel.length} onChange={e => updateOverlay(sel.id, { length: parseFloat(e.target.value) })} className="w-full accent-purple-600" /></label>
+                  <label className="block">
+                    <span className="text-[11px] text-muted-foreground">Duration {sel.length.toFixed(1)}s</span>
+                    <input type="range" min={1} max={10} step={0.5} value={sel.length} onChange={e => updateOverlay(sel.id, { length: parseFloat(e.target.value) })} className="w-full accent-purple-600 mt-1" />
+                  </label>
                 </div>
               )}
 
               {!hasCaptions ? (
-                <div className="rounded-2xl border border-gray-100 p-4 text-center space-y-3">
-                  <p className="text-sm text-gray-500">Add auto-captions to your video</p>
-                  <button onClick={transcribe} disabled={status === "uploading" || status === "transcribing"} className="px-5 py-2 rounded-xl text-white font-semibold disabled:opacity-40 transition" style={{ background: GRAD }}>
+                <div className="rounded-2xl border border-border bg-card p-5 text-center space-y-3">
+                  <div className="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg font-bold" style={{ background: `${PURPLE}15`, color: PURPLE }}>T</div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Auto-captions</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Transcribe your video and edit captions inline</p>
+                  </div>
+                  <button onClick={transcribe} disabled={status === "uploading" || status === "transcribing"}
+                    className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-40 transition hover:opacity-90 shadow-sm"
+                    style={{ background: GRAD }}>
                     {status === "uploading" ? "Uploading…" : status === "transcribing" ? "Transcribing…" : "Transcribe captions"}
                   </button>
-                  {error && <p className="text-red-500 text-sm">{error}</p>}
+                  {error && <p className="text-red-500 text-xs">{error}</p>}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-gray-100 p-4 space-y-4">
-                  <div><p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Font</p>
-                    <div className="flex flex-wrap gap-2">{FONTS.map(f => (<button key={f.key} onClick={() => setFont(f)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={font.key === f.key ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF", fontFamily: f.css } : { borderColor: "#e5e7eb", fontFamily: f.css }}>{f.label}</button>))}</div>
+                <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Caption Style</p>
                   </div>
-                  <div><p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Position</p>
-                    <div className="flex gap-2">{(["top", "middle", "bottom"] as const).map(p => (<button key={p} onClick={() => setCaptionPos(p)} className="flex-1 px-3 py-1.5 rounded-lg border text-sm capitalize transition" style={captionPos === p ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{p}</button>))}</div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">Font</p>
+                    <div className="flex flex-wrap gap-2">
+                      {FONTS.map(f => (
+                        <button key={f.key} onClick={() => setFont(f)}
+                          className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
+                          style={font.key === f.key ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15`, fontFamily: f.css } : { fontFamily: f.css }}>
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div><p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Style</p>
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <button onClick={() => setShowBox(v => !v)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={showBox ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>{showBox ? "Box: on" : "Box: off"}</button>
-                      <label className="flex items-center gap-1.5 text-xs text-gray-500">Text<input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" /></label>
-                      {showBox && <label className="flex items-center gap-1.5 text-xs text-gray-500">Box<input type="color" value={boxColor} onChange={e => setBoxColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" /></label>}
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">Position</p>
+                    <div className="flex gap-2">
+                      {(["top", "middle", "bottom"] as const).map(p => (
+                        <button key={p} onClick={() => setCaptionPos(p)}
+                          className="flex-1 px-3 py-1.5 rounded-lg border border-border text-sm capitalize font-medium transition"
+                          style={captionPos === p ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">Style</p>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <button onClick={() => setShowBox(v => !v)}
+                        className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
+                        style={showBox ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                        {showBox ? "Box: on" : "Box: off"}
+                      </button>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">Text<input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" /></label>
+                      {showBox && <label className="flex items-center gap-1.5 text-xs text-muted-foreground">Box<input type="color" value={boxColor} onChange={e => setBoxColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" /></label>}
                     </div>
                   </div>
                 </div>
@@ -710,86 +786,121 @@ export default function ContentStudio() {
             </div>
 
             {/* right column: transcript + music */}
-            <div className="space-y-6">
+            <div className="space-y-5">
               {hasCaptions ? (
-                <div>
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-semibold text-gray-700">Transcript</h2>
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
+                      <h2 className="font-bold text-foreground text-sm">Transcript</h2>
+                    </div>
                     <div className="flex items-center gap-3">
-                      <button onClick={undo} disabled={!history.length} className="text-xs font-semibold px-2 py-1 rounded-lg border transition disabled:opacity-40" style={{ borderColor: "#e5e7eb", color: history.length ? PURPLE : "#9ca3af" }}>↺ Undo</button>
-                      <span className="text-xs text-gray-400">{segments.length} lines</span>
+                      <button onClick={undo} disabled={!history.length}
+                        className="text-xs font-semibold px-2 py-1 rounded-lg border border-border transition disabled:opacity-40"
+                        style={{ color: history.length ? PURPLE : undefined }}>↺ Undo</button>
+                      <span className="text-xs text-muted-foreground">{segments.length} lines</span>
                     </div>
                   </div>
                   <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
                     {segments.map(s => { const active = s.id === activeId; return (
-                      <div key={s.id} ref={el => (rowRefs.current[s.id] = el)} className="group flex gap-3 p-3 rounded-xl border transition" style={active ? { borderColor: PURPLE, background: "#F5F2FF", boxShadow: "0 0 0 1px #7C3AED" } : { borderColor: "#f0f0f0" }}>
-                        <button onClick={() => seek(s.start)} className="shrink-0 text-xs font-mono mt-1 px-1.5 py-0.5 rounded transition" style={active ? { color: PURPLE } : { color: "#9ca3af" }}>{fmt(s.start)}</button>
-                        <textarea value={s.text} onFocus={pushHistory} onChange={e => editSeg(s.id, e.target.value)} onSelect={e => { caretRef.current = { id: s.id, pos: e.currentTarget.selectionStart }; }} rows={1} className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed" style={{ minHeight: 24 }} onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
+                      <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
+                        className="group flex gap-3 p-3 rounded-xl border border-border transition"
+                        style={active ? { borderColor: PURPLE, background: `${PURPLE}10`, boxShadow: `0 0 0 1px ${PURPLE}` } : {}}>
+                        <button onClick={() => seek(s.start)} className="shrink-0 text-xs font-mono mt-1 px-1.5 py-0.5 rounded transition text-muted-foreground"
+                          style={active ? { color: PURPLE } : {}}>{fmt(s.start)}</button>
+                        <textarea value={s.text} onFocus={pushHistory} onChange={e => editSeg(s.id, e.target.value)}
+                          onSelect={e => { caretRef.current = { id: s.id, pos: e.currentTarget.selectionStart }; }}
+                          rows={1} className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed text-foreground"
+                          style={{ minHeight: 24 }}
+                          onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
                         <div className="shrink-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
-                          <button onClick={() => splitSeg(s.id)} className="text-[10px] px-1.5 py-0.5 rounded border text-gray-500 hover:text-purple-600">Split</button>
-                          <button onClick={() => mergeUp(s.id)} disabled={s.id === 0} className="text-[10px] px-1.5 py-0.5 rounded border text-gray-500 hover:text-purple-600 disabled:opacity-30">Merge↑</button>
+                          <button onClick={() => splitSeg(s.id)} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 transition">Split</button>
+                          <button onClick={() => mergeUp(s.id)} disabled={s.id === 0} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 disabled:opacity-30 transition">Merge↑</button>
                         </div>
                       </div>); })}
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400 p-10 text-center">Transcribe to edit captions here.</div>
+                <div className="rounded-2xl border border-dashed border-border bg-card flex items-center justify-center text-sm text-muted-foreground p-10 text-center">Transcribe to edit captions here.</div>
               )}
 
-              {/* Music kit */}
-              <div className="rounded-2xl border border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-semibold text-gray-700">Music</h2>
-                  {hasMusic && <span className="text-xs text-gray-400">drag the bar on the timeline</span>}
+              {/* Music */}
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
+                    <h2 className="font-bold text-foreground text-sm">Music</h2>
+                  </div>
+                  {hasMusic && <span className="text-xs text-muted-foreground">drag the bar on the timeline</span>}
                 </div>
-                <div className="mb-4 space-y-2">
+
+                {/* Original audio */}
+                <div className="rounded-xl bg-accent/40 p-3 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Original Audio</p>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setMuteOriginal(v => !v)} className="shrink-0 px-3 py-1.5 rounded-lg border text-sm transition" style={muteOriginal ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                    <button onClick={() => setMuteOriginal(v => !v)}
+                      className="shrink-0 w-8 h-8 rounded-lg border border-border flex items-center justify-center text-sm transition hover:bg-accent"
+                      style={muteOriginal ? { borderColor: PURPLE, background: `${PURPLE}15` } : {}}>
                       {muteOriginal ? "🔇" : "🔊"}
                     </button>
                     <div className="flex-1">
-                      <div className="flex justify-between text-[11px] text-gray-400 mb-1">
-                        <span>Original audio</span><span>{Math.round(originalVolume * 100)}%</span>
+                      <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
+                        <span>{muteOriginal ? "Muted" : "Volume"}</span><span>{Math.round(originalVolume * 100)}%</span>
                       </div>
                       <input type="range" min={0} max={1} step={0.05} value={originalVolume}
                         disabled={muteOriginal}
-                        onChange={e => {
-                          const v = parseFloat(e.target.value);
-                          setOriginalVolume(v);
-                          if (videoRef.current) videoRef.current.volume = v;
-                        }}
+                        onChange={e => { const v = parseFloat(e.target.value); setOriginalVolume(v); if (videoRef.current) videoRef.current.volume = v; }}
                         className="w-full accent-purple-600 disabled:opacity-40" />
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {MUSIC.map(m => (<button key={m.key} onClick={() => setMusic(m)} className="px-3 py-1.5 rounded-lg border text-sm transition" style={music.key === m.key ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{m.label}</button>))}
-                  {uploadedMusic.map(m => (
-                    <span key={m.key} className="inline-flex items-center rounded-lg border text-sm overflow-hidden"
-                      style={music.key === m.key ? { borderColor: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>
-                      <button onClick={() => setMusic(m)} className="px-3 py-1.5" style={{ color: music.key === m.key ? PURPLE : "#374151" }}>♪ {m.label}</button>
-                      <button onClick={() => { setUploadedMusic(prev => prev.filter(t => t.key !== m.key)); if (music.key === m.key) setMusic(MUSIC[0]); }}
-                        className="px-2 py-1.5 text-gray-400 hover:text-red-500 border-l" style={{ borderColor: "#e5e7eb" }}>✕</button>
-                    </span>
-                  ))}
-                  <label className="px-3 py-1.5 rounded-lg border border-dashed text-sm cursor-pointer text-gray-500 hover:border-gray-400 transition" style={{ borderColor: "#d1d5db" }}>
-                    {uploadingMusic ? "Uploading…" : "+ Upload your own"}
-                    <input type="file" accept="audio/*" onChange={uploadMusic} className="hidden" disabled={uploadingMusic} />
-                  </label>
+
+                {/* Music kit */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Music Kit</p>
+                  <div className="flex flex-wrap gap-2">
+                    {MUSIC.map(m => (
+                      <button key={m.key} onClick={() => setMusic(m)}
+                        className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
+                        style={music.key === m.key ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                        {m.label}
+                      </button>
+                    ))}
+                    {uploadedMusic.map(m => (
+                      <span key={m.key} className="inline-flex items-center rounded-lg border border-border text-sm overflow-hidden"
+                        style={music.key === m.key ? { borderColor: PURPLE, background: `${PURPLE}15` } : {}}>
+                        <button onClick={() => setMusic(m)} className="px-3 py-1.5 font-medium" style={{ color: music.key === m.key ? PURPLE : undefined }}>♪ {m.label}</button>
+                        <button onClick={() => { setUploadedMusic(prev => prev.filter(t => t.key !== m.key)); if (music.key === m.key) setMusic(MUSIC[0]); }}
+                          className="px-2 py-1.5 text-muted-foreground hover:text-red-500 border-l border-border transition">✕</button>
+                      </span>
+                    ))}
+                    <label className="px-3 py-1.5 rounded-lg border border-dashed border-border text-sm cursor-pointer text-muted-foreground hover:text-foreground transition">
+                      {uploadingMusic ? "Uploading…" : "+ Upload"}
+                      <input type="file" accept="audio/*" onChange={uploadMusic} className="hidden" disabled={uploadingMusic} />
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/50">Only upload music you have the rights to use.</p>
                 </div>
-                <p className="text-[11px] text-gray-400 mb-4">Only upload music you have the rights to use.</p>
 
                 {hasMusic && (
-                  <div className="space-y-5">
-                    <div className="grid sm:grid-cols-2 gap-5">
-                      <label className="block"><span className="text-[11px] text-gray-400">Music volume {Math.round(volume * 100)}%</span>
-                        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => { const v = parseFloat(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v; }} className="w-full accent-purple-600" /></label>
-                      <label className="block"><span className="text-[11px] text-gray-400">Start song from {fmt(songTrim)}</span>
-                        <input type="range" min={0} max={60} step={1} value={songTrim} onChange={e => setSongTrim(parseInt(e.target.value))} className="w-full accent-purple-600" /></label>
+                  <div className="space-y-4 pt-1 border-t border-border">
+                    <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                      <label className="block">
+                        <span className="text-[11px] text-muted-foreground">Music volume {Math.round(volume * 100)}%</span>
+                        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => { const v = parseFloat(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v; }} className="w-full accent-purple-600 mt-1" />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] text-muted-foreground">Start from {fmt(songTrim)}</span>
+                        <input type="range" min={0} max={60} step={1} value={songTrim} onChange={e => setSongTrim(parseInt(e.target.value))} className="w-full accent-purple-600 mt-1" />
+                      </label>
                     </div>
                     <div className="flex gap-2 max-w-xs">
                       {[{ k: "in", v: fadeIn, set: setFadeIn }, { k: "out", v: fadeOut, set: setFadeOut }].map(f => (
-                        <button key={f.k} onClick={() => f.set(!f.v)} className="flex-1 px-3 py-1.5 rounded-lg border text-sm transition" style={f.v ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>Fade {f.k}</button>
+                        <button key={f.k} onClick={() => f.set(!f.v)}
+                          className="flex-1 px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
+                          style={f.v ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                          Fade {f.k}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -858,54 +969,67 @@ export default function ContentStudio() {
 
       {/* Media browser (Pexels + Upload) */}
       {showPex && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowPex(false)}>
-          <div className="bg-white text-gray-900 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-
-            {/* Tab bar */}
-            <div className="px-4 pt-4 flex items-center gap-2 border-b border-gray-100 pb-0">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowPex(false)}>
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col border border-border shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="px-4 pt-4 flex items-center gap-2 border-b border-border pb-0">
               {(["pexels", "upload"] as const).map(tab => (
                 <button key={tab} onClick={() => setPexTab(tab)}
                   className="px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition capitalize"
-                  style={pexTab === tab ? { borderColor: PURPLE, color: PURPLE } : { borderColor: "transparent", color: "#9ca3af" }}>
+                  style={pexTab === tab ? { borderColor: PURPLE, color: PURPLE } : { borderColor: "transparent" }}>
                   {tab === "pexels" ? "Pexels" : "Upload yours"}
                 </button>
               ))}
-              <button onClick={() => setShowPex(false)} className="ml-auto px-2 text-gray-400 text-xl pb-2">✕</button>
+              <button onClick={() => setShowPex(false)} className="ml-auto px-2 text-muted-foreground text-xl pb-2 hover:text-foreground transition">✕</button>
             </div>
 
             {pexTab === "pexels" && (
               <>
-                <div className="p-4 border-b border-gray-100 flex items-center gap-2">
-                  <input value={pexQ} onChange={e => setPexQ(e.target.value)} onKeyDown={e => e.key === "Enter" && searchPexels()} placeholder="Search Pexels…" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 outline-none text-sm text-gray-900 placeholder-gray-400 bg-white" />
-                  <div className="flex gap-1">{(["photo", "video"] as const).map(t => (<button key={t} onClick={() => setPexType(t)} className="px-3 py-2 rounded-lg border text-sm capitalize" style={pexType === t ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" } : { borderColor: "#e5e7eb" }}>{t}</button>))}</div>
-                  <button onClick={searchPexels} className="px-4 py-2 rounded-lg text-white text-sm font-semibold" style={{ background: GRAD }}>Search</button>
+                <div className="p-4 border-b border-border flex items-center gap-2">
+                  <input value={pexQ} onChange={e => setPexQ(e.target.value)} onKeyDown={e => e.key === "Enter" && searchPexels()}
+                    placeholder="Search Pexels…"
+                    className="flex-1 px-3 py-2 rounded-lg border border-border bg-background outline-none text-sm text-foreground placeholder:text-muted-foreground" />
+                  <div className="flex gap-1">
+                    {(["photo", "video"] as const).map(t => (
+                      <button key={t} onClick={() => setPexType(t)}
+                        className="px-3 py-2 rounded-lg border border-border text-sm capitalize font-medium transition"
+                        style={pexType === t ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={searchPexels} className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90 transition" style={{ background: GRAD }}>Search</button>
                 </div>
                 <div className="p-4 overflow-y-auto">
-                  {pexLoading ? <p className="text-center text-gray-400 text-sm py-10">Searching…</p> : (
+                  {pexLoading ? <p className="text-center text-muted-foreground text-sm py-10">Searching…</p> : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {pexItems.map(it => (<button key={it.id} onClick={() => addOverlay(it)} className="relative aspect-[9/16] rounded-lg overflow-hidden border border-gray-100 hover:border-purple-400 transition"><img src={it.thumb} alt="" className="w-full h-full object-cover" />{it.kind === "video" && <span className="absolute top-1 left-1 text-[9px] bg-black/60 text-white px-1 rounded">▶ video</span>}</button>))}
-                      {!pexItems.length && <p className="col-span-full text-center text-gray-400 text-sm py-10">Search Pexels for images or videos to overlay.</p>}
+                      {pexItems.map(it => (
+                        <button key={it.id} onClick={() => addOverlay(it)}
+                          className="relative aspect-[9/16] rounded-xl overflow-hidden border border-border hover:border-purple-400 transition">
+                          <img src={it.thumb} alt="" className="w-full h-full object-cover" />
+                          {it.kind === "video" && <span className="absolute top-1 left-1 text-[9px] bg-black/60 text-white px-1 rounded">▶ video</span>}
+                        </button>
+                      ))}
+                      {!pexItems.length && <p className="col-span-full text-center text-muted-foreground text-sm py-10">Search Pexels for images or videos to overlay.</p>}
                     </div>
                   )}
-                  <p className="text-[11px] text-gray-400 mt-3">Media from Pexels — free to use. PiP or full-frame is set per overlay after adding.</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-3">Media from Pexels — free to use.</p>
                 </div>
               </>
             )}
 
             {pexTab === "upload" && (
               <div className="p-8 flex flex-col items-center justify-center gap-4 flex-1">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl" style={{ background: "#F5F2FF" }}>🖼️</div>
-                <p className="font-semibold text-gray-700">Upload an image or video</p>
-                <p className="text-sm text-gray-400 text-center max-w-xs">It will be added to the timeline at the current playhead position as an overlay.</p>
-                <label className="cursor-pointer px-6 py-3 rounded-xl text-white font-semibold hover:opacity-90 transition" style={{ background: uploadingOverlay ? "#a78bfa" : GRAD }}>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl" style={{ background: `${PURPLE}15` }}>🖼️</div>
+                <p className="font-bold text-foreground">Upload an image or video</p>
+                <p className="text-sm text-muted-foreground text-center max-w-xs">It will be added at the current playhead position as an overlay.</p>
+                <label className="cursor-pointer px-6 py-3 rounded-xl text-white font-semibold hover:opacity-90 transition shadow-sm" style={{ background: uploadingOverlay ? "#a78bfa" : GRAD }}>
                   {uploadingOverlay ? "Uploading…" : "Choose file"}
                   <input type="file" accept="image/*,video/*" onChange={uploadOverlayFile} className="hidden" disabled={uploadingOverlay} />
                 </label>
                 {error && <p className="text-red-500 text-sm">{error}</p>}
-                <p className="text-[11px] text-gray-400">Supports JPG, PNG, GIF, MP4, MOV and more.</p>
+                <p className="text-[11px] text-muted-foreground/60">Supports JPG, PNG, GIF, MP4, MOV and more.</p>
               </div>
             )}
-
           </div>
         </div>
       )}
@@ -913,68 +1037,62 @@ export default function ContentStudio() {
       {/* Projects slide-over panel */}
       {showProjects && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="flex-1 bg-black/40" onClick={() => setShowProjects(false)} />
-          <div className="w-80 bg-white h-full shadow-2xl flex flex-col overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-              <h2 className="font-bold text-gray-800">My Projects</h2>
-              <button onClick={() => setShowProjects(false)} className="text-gray-400 text-xl hover:text-gray-600">✕</button>
+          <div className="flex-1 bg-black/50" onClick={() => setShowProjects(false)} />
+          <div className="w-80 bg-card h-full shadow-2xl flex flex-col overflow-hidden border-l border-border">
+            <div className="px-5 py-4 flex items-center justify-between shrink-0" style={{ background: GRAD }}>
+              <div>
+                <h2 className="font-bold text-white text-sm">My Projects</h2>
+                <p className="text-white/70 text-[11px]">{projects.length} saved project{projects.length !== 1 ? "s" : ""}</p>
+              </div>
+              <button onClick={() => setShowProjects(false)} className="text-white/80 hover:text-white text-xl transition">✕</button>
             </div>
             {loadingProjects ? (
-              <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
+              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
             ) : projects.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-2 text-gray-400 text-sm px-6 text-center">
+              <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground text-sm px-6 text-center">
                 <span className="text-3xl">📁</span>
-                <p>No saved projects yet.</p>
+                <p className="font-semibold text-foreground">No saved projects yet</p>
                 <p className="text-xs">Save a project from the editor and it will appear here.</p>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+              <div className="flex-1 overflow-y-auto divide-y divide-border">
                 {projects.map(p => (
-                  <div key={p.id} className="flex items-center hover:bg-purple-50 transition group">
+                  <div key={p.id} className="flex items-center hover:bg-accent transition group">
                     <button onClick={() => renamingId !== p.id && loadProject(p)} className="flex-1 p-4 text-left flex gap-3 items-center min-w-0">
-                      <div className="w-12 shrink-0 rounded-lg overflow-hidden bg-gray-100" style={{ aspectRatio: "9/16" }}>
+                      <div className="w-12 shrink-0 rounded-lg overflow-hidden bg-muted" style={{ aspectRatio: "9/16" }}>
                         <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         {renamingId === p.id ? (
-                          <input
-                            autoFocus
-                            value={renameValue}
+                          <input autoFocus value={renameValue}
                             onChange={e => setRenameValue(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === "Enter") renameProject(p.id, renameValue);
-                              if (e.key === "Escape") setRenamingId(null);
-                            }}
+                            onKeyDown={e => { if (e.key === "Enter") renameProject(p.id, renameValue); if (e.key === "Escape") setRenamingId(null); }}
                             onClick={e => e.stopPropagation()}
-                            className="w-full text-sm font-semibold text-gray-800 border-b border-purple-400 outline-none bg-transparent"
-                          />
+                            className="w-full text-sm font-semibold text-foreground border-b border-purple-400 outline-none bg-transparent" />
                         ) : (
-                          <p className="font-semibold text-gray-800 text-sm truncate">{p.name}</p>
+                          <p className="font-semibold text-foreground text-sm truncate">{p.name}</p>
                         )}
-                        <p className="text-[11px] text-gray-400 mt-0.5">
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
                           {new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                         </p>
                         {p.data?.segments?.length > 0 && (
-                          <p className="text-[10px] text-purple-400 mt-0.5">{p.data.segments.length} caption lines</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: "#a78bfa" }}>{p.data.segments.length} caption lines</p>
                         )}
                       </div>
                       {renamingId !== p.id && <span className="shrink-0 text-xs font-semibold" style={{ color: PURPLE }}>Open →</span>}
                     </button>
                     <div className="shrink-0 mr-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                       {renamingId === p.id ? (
-                        <button
-                          onClick={e => { e.stopPropagation(); renameProject(p.id, renameValue); }}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-purple-500 hover:bg-purple-100 transition"
-                          title="Save name">✓</button>
+                        <button onClick={e => { e.stopPropagation(); renameProject(p.id, renameValue); }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-accent transition"
+                          style={{ color: PURPLE }} title="Save name">✓</button>
                       ) : (
-                        <button
-                          onClick={e => { e.stopPropagation(); setRenamingId(p.id); setRenameValue(p.name); }}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-purple-500 hover:bg-purple-50 transition"
+                        <button onClick={e => { e.stopPropagation(); setRenamingId(p.id); setRenameValue(p.name); }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-purple-500 hover:bg-accent transition"
                           title="Rename">✏️</button>
                       )}
-                      <button
-                        onClick={e => deleteProject(p.id, e)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition"
+                      <button onClick={e => deleteProject(p.id, e)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition"
                         title="Delete project">🗑</button>
                     </div>
                   </div>
@@ -988,44 +1106,35 @@ export default function ContentStudio() {
       {/* Export preview modal */}
       {exportPreviewUrl && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col items-center gap-4 p-6 w-full max-w-sm">
-            <p className="font-bold text-gray-800 text-lg">Export Preview</p>
+          <div className="bg-card rounded-2xl overflow-hidden shadow-2xl flex flex-col items-center gap-4 p-6 w-full max-w-sm border border-border">
+            <p className="font-bold text-foreground text-lg">Export Preview</p>
             <video src={exportPreviewUrl} controls autoPlay className="w-full rounded-xl" style={{ maxHeight: "55vh" }} />
 
-            {/* MP4 conversion progress */}
             {converting && (
               <div className="w-full space-y-1">
-                <div className="flex justify-between text-xs text-gray-500">
+                <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Converting to MP4…</span><span>{convertProgress}%</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-accent overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-200" style={{ width: `${convertProgress}%`, background: GRAD }} />
                 </div>
               </div>
             )}
 
             <div className="flex flex-col gap-2 w-full">
-              <button
-                onClick={convertToMp4}
-                disabled={converting}
-                className="w-full py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-50 transition hover:opacity-90"
+              <button onClick={convertToMp4} disabled={converting}
+                className="w-full py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-50 transition hover:opacity-90 shadow-sm"
                 style={{ background: GRAD }}>
                 {converting ? `Converting… ${convertProgress}%` : "Download as MP4"}
               </button>
-              <button
-                onClick={() => {
-                  const a = document.createElement("a"); a.href = exportPreviewUrl;
-                  a.download = `studio-export-${Date.now()}.webm`; a.click();
-                }}
+              <button onClick={() => { const a = document.createElement("a"); a.href = exportPreviewUrl; a.download = `studio-export-${Date.now()}.webm`; a.click(); }}
                 disabled={converting}
-                className="w-full py-2.5 rounded-xl border text-sm font-semibold text-gray-600 disabled:opacity-50"
-                style={{ borderColor: "#e5e7eb" }}>
+                className="w-full py-2.5 rounded-xl border border-border text-sm font-semibold text-foreground disabled:opacity-50 hover:bg-accent transition">
                 Download as WebM
               </button>
-              <button
-                onClick={() => { URL.revokeObjectURL(exportPreviewUrl); setExportPreviewUrl(null); setExportBlob(null); }}
+              <button onClick={() => { URL.revokeObjectURL(exportPreviewUrl); setExportPreviewUrl(null); setExportBlob(null); }}
                 disabled={converting}
-                className="w-full py-2 text-xs text-gray-400 disabled:opacity-50">
+                className="w-full py-2 text-xs text-muted-foreground disabled:opacity-50 hover:text-foreground transition">
                 Close
               </button>
             </div>

@@ -43,8 +43,8 @@ interface CompetitorCard {
 }
 
 // ─── Competitor Detail Page ───────────────────────────────────────────────────
-function CompetitorDetail({ competitor, onBack, onUpdate }: { 
-  competitor: CompetitorCard; 
+function CompetitorDetail({ competitor, onBack, onUpdate }: {
+  competitor: CompetitorCard;
   onBack: () => void;
   onUpdate?: (username: string, hikerData: any) => void;
 }) {
@@ -54,6 +54,9 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
+  const [aiPillars, setAiPillars] = useState<string[]>([]);
+  const [pillarsLoading, setPillarsLoading] = useState(false);
+  const [postsExpanded, setPostsExpanded] = useState(false);
 
   // Re-fetch fresh hiker data on open so CDN URLs are not expired
   useEffect(() => {
@@ -64,7 +67,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         if (res.ok) {
           const freshData = await res.json();
           setHiker(freshData);
-          // Update the competitor card in the list with fresh data
           if (onUpdate) onUpdate(competitor.username, freshData);
         }
       } catch (e) { console.error(e); }
@@ -72,6 +74,23 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
     };
     refetch();
   }, [competitor.username]);
+
+  // Fetch AI-generated content pillars if not available from ScrapeCreators
+  useEffect(() => {
+    if (result?.content_pillars?.length > 0) return;
+    const fetchPillars = async () => {
+      setPillarsLoading(true);
+      try {
+        const res = await fetch(`${BASE}/api/hiker/pillars?username=${encodeURIComponent(competitor.username)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.pillars?.length > 0) setAiPillars(data.pillars);
+        }
+      } catch (e) { console.error(e); }
+      finally { setPillarsLoading(false); }
+    };
+    fetchPillars();
+  }, [competitor.username, result]);
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -189,18 +208,36 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
           </div>
         )}
 
-        {/* Content Pillars */}
-        {result?.content_pillars?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-            <div className="flex items-center gap-2 mb-4"><TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Content Pillars</h2></div>
-            <div className="flex flex-wrap gap-2">
-              {result.content_pillars.map((pillar: string, i: number) => {
-                const s = PILLAR_COLORS[i % PILLAR_COLORS.length];
-                return <span key={i} className="px-4 py-2 rounded-full text-xs font-bold" style={{ background: s.bg, color: s.text }}>{pillar}</span>;
-              })}
+        {/* Content Pillars — from ScrapeCreators AI or HikerAPI+Claude fallback */}
+        {(() => {
+          const pillars = result?.content_pillars?.length > 0 ? result.content_pillars : aiPillars;
+          const isAI = !(result?.content_pillars?.length > 0) && aiPillars.length > 0;
+          if (pillars.length === 0 && !pillarsLoading) return null;
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
+                  <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Content Pillars</h2>
+                </div>
+                {isAI && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>AI</span>}
+              </div>
+              {pillarsLoading && pillars.length === 0 ? (
+                <div className="flex items-center gap-2 py-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: PRIMARY }} />
+                  <span className="text-xs text-[#757684]">Analysing content themes…</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {pillars.map((pillar: string, i: number) => {
+                    const s = PILLAR_COLORS[i % PILLAR_COLORS.length];
+                    return <span key={i} className="px-4 py-2 rounded-full text-xs font-bold" style={{ background: s.bg, color: s.text }}>{pillar}</span>;
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* What they post */}
         {result?.reel_ideas?.length > 0 && (result?.stats?.total_posts ?? 0) > 0 && (
@@ -363,33 +400,41 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
           </div>
         )}
 
-        {/* Posts */}
+        {/* Posts — image grid */}
         {!hikerLoading && hiker?.posts?.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} />
-              <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Their Posts ({hiker.posts.length})</h2>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} />
+                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posted Images ({hiker.posts.length})</h2>
+              </div>
+              {hiker.posts.length > 9 && (
+                <button onClick={() => setPostsExpanded(v => !v)} className="text-xs font-bold" style={{ color: PRIMARY }}>
+                  {postsExpanded ? 'Show less' : `See all ${hiker.posts.length}`}
+                </button>
+              )}
             </div>
-            <div className="flex gap-1.5 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
-              {hiker.posts.map((post: any, i: number) => (
+            <div className="grid grid-cols-3 gap-1.5">
+              {(postsExpanded ? hiker.posts : hiker.posts.slice(0, 9)).map((post: any, i: number) => (
                 <a key={post.id || i} href={post.permalink} target="_blank" rel="noopener noreferrer"
-                  className="relative rounded-xl overflow-hidden group block" style={{ aspectRatio: '1/1', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
+                  className="relative rounded-xl overflow-hidden group block bg-[#1a1a2e]" style={{ aspectRatio: '1/1' }}>
                   {post.thumbnail && (
-                    <img src={`${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
+                    <img
+                      src={post.thumbnail.includes('supabase') ? post.thumbnail : `${BASE}/api/instagram/img?u=${encodeURIComponent(post.thumbnail)}`}
                       alt={post.caption?.slice(0, 40) || ''}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }} />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'rgba(124,58,237,0.9)', backdropFilter: 'blur(6px)' }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center shadow-xl" style={{ background: 'rgba(124,58,237,0.9)', backdropFilter: 'blur(6px)' }}>
                       <Eye className="w-4 h-4 text-white" />
                     </div>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="flex items-center gap-1.5">
-                      <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(post.likes || 0)}</span>
-                      <MessageCircle className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(post.comments || 0)}</span>
+                  <div className="absolute bottom-0 left-0 right-0 px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[9px] text-white/80 font-medium">{formatNum(post.likes || 0)}</span>
+                      <MessageCircle className="w-2.5 h-2.5 text-white/80" /><span className="text-[9px] text-white/80 font-medium">{formatNum(post.comments || 0)}</span>
                     </div>
                   </div>
                 </a>
