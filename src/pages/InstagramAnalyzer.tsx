@@ -141,8 +141,9 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
               const picSrc = result?.stats?.profile_pic_base64 ||
                 hiker?.reels?.[0]?.profile_pic_url ||
                 competitor.profile_pic_url;
-              return picSrc && !imgError ? (
-                <img src={picSrc} alt={competitor.username}
+              const proxiedPic = picSrc?.startsWith('data:') ? picSrc : proxyImg(picSrc);
+              return proxiedPic && !imgError ? (
+                <img src={proxiedPic} alt={competitor.username}
                   className="w-14 h-14 rounded-full object-cover border-2 border-white/30"
                   onError={() => {
                     if (picSrc && !picSrc.startsWith('data:') && !picSrc.includes('/api/instagram/img')) {
@@ -787,9 +788,10 @@ export default function InstagramAnalyzer() {
                   {/* Profile pic */}
                   {(() => {
                     const picUrl = comp.profile_pic_base64 || comp.profile_pic_url;
-                    if (picUrl) return (
+                    const proxiedUrl = picUrl?.startsWith('data:') ? picUrl : (picUrl ? (picUrl.includes('supabase') ? picUrl : `${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}`) : null);
+                    if (proxiedUrl) return (
                       <img
-                        src={picUrl}
+                        src={proxiedUrl}
                         alt={comp.username}
                         className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0"
                         onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
