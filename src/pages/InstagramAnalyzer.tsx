@@ -175,7 +175,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
             {(() => {
               const picSrc = result?.stats?.profile_pic_base64 ||
                 hiker?.profile?.profile_pic_url ||
-                hiker?.reels?.[0]?.profile_pic_url ||
                 competitor.profile_pic_url;
               const proxiedPic = picSrc?.startsWith('data:') ? picSrc : proxyImg(picSrc);
               return proxiedPic && !imgError ? (
@@ -744,7 +743,7 @@ export default function InstagramAnalyzer() {
       const fullData = mainRes.status === 'fulfilled' ? mainRes.value : null;
       const hikerData = hikerRes.status === 'fulfilled' ? hikerRes.value : null;
       // Use HikerAPI profile pic (proxied) as it's more reliable than ScrapeCreators base64
-      const hikerProfilePic = hikerData?.profile?.profile_pic_url || hikerData?.profile_pic_url || hikerData?.reels?.[0]?.profile_pic_url || null;
+      const hikerProfilePic = hikerData?.profile?.profile_pic_url || hikerData?.profile_pic_url || null;
       const card: CompetitorCard = {
         username: clean,
         profile_pic_base64: null,
@@ -774,7 +773,7 @@ export default function InstagramAnalyzer() {
     if (!clean || isAlreadyCompetitor(clean)) return;
     setCompLoading(true);
     try {
-      const hikerProfilePic = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || hiker?.reels?.[0]?.profile_pic_url || null;
+      const hikerProfilePic = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || null;
       const card: CompetitorCard = {
         username: clean,
         profile_pic_base64: null,
