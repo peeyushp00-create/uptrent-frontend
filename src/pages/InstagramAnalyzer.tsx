@@ -70,8 +70,9 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [copied, setCopied] = useState<string | null>(null);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [imgError, setImgError] = useState(false);
-  const [aiPillars, setAiPillars] = useState<string[]>([]);
+  const [aiPillars, setAiPillars] = useState<{name: string, description: string}[]>([]);
   const [pillarsLoading, setPillarsLoading] = useState(false);
+  const [selectedPillar, setSelectedPillar] = useState<string | null>(null);
   const [postsExpanded, setPostsExpanded] = useState(false);
   const [reelsFilter, setReelsFilter] = useState<'top' | 'latest' | 'liked' | 'viral'>('top');
   const [postsFilter, setPostsFilter] = useState<'top' | 'latest' | 'liked'>('top');
@@ -110,11 +111,10 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
     refetch();
   }, [competitor.username]);
 
-  // Fetch AI-generated content pillars once hiker data is loaded
+  // Fetch AI content pillar descriptions once hiker data is loaded
   useEffect(() => {
-    if (result?.content_pillars?.length > 0) return; // already have pillars
-    if (hikerLoading || !hiker) return;              // wait for hiker data
-    if (aiPillars.length > 0) return;               // already fetched
+    if (hikerLoading || !hiker) return;
+    if (aiPillars.length > 0) return;
 
     const captions = (hiker.reels || [])
       .slice(0, 20)
@@ -124,13 +124,15 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
     if (captions.length === 0 && hashtags.length === 0) return;
 
+    const pillarNames = result?.content_pillars?.length > 0 ? result.content_pillars : undefined;
+
     const fetchPillars = async () => {
       setPillarsLoading(true);
       try {
         const res = await fetch(`${BASE}/api/hiker/pillars`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: competitor.username, captions, hashtags }),
+          body: JSON.stringify({ username: competitor.username, captions, hashtags, ...(pillarNames ? { pillarNames } : {}) }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -306,8 +308,14 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* Content Pillars — from ScrapeCreators AI or HikerAPI+Claude fallback */}
         {(() => {
-          const pillars = result?.content_pillars?.length > 0 ? result.content_pillars : aiPillars;
-          const isAI = !(result?.content_pillars?.length > 0) && aiPillars.length > 0;
+          const scrapeNames: string[] = result?.content_pillars || [];
+          const pillars: {name: string, description: string}[] = scrapeNames.length > 0
+            ? scrapeNames.map((name: string) => {
+                const found = aiPillars.find(p => p.name === name);
+                return { name, description: found?.description || '' };
+              })
+            : aiPillars;
+          const isAI = scrapeNames.length === 0 && aiPillars.length > 0;
           if (pillars.length === 0 && !pillarsLoading) return null;
           return (
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
@@ -324,12 +332,37 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                   <span className="text-xs text-[#757684]">Analysing content themes…</span>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {pillars.map((pillar: string, i: number) => {
-                    const s = PILLAR_COLORS[i % PILLAR_COLORS.length];
-                    return <span key={i} className="px-4 py-2 rounded-full text-xs font-bold" style={{ background: s.bg, color: s.text }}>{pillar}</span>;
-                  })}
-                </div>
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {pillars.map((pillar, i) => {
+                      const s = PILLAR_COLORS[i % PILLAR_COLORS.length];
+                      const isSelected = selectedPillar === pillar.name;
+                      return (
+                        <button key={i} onClick={() => setSelectedPillar(isSelected ? null : pillar.name)}
+                          className="px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer"
+                          style={isSelected ? { background: s.text, color: '#fff' } : { background: s.bg, color: s.text }}>
+                          {pillar.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedPillar && (() => {
+                    const idx = pillars.findIndex(p => p.name === selectedPillar);
+                    if (idx === -1) return null;
+                    const ds = PILLAR_COLORS[idx % PILLAR_COLORS.length];
+                    const desc = pillars[idx]?.description;
+                    return (
+                      <div className="mt-3 p-3.5 rounded-xl" style={{ background: ds.bg }}>
+                        <p className="font-bold text-xs mb-1" style={{ color: ds.text }}>{selectedPillar}</p>
+                        {pillarsLoading && !desc
+                          ? <div className="flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" style={{ color: ds.text }} /><span className="text-xs" style={{ color: ds.text }}>Loading…</span></div>
+                          : desc
+                            ? <p className="text-xs leading-relaxed" style={{ color: ds.text }}>{desc}</p>
+                            : <p className="text-xs opacity-60" style={{ color: ds.text }}>No description available.</p>}
+                      </div>
+                    );
+                  })()}
+                </>
               )}
             </div>
           );
@@ -651,8 +684,9 @@ export default function InstagramAnalyzer() {
   const [reelsVisible, setReelsVisible] = useState(9);
   const [reelsFilter, setReelsFilter] = useState<'top' | 'latest' | 'liked' | 'viral'>('top');
   const [postsFilter, setPostsFilter] = useState<'top' | 'latest' | 'liked'>('top');
-  const [aiPillars, setAiPillars] = useState<string[]>([]);
+  const [aiPillars, setAiPillars] = useState<{name: string, description: string}[]>([]);
   const [pillarsLoading, setPillarsLoading] = useState(false);
+  const [selectedPillar, setSelectedPillar] = useState<string | null>(null);
   const [competitors, setCompetitors] = useState<CompetitorCard[]>(() => {
     try { return JSON.parse(localStorage.getItem('ig_competitors') || '[]'); } catch { return []; }
   });
@@ -672,8 +706,9 @@ export default function InstagramAnalyzer() {
     return `${BASE}/api/instagram/img?u=${encodeURIComponent(url)}`;
   };
 
+  useEffect(() => { setAiPillars([]); setSelectedPillar(null); }, [handle]);
+
   useEffect(() => {
-    if (result?.content_pillars?.length > 0) return;
     if (hikerLoading || !hiker) return;
     if (aiPillars.length > 0) return;
     const captions = (hiker.reels || [])
@@ -682,13 +717,14 @@ export default function InstagramAnalyzer() {
       .filter(Boolean);
     const hashtags = (hiker.top_hashtags || []).slice(0, 25).map((h: any) => h.tag);
     if (captions.length === 0 && hashtags.length === 0) return;
+    const pillarNames = result?.content_pillars?.length > 0 ? result.content_pillars : undefined;
     const fetchPillars = async () => {
       setPillarsLoading(true);
       try {
         const res = await fetch(`${BASE}/api/hiker/pillars`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: handle.replace('@', '').trim(), captions, hashtags }),
+          body: JSON.stringify({ username: handle.replace('@', '').trim(), captions, hashtags, ...(pillarNames ? { pillarNames } : {}) }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -1138,8 +1174,14 @@ export default function InstagramAnalyzer() {
 
             {/* Content Pillars — ScrapeCreators or AI fallback */}
             {(() => {
-              const pillars = result?.content_pillars?.length > 0 ? result.content_pillars : aiPillars;
-              const isAI = !(result?.content_pillars?.length > 0) && aiPillars.length > 0;
+              const scrapeNames: string[] = result?.content_pillars || [];
+              const pillars: {name: string, description: string}[] = scrapeNames.length > 0
+                ? scrapeNames.map((name: string) => {
+                    const found = aiPillars.find(p => p.name === name);
+                    return { name, description: found?.description || '' };
+                  })
+                : aiPillars;
+              const isAI = scrapeNames.length === 0 && aiPillars.length > 0;
               if (pillars.length === 0 && !pillarsLoading) return null;
               return (
                 <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
@@ -1156,12 +1198,37 @@ export default function InstagramAnalyzer() {
                       <span className="text-xs text-[#757684]">Analysing content themes…</span>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {pillars.map((pillar: string, i: number) => {
-                        const s = PILLAR_COLORS[i % PILLAR_COLORS.length];
-                        return <span key={i} className="px-4 py-2 rounded-full text-xs font-bold" style={{ background: s.bg, color: s.text }}>{pillar}</span>;
-                      })}
-                    </div>
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {pillars.map((pillar, i) => {
+                          const s = PILLAR_COLORS[i % PILLAR_COLORS.length];
+                          const isSelected = selectedPillar === pillar.name;
+                          return (
+                            <button key={i} onClick={() => setSelectedPillar(isSelected ? null : pillar.name)}
+                              className="px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer"
+                              style={isSelected ? { background: s.text, color: '#fff' } : { background: s.bg, color: s.text }}>
+                              {pillar.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {selectedPillar && (() => {
+                        const idx = pillars.findIndex(p => p.name === selectedPillar);
+                        if (idx === -1) return null;
+                        const ds = PILLAR_COLORS[idx % PILLAR_COLORS.length];
+                        const desc = pillars[idx]?.description;
+                        return (
+                          <div className="mt-3 p-3.5 rounded-xl" style={{ background: ds.bg }}>
+                            <p className="font-bold text-xs mb-1" style={{ color: ds.text }}>{selectedPillar}</p>
+                            {pillarsLoading && !desc
+                              ? <div className="flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" style={{ color: ds.text }} /><span className="text-xs" style={{ color: ds.text }}>Loading…</span></div>
+                              : desc
+                                ? <p className="text-xs leading-relaxed" style={{ color: ds.text }}>{desc}</p>
+                                : <p className="text-xs opacity-60" style={{ color: ds.text }}>No description available.</p>}
+                          </div>
+                        );
+                      })()}
+                    </>
                   )}
                 </div>
               );
