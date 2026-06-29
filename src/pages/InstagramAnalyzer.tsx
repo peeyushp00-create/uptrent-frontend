@@ -1141,24 +1141,6 @@ export default function InstagramAnalyzer() {
               </div>
             ) : hiker && (hiker.reels?.length > 0 || hiker.stats) ? (
               <>
-                {/* Reel stats */}
-                {hiker.stats && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { label: 'Avg Views', value: formatNum(hiker.stats.avg_views || 0), icon: Eye },
-                      { label: 'Avg Likes', value: formatNum(hiker.stats.avg_likes || 0), icon: Heart },
-                      { label: 'Avg Comments', value: formatNum(hiker.stats.avg_comments || 0), icon: MessageCircle },
-                      { label: 'Engagement', value: `${hiker.stats.engagement_rate || 0}%`, icon: TrendingUp },
-                    ].map((s, i) => (
-                      <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-3">
-                        <s.icon className="w-3.5 h-3.5 mb-1" style={{ color: PRIMARY }} />
-                        <p className="font-bold text-base text-[#191c1d] dark:text-white">{s.value}</p>
-                        <p className="text-[10px] text-[#757684]">{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 {/* Audio */}
                 {hiker.top_audio?.length > 0 && (
                   <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
