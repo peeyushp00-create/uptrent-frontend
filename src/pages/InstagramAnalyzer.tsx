@@ -75,13 +75,28 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
     refetch();
   }, [competitor.username]);
 
-  // Fetch AI-generated content pillars if not available from ScrapeCreators
+  // Fetch AI-generated content pillars once hiker data is loaded
   useEffect(() => {
-    if (result?.content_pillars?.length > 0) return;
+    if (result?.content_pillars?.length > 0) return; // already have pillars
+    if (hikerLoading || !hiker) return;              // wait for hiker data
+    if (aiPillars.length > 0) return;               // already fetched
+
+    const captions = (hiker.reels || [])
+      .slice(0, 20)
+      .map((r: any) => (r.caption || '').split('\n')[0].trim().slice(0, 120))
+      .filter(Boolean);
+    const hashtags = (hiker.top_hashtags || []).slice(0, 25).map((h: any) => h.tag);
+
+    if (captions.length === 0 && hashtags.length === 0) return;
+
     const fetchPillars = async () => {
       setPillarsLoading(true);
       try {
-        const res = await fetch(`${BASE}/api/hiker/pillars?username=${encodeURIComponent(competitor.username)}`);
+        const res = await fetch(`${BASE}/api/hiker/pillars`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: competitor.username, captions, hashtags }),
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.pillars?.length > 0) setAiPillars(data.pillars);
@@ -90,7 +105,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
       finally { setPillarsLoading(false); }
     };
     fetchPillars();
-  }, [competitor.username, result]);
+  }, [competitor.username, result, hiker, hikerLoading]);
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
