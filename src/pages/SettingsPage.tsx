@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { getPageState, setPageState } from '@/lib/pageCache';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -61,7 +62,9 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  const [activeTab, setActiveTab] = useState("profile");
+  const _saved = getPageState('settings');
+
+  const [activeTab, setActiveTab] = useState(_saved?.activeTab ?? "profile");
   const [voiceSaving, setVoiceSaving] = useState(false);
   const [voiceSaved, setVoiceSaved] = useState(false);
   const [name, setName] = useState(user?.user_metadata?.full_name || '');
@@ -78,7 +81,7 @@ export default function SettingsPage() {
   const [platform, setPlatform] = useState(user?.user_metadata?.platform || 'both');
   const [igUsername, setIgUsername] = useState(user?.user_metadata?.instagram_username || '');
   const [isRecording, setIsRecording] = useState(false);
-  const [voiceStyle, setVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
+  const [voiceStyle, setVoiceStyle] = useState(_saved?.voiceStyle ?? (user?.user_metadata?.voice_style || ''));
   const [analyzingVoice, setAnalyzingVoice] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
 
@@ -87,6 +90,12 @@ export default function SettingsPage() {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<any>(null);
   const autoSaveTimer = useRef<any>(null);
+
+  const _stateRef = useRef<any>({});
+  useEffect(() => {
+    _stateRef.current = { activeTab, voiceStyle };
+  });
+  useEffect(() => () => { setPageState('settings', _stateRef.current); }, []);
 
   const [feedbackCategory, setFeedbackCategory] = useState("general");
   const [feedbackRating, setFeedbackRating] = useState(0);

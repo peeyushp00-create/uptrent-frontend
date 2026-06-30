@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Sparkles, Copy, Check, Loader2, Search, X, ChevronRight, Clock, Trash2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
+import { getPageState, setPageState } from '@/lib/pageCache';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const YT_GRAD = "linear-gradient(135deg, #ff0000, #FFB86C)";
@@ -161,11 +162,13 @@ function SeriesCalendar({ startDate, parts, frequency, accentColor, accentGrad }
 export default function YouTubeScript() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const [activeView, setActiveView] = useState<"generate" | "history" | "calendar">("generate");
-  const [topic, setTopic] = useState(() => localStorage.getItem('yt_script_topic') || "");
-  const [duration, setDuration] = useState(5);
+  const _saved = getPageState('ytScript');
+  const [activeView, setActiveView] = useState<"generate" | "history" | "calendar">(_saved?.activeView ?? "generate");
+  const [topic, setTopic] = useState(() => _saved?.topic ?? (localStorage.getItem('yt_script_topic') || ""));
+  const [duration, setDuration] = useState(_saved?.duration ?? 5);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(() => {
+    if (_saved?.result !== undefined) return _saved.result;
     const saved = localStorage.getItem('yt_script_result');
     return saved ? JSON.parse(saved) : null;
   });
@@ -174,19 +177,24 @@ export default function YouTubeScript() {
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const [detectedNiche, setDetectedNiche] = useState<string | null>(null);
   const [showSubCategories, setShowSubCategories] = useState(false);
-  const [history, setHistory] = useState<HistoryEntry[]>(() => JSON.parse(localStorage.getItem("yt_script_history") || "[]"));
+  const [history, setHistory] = useState<HistoryEntry[]>(() => _saved?.history ?? JSON.parse(localStorage.getItem("yt_script_history") || "[]"));
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
   const [showSeriesPrompt, setShowSeriesPrompt] = useState(false);
-  const [seriesTopic, setSeriesTopic] = useState('');
-  const [seriesParts, setSeriesParts] = useState(5);
-  const [seriesFrequency, setSeriesFrequency] = useState<'daily' | 'alternate' | 'weekly'>('weekly');
-  const [seriesStartDate, setSeriesStartDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [seriesTopic, setSeriesTopic] = useState(_saved?.seriesTopic ?? '');
+  const [seriesParts, setSeriesParts] = useState(_saved?.seriesParts ?? 5);
+  const [seriesFrequency, setSeriesFrequency] = useState<'daily' | 'alternate' | 'weekly'>(_saved?.seriesFrequency ?? 'weekly');
+  const [seriesStartDate, setSeriesStartDate] = useState(() => _saved?.seriesStartDate ?? new Date().toISOString().split('T')[0]);
   const [seriesStep, setSeriesStep] = useState<'prompt' | 'customize'>('prompt');
   const [generatingSeries, setGeneratingSeries] = useState(false);
-  const [seriesScripts, setSeriesScripts] = useState<any[]>([]);
-  const [showSeriesResult, setShowSeriesResult] = useState(false);
+  const [seriesScripts, setSeriesScripts] = useState<any[]>(_saved?.seriesScripts ?? []);
+  const [showSeriesResult, setShowSeriesResult] = useState(_saved?.showSeriesResult ?? false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const _stateRef = useRef<any>({});
+  useEffect(() => {
+    _stateRef.current = { activeView, topic, duration, result, history, seriesTopic, seriesParts, seriesFrequency, seriesStartDate, seriesScripts, showSeriesResult };
+  });
+  useEffect(() => () => { setPageState('ytScript', _stateRef.current); }, []);
 
   useEffect(() => { localStorage.setItem('yt_script_topic', topic); }, [topic]);
   useEffect(() => { if (result) localStorage.setItem('yt_script_result', JSON.stringify(result)); }, [result]);
