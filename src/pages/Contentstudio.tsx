@@ -36,6 +36,8 @@ const MUSIC: Music[] = [
 const fmt = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
 const uid = () => Math.random().toString(36).slice(2, 9);
 
+let savedStudioState: any = null;
+
 function buildSegments(words: Word[]): Segment[] {
   const out: Segment[] = []; let cur: Word[] = [];
   const flush = () => { if (!cur.length) return; out.push({ id: out.length, start: cur[0].start, end: cur[cur.length - 1].end, text: cur.map(w => w.text).join(" ") }); cur = []; };
@@ -45,62 +47,82 @@ function buildSegments(words: Word[]): Segment[] {
 function reindex(segs: Segment[]): Segment[] { return segs.map((s, i) => ({ ...s, id: i })); }
 
 export default function ContentStudio() {
-  const [file, setFile] = useState<File | null>(null);
-  const [videoUrl, setVideoUrl] = useState("");
-  const [hostedUrl, setHostedUrl] = useState("");
-  const [duration, setDuration] = useState(0);
-  const [time, setTime] = useState(0);
-  const [segments, setSegments] = useState<Segment[]>([]);
-  const [status, setStatus] = useState<"idle" | "uploading" | "transcribing" | "ready">("idle");
-  const [error, setError] = useState("");
+  const [file, setFile] = useState<File | null>(() => savedStudioState?.file ?? null);
+  const [videoUrl, setVideoUrl] = useState(() => savedStudioState?.videoUrl ?? "");
+  const [hostedUrl, setHostedUrl] = useState(() => savedStudioState?.hostedUrl ?? "");
+  const [duration, setDuration] = useState(() => savedStudioState?.duration ?? 0);
+  const [time, setTime] = useState(() => savedStudioState?.time ?? 0);
+  const [segments, setSegments] = useState<Segment[]>(() => savedStudioState?.segments ?? []);
+  const [status, setStatus] = useState<"idle" | "uploading" | "transcribing" | "ready">(() => savedStudioState?.status ?? "idle");
+  const [error, setError] = useState(() => savedStudioState?.error ?? "");
 
-  const [font, setFont] = useState(FONTS[0]);
-  const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">("bottom");
-  const [showBox, setShowBox] = useState(true);
-  const [textColor, setTextColor] = useState("#ffffff");
-  const [boxColor, setBoxColor] = useState("#000000");
-  const [history, setHistory] = useState<Segment[][]>([]);
+  const [font, setFont] = useState(() => savedStudioState?.font ?? FONTS[0]);
+  const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">(() => savedStudioState?.captionPos ?? "bottom");
+  const [showBox, setShowBox] = useState(() => savedStudioState?.showBox ?? true);
+  const [textColor, setTextColor] = useState(() => savedStudioState?.textColor ?? "#ffffff");
+  const [boxColor, setBoxColor] = useState(() => savedStudioState?.boxColor ?? "#000000");
+  const [history, setHistory] = useState<Segment[][]>(() => savedStudioState?.history ?? []);
 
   // overlays
-  const [overlays, setOverlays] = useState<Overlay[]>([]);
-  const [selOverlay, setSelOverlay] = useState<string | null>(null);
+  const [overlays, setOverlays] = useState<Overlay[]>(() => savedStudioState?.overlays ?? []);
+  const [selOverlay, setSelOverlay] = useState<string | null>(() => savedStudioState?.selOverlay ?? null);
   const [dragOverlay, setDragOverlay] = useState<{ id: string; dx: number } | null>(null);
 
   // pexels
-  const [showPex, setShowPex] = useState(false);
-  const [pexTab, setPexTab] = useState<"pexels" | "upload">("pexels");
-  const [pexQ, setPexQ] = useState("");
-  const [pexType, setPexType] = useState<"photo" | "video">("photo");
-  const [pexItems, setPexItems] = useState<PexItem[]>([]);
-  const [pexLoading, setPexLoading] = useState(false);
-  const [uploadingOverlay, setUploadingOverlay] = useState(false);
+  const [showPex, setShowPex] = useState(() => savedStudioState?.showPex ?? false);
+  const [pexTab, setPexTab] = useState<"pexels" | "upload">(() => savedStudioState?.pexTab ?? "pexels");
+  const [pexQ, setPexQ] = useState(() => savedStudioState?.pexQ ?? "");
+  const [pexType, setPexType] = useState<"photo" | "video">(() => savedStudioState?.pexType ?? "photo");
+  const [pexItems, setPexItems] = useState<PexItem[]>(() => savedStudioState?.pexItems ?? []);
+  const [pexLoading, setPexLoading] = useState(() => savedStudioState?.pexLoading ?? false);
+  const [uploadingOverlay, setUploadingOverlay] = useState(() => savedStudioState?.uploadingOverlay ?? false);
 
   // music
-  const [music, setMusic] = useState<Music>(MUSIC[0]);
-  const [musicStart, setMusicStart] = useState(0);
-  const [songTrim, setSongTrim] = useState(0);
-  const [volume, setVolume] = useState(0.25);
-  const [fadeIn, setFadeIn] = useState(true);
-  const [fadeOut, setFadeOut] = useState(true);
-  const [muteOriginal, setMuteOriginal] = useState(false);
-  const [originalVolume, setOriginalVolume] = useState(1);
-  const [uploadingMusic, setUploadingMusic] = useState(false);
-  const [uploadedMusic, setUploadedMusic] = useState<Music[]>([]);
+  const [music, setMusic] = useState<Music>(() => savedStudioState?.music ?? MUSIC[0]);
+  const [musicStart, setMusicStart] = useState(() => savedStudioState?.musicStart ?? 0);
+  const [songTrim, setSongTrim] = useState(() => savedStudioState?.songTrim ?? 0);
+  const [volume, setVolume] = useState(() => savedStudioState?.volume ?? 0.25);
+  const [fadeIn, setFadeIn] = useState(() => savedStudioState?.fadeIn ?? true);
+  const [fadeOut, setFadeOut] = useState(() => savedStudioState?.fadeOut ?? true);
+  const [muteOriginal, setMuteOriginal] = useState(() => savedStudioState?.muteOriginal ?? false);
+  const [originalVolume, setOriginalVolume] = useState(() => savedStudioState?.originalVolume ?? 1);
+  const [uploadingMusic, setUploadingMusic] = useState(() => savedStudioState?.uploadingMusic ?? false);
+  const [uploadedMusic, setUploadedMusic] = useState<Music[]>(() => savedStudioState?.uploadedMusic ?? []);
   const [dragMusic, setDragMusic] = useState(false);
   const [dragPip, setDragPip] = useState<{ id: string; dx: number; dy: number } | null>(null);
 
   // save
-  const [savedAt, setSavedAt] = useState("");
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState(() => savedStudioState?.savedAt ?? "");
+  const [projectId, setProjectId] = useState<string | null>(() => savedStudioState?.projectId ?? null);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
+  const [saveError, setSaveError] = useState(() => savedStudioState?.saveError ?? "");
 
   // projects panel
-  const [showProjects, setShowProjects] = useState(false);
-  const [projects, setProjects] = useState<{ id: string; name: string; video_url: string; data: any; updated_at: string }[]>([]);
+  const [showProjects, setShowProjects] = useState(() => savedStudioState?.showProjects ?? false);
+  const [projects, setProjects] = useState<{ id: string; name: string; video_url: string; data: any; updated_at: string }[]>(() => savedStudioState?.projects ?? []);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+
+  const _stateRef = useRef<any>();
+  _stateRef.current = {
+    file, videoUrl, hostedUrl, duration, time, segments, status, error,
+    font, captionPos, showBox, textColor, boxColor, history,
+    overlays, selOverlay,
+    showPex, pexTab, pexQ, pexType, pexItems, pexLoading, uploadingOverlay,
+    music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, uploadingMusic, uploadedMusic,
+    savedAt, projectId, saveError,
+    showProjects, projects
+  };
+
+  useEffect(() => {
+    if (videoRef.current && _stateRef.current.time > 0) {
+      videoRef.current.currentTime = _stateRef.current.time;
+    }
+    return () => {
+      savedStudioState = _stateRef.current;
+    };
+  }, []);
 
   // export
   const [exporting, setExporting] = useState(false);
