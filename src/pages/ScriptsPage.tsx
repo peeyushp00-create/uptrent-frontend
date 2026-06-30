@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
+import { getPageState, setPageState } from '@/lib/pageCache';
 
 // ── Design tokens ──────────────────────────────────────────────
 // Light tokens: clean white surfaces, dark text.
@@ -215,6 +216,8 @@ export default function ScriptsPage() {
   const T = theme === 'dark' ? DARK : LIGHT;
   const { BG, SURFACE, SURFACE_RAISED, BORDER, TEXT, TEXT_MUTED, ACCENT, ACCENT_SOLID } = T;
 
+  const _saved = getPageState('scripts');
+
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
   const userNiche = userNiches.join(', ') || '';
   const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
@@ -235,9 +238,9 @@ export default function ScriptsPage() {
   }, []);
 
   // ── Onboarding: only for users who've never completed it ──────
-  const [onboardingDone, setOnboardingDone] = useState<boolean>(!!user?.user_metadata?.onboarding_completed);
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(_saved?.onboardingDone ?? !!user?.user_metadata?.onboarding_completed);
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>({});
+  const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>(_saved?.onboardingAnswers ?? {});
   const [savingOnboarding, setSavingOnboarding] = useState(false);
 
   useEffect(() => {
@@ -292,30 +295,30 @@ export default function ScriptsPage() {
     }
   };
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>(_saved?.messages ?? []);
+  const [input, setInput] = useState(_saved?.input ?? '');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const [contentType, setContentType] = useState('auto');
+  const [contentType, setContentType] = useState(_saved?.contentType ?? 'auto');
   const [showContentTypeMenu, setShowContentTypeMenu] = useState(false);
-  const [selectedModelKey, setSelectedModelKey] = useState(DEFAULT_MODEL_KEY);
+  const [selectedModelKey, setSelectedModelKey] = useState(_saved?.selectedModelKey ?? DEFAULT_MODEL_KEY);
   const [showAiModelMenu, setShowAiModelMenu] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState<number | 'auto'>('auto');
+  const [selectedDuration, setSelectedDuration] = useState<number | 'auto'>(_saved?.selectedDuration ?? 'auto');
   const [showDurationMenu, setShowDurationMenu] = useState(false);
   const [customDuration, setCustomDuration] = useState('');
   const [showCustomDurationInput, setShowCustomDurationInput] = useState(false);
 
   // Language switcher — initialised from localStorage so it persists across sessions
   const [selectedLanguage, setSelectedLanguage] = useState(
-    () => localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english'
+    _saved?.selectedLanguage ?? (() => localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english')
   );
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
   // Title editing from inside the chat header
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleEditValue, setTitleEditValue] = useState('');
-  const [currentConvTitle, setCurrentConvTitle] = useState<string | null>(null);
+  const [currentConvTitle, setCurrentConvTitle] = useState<string | null>(_saved?.currentConvTitle ?? null);
 
   // Batch 2 state
   const [rewritingMsgId, setRewritingMsgId] = useState<string | null>(null); // which card has dropdown open
@@ -326,8 +329,8 @@ export default function ScriptsPage() {
   const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
 
   // ── Conversations (multi-chat) ─────────────────────────────────
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(_saved?.conversationId ?? null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>(_saved?.conversations ?? []);
   const [showConversationPanel, setShowConversationPanel] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -342,7 +345,26 @@ export default function ScriptsPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  // ── Page-state persistence: save on unmount, restore on mount ──
+  const _stateRef = useRef<any>({});
+  useEffect(() => {
+    _stateRef.current = {
+      messages, conversationId, conversations, contentType, selectedModelKey,
+      selectedDuration, selectedLanguage, input, currentConvTitle, onboardingDone,
+      onboardingAnswers, chatScrollTop: chatScrollRef.current?.scrollTop ?? 0,
+    };
+  });
+  useEffect(() => () => { setPageState('scripts', _stateRef.current); }, []);
+
+  // Restore chat scroll position after messages render
+  useEffect(() => {
+    const saved = getPageState('scripts');
+    if (!saved?.chatScrollTop || !chatScrollRef.current) return;
+    chatScrollRef.current.scrollTop = saved.chatScrollTop;
+  }, [messages]);
+
   const bottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const contentTypeMenuRef = useRef<HTMLDivElement>(null);
   const aiModelMenuRef = useRef<HTMLDivElement>(null);
@@ -388,7 +410,9 @@ export default function ScriptsPage() {
       skipNextConversationLoadRef.current = false;
       return;
     }
-    if (!user?.id || !conversationId) {
+    // Wait for auth before doing anything — avoids wiping restored cache while loading
+    if (!user?.id) return;
+    if (!conversationId) {
       setMessages([]);
       return;
     }
@@ -953,7 +977,7 @@ export default function ScriptsPage() {
       </AnimatePresence>
 
       {/* ── Message Thread ── */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={chatScrollRef} className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-5 py-8 flex flex-col gap-6">
 
           {loadingConversation ? (
