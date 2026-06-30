@@ -222,7 +222,8 @@ export default function SettingsPage() {
     mediaRecorder.onstop = async () => {
       clearInterval(timerRef.current);
       setIsRecording(false);
-      const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const mimeType = mediaRecorder.mimeType || 'audio/webm';
+      const audioBlob = new Blob(chunksRef.current, { type: mimeType });
       await analyzeVoice(audioBlob);
     };
 
@@ -235,9 +236,9 @@ export default function SettingsPage() {
     try {
       const data = await analyzeVoiceStyleRequest(audioBlob, language);
       setVoiceStyle(data.style);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Voice analysis failed:', err);
-      alert('Voice analysis failed. Please try again.');
+      alert(err.message || 'Voice analysis failed. Please try again.');
     } finally {
       setAnalyzingVoice(false);
     }

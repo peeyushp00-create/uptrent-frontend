@@ -135,7 +135,8 @@ export const getCredits = (userId: string) =>
 // ✅ NEW: Transcribe a voice recording into text for the chat input box
 export const transcribeAudio = async (audioBlob: Blob, language: string = 'english') => {
   const formData = new FormData();
-  formData.append('audio', audioBlob, 'voice.webm');
+  const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+  formData.append('audio', audioBlob, `voice.${ext}`);
   formData.append('language', language);
 
   const response = await fetch(`${BASE}/api/scripts/transcribe`, {
@@ -175,7 +176,8 @@ export const chatWithAI = (message: string) =>
 // ✅ UPDATED: Sends audio blob to Whisper for accurate transcription
 export const analyzeVoiceStyle = async (audioBlob: Blob, language: string = 'english') => {
   const formData = new FormData();
-  formData.append('audio', audioBlob, 'voice.webm');
+  const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+  formData.append('audio', audioBlob, `voice.${ext}`);
   formData.append('language', language);
 
   const response = await fetch(`${BASE}/api/scripts/analyze-voice`, {

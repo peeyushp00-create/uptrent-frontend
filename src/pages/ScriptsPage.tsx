@@ -720,7 +720,8 @@ export default function ScriptsPage() {
 
       recorder.onstop = async () => {
         stream.getTracks().forEach(track => track.stop());
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const mimeType = recorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         const userLanguage = selectedLanguage;
         setTranscribing(true);
         try {
