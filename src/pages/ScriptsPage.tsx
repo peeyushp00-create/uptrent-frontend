@@ -300,11 +300,25 @@ export default function ScriptsPage() {
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const [contentType, setContentType] = useState(_saved?.contentType ?? 'auto');
+  // Toolbar settings persist to localStorage (like the language switcher), so the
+  // user's last choices survive navigation, full reloads, and new sessions —
+  // they never silently revert to defaults after generating a script.
+  const [contentType, setContentType] = useState<string>(
+    _saved?.contentType ?? localStorage.getItem('scriptContentType') ?? 'auto'
+  );
   const [showContentTypeMenu, setShowContentTypeMenu] = useState(false);
-  const [selectedModelKey, setSelectedModelKey] = useState(_saved?.selectedModelKey ?? DEFAULT_MODEL_KEY);
+  const [selectedModelKey, setSelectedModelKey] = useState<string>(
+    _saved?.selectedModelKey ?? localStorage.getItem('scriptModelKey') ?? DEFAULT_MODEL_KEY
+  );
   const [showAiModelMenu, setShowAiModelMenu] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState<number | 'auto'>(_saved?.selectedDuration ?? 'auto');
+  const [selectedDuration, setSelectedDuration] = useState<number | 'auto'>(
+    _saved?.selectedDuration ?? (() => {
+      const stored = localStorage.getItem('scriptDuration');
+      if (!stored || stored === 'auto') return 'auto';
+      const n = Number(stored);
+      return Number.isFinite(n) && n > 0 ? n : 'auto';
+    })()
+  );
   const [showDurationMenu, setShowDurationMenu] = useState(false);
   const [customDuration, setCustomDuration] = useState('');
   const [showCustomDurationInput, setShowCustomDurationInput] = useState(false);
@@ -356,11 +370,24 @@ export default function ScriptsPage() {
   });
   useEffect(() => () => { setPageState('scripts', _stateRef.current); }, []);
 
-  // Restore chat scroll position after messages render
+  // Persist toolbar choices so they stick across reloads / new sessions.
+  useEffect(() => { localStorage.setItem('scriptContentType', contentType); }, [contentType]);
+  useEffect(() => { localStorage.setItem('scriptModelKey', selectedModelKey); }, [selectedModelKey]);
+  useEffect(() => { localStorage.setItem('scriptDuration', String(selectedDuration)); }, [selectedDuration]);
+
+  // True on the very first effect run if we restored a conversation from the page
+  // cache. Lets the conversation-load effect skip its redundant network refetch
+  // (and the loading-spinner flash + scroll jump it causes) when navigating back.
+  const _skipInitialLoadRef = useRef(!!(_saved?.conversationId && _saved?.messages?.length));
+
+  // Restore chat scroll position once, after the restored messages first render.
+  // One-shot so it doesn't fight the auto-scroll-to-bottom on later message adds.
+  const _scrollRestoredRef = useRef(false);
   useEffect(() => {
+    if (_scrollRestoredRef.current || !chatScrollRef.current) return;
     const saved = getPageState('scripts');
-    if (!saved?.chatScrollTop || !chatScrollRef.current) return;
-    chatScrollRef.current.scrollTop = saved.chatScrollTop;
+    if (saved?.chatScrollTop) chatScrollRef.current.scrollTop = saved.chatScrollTop;
+    _scrollRestoredRef.current = true;
   }, [messages]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -371,7 +398,14 @@ export default function ScriptsPage() {
   const durationMenuRef = useRef<HTMLDivElement>(null);
   const languageMenuRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll to the newest message — but NOT on the first render after a
+  // remount, so the cache-restored scroll position isn't immediately overridden.
+  const _autoScrollReadyRef = useRef(false);
   useEffect(() => {
+    if (!_autoScrollReadyRef.current) {
+      _autoScrollReadyRef.current = true;
+      return;
+    }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, generating]);
 
@@ -414,6 +448,14 @@ export default function ScriptsPage() {
     if (!user?.id) return;
     if (!conversationId) {
       setMessages([]);
+      return;
+    }
+    // On remount we already have this conversation's messages restored from the
+    // page cache. Skip the refetch (which would flash the loading spinner, reset
+    // scroll, and risk wiping the thread on a transient error). Switching to a
+    // different conversation later still loads normally.
+    if (_skipInitialLoadRef.current) {
+      _skipInitialLoadRef.current = false;
       return;
     }
     setLoadingConversation(true);

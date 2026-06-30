@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Tag, Sparkles, Copy, Check, Loader2, Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
+import { getPageState, setPageState } from '@/lib/pageCache';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const YT_GRAD = "linear-gradient(135deg, #ff0000, #FFB86C)";
@@ -24,20 +25,20 @@ const SEO_SUGGESTIONS = [
 export default function YouTubeSEO() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const [topic, setTopic] = useState(() => localStorage.getItem('yt_seo_topic') || "");
+  const _saved = getPageState('ytSeo');
+  const [topic, setTopic] = useState(_saved?.topic ?? "");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(() => {
-    const saved = localStorage.getItem('yt_seo_result');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [result, setResult] = useState<any>(_saved?.result ?? null);
   const [copied, setCopied] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const _stateRef = useRef<any>({});
+  useEffect(() => { _stateRef.current = { topic, result }; });
+  useEffect(() => () => { setPageState('ytSeo', _stateRef.current); }, []);
 
-  useEffect(() => { localStorage.setItem('yt_seo_topic', topic); }, [topic]);
-  useEffect(() => { if (result) localStorage.setItem('yt_seo_result', JSON.stringify(result)); }, [result]);
+
 
   useEffect(() => {
     if (topic.trim().length > 0) {
@@ -59,8 +60,7 @@ export default function YouTubeSEO() {
 
   const handleClear = () => {
     setTopic(''); setResult(null);
-    localStorage.removeItem('yt_seo_result');
-    localStorage.removeItem('yt_seo_topic');
+    setPageState('ytSeo', {});
   };
 
   const handleGenerate = async (tp?: string) => {
