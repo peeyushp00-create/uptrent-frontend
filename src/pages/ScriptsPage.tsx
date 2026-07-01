@@ -11,7 +11,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
-import { getPageState, setPageState } from '@/lib/pageCache';
 
 // ── Design tokens ──────────────────────────────────────────────
 // Light tokens: clean white surfaces, dark text.
@@ -216,18 +215,13 @@ export default function ScriptsPage() {
   const T = theme === 'dark' ? DARK : LIGHT;
   const { BG, SURFACE, SURFACE_RAISED, BORDER, TEXT, TEXT_MUTED, ACCENT, ACCENT_SOLID } = T;
 
-  const _saved = getPageState('scripts');
-
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
   const userNiche = userNiches.join(', ') || '';
+  const userJob = user?.user_metadata?.job || '';
+  const userLocationRegion = user?.user_metadata?.location_region || '';
+  const userPlatform = user?.user_metadata?.platform || '';
+  const userTargetAudience = user?.user_metadata?.target_audience || '';
   const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
-
-  // Full creator profile from onboarding — passed to the generator so scripts are
-  // personalized to the creator's job, region, platform and target audience.
-  const userJob: string = user?.user_metadata?.job || '';
-  const userLocationRegion: string = user?.user_metadata?.location_region || '';
-  const userPlatform: string = user?.user_metadata?.platform || '';
-  const userTargetAudience: string = user?.user_metadata?.target_audience || '';
 
   // Same fallback chain as the sidebar avatar: YouTube channel pic → Google account pic → initials
   const userAvatarUrl: string | null =
@@ -245,9 +239,9 @@ export default function ScriptsPage() {
   }, []);
 
   // ── Onboarding: only for users who've never completed it ──────
-  const [onboardingDone, setOnboardingDone] = useState<boolean>(_saved?.onboardingDone ?? !!user?.user_metadata?.onboarding_completed);
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(!!user?.user_metadata?.onboarding_completed);
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>(_saved?.onboardingAnswers ?? {});
+  const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>({});
   const [savingOnboarding, setSavingOnboarding] = useState(false);
 
   useEffect(() => {
@@ -302,44 +296,30 @@ export default function ScriptsPage() {
     }
   };
 
-  const [messages, setMessages] = useState<ChatMessage[]>(_saved?.messages ?? []);
-  const [input, setInput] = useState(_saved?.input ?? '');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // Toolbar settings persist to localStorage (like the language switcher), so the
-  // user's last choices survive navigation, full reloads, and new sessions —
-  // they never silently revert to defaults after generating a script.
-  const [contentType, setContentType] = useState<string>(
-    _saved?.contentType ?? localStorage.getItem('scriptContentType') ?? 'auto'
-  );
+  const [contentType, setContentType] = useState('auto');
   const [showContentTypeMenu, setShowContentTypeMenu] = useState(false);
-  const [selectedModelKey, setSelectedModelKey] = useState<string>(
-    _saved?.selectedModelKey ?? localStorage.getItem('scriptModelKey') ?? DEFAULT_MODEL_KEY
-  );
+  const [selectedModelKey, setSelectedModelKey] = useState(DEFAULT_MODEL_KEY);
   const [showAiModelMenu, setShowAiModelMenu] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState<number | 'auto'>(
-    _saved?.selectedDuration ?? (() => {
-      const stored = localStorage.getItem('scriptDuration');
-      if (!stored || stored === 'auto') return 'auto';
-      const n = Number(stored);
-      return Number.isFinite(n) && n > 0 ? n : 'auto';
-    })()
-  );
+  const [selectedDuration, setSelectedDuration] = useState<number | 'auto'>('auto');
   const [showDurationMenu, setShowDurationMenu] = useState(false);
   const [customDuration, setCustomDuration] = useState('');
   const [showCustomDurationInput, setShowCustomDurationInput] = useState(false);
 
   // Language switcher — initialised from localStorage so it persists across sessions
   const [selectedLanguage, setSelectedLanguage] = useState(
-    _saved?.selectedLanguage ?? (() => localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english')
+    () => localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english'
   );
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
   // Title editing from inside the chat header
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleEditValue, setTitleEditValue] = useState('');
-  const [currentConvTitle, setCurrentConvTitle] = useState<string | null>(_saved?.currentConvTitle ?? null);
+  const [currentConvTitle, setCurrentConvTitle] = useState<string | null>(null);
 
   // Batch 2 state
   const [rewritingMsgId, setRewritingMsgId] = useState<string | null>(null); // which card has dropdown open
@@ -350,8 +330,8 @@ export default function ScriptsPage() {
   const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
 
   // ── Conversations (multi-chat) ─────────────────────────────────
-  const [conversationId, setConversationId] = useState<string | null>(_saved?.conversationId ?? null);
-  const [conversations, setConversations] = useState<ConversationSummary[]>(_saved?.conversations ?? []);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [showConversationPanel, setShowConversationPanel] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -366,53 +346,14 @@ export default function ScriptsPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // ── Page-state persistence: save on unmount, restore on mount ──
-  const _stateRef = useRef<any>({});
-  useEffect(() => {
-    _stateRef.current = {
-      messages, conversationId, conversations, contentType, selectedModelKey,
-      selectedDuration, selectedLanguage, input, currentConvTitle, onboardingDone,
-      onboardingAnswers, chatScrollTop: chatScrollRef.current?.scrollTop ?? 0,
-    };
-  });
-  useEffect(() => () => { setPageState('scripts', _stateRef.current); }, []);
-
-  // Persist toolbar choices so they stick across reloads / new sessions.
-  useEffect(() => { localStorage.setItem('scriptContentType', contentType); }, [contentType]);
-  useEffect(() => { localStorage.setItem('scriptModelKey', selectedModelKey); }, [selectedModelKey]);
-  useEffect(() => { localStorage.setItem('scriptDuration', String(selectedDuration)); }, [selectedDuration]);
-
-  // True on the very first effect run if we restored a conversation from the page
-  // cache. Lets the conversation-load effect skip its redundant network refetch
-  // (and the loading-spinner flash + scroll jump it causes) when navigating back.
-  const _skipInitialLoadRef = useRef(!!(_saved?.conversationId && _saved?.messages?.length));
-
-  // Restore chat scroll position once, after the restored messages first render.
-  // One-shot so it doesn't fight the auto-scroll-to-bottom on later message adds.
-  const _scrollRestoredRef = useRef(false);
-  useEffect(() => {
-    if (_scrollRestoredRef.current || !chatScrollRef.current) return;
-    const saved = getPageState('scripts');
-    if (saved?.chatScrollTop) chatScrollRef.current.scrollTop = saved.chatScrollTop;
-    _scrollRestoredRef.current = true;
-  }, [messages]);
-
   const bottomRef = useRef<HTMLDivElement>(null);
-  const chatScrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const contentTypeMenuRef = useRef<HTMLDivElement>(null);
   const aiModelMenuRef = useRef<HTMLDivElement>(null);
   const durationMenuRef = useRef<HTMLDivElement>(null);
   const languageMenuRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to the newest message — but NOT on the first render after a
-  // remount, so the cache-restored scroll position isn't immediately overridden.
-  const _autoScrollReadyRef = useRef(false);
   useEffect(() => {
-    if (!_autoScrollReadyRef.current) {
-      _autoScrollReadyRef.current = true;
-      return;
-    }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, generating]);
 
@@ -451,18 +392,8 @@ export default function ScriptsPage() {
       skipNextConversationLoadRef.current = false;
       return;
     }
-    // Wait for auth before doing anything — avoids wiping restored cache while loading
-    if (!user?.id) return;
-    if (!conversationId) {
+    if (!user?.id || !conversationId) {
       setMessages([]);
-      return;
-    }
-    // On remount we already have this conversation's messages restored from the
-    // page cache. Skip the refetch (which would flash the loading spinner, reset
-    // scroll, and risk wiping the thread on a transient error). Switching to a
-    // different conversation later still loads normally.
-    if (_skipInitialLoadRef.current) {
-      _skipInitialLoadRef.current = false;
       return;
     }
     setLoadingConversation(true);
@@ -801,8 +732,7 @@ export default function ScriptsPage() {
 
       recorder.onstop = async () => {
         stream.getTracks().forEach(track => track.stop());
-        const mimeType = recorder.mimeType || 'audio/webm';
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const userLanguage = selectedLanguage;
         setTranscribing(true);
         try {
@@ -1034,7 +964,7 @@ export default function ScriptsPage() {
       </AnimatePresence>
 
       {/* ── Message Thread ── */}
-      <div ref={chatScrollRef} className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-5 py-8 flex flex-col gap-6">
 
           {loadingConversation ? (

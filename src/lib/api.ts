@@ -120,7 +120,6 @@ export const generateScriptFromMessage = (
     aiModel: opts?.aiModel || 'claude-sonnet',
     duration: opts?.duration,
     conversationHistory: opts?.conversationHistory || [],
-    // Full creator profile (from onboarding) so the AI personalizes the script
     job: opts?.job,
     locationRegion: opts?.locationRegion,
     platform: opts?.platform,
@@ -141,8 +140,7 @@ export const getCredits = (userId: string) =>
 // ✅ NEW: Transcribe a voice recording into text for the chat input box
 export const transcribeAudio = async (audioBlob: Blob, language: string = 'english') => {
   const formData = new FormData();
-  const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
-  formData.append('audio', audioBlob, `voice.${ext}`);
+  formData.append('audio', audioBlob, 'voice.webm');
   formData.append('language', language);
 
   const response = await fetch(`${BASE}/api/scripts/transcribe`, {
@@ -182,8 +180,7 @@ export const chatWithAI = (message: string) =>
 // ✅ UPDATED: Sends audio blob to Whisper for accurate transcription
 export const analyzeVoiceStyle = async (audioBlob: Blob, language: string = 'english') => {
   const formData = new FormData();
-  const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
-  formData.append('audio', audioBlob, `voice.${ext}`);
+  formData.append('audio', audioBlob, 'voice.webm');
   formData.append('language', language);
 
   const response = await fetch(`${BASE}/api/scripts/analyze-voice`, {
