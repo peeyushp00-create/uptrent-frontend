@@ -275,7 +275,7 @@ export default function YouTubeAnalyzer() {
   const ytChannel = user?.user_metadata?.youtube_channel || null;
   const _saved = getPageState('ytAnalyzer');
 
-  const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? localStorage.getItem('yt_search_channel') || "");
+const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localStorage.getItem('yt_search_channel') || ""));
   const [loading, setLoading] = useState(false);
 
   // Separate results per tab — My Channel never shows search results
