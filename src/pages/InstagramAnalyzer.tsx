@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb,
@@ -6,6 +6,7 @@ import {
   Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target, Image,
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
+import { getPageState, setPageState } from '@/lib/pageCache';
 
 const PRIMARY = "#7C3AED";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #9f6fef)";
@@ -678,13 +679,15 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function InstagramAnalyzer() {
   const { t } = useTranslation();
-  const [handle, setHandle] = useState('');
+  const _saved = getPageState('igAnalyzer');
+
+  const [handle, setHandle] = useState(_saved?.handle ?? '');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<any>(_saved?.result ?? null);
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [imgError, setImgError] = useState(false);
-  const [hiker, setHiker] = useState<any>(null);
+  const [hiker, setHiker] = useState<any>(_saved?.hiker ?? null);
   const [hikerLoading, setHikerLoading] = useState(false);
   const [reelsVisible, setReelsVisible] = useState(9);
   const [reelsFilter, setReelsFilter] = useState<'top' | 'latest' | 'liked' | 'viral'>('top');
@@ -693,6 +696,7 @@ export default function InstagramAnalyzer() {
   const [pillarsLoading, setPillarsLoading] = useState(false);
   const [selectedPillar, setSelectedPillar] = useState<string | null>(null);
   const [competitors, setCompetitors] = useState<CompetitorCard[]>(() => {
+    if (_saved?.competitors) return _saved.competitors;
     try { return JSON.parse(localStorage.getItem('ig_competitors') || '[]'); } catch { return []; }
   });
   const [addingCompetitor, setAddingCompetitor] = useState(false);
@@ -700,6 +704,13 @@ export default function InstagramAnalyzer() {
   const [compLoading, setCompLoading] = useState(false);
   const [compError, setCompError] = useState('');
   const [openCompetitor, setOpenCompetitor] = useState<CompetitorCard | null>(null);
+
+  // ── Page-state persistence ──
+  const _stateRef = useRef<any>({});
+  useEffect(() => {
+    _stateRef.current = { handle, result, hiker, competitors };
+  });
+  useEffect(() => () => { setPageState('igAnalyzer', _stateRef.current); }, []);
 
   useEffect(() => { localStorage.setItem('ig_competitors', JSON.stringify(competitors)); }, [competitors]);
 

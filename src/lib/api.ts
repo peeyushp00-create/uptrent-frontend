@@ -105,6 +105,7 @@ export const generateScriptFromMessage = (
     contentType?: string; contentTypePrompt?: string; aiModel?: string;
     duration?: number;
     conversationHistory?: ConversationTurn[];
+    job?: string; locationRegion?: string; platform?: string; targetAudience?: string;
   }
 ): Promise<ScriptResult | ClarificationResult> => {
   const savedLanguage = localStorage.getItem('userLanguage') || 'english';
@@ -119,6 +120,11 @@ export const generateScriptFromMessage = (
     aiModel: opts?.aiModel || 'claude-sonnet',
     duration: opts?.duration,
     conversationHistory: opts?.conversationHistory || [],
+    // Full creator profile (from onboarding) so the AI personalizes the script
+    job: opts?.job,
+    locationRegion: opts?.locationRegion,
+    platform: opts?.platform,
+    targetAudience: opts?.targetAudience,
   };
 
   return apiFetch<ScriptResult | ClarificationResult>("/api/scripts/generate", {
@@ -265,6 +271,10 @@ export const rewriteSection = (params: {
   language?: string;
   voiceStyle?: string;
   aiModel?: string;
+  job?: string;
+  locationRegion?: string;
+  platform?: string;
+  targetAudience?: string;
 }) =>
   apiFetch<{ hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string }>(
     '/api/scripts/rewrite',

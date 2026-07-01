@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, FileText, ArrowUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
+import { getPageState, setPageState } from '@/lib/pageCache';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PRIMARY = "#7C3AED";
@@ -174,29 +175,38 @@ export default function NewsPage() {
   const initialQuery = (location.state as any)?.query || "";
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
 
-  const [articles, setArticles] = useState<NewsArticle[]>([]);
-  const [allArticles, setAllArticles] = useState<NewsArticle[]>([]);
-  const [loading, setLoading] = useState(true);
+  const _saved = getPageState('news');
+
+  const [articles, setArticles] = useState<NewsArticle[]>(_saved?.articles ?? []);
+  const [allArticles, setAllArticles] = useState<NewsArticle[]>(_saved?.allArticles ?? []);
+  const [loading, setLoading] = useState(!_saved?.articles?.length);
   const [error, setError] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
-  const [searchInput, setSearchInput] = useState(initialQuery);
-  const [query, setQuery] = useState(initialQuery);
-  const [dateFilter, setDateFilter] = useState("today");
-  const [trendingFilter, setTrendingFilter] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState(_saved?.searchInput ?? initialQuery);
+  const [query, setQuery] = useState(_saved?.query ?? initialQuery);
+  const [dateFilter, setDateFilter] = useState(_saved?.dateFilter ?? "today");
+  const [trendingFilter, setTrendingFilter] = useState<string | null>(_saved?.trendingFilter ?? null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [customDate, setCustomDate] = useState<string | null>(null);
+  const [customDate, setCustomDate] = useState<string | null>(_saved?.customDate ?? null);
   const [pickerDay, setPickerDay] = useState('');
   const [pickerMonth, setPickerMonth] = useState('');
   const [pickerYear, setPickerYear] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All News');
-  const [region, setRegion] = useState<'in' | 'global'>('in');
+  const [activeCategory, setActiveCategory] = useState(_saved?.activeCategory ?? 'All News');
+  const [region, setRegion] = useState<'in' | 'global'>(_saved?.region ?? 'in');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ── Page-state persistence ──
+  const _stateRef = useRef<any>({});
+  useEffect(() => {
+    _stateRef.current = { articles, allArticles, searchInput, query, dateFilter, trendingFilter, customDate, activeCategory, region };
+  });
+  useEffect(() => () => { setPageState('news', _stateRef.current); }, []);
 
   const trendingTopics = useMemo<TrendingTopic[]>(() => {
     const counts: Record<string, number> = {};

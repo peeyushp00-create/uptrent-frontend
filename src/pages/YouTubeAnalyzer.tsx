@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
+import { getPageState, setPageState } from '@/lib/pageCache';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const YT_GRAD = "linear-gradient(135deg, #cc0000, #ff4444)";
@@ -272,13 +273,15 @@ export default function YouTubeAnalyzer() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const ytChannel = user?.user_metadata?.youtube_channel || null;
+  const _saved = getPageState('ytAnalyzer');
 
-  const [channelUrl, setChannelUrl] = useState(() => localStorage.getItem('yt_search_channel') || "");
+  const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? localStorage.getItem('yt_search_channel') || "");
   const [loading, setLoading] = useState(false);
 
   // Separate results per tab — My Channel never shows search results
-  const [myResult, setMyResult] = useState<any>(null);
+  const [myResult, setMyResult] = useState<any>(_saved?.myResult ?? null);
   const [searchResult, setSearchResult] = useState<any>(() => {
+    if (_saved?.searchResult !== undefined) return _saved.searchResult;
     try {
       const saved = localStorage.getItem('yt_search_result');
       return saved ? JSON.parse(saved) : null;
@@ -288,13 +291,21 @@ export default function YouTubeAnalyzer() {
   const [copied, setCopied] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'mine' | 'search'>(ytChannel ? 'mine' : 'search');
+  const [activeTab, setActiveTab] = useState<'mine' | 'search'>(_saved?.activeTab ?? (ytChannel ? 'mine' : 'search'));
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [competitors, setCompetitors] = useState<CompetitorCard[]>(() => {
+    if (_saved?.competitors) return _saved.competitors;
     try { return JSON.parse(localStorage.getItem('yt_competitors') || '[]'); } catch { return []; }
   });
+
+  // ── Page-state persistence ──
+  const _stateRef = useRef<any>({});
+  useEffect(() => {
+    _stateRef.current = { channelUrl, myResult, searchResult, activeTab, competitors };
+  });
+  useEffect(() => () => { setPageState('ytAnalyzer', _stateRef.current); }, []);
   const [addingCompetitor, setAddingCompetitor] = useState(false);
   const [compInput, setCompInput] = useState('');
   const [compLoading, setCompLoading] = useState(false);

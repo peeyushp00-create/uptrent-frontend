@@ -222,6 +222,13 @@ export default function ScriptsPage() {
   const userNiche = userNiches.join(', ') || '';
   const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
 
+  // Full creator profile from onboarding — passed to the generator so scripts are
+  // personalized to the creator's job, region, platform and target audience.
+  const userJob: string = user?.user_metadata?.job || '';
+  const userLocationRegion: string = user?.user_metadata?.location_region || '';
+  const userPlatform: string = user?.user_metadata?.platform || '';
+  const userTargetAudience: string = user?.user_metadata?.target_audience || '';
+
   // Same fallback chain as the sidebar avatar: YouTube channel pic → Google account pic → initials
   const userAvatarUrl: string | null =
     user?.user_metadata?.youtube_channel?.channel_thumbnail ||
@@ -552,6 +559,10 @@ export default function ScriptsPage() {
         aiModel: selectedModelKey,
         duration: selectedDuration !== 'auto' ? selectedDuration : undefined,
         conversationHistory,
+        job: userJob,
+        locationRegion: userLocationRegion,
+        platform: userPlatform,
+        targetAudience: userTargetAudience,
       });
 
       const assistantMsg: ChatMessage = result.needs_clarification
@@ -675,6 +686,10 @@ export default function ScriptsPage() {
         language: selectedLanguage,
         voiceStyle: userVoiceStyle,
         aiModel: selectedModelKey,
+        job: userJob,
+        locationRegion: userLocationRegion,
+        platform: userPlatform,
+        targetAudience: userTargetAudience,
       });
       // Update the message in local state with the rewritten section
       setMessages(prev => prev.map(m =>
