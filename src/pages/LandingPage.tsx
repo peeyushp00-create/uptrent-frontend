@@ -576,7 +576,7 @@ export default function LandingPage() {
                 <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
                   <input type="text" placeholder="Your name (optional)" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="sr-input" />
                   <input type="email" placeholder="your@email.com *" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleNext(); }} />
-                  <input type="tel" placeholder="WhatsApp number (optional)" value={formData.whatsapp} onChange={e => setFormData(p => ({ ...p, whatsapp: e.target.value }))} className="sr-input" />
+                  <input type="text" placeholder="WhatsApp number or username (optional)" value={formData.whatsapp} onChange={e => setFormData(p => ({ ...p, whatsapp: e.target.value }))} className="sr-input" />
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
                 <button onClick={handleNext} className="sr-ea-btn">Next →</button>
