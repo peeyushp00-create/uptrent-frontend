@@ -24,6 +24,7 @@ import PricingPage from "./pages/PricingPage";
 import ContentStudio from "./pages/Contentstudio";
 // import VideoCaptioner from "./pages/VideoCaptioner"; // temporarily hidden
 import LandingPage from "./pages/LandingPage";
+import ReferralRedirect from "./pages/ReferralRedirect";
 import BlogPage from "@/pages/BlogPage";
 import AdminBlogPage from "@/pages/AdminBlogPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -41,6 +42,7 @@ const App = () => (
 
             {/* ── Public pages (no auth required) ── */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/r/:code" element={<ReferralRedirect />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/admin/blog" element={<AdminBlogPage />} />
             <Route path="/login" element={<LoginPage />} />

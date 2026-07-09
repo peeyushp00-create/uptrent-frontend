@@ -136,9 +136,12 @@ const css = `
   .sr-step-card:hover{transform:translateY(-6px);border-color:rgba(139,92,246,0.35);box-shadow:0 20px 50px rgba(139,92,246,0.12)}
   .sr-step-num{font-family:'Roboto',sans-serif;font-size:48px;font-weight:800;color:rgba(139,92,246,0.12);line-height:1;margin-bottom:16px;letter-spacing:-.03em;transition:color .3s}
   .sr-step-card:hover .sr-step-num{color:rgba(139,92,246,0.3)}
-  .sr-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Roboto',sans-serif;outline:none;transition:border-color .3s,box-shadow .3s}
+  .sr-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Roboto',sans-serif;outline:none;transition:border-color .3s,box-shadow .3s;box-sizing:border-box}
   .sr-input:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,0.15)}
   .sr-input::placeholder{color:rgba(255,255,255,0.25)}
+  select.sr-input{cursor:pointer}
+  select.sr-input option{background:#1a0a2e;color:#fff}
+  textarea.sr-input{resize:none}
   .sr-ea-btn{width:100%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;font-family:'Roboto',sans-serif;cursor:pointer;transition:transform .15s,box-shadow .3s;box-shadow:0 0 30px rgba(124,58,237,0.4);margin-bottom:10px}
   .sr-ea-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 0 50px rgba(124,58,237,0.6)}
   .sr-ea-btn:disabled{opacity:.5;cursor:not-allowed}
@@ -154,20 +157,49 @@ const css = `
 `;
 
 export default function LandingPage() {
-  const emailRef = useRef<HTMLInputElement>(null);
-  const otpRef = useRef<HTMLInputElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [step, setStep] = useState<'email'|'otp'|'done'>('email');
-  const [userEmail, setUserEmail] = useState('');
+  const [step, setStep] = useState<'form'|'questions'|'sent'|'status'>('form');
+  const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '' });
+  const [answers, setAnswers] = useState({ platform: '', niche: '', language: '', follower_range: '', posting_frequency: '', biggest_struggle: '', weekly_feedback_ok: false });
+  const [statusData, setStatusData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [copied, setCopied] = useState(false);
   const [activeNiche, setActiveNiche] = useState(0);
 
   const BASE = import.meta.env.VITE_API_URL || 'https://uptrent-backend.onrender.com';
 
-  // Scroll to top on mount
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const getStoredRef = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('ref') || localStorage.getItem('sr_ref') || '';
+  };
+
+  const fetchStatus = async (code: string) => {
+    try {
+      const res = await fetch(`${BASE}/api/waitlist/status?code=${code}`);
+      const data = await res.json();
+      if (res.ok) { setStatusData(data); setStep('status'); }
+    } catch (e) { console.error(e); }
+  };
+
+  // Ref attribution + magic-link return detection
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('sr_ref', ref);
+      const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = `sr_ref=${encodeURIComponent(ref)}; expires=${expires}; path=/; SameSite=Lax`;
+    }
+    const code = params.get('code');
+    if (code) {
+      fetchStatus(code);
+      setTimeout(() => document.getElementById('early-access')?.scrollIntoView({ behavior: 'smooth' }), 300);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, []);
 
   // ✅ SEO: Set page title and meta description
   useEffect(() => {
@@ -199,30 +231,42 @@ export default function LandingPage() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  const handleSendOTP = async () => {
-    const email = emailRef.current?.value.trim() ?? '';
-    const name = (document.getElementById('sr-name-input') as HTMLInputElement)?.value.trim() ?? '';
-    if (!email || !email.includes('@')) { setErrorMsg('Please enter a valid email.'); return; }
-    setLoading(true); setErrorMsg('');
-    try {
-      const res = await fetch(`${BASE}/api/waitlist`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, name: name || email.split('@')[0] }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
-      setUserEmail(email); setStep('otp');
-    } catch (err: any) { setErrorMsg(err.message || 'Something went wrong.'); }
-    finally { setLoading(false); }
+  const handleNext = () => {
+    if (!formData.email || !formData.email.includes('@')) { setErrorMsg('Please enter a valid email.'); return; }
+    setErrorMsg('');
+    setStep('questions');
   };
 
-  const handleVerifyOTP = async () => {
-    const token = otpRef.current?.value.trim() ?? '';
-    if (!token || token.length < 6) { setErrorMsg('Enter the 6-digit code.'); return; }
+  const handleSubmit = async () => {
     setLoading(true); setErrorMsg('');
+    const params = new URLSearchParams(window.location.search);
     try {
-      const res = await fetch(`${BASE}/api/waitlist`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: userEmail, otp: token, action:'verify' }) });
+      const res = await fetch(`${BASE}/api/waitlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name || formData.email.split('@')[0],
+          email: formData.email,
+          whatsapp: formData.whatsapp || null,
+          answers,
+          ref: getStoredRef(),
+          utm_source: params.get('utm_source') || undefined,
+          utm_medium: params.get('utm_medium') || undefined,
+          utm_campaign: params.get('utm_campaign') || undefined,
+        }),
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Invalid OTP');
-      setStep('done');
-    } catch (err: any) { setErrorMsg(err.message || 'Invalid code. Try again.'); }
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      if (data.already_registered) {
+        if (data.referral_code && data.status === 'verified') {
+          await fetchStatus(data.referral_code);
+        } else {
+          setErrorMsg("You're already on the list! Check your email for the confirmation link.");
+        }
+        return;
+      }
+      setStep('sent');
+    } catch (err: any) { setErrorMsg(err.message || 'Something went wrong.'); }
     finally { setLoading(false); }
   };
 
@@ -524,40 +568,174 @@ export default function LandingPage() {
             style={{ background:'rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:36, position:'relative', overflow:'hidden' }}>
             <div style={{ position:'absolute', top:-60, right:-60, width:160, height:160, background:'rgba(139,92,246,0.1)', filter:'blur(30px)', borderRadius:'50%', pointerEvents:'none' }} />
 
-            {step === 'done' && (
-              <div className="sr-fade-in" style={{ textAlign:'center', padding:'24px 0' }}>
-                <div style={{ width:64, height:64, background:'linear-gradient(135deg,#7c3aed,#a78bfa)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
-                  <svg viewBox="0 0 24 24" style={{ width:32, height:32, fill:'none', stroke:'white', strokeWidth:2.5 }}><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>You're In! 🎉</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', lineHeight:1.6, marginBottom:20, fontFamily:'Roboto,sans-serif' }}>Welcome to SocialRum early access.<br/>We'll notify you the moment we launch.</p>
-                <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:50, padding:'10px 20px', fontSize:13, color:'#a78bfa', fontWeight:500 }}>✅ Verified — {userEmail}</div>
-              </div>
-            )}
-
-            {step === 'otp' && (
-              <div className="sr-fade-in">
-                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Check your email</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:6, fontFamily:'Roboto,sans-serif' }}>We sent a 6-digit code to</p>
-                <p style={{ fontSize:15, color:'#a78bfa', fontWeight:600, marginBottom:24 }}>{userEmail}</p>
-                <input ref={otpRef} type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit code" className="sr-input" style={{ letterSpacing:'0.35em', textAlign:'center', fontSize:22, marginBottom:12 }} onKeyDown={e => { if (e.key==='Enter') handleVerifyOTP(); }} />
-                {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
-                <button onClick={handleVerifyOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Verifying...' : 'Verify & Get Access →'}</button>
-                <button onClick={() => { setStep('email'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer', display:'block', width:'100%', textAlign:'center', padding:4, fontFamily:'Roboto,sans-serif' }}>← Back</button>
-              </div>
-            )}
-
-            {step === 'email' && (
+            {/* ── STEP 1: Basic info ── */}
+            {step === 'form' && (
               <div className="sr-fade-in">
                 <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Join Early Access</h3>
                 <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:24, lineHeight:1.6, fontFamily:'Roboto,sans-serif' }}>Be among the first Indian creators to get access to SocialRum.</p>
                 <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
-                  <input id="sr-name-input" type="text" placeholder="Your name (optional)" className="sr-input" />
-                  <input ref={emailRef} type="email" placeholder="your@email.com" className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleSendOTP(); }} />
+                  <input type="text" placeholder="Your name (optional)" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="sr-input" />
+                  <input type="email" placeholder="your@email.com *" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleNext(); }} />
+                  <input type="tel" placeholder="WhatsApp number (optional)" value={formData.whatsapp} onChange={e => setFormData(p => ({ ...p, whatsapp: e.target.value }))} className="sr-input" />
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
-                <button onClick={handleSendOTP} disabled={loading} className="sr-ea-btn">{loading ? 'Sending...' : 'Get Early Access →'}</button>
+                <button onClick={handleNext} className="sr-ea-btn">Next →</button>
                 <p style={{ fontSize:11, color:'rgba(255,255,255,0.2)', textAlign:'center', fontFamily:'Roboto,sans-serif' }}>No spam. Unsubscribe anytime.</p>
+              </div>
+            )}
+
+            {/* ── STEP 2: Qualifying questions ── */}
+            {step === 'questions' && (
+              <div className="sr-fade-in">
+                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:6 }}>Quick questions</h3>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:20, fontFamily:'Roboto,sans-serif' }}>Help us understand your creator journey.</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
+                  <select value={answers.platform} onChange={e => setAnswers(p => ({ ...p, platform: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                    <option value="">Platform you create on *</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="both">Both</option>
+                  </select>
+                  <select value={answers.niche} onChange={e => setAnswers(p => ({ ...p, niche: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                    <option value="">Your content niche *</option>
+                    <option value="finance">Finance</option>
+                    <option value="fitness">Fitness & Health</option>
+                    <option value="technology">Technology & AI</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="lifestyle">Lifestyle</option>
+                    <option value="food">Food & Cooking</option>
+                    <option value="travel">Travel</option>
+                    <option value="education">Education</option>
+                    <option value="comedy">Comedy & Entertainment</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <select value={answers.language} onChange={e => setAnswers(p => ({ ...p, language: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                    <option value="">Content language *</option>
+                    <option value="hindi">Hindi</option>
+                    <option value="english">English</option>
+                    <option value="hinglish">Hinglish</option>
+                    <option value="tamil">Tamil</option>
+                    <option value="telugu">Telugu</option>
+                    <option value="bengali">Bengali</option>
+                    <option value="kannada">Kannada</option>
+                    <option value="marathi">Marathi</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <select value={answers.follower_range} onChange={e => setAnswers(p => ({ ...p, follower_range: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                    <option value="">Current followers *</option>
+                    <option value="0-1k">Just starting (0 – 1K)</option>
+                    <option value="1k-10k">Growing (1K – 10K)</option>
+                    <option value="10k-100k">Established (10K – 100K)</option>
+                    <option value="100k+">Large (100K+)</option>
+                  </select>
+                  <select value={answers.posting_frequency} onChange={e => setAnswers(p => ({ ...p, posting_frequency: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                    <option value="">Posting frequency *</option>
+                    <option value="daily">Daily</option>
+                    <option value="2-3x_week">2–3× a week</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="less_than_weekly">Less than weekly</option>
+                  </select>
+                  <textarea value={answers.biggest_struggle} onChange={e => setAnswers(p => ({ ...p, biggest_struggle: e.target.value }))} placeholder="Biggest content challenge? (optional)" className="sr-input" style={{ resize:'none', height:72 }} />
+                  <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.5)', fontFamily:'Roboto,sans-serif', padding:'4px 0' }}>
+                    <input type="checkbox" checked={answers.weekly_feedback_ok} onChange={e => setAnswers(p => ({ ...p, weekly_feedback_ok: e.target.checked }))}
+                      style={{ width:16, height:16, accentColor:'#7c3aed', cursor:'pointer' }} />
+                    I'm open to giving weekly feedback during beta
+                  </label>
+                </div>
+                {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
+                <button onClick={handleSubmit} disabled={loading} className="sr-ea-btn">{loading ? 'Submitting...' : 'Apply for Beta →'}</button>
+                <button onClick={() => { setStep('form'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer', display:'block', width:'100%', textAlign:'center', padding:4, fontFamily:'Roboto,sans-serif' }}>← Back</button>
+              </div>
+            )}
+
+            {/* ── STEP 3: Magic link sent ── */}
+            {step === 'sent' && (
+              <div className="sr-fade-in" style={{ textAlign:'center', padding:'24px 0' }}>
+                <div style={{ width:64, height:64, background:'linear-gradient(135deg,#7c3aed,#a78bfa)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
+                  <svg viewBox="0 0 24 24" style={{ width:32, height:32, fill:'none', stroke:'white', strokeWidth:2 }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Check your email!</h3>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', lineHeight:1.6, marginBottom:20, fontFamily:'Roboto,sans-serif' }}>
+                  We sent a confirmation link to<br/>
+                  <strong style={{ color:'#a78bfa' }}>{formData.email}</strong>
+                </p>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.3)', fontFamily:'Roboto,sans-serif' }}>Click the link to confirm your spot and unlock your referral link.</p>
+              </div>
+            )}
+
+            {/* ── STEP 4: Status page (after magic link click) ── */}
+            {step === 'status' && statusData && (
+              <div className="sr-fade-in">
+                {/* Position */}
+                <div style={{ textAlign:'center', marginBottom:20 }}>
+                  <p style={{ fontSize:11, color:'rgba(255,255,255,0.35)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:6, fontFamily:'Roboto,sans-serif' }}>Your position</p>
+                  {statusData.position ? (
+                    <div style={{ fontSize:42, fontWeight:900, color:'#fff', lineHeight:1, fontFamily:'Roboto,sans-serif' }}>
+                      #{statusData.position}
+                      <span style={{ fontSize:16, color:'rgba(255,255,255,0.35)', fontWeight:400, marginLeft:8 }}>of {statusData.total_signups}</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize:20, fontWeight:700, color:'#a78bfa', fontFamily:'Roboto,sans-serif' }}>Pending email verification</div>
+                  )}
+                </div>
+
+                {/* Tier progress */}
+                <div style={{ background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.15)', borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
+                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>Reward tiers</p>
+                  {[{ label:'Mover', req:1 },{ label:'Locked In', req:3 },{ label:'Founding Creator', req:5 },{ label:'Legend', req:10 }].map(tier => {
+                    const done = (statusData.referral_count || 0) >= tier.req;
+                    return (
+                      <div key={tier.label} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                        <div style={{ width:16, height:16, borderRadius:'50%', background: done ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'rgba(255,255,255,0.08)', border: done ? 'none' : '1px solid rgba(255,255,255,0.12)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          {done && <svg viewBox="0 0 12 12" style={{ width:8, height:8 }} fill="none" strokeWidth={2.5} stroke="#fff" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>}
+                        </div>
+                        <span style={{ fontSize:13, color: done ? '#a78bfa' : 'rgba(255,255,255,0.35)', flex:1, fontFamily:'Roboto,sans-serif' }}>{tier.label}</span>
+                        <span style={{ fontSize:11, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif' }}>{tier.req} ref{tier.req > 1 ? 's' : ''}</span>
+                      </div>
+                    );
+                  })}
+                  {statusData.next_tier && (
+                    <div style={{ marginTop:10, padding:'8px 12px', background:'rgba(139,92,246,0.08)', borderRadius:10, fontSize:12, color:'#a78bfa', textAlign:'center', fontFamily:'Roboto,sans-serif' }}>
+                      <strong>{statusData.next_tier.referrals_needed}</strong> more referral{statusData.next_tier.referrals_needed !== 1 ? 's' : ''} → <strong>{statusData.next_tier.label}</strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Referral link */}
+                <div style={{ marginBottom:12 }}>
+                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:8, fontFamily:'Roboto,sans-serif' }}>Your referral link</p>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <div style={{ flex:1, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:10, padding:'10px 14px', fontSize:12, color:'#a78bfa', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      {statusData.referral_link}
+                    </div>
+                    <button onClick={() => { navigator.clipboard.writeText(statusData.referral_link); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                      style={{ background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(139,92,246,0.15)', border:`1px solid ${copied ? 'rgba(34,197,94,0.3)' : 'rgba(139,92,246,0.3)'}`, borderRadius:10, padding:'10px 16px', color: copied ? '#4ade80' : '#a78bfa', fontSize:12, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'Roboto,sans-serif', transition:'all .2s' }}>
+                      {copied ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* WhatsApp share (primary) */}
+                <a href={`https://wa.me/?text=${encodeURIComponent(`I just applied for SocialRum's beta — AI that turns trending topics into ready-to-film scripts in your language. Only 50 spots. Apply here: ${statusData.referral_link}`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, width:'100%', background:'#25D366', color:'#fff', borderRadius:12, padding:'13px', fontWeight:700, fontSize:15, textDecoration:'none', marginBottom:8, fontFamily:'Roboto,sans-serif', boxSizing:'border-box' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  Share on WhatsApp
+                </a>
+
+                {/* Secondary: LinkedIn + X */}
+                <div style={{ display:'flex', gap:8 }}>
+                  <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(statusData.referral_link)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(10,102,194,0.12)', border:'1px solid rgba(10,102,194,0.25)', borderRadius:10, padding:'10px', color:'#60a5fa', fontSize:12, textDecoration:'none', fontWeight:600, fontFamily:'Roboto,sans-serif' }}>
+                    LinkedIn
+                  </a>
+                  <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just applied for @SocialRum beta — AI tools for Indian creators. Only 50 spots! ${statusData.referral_link}`)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'10px', color:'rgba(255,255,255,0.55)', fontSize:12, textDecoration:'none', fontWeight:600, fontFamily:'Roboto,sans-serif' }}>
+                    X (Twitter)
+                  </a>
+                </div>
               </div>
             )}
           </motion.div>
