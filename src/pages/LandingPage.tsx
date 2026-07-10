@@ -1,217 +1,144 @@
-import { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+
+const DEADLINE = 'July 17';
 
 const FEATURES = [
-  { num: '01', title: 'Creator News Feed', desc: 'Curated industry news, platform updates, and creator economy signals — filtered for what actually matters to your niche.', tags: ['YouTube', 'Instagram'] },
-  { num: '02', title: 'AI Script Generator', desc: 'Go from idea to full video script in 60 seconds. Trained on viral hooks, retention patterns, and your channel voice.', tags: ['Hook', 'Body', 'CTA'] },
-  { num: '03', title: 'Competitor Analyzer', desc: "Deep-dive analytics on competitor profiles. Identify what's working in your niche, spot content gaps, and stay ahead of the curve.", tags: ['Instagram', 'YouTube'] },
-  { num: '04', title: 'Trending Topics', desc: 'Real-time trend detection across YouTube and Instagram before they peak — publish first, win the algorithm.', tags: ['#AIVideoEditing → 340%', '#CreatorEconomy → 128%'] },
-  { num: '05', title: 'YouTube SEO', desc: 'Keyword research, title optimization, tag suggestions, and thumbnail analysis — everything to rank on page one.', tags: ['Keywords', 'Titles', 'Tags'] },
+  {
+    slot: 'S2',
+    title: 'Trending topics in your niche',
+    body: 'Live trends filtered to what your audience actually watches — not generic hashtag lists.',
+    img: '/screenshots/s2.webp',
+  },
+  {
+    slot: 'S3',
+    title: 'Know exactly what to post next',
+    body: "Personalized recommendations based on your niche, your past posts, and what's rising right now.",
+    img: '/screenshots/s3.webp',
+  },
+  {
+    slot: 'S4',
+    title: 'Ready-to-film scripts',
+    body: 'Hook, body, and CTA written for the format — Reels, Shorts, or long-form.',
+    img: '/screenshots/s4.webp',
+  },
+  {
+    slot: 'S5',
+    title: 'Captions in every Indian language',
+    body: 'हिंदी, தமிழ், മലയാളം, తెలుగు and more — written natively, not translated word-for-word.',
+    img: '/screenshots/s5.webp',
+  },
 ];
 
-const STEPS = [
-  { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library.', note: 'OAuth2.0 secure. Read-only access. Revoke anytime.' },
-  { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: 'Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience.', note: 'Processes 150+ content signals per channel per day.' },
-  { num: '03', title: 'Publish & Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark premium workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
+const AVATARS = [
+  { bg: 'linear-gradient(135deg,#7C5CFC,#a855f7)', l: 'A' },
+  { bg: 'linear-gradient(135deg,#f59e0b,#ef4444)',  l: 'R' },
+  { bg: 'linear-gradient(135deg,#06b6d4,#3b82f6)',  l: 'P' },
+  { bg: 'linear-gradient(135deg,#10b981,#059669)',   l: 'S' },
+  { bg: 'linear-gradient(135deg,#ec4899,#8b5cf6)',   l: 'K' },
 ];
-
-const STATS = [
-  { value: '5', label: 'Creator Tools' },
-  { value: '20+', label: 'Content Niches' },
-  { value: 'Free', label: 'Early Access Tier' },
-  { value: '100%', label: 'Made for India' },
-];
-
-const VIDEO_CARDS = [
-  { id:1,  platform:'youtube',   title:'How I Got 100K Subs in 30 Days',       views:'2.4M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1d6391833-1773075779744.png',  lane:0, speed:18, startOffset:0 },
-  { id:2,  platform:'instagram', title:'Morning Routine That Changed My Life',  views:'890K', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1521eb58e-1764644106046.png',  lane:1, speed:22, startOffset:-40 },
-  { id:3,  platform:'youtube',   title:'AI Tools Every Creator Needs in 2026', views:'1.1M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1ddab98dc-1773131998650.png',  lane:2, speed:16, startOffset:-20 },
-  { id:4,  platform:'instagram', title:'Street Food Tour in Tokyo',            views:'3.7M', thumbnail:'https://images.unsplash.com/photo-1516822561562-a6762898eb60?w=200',                 lane:3, speed:20, startOffset:-10 },
-  { id:5,  platform:'youtube',   title:'Build a SaaS in 24 Hours Challenge',   views:'780K', thumbnail:'https://images.unsplash.com/photo-1564756296543-d61bebcd226a?w=200',                 lane:4, speed:19, startOffset:-50 },
-  { id:6,  platform:'instagram', title:'Minimalist Home Makeover on Budget',   views:'1.5M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_15eaab260-1772956699125.png',  lane:5, speed:21, startOffset:-80 },
-  { id:7,  platform:'youtube',   title:'Camera Settings for Perfect Reels',    views:'640K', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_1b0948c90-1771909777566.png',  lane:0, speed:17, startOffset:-70 },
-  { id:8,  platform:'instagram', title:'Fitness Transformation 30 Days',       views:'4.3M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_159a50448-1767636094533.png',  lane:1, speed:23, startOffset:-45 },
-  { id:9,  platform:'youtube',   title:'Grow on YouTube with Zero Budget',     views:'920K', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_17b6062b2-1772483137359.png',  lane:2, speed:19, startOffset:-90 },
-  { id:10, platform:'instagram', title:'Aesthetic Room Tour 2026',             views:'1.2M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_150de2b75-1772333562367.png',  lane:3, speed:16, startOffset:-35 },
-  { id:11, platform:'youtube',   title:'Top 10 Trending Niches Right Now',     views:'3.1M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_126d7e136-1768020582546.png',  lane:4, speed:20, startOffset:-65 },
-  { id:12, platform:'instagram', title:'Skincare Routine for Glowing Skin',    views:'2.9M', thumbnail:'https://img.rocket.new/generatedImages/rocket_gen_img_194b951ad-1772304624866.png',  lane:5, speed:18, startOffset:-25 },
-];
-
-const TypingScript = () => {
-  const hooks = ["Generating viral hook...", "Analyzing retention patterns...", "Structuring body layout...", "Optimizing SEO keywords..."];
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setIndex(p => (p + 1) % hooks.length), 2500);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <AnimatePresence mode="wait">
-      <motion.span key={index} initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-4 }} transition={{ duration:0.3 }}>
-        {hooks[index]}
-      </motion.span>
-    </AnimatePresence>
-  );
-};
-
-const TRENDING_NICHES = [
-  { name: 'Finance', growth: '+34%', color: '#a78bfa' },
-  { name: 'AI & Tech', growth: '+28%', color: '#818cf8' },
-  { name: 'Cricket', growth: '+22%', color: '#60a5fa' },
-  { name: 'Fitness', growth: '+18%', color: '#34d399' },
-];
-
-const TiltCard = ({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-0.5, 0.5], [8, -8]);
-  const rotateY = useTransform(x, [-0.5, 0.5], [-8, 8]);
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    x.set((e.clientX - rect.left) / rect.width - 0.5);
-    y.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-  const handleMouseLeave = () => { x.set(0); y.set(0); };
-  return (
-    <motion.div ref={ref} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
-      style={{ rotateX, rotateY, transformStyle:'preserve-3d', transformPerspective:800, ...style }}
-      className={className}>
-      {children}
-    </motion.div>
-  );
-};
-
-const HeroTitle = () => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-0.5, 0.5], [6, -6]);
-  const rotateY = useTransform(x, [-0.5, 0.5], [-6, 6]);
-  const translateX = useTransform(x, [-0.5, 0.5], [-8, 8]);
-  const translateY = useTransform(y, [-0.5, 0.5], [-6, 6]);
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    x.set((e.clientX - rect.left) / rect.width - 0.5);
-    y.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-  const handleMouseLeave = () => { x.set(0); y.set(0); };
-  return (
-    <div style={{ position:'relative', marginBottom:8 }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
-      <motion.h1 style={{ margin:0, lineHeight:1, perspective:800, display:'flex', alignItems:'baseline', justifyContent:'center', flexWrap:'nowrap', rotateX, rotateY, translateX, translateY, transformStyle:'preserve-3d' }}>
-        {'Social'.split('').map((char, i) => (
-          <motion.span key={`s${i}`}
-            initial={{ opacity:0, y:60, rotateX:25 }} animate={{ opacity:1, y:0, rotateX:0 }}
-            transition={{ duration:0.7, delay: 0.2 + i * 0.06, ease:[0.16,1,0.3,1] }}
-            style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(42px,10vw,96px)', letterSpacing:'-.02em', color:'#5b21b6', verticalAlign:'baseline', lineHeight:1 }}>
-            {char}
-          </motion.span>
-        ))}
-        {'Rum'.split('').map((char, i) => (
-          <motion.span key={`r${i}`}
-            initial={{ opacity:0, y:60, rotateX:25 }} animate={{ opacity:1, y:0, rotateX:0 }}
-            transition={{ duration:0.7, delay: 0.55 + i * 0.07, ease:[0.16,1,0.3,1] }}
-            style={{ display:'inline-block', fontFamily:'Arial,Helvetica,sans-serif', fontWeight:900, fontSize:'clamp(42px,10vw,96px)', letterSpacing:'-.02em', background:'linear-gradient(to bottom,#fff,rgba(255,255,255,0.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', verticalAlign:'baseline', lineHeight:1 }}>
-            {char}
-          </motion.span>
-        ))}
-      </motion.h1>
-      <motion.div initial={{ scaleX:0, opacity:0 }} animate={{ scaleX:1, opacity:1 }} transition={{ duration:0.8, delay:0.9, ease:[0.16,1,0.3,1] }}
-        style={{ position:'relative', width:'85%', margin:'10px auto 0', height:3, transformOrigin:'center', overflow:'hidden' }}>
-        <div style={{ position:'absolute', inset:0, borderRadius:50, background:'linear-gradient(to right,transparent,rgba(139,92,246,0.4),transparent)' }} />
-        <motion.div animate={{ opacity:[0.6,1,0.6], boxShadow:['0 0 12px 2px rgba(139,92,246,0.4)','0 0 30px 6px rgba(139,92,246,0.8)','0 0 12px 2px rgba(139,92,246,0.4)'] }}
-          transition={{ duration:2, repeat:Infinity, ease:'easeInOut' }}
-          style={{ position:'absolute', inset:0, borderRadius:50, background:'linear-gradient(to right,transparent,#8b5cf6,transparent)' }} />
-        <motion.div animate={{ x:['-200%','300%'] }} transition={{ duration:4, repeat:Infinity, repeatDelay:0,ease:'linear' }}
-          style={{ position:'absolute', top:0, bottom:0, width:'60%', borderRadius:50, background:'linear-gradient(to right,transparent,rgba(255,255,255,0.7) 40%,rgba(255,255,255,0.9) 50%,rgba(255,255,255,0.7) 60%,transparent)' }} />
-      </motion.div>
-    </div>
-  );
-};
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap');
   * { box-sizing: border-box; }
-  .sr-feature-tag{font-size:11px;font-weight:500;color:#a78bfa;background:rgba(139,92,246,0.1);padding:3px 10px;border-radius:50px;border:1px solid rgba(139,92,246,0.2)}
-  .sr-step-card{background:rgba(139,92,246,0.03);border:1px solid rgba(139,92,246,0.12);border-radius:24px;padding:32px;transition:transform .4s,border-color .3s,box-shadow .4s}
-  .sr-step-card:hover{transform:translateY(-6px);border-color:rgba(139,92,246,0.35);box-shadow:0 20px 50px rgba(139,92,246,0.12)}
-  .sr-step-num{font-family:'Roboto',sans-serif;font-size:48px;font-weight:800;color:rgba(139,92,246,0.12);line-height:1;margin-bottom:16px;letter-spacing:-.03em;transition:color .3s}
-  .sr-step-card:hover .sr-step-num{color:rgba(139,92,246,0.3)}
-  .sr-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:12px 16px;color:#fff;font-size:14px;font-family:'Roboto',sans-serif;outline:none;transition:border-color .3s,box-shadow .3s;box-sizing:border-box}
-  .sr-input:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,0.15)}
+
+  .sr3-dot {
+    width:8px;height:8px;border-radius:50%;background:#FF4D6D;flex-shrink:0;
+    animation:sr3Pulse 1.6s ease infinite;
+  }
+  @keyframes sr3Pulse {
+    0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 rgba(255,77,109,0.4)}
+    50%{opacity:.85;transform:scale(1.2);box-shadow:0 0 0 6px rgba(255,77,109,0)}
+  }
+
+  .sr3-cta {
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    background:linear-gradient(135deg,#7C5CFC,#9B7DFF);
+    color:#fff;font-family:Inter,sans-serif;font-weight:600;font-size:16px;
+    padding:16px 36px;border-radius:999px;text-decoration:none;border:none;cursor:pointer;
+    box-shadow:0 0 32px rgba(124,92,252,0.45);
+    transition:transform .15s ease,box-shadow .2s ease;
+  }
+  .sr3-cta:hover{transform:translateY(-2px);box-shadow:0 0 52px rgba(124,92,252,0.65)}
+
+  .sr-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(124,92,252,0.2);border-radius:12px;padding:12px 16px;color:#F4F2FA;font-size:14px;font-family:Inter,sans-serif;outline:none;transition:border-color .3s,box-shadow .3s;box-sizing:border-box}
+  .sr-input:focus{border-color:#7C5CFC;box-shadow:0 0 0 3px rgba(124,92,252,0.15)}
   .sr-input::placeholder{color:rgba(255,255,255,0.25)}
-  select.sr-input{cursor:pointer}
-  select.sr-input option{background:#1a0a2e;color:#fff}
+  select.sr-input{cursor:pointer;appearance:none}
+  select.sr-input option{background:#0F0B1D;color:#F4F2FA}
   textarea.sr-input{resize:none}
-  .sr-ea-btn{width:100%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;font-family:'Roboto',sans-serif;cursor:pointer;transition:transform .15s,box-shadow .3s;box-shadow:0 0 30px rgba(124,58,237,0.4);margin-bottom:10px}
-  .sr-ea-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 0 50px rgba(124,58,237,0.6)}
-  .sr-ea-btn:disabled{opacity:.5;cursor:not-allowed}
-  .sr-fade-in{animation:srFadeIn .4s ease both}
-  @keyframes srFadeIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-  @keyframes srFloatDown{from{transform:translate3d(0,-380px,0)}to{transform:translate3d(0,calc(100vh + 380px),0)}}
-  @keyframes srFloatUp{from{transform:translate3d(0,calc(100vh + 380px),0)}to{transform:translate3d(0,-380px,0)}}
-  .sr-mobile-menu{position:fixed;inset:0;background:rgba(3,0,10,0.97);backdrop-filter:blur(20px);z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;transform:translateY(-100%);transition:transform .4s cubic-bezier(.16,1,.3,1)}
-  .sr-mobile-menu.open{transform:translateY(0)}
-  .sr-mobile-menu a{color:#fff;font-size:22px;text-decoration:none;font-weight:700;letter-spacing:-.02em}
-  @media(max-width:1024px){.sr-hero-grid{grid-template-columns:1fr !important}.sr-side-cards{display:none !important}.sr-hero-section{padding:100px 24px 60px !important;min-height:auto !important}}
-  @media(max-width:768px){.sr-nav{padding:0 20px !important}.sr-nav-links{display:none !important}.sr-nav-cta{display:none !important}.sr-hamburger{display:flex !important}.sr-hero-section{padding:90px 20px 48px !important}.sr-stats{gap:32px !important;padding:32px 20px !important}.sr-section{padding:60px 20px !important}.sr-ea-section{padding:60px 20px 80px !important}.sr-ea-grid{grid-template-columns:1fr !important;gap:32px !important;padding:32px 24px !important}.sr-footer{padding:32px 20px !important;flex-direction:column !important;align-items:flex-start !important;gap:24px !important}.sr-footer-links{flex-wrap:wrap !important;gap:16px !important}.sr-step-card{padding:24px !important}}
+
+  .sr3-btn{width:100%;background:linear-gradient(135deg,#7C5CFC,#9B7DFF);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 0 24px rgba(124,92,252,0.35);margin-bottom:10px}
+  .sr3-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 0 40px rgba(124,92,252,0.55)}
+  .sr3-btn:disabled{opacity:.5;cursor:not-allowed}
+
+  .sr3-in{animation:sr3In .4s ease both}
+  @keyframes sr3In{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  @media(prefers-reduced-motion:reduce){
+    .sr3-dot{animation:none!important}
+    .sr3-cta,.sr3-btn{transition:none!important}
+  }
+  @media(max-width:768px){
+    .sr3-grid{grid-template-columns:1fr!important}
+    .sr3-ea{grid-template-columns:1fr!important;gap:32px!important;padding:32px 20px!important}
+    .sr3-flow{flex-wrap:wrap!important;gap:10px!important;justify-content:center!important}
+    .sr3-nav{padding:0 20px!important}
+  }
 `;
 
 export default function LandingPage() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [step, setStep] = useState<'form'|'questions'|'sent'|'status'>('form');
-  const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '' });
-  const [answers, setAnswers] = useState({ platform: '', niche: '', language: '', follower_range: '', posting_frequency: '', biggest_struggle: '', weekly_feedback_ok: false });
+  const [scrolled, setScrolled]   = useState(false);
+  const [step, setStep]           = useState<'form'|'questions'|'sent'|'status'>('form');
+  const [formData, setFormData]   = useState({ name:'', email:'', whatsapp:'' });
+  const [answers, setAnswers]     = useState({ platform:'', niche:'', language:'', follower_range:'', posting_frequency:'', biggest_struggle:'', weekly_feedback_ok:false });
   const [statusData, setStatusData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [activeNiche, setActiveNiche] = useState(0);
+  const [loading, setLoading]     = useState(false);
+  const [errorMsg, setErrorMsg]   = useState('');
+  const [copied, setCopied]       = useState(false);
+  const [stats, setStats]         = useState<{total:number;today:number}|null>(null);
+  const [dispTotal, setDispTotal] = useState(0);
+  const [dispToday, setDispToday] = useState(0);
 
   const BASE = import.meta.env.VITE_API_URL || 'https://uptrent-backend.onrender.com';
 
   const getStoredRef = () => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('ref') || localStorage.getItem('sr_ref') || '';
+    const p = new URLSearchParams(window.location.search);
+    return p.get('ref') || localStorage.getItem('sr_ref') || '';
   };
 
   const fetchStatus = async (code: string) => {
     try {
-      const res = await fetch(`${BASE}/api/waitlist/status?code=${code}`);
-      const data = await res.json();
-      if (res.ok) { setStatusData(data); setStep('status'); }
-    } catch (e) { console.error(e); }
+      const r = await fetch(`${BASE}/api/waitlist/status?code=${code}`);
+      const d = await r.json();
+      if (r.ok) { setStatusData(d); setStep('status'); }
+    } catch {}
   };
 
-  // Ref attribution + magic-link return detection
+  // SEO
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref');
-    if (ref) {
-      localStorage.setItem('sr_ref', ref);
-      const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
-      document.cookie = `sr_ref=${encodeURIComponent(ref)}; expires=${expires}; path=/; SameSite=Lax`;
-    }
-    const code = params.get('code');
-    if (code) {
-      fetchStatus(code);
-      setTimeout(() => document.getElementById('early-access')?.scrollIntoView({ behavior: 'smooth' }), 300);
-    } else {
-      window.scrollTo(0, 0);
-    }
+    document.title = 'SocialRum – Stop guessing what to post | Beta Access';
+    let m = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    const c = 'SocialRum is your personal content agency in your pocket — trending topics, what to post next, ready-to-film scripts, and captions in every Indian language. Apply for beta.';
+    if (m) m.setAttribute('content', c);
+    else { m = document.createElement('meta'); m.name='description'; m.content=c; document.head.appendChild(m); }
   }, []);
 
-  // ✅ SEO: Set page title and meta description
+  // Ref attribution + magic-link return
   useEffect(() => {
-    document.title = 'SocialRum – Content Engine for Indian Creators | Scripts, Trends & Captions in Your Language';
-    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-    if (meta) {
-      meta.setAttribute('content', 'AI platform for Indian creators — discover trends, write scripts in your own voice & language, and analyse competitors on Instagram & YouTube. Join the waitlist.');
+    const p = new URLSearchParams(window.location.search);
+    const ref = p.get('ref');
+    if (ref) {
+      localStorage.setItem('sr_ref', ref);
+      const exp = new Date(Date.now() + 30*24*60*60*1000).toUTCString();
+      document.cookie = `sr_ref=${encodeURIComponent(ref)}; expires=${exp}; path=/; SameSite=Lax`;
+    }
+    const code = p.get('code');
+    if (code) {
+      fetchStatus(code);
+      setTimeout(() => document.getElementById('early-access')?.scrollIntoView({ behavior:'smooth' }), 300);
     } else {
-      meta = document.createElement('meta');
-      meta.name = 'description';
-      meta.content = 'AI platform for Indian creators — discover trends, write scripts in your own voice & language, and analyse competitors on Instagram & YouTube. Join the waitlist.';
-      document.head.appendChild(meta);
+      window.scrollTo(0, 0);
     }
   }, []);
 
@@ -221,48 +148,56 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
+  // Fetch live applicant count
   useEffect(() => {
-    const t = setInterval(() => setActiveNiche(p => (p + 1) % TRENDING_NICHES.length), 2000);
-    return () => clearInterval(t);
+    fetch(`${BASE}/api/waitlist/stats`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setStats(d); })
+      .catch(() => {});
   }, []);
 
+  // Animate counter 0 → total
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [menuOpen]);
+    if (!stats) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDispTotal(stats.total); setDispToday(stats.today); return;
+    }
+    const dur = 1200, t0 = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - t0) / dur, 1);
+      const e = 1 - (1 - t) ** 3;
+      setDispTotal(Math.round(stats.total * e));
+      setDispToday(Math.round(stats.today * e));
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [stats]);
 
   const handleNext = () => {
     if (!formData.email || !formData.email.includes('@')) { setErrorMsg('Please enter a valid email.'); return; }
-    setErrorMsg('');
-    setStep('questions');
+    setErrorMsg(''); setStep('questions');
   };
 
   const handleSubmit = async () => {
     setLoading(true); setErrorMsg('');
-    const params = new URLSearchParams(window.location.search);
+    const p = new URLSearchParams(window.location.search);
     try {
       const res = await fetch(`${BASE}/api/waitlist`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           name: formData.name || formData.email.split('@')[0],
-          email: formData.email,
-          whatsapp: formData.whatsapp || null,
-          answers,
-          ref: getStoredRef(),
-          utm_source: params.get('utm_source') || undefined,
-          utm_medium: params.get('utm_medium') || undefined,
-          utm_campaign: params.get('utm_campaign') || undefined,
+          email: formData.email, whatsapp: formData.whatsapp || null,
+          answers, ref: getStoredRef(),
+          utm_source: p.get('utm_source')||undefined,
+          utm_medium: p.get('utm_medium')||undefined,
+          utm_campaign: p.get('utm_campaign')||undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong');
       if (data.already_registered) {
-        if (data.referral_code && data.status === 'verified') {
-          await fetchStatus(data.referral_code);
-        } else {
-          setErrorMsg("You're already on the list! Check your email for the confirmation link.");
-        }
+        if (data.referral_code && data.status === 'verified') await fetchStatus(data.referral_code);
+        else setErrorMsg("You're already on the list! Check your email for the confirmation link.");
         return;
       }
       setStep('sent');
@@ -270,346 +205,224 @@ export default function LandingPage() {
     finally { setLoading(false); }
   };
 
+  const ScreenSlot = ({ slot, img, ratio }: { slot:string; img:string; ratio:string }) => {
+    const [err, setErr] = useState(false);
+    return err
+      ? <div style={{ width:'100%', aspectRatio:ratio, background:'rgba(124,92,252,0.04)', border:'1px dashed rgba(124,92,252,0.2)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <span style={{ fontSize:11, color:'rgba(255,255,255,0.15)', fontFamily:'Inter,sans-serif' }}>{slot} · add screenshot to /public/screenshots/</span>
+        </div>
+      : <img src={img} alt={slot} loading="lazy" onError={() => setErr(true)}
+          style={{ width:'100%', aspectRatio:ratio, objectFit:'cover', borderRadius:12, display:'block' }} />;
+  };
+
+  const [s1Err, setS1Err] = useState(false);
+
   return (
-    <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily:"'Roboto',sans-serif" }}>
+    <div style={{ background:'#08060F', minHeight:'100vh', color:'#F4F2FA', fontFamily:'Inter,sans-serif', overflowX:'hidden' }}>
       <style>{css}</style>
 
-      {/* Mobile menu */}
-      <div className={`sr-mobile-menu ${menuOpen ? 'open' : ''}`}>
-        <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
-        <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How It Works</a>
-        <a href="#early-access" onClick={() => setMenuOpen(false)} style={{ color:'#a855f7' }}>Early Access</a>
-        <a href="#early-access" onClick={() => setMenuOpen(false)}
-          style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', padding:'14px 32px', borderRadius:50, fontSize:15, fontWeight:700 }}>
-          Get Early Access
-        </a>
-      </div>
-
-      {/* Animated bg */}
-      <motion.div animate={{ scale:[1,1.06,1], rotate:[0,2,0] }} transition={{ duration:15, repeat:Infinity, ease:'easeInOut' }}
-        style={{ position:'fixed', inset:0, zIndex:1, pointerEvents:'none', background:'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.09), transparent 65%)' }} />
-      <motion.div animate={{ y:[0,-15,0], x:[0,10,0] }} transition={{ duration:20, repeat:Infinity, ease:'linear' }}
-        style={{ position:'fixed', inset:-20, zIndex:1, pointerEvents:'none', opacity:0.025, backgroundImage:'linear-gradient(rgba(255,255,255,0.2) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.2) 1px,transparent 1px)', backgroundSize:'60px 60px' }} />
-
-      {/* Floating video cards */}
-      <div className="hidden md:block" style={{ position:'fixed', inset:0, zIndex:2, overflow:'hidden', pointerEvents:'none' }}>
-        {[0,1,2,3,4,5].map(laneIndex => {
-          const laneCards = VIDEO_CARDS.filter(c => c.lane === laneIndex);
-          const isEven = laneIndex % 2 === 0;
-          return (
-            <div key={laneIndex} style={{ position:'absolute', top:0, bottom:0, left:`${4 + laneIndex * 16}%`, width:140 }}>
-              {laneCards.map(card => {
-                const isIG = card.platform === 'instagram';
-                return (
-                  <div key={card.id} style={{ position:'absolute', width:130, top: isEven ? -380 : '100%', animationName: isEven ? 'srFloatDown' : 'srFloatUp', animationDuration:`${card.speed}s`, animationDelay:`${card.startOffset/10}s`, animationTimingFunction:'linear', animationIterationCount:'infinite', willChange:'transform' }}>
-                    <div style={{ position:'relative', width:130, height:230, borderRadius:16, overflow:'hidden', background:'rgba(139,92,246,0.05)', border:'1px solid rgba(139,92,246,0.12)', opacity:0.35 }}>
-                      <img src={card.thumbnail} alt="" loading="lazy" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', opacity:0.6 }} />
-                      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,transparent,rgba(0,0,0,0.85))' }} />
-                      <div style={{ position:'absolute', top:8, left:8, padding:'2px 6px', borderRadius:50, background: isIG ? 'linear-gradient(45deg,#f09433,#bc1888)' : '#FF0000', fontSize:8, fontWeight:700, color:'white' }}>{isIG ? 'Reels' : 'Shorts'}</div>
-                      <div style={{ position:'absolute', bottom:8, left:8, right:8 }}>
-                        <p style={{ color:'white', fontWeight:600, fontSize:9, lineHeight:1.3, marginBottom:2 }}>{card.title}</p>
-                        <span style={{ fontSize:8, fontWeight:700, color: isIG ? '#E1306C' : '#FF0000' }}>{card.views}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* NAVBAR */}
-      <nav className="sr-nav" style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 64px', height:72, transition:'all .3s', background: scrolled || menuOpen ? 'rgba(3,0,10,0.95)' : 'transparent', backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(139,92,246,0.1)' : 'none' }}>
-
-        <div style={{ display:'flex', alignItems:'center', gap:10, zIndex:51 }}>
-          <div style={{ width:36, height:36, borderRadius:10, overflow:'hidden', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <img src="/logo.png" alt="SocialRum" style={{ width:36, height:36, objectFit:'cover', borderRadius:10 }}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                const parent = target.parentElement;
-                if (parent) {
-                  const dot = document.createElement('div');
-                  dot.style.cssText = 'width:10px;height:10px;border-radius:3px;background:#a855f7;box-shadow:0 0 10px #a855f7';
-                  parent.appendChild(dot);
-                }
-              }} />
+      {/* ── NAV ── */}
+      <nav className="sr3-nav" style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, height:64, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 40px', transition:'background .3s,border-color .3s', background:scrolled?'rgba(8,6,15,0.96)':'transparent', backdropFilter:scrolled?'blur(16px)':'none', borderBottom:scrolled?'1px solid rgba(255,255,255,0.06)':'none' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:9 }}>
+          <div style={{ width:30, height:30, borderRadius:8, overflow:'hidden', background:'rgba(124,92,252,0.1)', border:'1px solid rgba(124,92,252,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <img src="/logo.png" alt="SocialRum" style={{ width:30, height:30, objectFit:'cover', borderRadius:8 }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
           </div>
-          <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:18, color:'#fff', letterSpacing:'-.02em' }}>SocialRum</span>
+          <span style={{ fontFamily:'Space Grotesk,sans-serif', fontWeight:700, fontSize:17, color:'#F4F2FA', letterSpacing:'-.01em' }}>SocialRum</span>
         </div>
-
-        <ul className="sr-nav-links" style={{ display:'flex', gap:40, listStyle:'none', margin:0, padding:0 }}>
-          {['Features','How It Works','Blog','Early Access'].map(item => (
-            <li key={item}><a href={item === 'Blog' ? '/blog' : `#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'Roboto,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
-          ))}
-        </ul>
-
-        <a href="#early-access" className="sr-nav-cta" style={{ background:'rgba(124,58,237,0.15)', border:'1px solid rgba(139,92,246,0.3)', padding:'10px 22px', borderRadius:50, fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none' }}>
-          Be the First to Know
-        </a>
-
-        <button className="sr-hamburger" onClick={() => setMenuOpen(!menuOpen)}
-          style={{ display:'none', background:'none', border:'none', color:'#fff', cursor:'pointer', padding:4, zIndex:51, flexDirection:'column', gap:5, alignItems:'center', justifyContent:'center' }}>
-          {menuOpen ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
-          )}
-        </button>
+        <a href="#early-access" className="sr3-cta" style={{ padding:'10px 22px', fontSize:14 }}>Apply for Beta</a>
       </nav>
 
-      {/* HERO */}
-      <section className="sr-hero-section" style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', padding:'0 64px', zIndex:10, paddingTop:80 }}>
-        <div className="sr-hero-grid" style={{ width:'100%', maxWidth:1400, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1.4fr 1fr', gap:40, alignItems:'center' }}>
+      {/* ── HERO ── */}
+      <section style={{ paddingTop:136, paddingBottom:72, textAlign:'center', maxWidth:780, margin:'0 auto', padding:'136px 24px 72px', position:'relative', zIndex:10 }}>
+        <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.5 }}
+          style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(124,92,252,0.1)', border:'1px solid rgba(124,92,252,0.25)', borderRadius:999, padding:'7px 16px', fontSize:13, color:'#A29AC0', fontFamily:'Inter,sans-serif', marginBottom:28 }}>
+          <span className="sr3-dot" />
+          Beta applications open · 50 spots only
+        </motion.div>
 
-          {/* LEFT */}
-          <motion.div className="sr-side-cards" initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.3 }}
-            style={{ display:'flex', flexDirection:'column', gap:12 }}>
-            <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:20, backdropFilter:'blur(20px)', cursor:'default' }}>
-              <p style={{ fontFamily:'Roboto,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:14 }}>Trending Niches</p>
-              {TRENDING_NICHES.map((niche, i) => (
-                <motion.div key={niche.name} animate={{ opacity: activeNiche === i ? 1 : 0.4, x: activeNiche === i ? 4 : 0 }} transition={{ duration:0.3 }}
-                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <motion.div animate={activeNiche === i ? { scale:[1,1.3,1] } : {}} transition={{ duration:0.6, repeat:Infinity }}
-                      style={{ width:6, height:6, borderRadius:'50%', background: activeNiche === i ? niche.color : 'rgba(255,255,255,0.15)', flexShrink:0 }} />
-                    <span style={{ fontSize:13, color:'#fff', fontFamily:'Roboto,sans-serif' }}>{niche.name}</span>
-                  </div>
-                  <span style={{ fontSize:12, fontWeight:700, color: niche.color }}>{niche.growth}</span>
-                </motion.div>
-              ))}
-            </TiltCard>
+        <motion.h1 initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, delay:0.1 }}
+          style={{ fontFamily:'Space Grotesk,sans-serif', fontWeight:700, fontSize:'clamp(38px,5.4vw,62px)', letterSpacing:'-0.025em', lineHeight:1.06, color:'#F4F2FA', margin:'0 0 20px' }}>
+          Stop guessing what to post.
+        </motion.h1>
 
-            <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:20, padding:18, backdropFilter:'blur(20px)', cursor:'default' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                <p style={{ fontFamily:'Roboto,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.1em' }}>AI Script Ideas</p>
-                <motion.div animate={{ rotate:360 }} transition={{ duration:4, repeat:Infinity, ease:'linear' }}
-                  style={{ width:16, height:16, borderRadius:'50%', border:'2px solid transparent', borderTopColor:'#8b5cf6', borderRightColor:'#8b5cf6' }} />
-              </div>
-              {['Top 5 Finance Tips for 2026', 'React to Latest IPL News', 'AI Tools Every Creator Needs'].map((idea, i) => (
-                <div key={idea} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                  <div style={{ width:18, height:18, borderRadius:6, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.25)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <span style={{ fontSize:9, color:'#a78bfa', fontWeight:700 }}>{i+1}</span>
-                  </div>
-                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)', fontFamily:'Roboto,sans-serif', lineHeight:1.3 }}>{idea}</span>
+        <motion.p initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, delay:0.2 }}
+          style={{ fontSize:'clamp(15px,1.6vw,18px)', color:'#A29AC0', lineHeight:1.75, maxWidth:580, margin:'0 auto 32px', fontFamily:'Inter,sans-serif' }}>
+          SocialRum is your <strong style={{ color:'#F4F2FA', fontWeight:600 }}>personal content agency in your pocket</strong> — it spots what's trending in your niche, tells you what to post next, writes the script, and generates captions in any Indian language. You just hit record.
+        </motion.p>
+
+        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, delay:0.3 }}
+          style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, marginBottom:32 }}>
+          <a href="#early-access" className="sr3-cta" style={{ width:'100%', maxWidth:360, minHeight:52 }}>
+            Apply for Beta Access →
+          </a>
+          <p style={{ fontSize:13, color:'#6E6790', fontFamily:'Inter,sans-serif' }}>
+            Takes 60 seconds · No card needed · Applications close {DEADLINE}
+          </p>
+        </motion.div>
+
+        {/* Proof row — only shown when API returns data */}
+        {stats && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.5, delay:0.5 }}
+            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10 }}>
+            <div style={{ display:'flex' }}>
+              {AVATARS.map((av, i) => (
+                <div key={i} style={{ width:32, height:32, borderRadius:'50%', background:av.bg, border:'2px solid #08060F', marginLeft:i>0?-9:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', fontFamily:'Inter,sans-serif', flexShrink:0 }}>
+                  {av.l}
                 </div>
               ))}
-            </TiltCard>
+            </div>
+            <span style={{ fontSize:13, color:'#A29AC0', fontFamily:'Inter,sans-serif' }}>
+              <strong style={{ color:'#F4F2FA' }}>{dispTotal.toLocaleString()}</strong> creators have applied · <strong style={{ color:'#F4F2FA' }}>{dispToday}</strong> today
+            </span>
           </motion.div>
-
-          {/* CENTER */}
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center' }}>
-            <motion.div initial={{ opacity:0, y:-20, scale:0.85 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.7, ease:[0.16,1,0.3,1] }}
-              style={{ border:'1px solid rgba(139,92,246,0.3)', background:'rgba(139,92,246,0.06)', color:'#c4b5fd', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'6px 16px', borderRadius:50, fontWeight:600, marginBottom:24, fontFamily:'Roboto,sans-serif', display:'inline-flex', alignItems:'center', gap:8 }}>
-              <motion.div animate={{ opacity:[1,0.2,1] }} transition={{ duration:1.5, repeat:Infinity }} style={{ width:6, height:6, borderRadius:'50%', background:'#8b5cf6' }} />
-              Now Accepting Early Access
-            </motion.div>
-
-            <HeroTitle />
-
-            <motion.h2 initial={{ opacity:0, y:20, filter:'blur(8px)' }} animate={{ opacity:1, y:0, filter:'blur(0px)' }} transition={{ duration:0.8, delay:0.8, ease:[0.16,1,0.3,1] }}
-              style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(18px,4vw,32px)', fontWeight:700, color:'#fff', marginBottom:16, lineHeight:1.3 }}>
-              Create Content{' '}
-              <motion.span animate={{ color:['#8b5cf6','#a78bfa','#8b5cf6'] }} transition={{ duration:3, repeat:Infinity }}>That Actually</motion.span>
-              <br/>Gets Discovered
-            </motion.h2>
-
-            <motion.p initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, delay:1.0, ease:[0.16,1,0.3,1] }}
-              style={{ fontFamily:'Roboto,sans-serif', fontSize:14, color:'rgba(255,255,255,0.5)', maxWidth:380, lineHeight:1.8, marginBottom:32, padding:'0 8px' }}>
-              SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, competitor analysis, and SEO in one dark premium dashboard.
-            </motion.p>
-
-            <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, delay:1.2, ease:[0.16,1,0.3,1] }}
-              style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap', justifyContent:'center' }}>
-              <motion.a href="#early-access" whileHover={{ scale:1.06 }} whileTap={{ scale:0.97 }}
-                style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', color:'#fff', fontWeight:600, fontSize:14, padding:'14px 28px', borderRadius:50, textDecoration:'none', boxShadow:'0 0 30px rgba(124,58,237,0.5)', display:'inline-flex', alignItems:'center', gap:8 }}>
-                Be the First to Know
-                <motion.span animate={{ x:[0,4,0] }} transition={{ duration:1.2, repeat:Infinity }}>→</motion.span>
-              </motion.a>
-              <motion.a href="#features" whileHover={{ color:'#fff' }}
-                style={{ fontSize:14, color:'rgba(255,255,255,0.5)', textDecoration:'none', fontFamily:'Roboto,sans-serif', display:'inline-flex', alignItems:'center', gap:6 }}>
-                Explore Features
-                <motion.span animate={{ y:[0,3,0] }} transition={{ duration:1.2, repeat:Infinity }}>▼</motion.span>
-              </motion.a>
-            </motion.div>
-          </div>
-
-          {/* RIGHT */}
-          <motion.div className="sr-side-cards" initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, delay:0.2 }}>
-            <TiltCard style={{ background:'rgba(11,6,22,0.85)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:28, padding:20, backdropFilter:'blur(20px)', boxShadow:'0 30px 60px rgba(0,0,0,0.6)', position:'relative', overflow:'hidden', cursor:'default' }}>
-              <div style={{ position:'absolute', top:-30, right:-30, width:96, height:96, background:'rgba(139,92,246,0.12)', filter:'blur(20px)', borderRadius:'50%', pointerEvents:'none' }} />
-              <div style={{ display:'flex', alignItems:'center', gap:8, color:'#a78bfa', fontSize:12, fontWeight:700, marginBottom:16, fontFamily:'Roboto,sans-serif' }}>
-                <motion.div animate={{ opacity:[1,0.3,1] }} transition={{ duration:1.5, repeat:Infinity }} style={{ width:6, height:6, borderRadius:'50%', background:'#8b5cf6' }} />
-                Dashboard
-              </div>
-              <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14, marginBottom:12 }}>
-                <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>Trending Now</p>
-                {[['#AIVideoEditing','Trending'],['#CreatorEconomy2026','Rising'],['#YouTubeShorts','Hot']].map(([tag, status]) => (
-                  <div key={tag} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, fontSize:12, color:'#fff', fontFamily:'Roboto,sans-serif' }}>
-                    <span>{tag}</span><span style={{ color:'#a78bfa', fontSize:10, fontWeight:600 }}>→ {status}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14, marginBottom:12 }}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'Roboto,sans-serif' }}>Script Generator</p>
-                  <motion.div animate={{ rotate:360 }} transition={{ duration:3, repeat:Infinity, ease:'linear' }}
-                    style={{ width:20, height:20, borderRadius:6, background:'linear-gradient(135deg,#7c3aed,#a855f7)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <div style={{ width:6, height:6, borderRadius:'50%', background:'#fff' }} />
-                  </motion.div>
-                </div>
-                <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:10, padding:'8px 12px', fontSize:11, color:'rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'space-between', fontFamily:'Roboto,sans-serif', minHeight:32 }}>
-                  <TypingScript />
-                  <motion.div animate={{ opacity:[1,0,1] }} transition={{ duration:0.8, repeat:Infinity }} style={{ width:1, height:12, background:'#8b5cf6', flexShrink:0, marginLeft:4 }} />
-                </div>
-              </div>
-              <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.03)', borderRadius:16, padding:14 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                  <p style={{ color:'rgba(255,255,255,0.4)', fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'Roboto,sans-serif' }}>SEO Score</p>
-                  <span style={{ color:'#a78bfa', fontWeight:600, fontSize:11, fontFamily:'Roboto,sans-serif' }}>AI Ready</span>
-                </div>
-                <div style={{ width:'100%', height:6, borderRadius:50, background:'rgba(255,255,255,0.08)', overflow:'hidden', marginBottom:8 }}>
-                  <motion.div animate={{ width:['0%','85%'] }} transition={{ duration:1.5, ease:'easeOut', delay:1 }}
-                    style={{ height:'100%', borderRadius:50, background:'linear-gradient(90deg,#7c3aed,#a855f7)', boxShadow:'0 0 10px rgba(139,92,246,0.6)' }} />
-                </div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.3)', fontFamily:'Roboto,sans-serif' }}>
-                  <span>Low</span><span style={{ color:'#a78bfa', fontWeight:600 }}>85/100</span><span>High</span>
-                </div>
-              </div>
-            </TiltCard>
-          </motion.div>
-        </div>
+        )}
       </section>
 
-      {/* STATS */}
-      <div className="sr-stats" style={{ background:'rgba(139,92,246,0.01)', borderTop:'1px solid rgba(139,92,246,0.08)', borderBottom:'1px solid rgba(139,92,246,0.08)', padding:'48px 32px', display:'flex', justifyContent:'center', gap:64, flexWrap:'wrap', position:'relative', zIndex:20 }}>
-        {STATS.map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.1 }} style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'Roboto,sans-serif', fontSize:38, fontWeight:800, letterSpacing:'-.03em', background:'linear-gradient(to bottom,#fff,#a78bfa)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>{s.value}</div>
-            <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:6, fontFamily:'Roboto,sans-serif' }}>{s.label}</div>
-          </motion.div>
-        ))}
+      {/* ── S1 BROWSER FRAME ── */}
+      <div style={{ maxWidth:1020, margin:'0 auto 88px', padding:'0 24px', position:'relative', zIndex:10 }}>
+        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'70%', height:'80%', background:'radial-gradient(ellipse at center,rgba(124,92,252,0.16),transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+        <div style={{ background:'#0F0B1D', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, overflow:'hidden', boxShadow:'0 30px 90px rgba(0,0,0,0.55),0 0 0 1px rgba(124,92,252,0.14)' }}>
+          <div style={{ height:40, background:'#0A0714', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', padding:'0 16px', gap:12 }}>
+            <div style={{ display:'flex', gap:6 }}>
+              {['#FF5F57','#FFBD2E','#28C840'].map((c, i) => <div key={i} style={{ width:10, height:10, borderRadius:'50%', background:c }} />)}
+            </div>
+            <div style={{ flex:1, display:'flex', justifyContent:'center' }}>
+              <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:6, padding:'3px 16px', fontSize:11, color:'#6E6790', fontFamily:'JetBrains Mono,monospace' }}>
+                app.socialrum.com/dashboard
+              </div>
+            </div>
+          </div>
+          <div style={{ aspectRatio:'16/10', background:'#0F0B1D', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            {s1Err
+              ? <span style={{ fontSize:13, color:'rgba(255,255,255,0.15)', fontFamily:'Inter,sans-serif' }}>S1 · Add dashboard screenshot to /public/screenshots/s1.webp</span>
+              : <img src="/screenshots/s1.webp" alt="SocialRum Dashboard" loading="eager" onError={() => setS1Err(true)}
+                  style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+            }
+          </div>
+        </div>
       </div>
 
-      {/* FEATURES */}
-      <section id="features" className="sr-section" style={{ maxWidth:1100, margin:'0 auto', padding:'100px 32px', position:'relative', zIndex:20 }}>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>Platform Features</motion.p>
-        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>Every tool a serious creator needs.</motion.h2>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</motion.p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:16 }}>
+      {/* ── WORKFLOW STRIP ── */}
+      <div style={{ maxWidth:900, margin:'0 auto 88px', padding:'0 24px', position:'relative', zIndex:10 }}>
+        <div className="sr3-flow" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+          {['Spot the trend','Know what to post','Get the script','Caption in your language'].map((label, i, arr) => (
+            <div key={label} style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ width:22, height:22, borderRadius:'50%', background:'rgba(124,92,252,0.12)', border:'1px solid rgba(124,92,252,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:600, color:'#9B7DFF', fontFamily:'Inter,sans-serif', flexShrink:0 }}>
+                {i + 1}
+              </div>
+              <span style={{ fontSize:14, color:'#A29AC0', fontFamily:'Inter,sans-serif', whiteSpace:'nowrap' }}>{label}</span>
+              {i < arr.length - 1 && <span style={{ color:'rgba(124,92,252,0.35)', fontSize:18, marginLeft:2 }}>→</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── FEATURE GRID ── */}
+      <section style={{ maxWidth:1000, margin:'0 auto 96px', padding:'0 24px', position:'relative', zIndex:10 }}>
+        <div style={{ textAlign:'center', marginBottom:52 }}>
+          <h2 style={{ fontFamily:'Space Grotesk,sans-serif', fontWeight:700, fontSize:'clamp(24px,3vw,38px)', color:'#F4F2FA', letterSpacing:'-0.02em', marginBottom:12 }}>
+            One dashboard. Your whole content workflow.
+          </h2>
+          <p style={{ fontSize:16, color:'#A29AC0', fontFamily:'Inter,sans-serif' }}>
+            Everything an agency team would do for you — before your morning chai.
+          </p>
+        </div>
+        <div className="sr3-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
           {FEATURES.map((f, i) => (
-            <motion.div key={f.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.08 }} className="sr-step-card">
-              <div className="sr-step-num">{f.num}</div>
-              <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:8 }}>{f.title}</h3>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:14, fontFamily:'Roboto,sans-serif' }}>{f.desc}</p>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                {f.tags.map(tag => <span key={tag} className="sr-feature-tag">{tag}</span>)}
+            <motion.div key={f.slot} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.5, delay:i*0.08 }}
+              style={{ background:'rgba(124,92,252,0.04)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16, overflow:'hidden' }}>
+              <ScreenSlot slot={f.slot} img={f.img} ratio="4/3" />
+              <div style={{ padding:'18px 20px 22px' }}>
+                <h3 style={{ fontFamily:'Space Grotesk,sans-serif', fontWeight:600, fontSize:17, color:'#F4F2FA', marginBottom:6 }}>{f.title}</h3>
+                <p style={{ fontSize:14, color:'#A29AC0', lineHeight:1.65, fontFamily:'Inter,sans-serif' }}>{f.body}</p>
               </div>
             </motion.div>
           ))}
-          <motion.div initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay:0.4 }}
-            className="sr-step-card" style={{ display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center' }}>
-            <div>
-              <div className="sr-step-num" style={{ textAlign:'center' }}>+</div>
-              <p style={{ fontFamily:'Roboto,sans-serif', fontSize:17, fontWeight:700, color:'rgba(255,255,255,0.2)', marginBottom:8 }}>More coming</p>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.15)', fontFamily:'Roboto,sans-serif' }}>Platform is actively growing</p>
-            </div>
-          </motion.div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how-it-works" className="sr-section" style={{ maxWidth:1100, margin:'0 auto', padding:'80px 32px', position:'relative', zIndex:20 }}>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>How It Works</motion.p>
-        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>From zero to algorithm-ready in one session.</motion.h2>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>No complex setup. No learning curve. Connect your channels and SocialRum immediately starts surfacing what to create, how to optimize it, and how to rank it.</motion.p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:20 }}>
-          {STEPS.map((s, i) => (
-            <motion.div key={s.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.1 }} className="sr-step-card">
-              <div className="sr-step-num">{s.num}</div>
-              <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:8 }}>{s.title}</h3>
-              <p style={{ fontSize:12, fontWeight:600, color:'#8b5cf6', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>{s.sub}</p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>{s.desc}</p>
-              <p style={{ marginTop:14, fontSize:11, color:'rgba(139,92,246,0.5)', fontStyle:'italic', fontFamily:'Roboto,sans-serif' }}>{s.note}</p>
-            </motion.div>
-          ))}
+      {/* ── CLOSING CTA ── */}
+      <section style={{ textAlign:'center', padding:'72px 24px 88px', position:'relative', zIndex:10 }}>
+        <h2 style={{ fontFamily:'Space Grotesk,sans-serif', fontWeight:700, fontSize:'clamp(24px,3vw,38px)', color:'#F4F2FA', letterSpacing:'-0.02em', marginBottom:28 }}>
+          50 creators get in first. Be one of them.
+        </h2>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+          <a href="#early-access" className="sr3-cta" style={{ width:'100%', maxWidth:360, minHeight:52 }}>Apply for Beta Access →</a>
+          <p style={{ fontSize:13, color:'#6E6790', fontFamily:'Inter,sans-serif' }}>Applications close {DEADLINE}</p>
         </div>
       </section>
 
-      {/* EARLY ACCESS */}
-      <section id="early-access" className="sr-ea-section" style={{ maxWidth:1100, margin:'0 auto', padding:'80px 32px 120px', position:'relative', zIndex:20 }}>
-        <div className="sr-ea-grid" style={{ border:'1px solid rgba(139,92,246,0.1)', background:'rgba(139,92,246,0.02)', borderRadius:32, padding:'64px 56px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:64, alignItems:'center', position:'relative', overflow:'hidden' }}>
-          <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, background:'rgba(139,92,246,0.05)', filter:'blur(40px)', borderRadius:'50%', pointerEvents:'none' }} />
+      {/* ── EARLY ACCESS FORM ── */}
+      <section id="early-access" style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px 120px', position:'relative', zIndex:10 }}>
+        <div className="sr3-ea" style={{ border:'1px solid rgba(124,92,252,0.1)', background:'rgba(124,92,252,0.02)', borderRadius:28, padding:'56px 48px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:56, alignItems:'start', position:'relative', overflow:'hidden' }}>
+          <div style={{ position:'absolute', top:-40, right:-40, width:180, height:180, background:'rgba(124,92,252,0.07)', filter:'blur(40px)', borderRadius:'50%', pointerEvents:'none' }} />
 
-          <motion.div initial={{ opacity:0, x:-20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }}>
-            <p style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:16, fontFamily:'Roboto,sans-serif' }}>Limited Spots Remaining</p>
-            <h2 style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:16, lineHeight:1.2 }}>Be the First to<br/>Know &amp; Create.</h2>
-            <p style={{ fontSize:15, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:32, fontFamily:'Roboto,sans-serif' }}>Get early access and founding creator status when SocialRum launches.</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          {/* Left: benefits */}
+          <div>
+            <p style={{ color:'#7C5CFC', fontSize:12, fontWeight:600, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14, fontFamily:'Inter,sans-serif' }}>Limited Spots Remaining</p>
+            <h2 style={{ fontFamily:'Space Grotesk,sans-serif', fontSize:'clamp(22px,2.8vw,32px)', fontWeight:700, color:'#F4F2FA', marginBottom:14, lineHeight:1.25 }}>Be the First to<br/>Know &amp; Create.</h2>
+            <p style={{ fontSize:15, color:'#A29AC0', lineHeight:1.7, marginBottom:28, fontFamily:'Inter,sans-serif' }}>Get early access and founding creator status when SocialRum launches.</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
               {[
                 'Beta Access — Use all 5 tools before public launch',
                 'Founding Creator Badge — Exclusive profile recognition',
                 'Free Early Access Tier — No credit card required',
-                'Priority support from the SocialRum team'
+                'Priority support from the SocialRum team',
               ].map(b => (
-                <div key={b} style={{ display:'flex', alignItems:'flex-start', gap:12, fontSize:14, color:'rgba(255,255,255,0.55)', fontFamily:'Roboto,sans-serif' }}>
-                  <div style={{ width:20, height:20, borderRadius:'50%', background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2 }}>
-                    <svg viewBox="0 0 12 12" style={{ width:10, height:10 }} fill="none" strokeWidth={2.5} stroke="#a78bfa" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
+                <div key={b} style={{ display:'flex', alignItems:'flex-start', gap:12, fontSize:14, color:'#A29AC0', fontFamily:'Inter,sans-serif' }}>
+                  <div style={{ width:20, height:20, borderRadius:'50%', background:'rgba(124,92,252,0.12)', border:'1px solid rgba(124,92,252,0.28)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2 }}>
+                    <svg viewBox="0 0 12 12" style={{ width:10, height:10 }} fill="none" strokeWidth={2.5} stroke="#9B7DFF" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
                   </div>
                   {b}
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Form */}
-          <motion.div initial={{ opacity:0, x:20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }}
-            style={{ background:'rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:24, padding:36, position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', top:-60, right:-60, width:160, height:160, background:'rgba(139,92,246,0.1)', filter:'blur(30px)', borderRadius:'50%', pointerEvents:'none' }} />
+          {/* Right: form */}
+          <div style={{ background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:22, padding:30, position:'relative', overflow:'hidden' }}>
+            <div style={{ position:'absolute', top:-50, right:-50, width:130, height:130, background:'rgba(124,92,252,0.1)', filter:'blur(26px)', borderRadius:'50%', pointerEvents:'none' }} />
 
-            {/* ── STEP 1: Basic info ── */}
             {step === 'form' && (
-              <div className="sr-fade-in">
-                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Join Early Access</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:24, lineHeight:1.6, fontFamily:'Roboto,sans-serif' }}>Be among the first Indian creators to get access to SocialRum.</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
-                  <input type="text" placeholder="Your name (optional)" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="sr-input" />
-                  <input type="email" placeholder="your@email.com *" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleNext(); }} />
-                  <input type="text" placeholder="WhatsApp number or username (optional)" value={formData.whatsapp} onChange={e => setFormData(p => ({ ...p, whatsapp: e.target.value }))} className="sr-input" />
+              <div className="sr3-in">
+                <h3 style={{ fontFamily:'Space Grotesk,sans-serif', fontSize:20, fontWeight:700, color:'#F4F2FA', marginBottom:6 }}>Apply for Beta Access</h3>
+                <p style={{ fontSize:14, color:'#A29AC0', marginBottom:22, lineHeight:1.6, fontFamily:'Inter,sans-serif' }}>Be among the first Indian creators to get access to SocialRum.</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:11, marginBottom:14 }}>
+                  <input type="text" placeholder="Your name (optional)" value={formData.name} onChange={e => setFormData(p => ({ ...p, name:e.target.value }))} className="sr-input" />
+                  <input type="email" placeholder="your@email.com *" value={formData.email} onChange={e => setFormData(p => ({ ...p, email:e.target.value }))} className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleNext(); }} />
+                  <input type="text" placeholder="WhatsApp number or username (optional)" value={formData.whatsapp} onChange={e => setFormData(p => ({ ...p, whatsapp:e.target.value }))} className="sr-input" />
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
-                <button onClick={handleNext} className="sr-ea-btn">Next →</button>
-                <p style={{ fontSize:11, color:'rgba(255,255,255,0.2)', textAlign:'center', fontFamily:'Roboto,sans-serif' }}>No spam. Unsubscribe anytime.</p>
+                <button onClick={handleNext} className="sr3-btn">Next →</button>
+                <p style={{ fontSize:11, color:'#6E6790', textAlign:'center', fontFamily:'Inter,sans-serif' }}>No spam. Unsubscribe anytime.</p>
               </div>
             )}
 
-            {/* ── STEP 2: Qualifying questions ── */}
             {step === 'questions' && (
-              <div className="sr-fade-in">
-                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:6 }}>Quick questions</h3>
-                <p style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:20, fontFamily:'Roboto,sans-serif' }}>Help us understand your creator journey.</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
-                  <select value={answers.platform} onChange={e => setAnswers(p => ({ ...p, platform: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+              <div className="sr3-in">
+                <h3 style={{ fontFamily:'Space Grotesk,sans-serif', fontSize:18, fontWeight:700, color:'#F4F2FA', marginBottom:5 }}>Quick questions</h3>
+                <p style={{ fontSize:13, color:'#A29AC0', marginBottom:18, fontFamily:'Inter,sans-serif' }}>Help us understand your creator journey.</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:14 }}>
+                  <select value={answers.platform} onChange={e => setAnswers(p => ({ ...p, platform:e.target.value }))} className="sr-input">
                     <option value="">Platform you create on *</option>
                     <option value="youtube">YouTube</option>
                     <option value="instagram">Instagram</option>
                     <option value="both">Both</option>
                   </select>
-                  <select value={answers.niche} onChange={e => setAnswers(p => ({ ...p, niche: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                  <select value={answers.niche} onChange={e => setAnswers(p => ({ ...p, niche:e.target.value }))} className="sr-input">
                     <option value="">Your content niche *</option>
                     <option value="finance">Finance</option>
-                    <option value="fitness">Fitness & Health</option>
-                    <option value="technology">Technology & AI</option>
+                    <option value="fitness">Fitness &amp; Health</option>
+                    <option value="technology">Technology &amp; AI</option>
                     <option value="gaming">Gaming</option>
                     <option value="lifestyle">Lifestyle</option>
-                    <option value="food">Food & Cooking</option>
+                    <option value="food">Food &amp; Cooking</option>
                     <option value="travel">Travel</option>
                     <option value="education">Education</option>
-                    <option value="comedy">Comedy & Entertainment</option>
+                    <option value="comedy">Comedy &amp; Entertainment</option>
                     <option value="other">Other</option>
                   </select>
-                  <select value={answers.language} onChange={e => setAnswers(p => ({ ...p, language: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                  <select value={answers.language} onChange={e => setAnswers(p => ({ ...p, language:e.target.value }))} className="sr-input">
                     <option value="">Content language *</option>
                     <option value="hindi">Hindi</option>
                     <option value="english">English</option>
@@ -621,188 +434,131 @@ export default function LandingPage() {
                     <option value="marathi">Marathi</option>
                     <option value="other">Other</option>
                   </select>
-                  <select value={answers.follower_range} onChange={e => setAnswers(p => ({ ...p, follower_range: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                  <select value={answers.follower_range} onChange={e => setAnswers(p => ({ ...p, follower_range:e.target.value }))} className="sr-input">
                     <option value="">Current followers *</option>
                     <option value="0-1k">Just starting (0 – 1K)</option>
                     <option value="1k-10k">Growing (1K – 10K)</option>
                     <option value="10k-100k">Established (10K – 100K)</option>
                     <option value="100k+">Large (100K+)</option>
                   </select>
-                  <select value={answers.posting_frequency} onChange={e => setAnswers(p => ({ ...p, posting_frequency: e.target.value }))} className="sr-input" style={{ appearance:'none' as any }}>
+                  <select value={answers.posting_frequency} onChange={e => setAnswers(p => ({ ...p, posting_frequency:e.target.value }))} className="sr-input">
                     <option value="">Posting frequency *</option>
                     <option value="daily">Daily</option>
                     <option value="2-3x_week">2–3× a week</option>
                     <option value="weekly">Weekly</option>
                     <option value="less_than_weekly">Less than weekly</option>
                   </select>
-                  <textarea value={answers.biggest_struggle} onChange={e => setAnswers(p => ({ ...p, biggest_struggle: e.target.value }))} placeholder="Biggest content challenge? (optional)" className="sr-input" style={{ resize:'none', height:72 }} />
-                  <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.5)', fontFamily:'Roboto,sans-serif', padding:'4px 0' }}>
-                    <input type="checkbox" checked={answers.weekly_feedback_ok} onChange={e => setAnswers(p => ({ ...p, weekly_feedback_ok: e.target.checked }))}
-                      style={{ width:16, height:16, accentColor:'#7c3aed', cursor:'pointer' }} />
+                  <textarea value={answers.biggest_struggle} onChange={e => setAnswers(p => ({ ...p, biggest_struggle:e.target.value }))} placeholder="Biggest content challenge? (optional)" className="sr-input" style={{ height:68 }} />
+                  <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', fontSize:13, color:'#A29AC0', fontFamily:'Inter,sans-serif' }}>
+                    <input type="checkbox" checked={answers.weekly_feedback_ok} onChange={e => setAnswers(p => ({ ...p, weekly_feedback_ok:e.target.checked }))} style={{ width:16, height:16, accentColor:'#7C5CFC', cursor:'pointer' }} />
                     I'm open to giving weekly feedback during beta
                   </label>
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
-                <button onClick={handleSubmit} disabled={loading} className="sr-ea-btn">{loading ? 'Submitting...' : 'Apply for Beta →'}</button>
-                <button onClick={() => { setStep('form'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer', display:'block', width:'100%', textAlign:'center', padding:4, fontFamily:'Roboto,sans-serif' }}>← Back</button>
+                <button onClick={handleSubmit} disabled={loading} className="sr3-btn">{loading ? 'Submitting...' : 'Apply for Beta →'}</button>
+                <button onClick={() => { setStep('form'); setErrorMsg(''); }} style={{ background:'none', border:'none', color:'#6E6790', fontSize:12, cursor:'pointer', display:'block', width:'100%', textAlign:'center', padding:4, fontFamily:'Inter,sans-serif' }}>← Back</button>
               </div>
             )}
 
-            {/* ── STEP 3: Magic link sent ── */}
             {step === 'sent' && (
-              <div className="sr-fade-in" style={{ textAlign:'center', padding:'24px 0' }}>
-                <div style={{ width:64, height:64, background:'linear-gradient(135deg,#7c3aed,#a78bfa)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
-                  <svg viewBox="0 0 24 24" style={{ width:32, height:32, fill:'none', stroke:'white', strokeWidth:2 }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <div className="sr3-in" style={{ textAlign:'center', padding:'20px 0' }}>
+                <div style={{ width:60, height:60, background:'linear-gradient(135deg,#7C5CFC,#9B7DFF)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+                  <svg viewBox="0 0 24 24" style={{ width:28, height:28, fill:'none', stroke:'white', strokeWidth:2 }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 </div>
-                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:22, fontWeight:700, color:'#fff', marginBottom:8 }}>Check your email!</h3>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', lineHeight:1.6, marginBottom:20, fontFamily:'Roboto,sans-serif' }}>
-                  We sent a confirmation link to<br/>
-                  <strong style={{ color:'#a78bfa' }}>{formData.email}</strong>
+                <h3 style={{ fontFamily:'Space Grotesk,sans-serif', fontSize:20, fontWeight:700, color:'#F4F2FA', marginBottom:8 }}>Check your email!</h3>
+                <p style={{ fontSize:14, color:'#A29AC0', lineHeight:1.65, marginBottom:16, fontFamily:'Inter,sans-serif' }}>
+                  We sent a confirmation link to<br/><strong style={{ color:'#9B7DFF' }}>{formData.email}</strong>
                 </p>
-                <p style={{ fontSize:13, color:'rgba(255,255,255,0.3)', fontFamily:'Roboto,sans-serif' }}>Click the link to confirm your spot and unlock your referral link.</p>
+                <p style={{ fontSize:13, color:'#6E6790', fontFamily:'Inter,sans-serif' }}>Click the link to confirm your spot and unlock your referral link.</p>
               </div>
             )}
 
-            {/* ── STEP 4: Status page (after magic link click) ── */}
             {step === 'status' && statusData && (
-              <div className="sr-fade-in">
-                {/* Position */}
+              <div className="sr3-in">
                 <div style={{ textAlign:'center', marginBottom:20 }}>
-                  <p style={{ fontSize:11, color:'rgba(255,255,255,0.35)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:6, fontFamily:'Roboto,sans-serif' }}>Your position</p>
-                  {statusData.position ? (
-                    <div style={{ fontSize:42, fontWeight:900, color:'#fff', lineHeight:1, fontFamily:'Roboto,sans-serif' }}>
-                      #{statusData.position}
-                      <span style={{ fontSize:16, color:'rgba(255,255,255,0.35)', fontWeight:400, marginLeft:8 }}>of {statusData.total_signups}</span>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize:20, fontWeight:700, color:'#a78bfa', fontFamily:'Roboto,sans-serif' }}>Pending email verification</div>
-                  )}
+                  <p style={{ fontSize:11, color:'#6E6790', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:6, fontFamily:'Inter,sans-serif' }}>Your position</p>
+                  {statusData.position
+                    ? <div style={{ fontSize:40, fontWeight:700, color:'#F4F2FA', lineHeight:1, fontFamily:'Space Grotesk,sans-serif' }}>
+                        #{statusData.position}<span style={{ fontSize:15, color:'#6E6790', fontWeight:400, marginLeft:8 }}>of {statusData.total_signups}</span>
+                      </div>
+                    : <div style={{ fontSize:17, fontWeight:600, color:'#9B7DFF', fontFamily:'Space Grotesk,sans-serif' }}>Pending email verification</div>
+                  }
                 </div>
 
-                {/* Tier progress */}
-                <div style={{ background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.15)', borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
-                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>Reward tiers</p>
-                  {[{ label:'Mover', req:1 },{ label:'Locked In', req:3 },{ label:'Founding Creator', req:5 },{ label:'Legend', req:10 }].map(tier => {
-                    const done = (statusData.referral_count || 0) >= tier.req;
+                <div style={{ background:'rgba(124,92,252,0.05)', border:'1px solid rgba(124,92,252,0.14)', borderRadius:14, padding:'14px 16px', marginBottom:14 }}>
+                  <p style={{ fontSize:10, color:'#6E6790', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:11, fontFamily:'Inter,sans-serif' }}>Reward tiers</p>
+                  {[{ l:'Mover',r:1 },{ l:'Locked In',r:3 },{ l:'Founding Creator',r:5 },{ l:'Legend',r:10 }].map(t => {
+                    const done = (statusData.referral_count||0) >= t.r;
                     return (
-                      <div key={tier.label} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                        <div style={{ width:16, height:16, borderRadius:'50%', background: done ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'rgba(255,255,255,0.08)', border: done ? 'none' : '1px solid rgba(255,255,255,0.12)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                          {done && <svg viewBox="0 0 12 12" style={{ width:8, height:8 }} fill="none" strokeWidth={2.5} stroke="#fff" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>}
+                      <div key={t.l} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:7 }}>
+                        <div style={{ width:16,height:16,borderRadius:'50%',background:done?'linear-gradient(135deg,#7C5CFC,#9B7DFF)':'rgba(255,255,255,0.07)',border:done?'none':'1px solid rgba(255,255,255,0.1)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center' }}>
+                          {done && <svg viewBox="0 0 12 12" style={{ width:8,height:8 }} fill="none" strokeWidth={2.5} stroke="#fff" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>}
                         </div>
-                        <span style={{ fontSize:13, color: done ? '#a78bfa' : 'rgba(255,255,255,0.35)', flex:1, fontFamily:'Roboto,sans-serif' }}>{tier.label}</span>
-                        <span style={{ fontSize:11, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif' }}>{tier.req} ref{tier.req > 1 ? 's' : ''}</span>
+                        <span style={{ fontSize:13,color:done?'#9B7DFF':'#6E6790',flex:1,fontFamily:'Inter,sans-serif' }}>{t.l}</span>
+                        <span style={{ fontSize:11,color:'rgba(255,255,255,0.18)',fontFamily:'Inter,sans-serif' }}>{t.r} ref{t.r>1?'s':''}</span>
                       </div>
                     );
                   })}
                   {statusData.next_tier && (
-                    <div style={{ marginTop:10, padding:'8px 12px', background:'rgba(139,92,246,0.08)', borderRadius:10, fontSize:12, color:'#a78bfa', textAlign:'center', fontFamily:'Roboto,sans-serif' }}>
-                      <strong>{statusData.next_tier.referrals_needed}</strong> more referral{statusData.next_tier.referrals_needed !== 1 ? 's' : ''} → <strong>{statusData.next_tier.label}</strong>
+                    <div style={{ marginTop:10,padding:'8px 12px',background:'rgba(124,92,252,0.08)',borderRadius:10,fontSize:12,color:'#9B7DFF',textAlign:'center',fontFamily:'Inter,sans-serif' }}>
+                      <strong>{statusData.next_tier.referrals_needed}</strong> more referral{statusData.next_tier.referrals_needed!==1?'s':''} → <strong>{statusData.next_tier.label}</strong>
                     </div>
                   )}
                 </div>
 
-                {/* Referral link */}
-                <div style={{ marginBottom:12 }}>
-                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:8, fontFamily:'Roboto,sans-serif' }}>Your referral link</p>
-                  <div style={{ display:'flex', gap:8 }}>
-                    <div style={{ flex:1, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:10, padding:'10px 14px', fontSize:12, color:'#a78bfa', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                <div style={{ marginBottom:11 }}>
+                  <p style={{ fontSize:10,color:'#6E6790',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:7,fontFamily:'Inter,sans-serif' }}>Your referral link</p>
+                  <div style={{ display:'flex',gap:8 }}>
+                    <div style={{ flex:1,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(124,92,252,0.2)',borderRadius:10,padding:'10px 14px',fontSize:12,color:'#9B7DFF',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>
                       {statusData.referral_link}
                     </div>
-                    <button onClick={() => { navigator.clipboard.writeText(statusData.referral_link); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                      style={{ background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(139,92,246,0.15)', border:`1px solid ${copied ? 'rgba(34,197,94,0.3)' : 'rgba(139,92,246,0.3)'}`, borderRadius:10, padding:'10px 16px', color: copied ? '#4ade80' : '#a78bfa', fontSize:12, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'Roboto,sans-serif', transition:'all .2s' }}>
-                      {copied ? '✓ Copied' : 'Copy'}
+                    <button onClick={() => { navigator.clipboard.writeText(statusData.referral_link); setCopied(true); setTimeout(()=>setCopied(false),2000); }}
+                      style={{ background:copied?'rgba(74,222,128,0.1)':'rgba(124,92,252,0.1)',border:`1px solid ${copied?'rgba(74,222,128,0.28)':'rgba(124,92,252,0.28)'}`,borderRadius:10,padding:'10px 14px',color:copied?'#4ADE80':'#9B7DFF',fontSize:12,cursor:'pointer',whiteSpace:'nowrap',fontFamily:'Inter,sans-serif',transition:'all .2s' }}>
+                      {copied?'✓ Copied':'Copy'}
                     </button>
                   </div>
                 </div>
 
-                {/* WhatsApp share (primary) */}
                 <a href={`https://wa.me/?text=${encodeURIComponent(`I just applied for SocialRum's beta — AI that turns trending topics into ready-to-film scripts in your language. Only 50 spots. Apply here: ${statusData.referral_link}`)}`}
                   target="_blank" rel="noopener noreferrer"
-                  style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, width:'100%', background:'#25D366', color:'#fff', borderRadius:12, padding:'13px', fontWeight:700, fontSize:15, textDecoration:'none', marginBottom:8, fontFamily:'Roboto,sans-serif', boxSizing:'border-box' }}>
+                  style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:10,width:'100%',background:'#25D366',color:'#fff',borderRadius:12,padding:'13px',fontWeight:700,fontSize:15,textDecoration:'none',marginBottom:8,fontFamily:'Inter,sans-serif',boxSizing:'border-box' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                   Share on WhatsApp
                 </a>
-
-                {/* Secondary: LinkedIn + X */}
-                <div style={{ display:'flex', gap:8 }}>
-                  <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(statusData.referral_link)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(10,102,194,0.12)', border:'1px solid rgba(10,102,194,0.25)', borderRadius:10, padding:'10px', color:'#60a5fa', fontSize:12, textDecoration:'none', fontWeight:600, fontFamily:'Roboto,sans-serif' }}>
+                <div style={{ display:'flex',gap:8 }}>
+                  <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(statusData.referral_link)}`} target="_blank" rel="noopener noreferrer"
+                    style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(10,102,194,0.1)',border:'1px solid rgba(10,102,194,0.22)',borderRadius:10,padding:'10px',color:'#60a5fa',fontSize:12,textDecoration:'none',fontWeight:600,fontFamily:'Inter,sans-serif' }}>
                     LinkedIn
                   </a>
-                  <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just applied for @SocialRum beta — AI tools for Indian creators. Only 50 spots! ${statusData.referral_link}`)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'10px', color:'rgba(255,255,255,0.55)', fontSize:12, textDecoration:'none', fontWeight:600, fontFamily:'Roboto,sans-serif' }}>
+                  <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just applied for @SocialRum beta — AI tools for Indian creators. Only 50 spots! ${statusData.referral_link}`)}`} target="_blank" rel="noopener noreferrer"
+                    style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'10px',color:'rgba(255,255,255,0.5)',fontSize:12,textDecoration:'none',fontWeight:600,fontFamily:'Inter,sans-serif' }}>
                     X (Twitter)
                   </a>
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="sr-footer" style={{ borderTop:'1px solid rgba(139,92,246,0.08)', padding:'32px 64px', display:'flex', flexDirection:'column', gap:20, position:'relative', zIndex:20 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          {/* Brand */}
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:28, height:28, borderRadius:8, overflow:'hidden', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <img src="/logo.png" alt="SocialRum" style={{ width:28, height:28, objectFit:'cover', borderRadius:8 }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
-            </div>
-            <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.6)' }}>SocialRum</span>
+      {/* ── FOOTER ── */}
+      <footer style={{ borderTop:'1px solid rgba(255,255,255,0.06)', padding:'24px 40px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, position:'relative', zIndex:20 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ width:26, height:26, borderRadius:7, overflow:'hidden', background:'rgba(124,92,252,0.1)', border:'1px solid rgba(124,92,252,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <img src="/logo.png" alt="SocialRum" style={{ width:26, height:26, objectFit:'cover', borderRadius:7 }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
           </div>
-
-          {/* Nav links */}
-          <div className="sr-footer-links" style={{ display:'flex', gap:24 }}>
-            {['Features', 'How It Works', 'Blog', 'Early Access'].map(item => (
-              <a key={item} href={item === 'Blog' ? '/blog' : `#${item.toLowerCase().replace(/ /g,'-')}`}
-                style={{ color:'rgba(255,255,255,0.3)', textDecoration:'none', fontSize:13, fontFamily:'Roboto,sans-serif', transition:'color .2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.7)')}
-                onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.3)')}>
-                {item}
-              </a>
-            ))}
-          </div>
-
-          {/* Social icons */}
-          <div style={{ display:'flex', gap:10 }}>
-            {[
-              {
-                href: 'https://www.instagram.com/socialrum.official?igsh=d3YxcHM2dXplaGx1',
-                label: 'Instagram',
-                path: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z',
-              },
-              {
-                href: 'https://www.linkedin.com/company/socialrum/',
-                label: 'LinkedIn',
-                path: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z',
-              },
-              {
-                href: '#',
-                label: 'X (Twitter)',
-                path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z',
-              },
-              {
-                href: '#',
-                label: 'Facebook',
-                path: 'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
-              },
-            ].map(({ href, label, path }) => (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                style={{ width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', transition:'all .2s', color:'rgba(255,255,255,0.35)' }}
-                onMouseEnter={e => { e.currentTarget.style.background='rgba(124,58,237,0.2)'; e.currentTarget.style.borderColor='rgba(139,92,246,0.4)'; e.currentTarget.style.color='rgba(255,255,255,0.8)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.08)'; e.currentTarget.style.color='rgba(255,255,255,0.35)'; }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d={path} />
-                </svg>
-              </a>
-            ))}
-          </div>
+          <span style={{ fontFamily:'Space Grotesk,sans-serif', fontWeight:700, fontSize:14, color:'rgba(255,255,255,0.45)' }}>SocialRum</span>
         </div>
-
-        <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif', textAlign:'center' }}>© 2026 SocialRum. Made for India 🇮🇳</p>
+        <div style={{ display:'flex', gap:20 }}>
+          {[['Blog','/blog'],['Early Access','#early-access']].map(([label, href]) => (
+            <a key={label} href={href} style={{ color:'rgba(255,255,255,0.28)', textDecoration:'none', fontSize:13, fontFamily:'Inter,sans-serif', transition:'color .2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.65)')}
+              onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.28)')}>
+              {label}
+            </a>
+          ))}
+        </div>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,0.18)', fontFamily:'Inter,sans-serif' }}>© 2026 SocialRum. Made for India 🇮🇳</p>
       </footer>
     </div>
   );
