@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import SEO from "@/components/SEO";
 import { useTranslation } from 'react-i18next';
 import { getPageState, setPageState } from '@/lib/pageCache';
 
@@ -416,6 +417,7 @@ const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localS
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+      <SEO title="YouTube Analyzer — SocialRum" noindex />
       <AnimatePresence>
         {openCompetitor && (
           <CompetitorDetail competitor={openCompetitor} onBack={() => setOpenCompetitor(null)} onCopy={copyText} copied={copied} />

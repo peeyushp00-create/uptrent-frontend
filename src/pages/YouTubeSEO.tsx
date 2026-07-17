@@ -4,6 +4,7 @@ import { Tag, Sparkles, Copy, Check, Loader2, Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
 import { getPageState, setPageState } from '@/lib/pageCache';
+import SEO from '@/components/SEO';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const YT_GRAD = "linear-gradient(135deg, #ff0000, #FFB86C)";
@@ -84,6 +85,7 @@ export default function YouTubeSEO() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="YouTube SEO — SocialRum" noindex />
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           <Tag className="w-5 h-5" style={{ color: YT_COLOR }} />

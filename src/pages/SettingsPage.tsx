@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import SEO from "@/components/SEO";
 import {
   Settings, User, Target, Globe, Palette, Save, Loader2, Check,
   Mic, MicOff, MessageSquare, Star, Send, ThumbsUp, Zap, Bug, Lightbulb,
@@ -295,6 +296,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Settings — SocialRum" noindex />
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           <Settings className="w-5 h-5 text-primary" />

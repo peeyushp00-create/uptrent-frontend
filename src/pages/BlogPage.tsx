@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, User, ArrowUpRight } from 'lucide-react';
+import SEO from '@/components/SEO';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -38,6 +39,10 @@ export default function BlogPage() {
 
   return (
     <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <SEO
+        title="Blog — SocialRum"
+        description="Tips, product updates, and creator-economy insights from SocialRum — the AI content platform for Indian YouTube and Instagram creators."
+      />
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');`}</style>
 
       {/* Bg glow */}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Eye, Heart, Share2, MessageCircle, Bookmark,
@@ -57,6 +58,7 @@ export default function InsightPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+      <SEO title="Insight — SocialRum" noindex />
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center gap-3">

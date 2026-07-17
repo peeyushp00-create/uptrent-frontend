@@ -1,18 +1,45 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import SEO from '@/components/SEO';
+import JsonLd from '@/components/JsonLd';
 
 const FEATURES = [
-  { num: '01', title: 'Creator News Feed', desc: 'Curated industry news, platform updates, and creator economy signals — filtered for what actually matters to your niche.', tags: ['YouTube', 'Instagram'] },
-  { num: '02', title: 'AI Script Generator', desc: 'Go from idea to full video script in 60 seconds. Trained on viral hooks, retention patterns, and your channel voice.', tags: ['Hook', 'Body', 'CTA'] },
-  { num: '03', title: 'Competitor Analyzer', desc: "Deep-dive analytics on competitor profiles. Identify what's working in your niche, spot content gaps, and stay ahead of the curve.", tags: ['Instagram', 'YouTube'] },
-  { num: '04', title: 'Trending Topics', desc: 'Real-time trend detection across YouTube and Instagram before they peak — publish first, win the algorithm.', tags: ['#AIVideoEditing → 340%', '#CreatorEconomy → 128%'] },
-  { num: '05', title: 'YouTube SEO', desc: 'Keyword research, title optimization, tag suggestions, and thumbnail analysis — everything to rank on page one.', tags: ['Keywords', 'Titles', 'Tags'] },
+  { num: '01', title: 'AI Personalized Script', desc: 'Your niche, your language, your voice — a full ready-to-film script in 60 seconds. Hooks that stop the scroll, bodies that hold retention, CTAs that convert.', tags: ['Hook', 'Body', 'CTA'] },
+  { num: '02', title: 'Competitor Analyzer', desc: "See exactly what's winning for top creators in your space — and which gaps they're leaving open. Find the opportunity before everyone else does.", tags: ['Instagram', 'YouTube'] },
+  { num: '03', title: 'Content Editing Suite', desc: 'Captions in every Indian language, thumbnails, and descriptions tuned for the algorithm. Write once, optimise everywhere, post in minutes.', tags: ['हिंदी', 'தமிழ்', 'తెలుగు', 'English'] },
+  { num: '04', title: 'Creator News Feed', desc: 'Platform updates, trending topics, and creator economy signals — surfaced before they peak so you publish first and own the moment.', tags: ['YouTube', 'Instagram'] },
 ];
 
 const STEPS = [
   { num: '01', title: 'Connect Your Channels', sub: 'YouTube & Instagram in 2 minutes', desc: 'Link your accounts securely. SocialRum reads your performance data, audience demographics, and content library.', note: 'OAuth2.0 secure. Read-only access. Revoke anytime.' },
   { num: '02', title: 'Let AI Analyze & Generate', sub: 'Scripts, trends, and SEO — automated', desc: 'Our AI engine scans trending topics in your niche, analyzes your top-performing content, and generates scripts tailored to your audience.', note: 'Processes 150+ content signals per channel per day.' },
   { num: '03', title: 'Publish & Rank Faster', sub: 'From insight to upload in record time', desc: 'Act on SEO recommendations, publish optimized content, and track performance gains — all from one dark premium workspace.', note: 'Avg. 3.2× faster content-to-publish workflow.' },
+];
+
+// Rendered both as visible copy below and as FAQPage JSON-LD — keep in sync.
+// TODO: review before publishing — drafted from the actual feature set and
+// pricing already in this codebase (see PricingPage.tsx), not invented.
+const FAQ_ITEMS = [
+  {
+    question: 'What is SocialRum?',
+    answer: 'SocialRum is an AI content intelligence platform built for Indian YouTube and Instagram creators. It generates ready-to-film scripts, analyzes competitors, writes multilingual captions, and surfaces trending topics before they peak.',
+  },
+  {
+    question: 'Who is SocialRum for?',
+    answer: 'SocialRum is built for Indian creators and small teams making content for YouTube and Instagram, in English or Indian languages like Hindi, Tamil, and Telugu.',
+  },
+  {
+    question: 'What can I do with SocialRum?',
+    answer: 'You can generate AI scripts tailored to your niche and language, analyze what’s working for competitors on Instagram and YouTube, write captions in multiple Indian languages, and track trending topics and creator-economy news.',
+  },
+  {
+    question: 'How much does SocialRum cost?',
+    answer: 'SocialRum has a free plan (₹0/month, 3 AI script generations/month) and paid plans starting at ₹399/month (billed annually) that add more script generations, full trending data, and additional tools like the YouTube SEO optimizer.',
+  },
+  {
+    question: 'Is SocialRum free to try?',
+    answer: 'Yes. SocialRum’s free plan is free forever and requires no credit card — it includes 3 AI script generations per month, basic trending topics, and the Instagram Reels explorer.',
+  },
 ];
 
 const STATS = [
@@ -158,6 +185,21 @@ const css = `
   @media(max-width:768px){.sr-nav{padding:0 20px !important}.sr-nav-links{display:none !important}.sr-nav-cta{display:none !important}.sr-hamburger{display:flex !important}.sr-hero-section{padding:90px 20px 48px !important}.sr-stats{gap:32px !important;padding:32px 20px !important}.sr-section{padding:60px 20px !important}.sr-ea-section{padding:60px 20px 80px !important}.sr-ea-grid{grid-template-columns:1fr !important;gap:32px !important;padding:32px 24px !important}.sr-footer{padding:32px 20px !important;flex-direction:column !important;align-items:flex-start !important;gap:24px !important}.sr-footer-links{flex-wrap:wrap !important;gap:16px !important}.sr-step-card{padding:24px !important}}
 `;
 
+const ScreenSlot = ({ file, label }: { file: string; label: string }) => {
+  const [err, setErr] = useState(false);
+  return err
+    ? <div style={{ width:'100%', aspectRatio:'16/9', background:'rgba(139,92,246,0.04)', border:'1px dashed rgba(139,92,246,0.2)', borderRadius:'0', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8 }}>
+        <div style={{ width:40, height:40, borderRadius:10, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(139,92,246,0.5)" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <span style={{ fontSize:12, color:'rgba(255,255,255,0.2)', fontFamily:'Roboto,sans-serif', textAlign:'center', padding:'0 16px' }}>
+          Add screenshot → <code style={{ color:'rgba(139,92,246,0.5)', fontSize:11 }}>/public/screenshots/{file}.webp</code>
+        </span>
+      </div>
+    : <img src={`/screenshots/${file}.webp`} alt={label} loading="lazy" onError={() => setErr(true)}
+        style={{ width:'100%', aspectRatio:'16/9', objectFit:'cover', display:'block' }} />;
+};
+
 export default function LandingPage() {
   const [scrolled, setScrolled]     = useState(false);
   const [menuOpen, setMenuOpen]     = useState(false);
@@ -290,16 +332,39 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily:"'Roboto',sans-serif" }}>
+      <SEO
+        title="SocialRum — Content Intelligence for Indian Creators"
+        description="SocialRum is an AI content platform for Indian YouTube and Instagram creators. Generate ready-to-film scripts in your language, analyze competitors, write multilingual captions, and track trending topics — free to start."
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "SocialRum",
+          url: "https://www.socialrum.com",
+          logo: "https://www.socialrum.com/socialrum-logo.png",
+          description: "SocialRum is an AI content intelligence platform that helps Indian creators write scripts, analyze competitors, and find trending topics in their own language.",
+          // TODO: add the Facebook page URL once you give it to me — I'm not
+          // including a guessed one, since a wrong sameAs link is worse than
+          // a missing one (schema.org sameAs must point to a verified profile).
+          sameAs: [
+            "https://www.instagram.com/socialrum.official",
+            "https://medium.com/@socialrum.official",
+            "https://www.reddit.com/user/SocialRum/",
+            "https://www.quora.com/profile/SocialRum",
+          ],
+        }}
+      />
       <style>{css}</style>
 
       {/* Mobile menu */}
       <div className={`sr-mobile-menu ${menuOpen ? 'open' : ''}`}>
         <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
-        <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How It Works</a>
+        <a href="#screenshots" onClick={() => setMenuOpen(false)}>Screenshots</a>
         <a href="#early-access" onClick={() => setMenuOpen(false)} style={{ color:'#a855f7' }}>Early Access</a>
         <a href="#early-access" onClick={() => setMenuOpen(false)}
           style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', padding:'14px 32px', borderRadius:50, fontSize:15, fontWeight:700 }}>
-          Get Early Access
+          Apply for Beta
         </a>
       </div>
 
@@ -341,7 +406,7 @@ export default function LandingPage() {
       <nav className="sr-nav" style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 64px', height:72, transition:'all .3s', background: scrolled || menuOpen ? 'rgba(3,0,10,0.95)' : 'transparent', backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(139,92,246,0.1)' : 'none' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, zIndex:51 }}>
           <div style={{ width:36, height:36, borderRadius:10, overflow:'hidden', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <img src="/logo.png" alt="SocialRum" style={{ width:36, height:36, objectFit:'cover', borderRadius:10 }}
+            <img src="/socialrum-logo.png" alt="SocialRum" style={{ width:36, height:36, objectFit:'cover', borderRadius:10 }}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -357,13 +422,13 @@ export default function LandingPage() {
         </div>
 
         <ul className="sr-nav-links" style={{ display:'flex', gap:40, listStyle:'none', margin:0, padding:0 }}>
-          {['Features','How It Works','Blog','Early Access'].map(item => (
-            <li key={item}><a href={item === 'Blog' ? '/blog' : `#${item.toLowerCase().replace(/ /g,'-')}`} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'Roboto,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{item}</a></li>
+          {[['Features','#features'],['Screenshots','#screenshots'],['Blog','/blog'],['Early Access','#early-access']].map(([label,href]) => (
+            <li key={label}><a href={href} style={{ color:'rgba(255,255,255,0.55)', textDecoration:'none', fontSize:14, fontFamily:'Roboto,sans-serif', transition:'color .2s' }} onMouseEnter={e => (e.currentTarget.style.color='#fff')} onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{label}</a></li>
           ))}
         </ul>
 
         <a href="#early-access" className="sr-nav-cta" style={{ background:'rgba(124,58,237,0.15)', border:'1px solid rgba(139,92,246,0.3)', padding:'10px 22px', borderRadius:50, fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none' }}>
-          Be the First to Know
+          Apply for Beta
         </a>
 
         <button className="sr-hamburger" onClick={() => setMenuOpen(!menuOpen)}
@@ -420,21 +485,21 @@ export default function LandingPage() {
             <motion.div initial={{ opacity:0, y:-20, scale:0.85 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.7, ease:[0.16,1,0.3,1] }}
               style={{ border:'1px solid rgba(139,92,246,0.3)', background:'rgba(139,92,246,0.06)', color:'#c4b5fd', fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'6px 16px', borderRadius:50, fontWeight:600, marginBottom:24, fontFamily:'Roboto,sans-serif', display:'inline-flex', alignItems:'center', gap:8 }}>
               <span className="sr-dot" />
-              Now Accepting Early Access
+              {stats ? `${stats.total} creators in — 50 spots total` : 'Beta open · Only 50 spots'}
             </motion.div>
 
             <HeroTitle />
 
             <motion.h2 initial={{ opacity:0, y:20, filter:'blur(8px)' }} animate={{ opacity:1, y:0, filter:'blur(0px)' }} transition={{ duration:0.8, delay:0.8, ease:[0.16,1,0.3,1] }}
               style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(18px,4vw,32px)', fontWeight:700, color:'#fff', marginBottom:16, lineHeight:1.3 }}>
-              Create Content{' '}
-              <motion.span animate={{ color:['#8b5cf6','#a78bfa','#8b5cf6'] }} transition={{ duration:3, repeat:Infinity }}>That Actually</motion.span>
-              <br/>Gets Discovered
+              Your competitors are already{' '}
+              <motion.span animate={{ color:['#8b5cf6','#a78bfa','#8b5cf6'] }} transition={{ duration:3, repeat:Infinity }}>using AI</motion.span>
+              <br/>to plan content. Are you?
             </motion.h2>
 
             <motion.p initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, delay:1.0, ease:[0.16,1,0.3,1] }}
               style={{ fontFamily:'Roboto,sans-serif', fontSize:14, color:'rgba(255,255,255,0.5)', maxWidth:380, lineHeight:1.8, marginBottom:32, padding:'0 8px' }}>
-              SocialRum brings YouTube and Instagram creators a unified AI workspace — trending topics, script generation, competitor analysis, and SEO in one dark premium dashboard.
+              Most Indian creators post 3× a week for months and never break through — not because of effort, but because they don't know <em style={{ color:'rgba(255,255,255,0.7)', fontStyle:'normal' }}>what</em> to create. SocialRum fixes that.
             </motion.p>
 
             {/* Live counter — only shown when API returns data */}
@@ -449,7 +514,7 @@ export default function LandingPage() {
               style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap', justifyContent:'center' }}>
               <motion.a href="#early-access" whileHover={{ scale:1.06 }} whileTap={{ scale:0.97 }}
                 style={{ background:'linear-gradient(135deg,#7c3aed,#6d28d9)', color:'#fff', fontWeight:600, fontSize:14, padding:'14px 28px', borderRadius:50, textDecoration:'none', boxShadow:'0 0 30px rgba(124,58,237,0.5)', display:'inline-flex', alignItems:'center', gap:8 }}>
-                Be the First to Know
+                Apply for Beta
                 <motion.span animate={{ x:[0,4,0] }} transition={{ duration:1.2, repeat:Infinity }}>→</motion.span>
               </motion.a>
               <motion.a href="#features" whileHover={{ color:'#fff' }}
@@ -520,8 +585,8 @@ export default function LandingPage() {
       {/* FEATURES */}
       <section id="features" className="sr-section" style={{ maxWidth:1100, margin:'0 auto', padding:'100px 32px', position:'relative', zIndex:20 }}>
         <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>Platform Features</motion.p>
-        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>Every tool a serious creator needs.</motion.h2>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>Built specifically for YouTube and Instagram creators who want to grow faster without guessing.</motion.p>
+        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>Stop winging it. Start winning it.</motion.h2>
+        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>Four tools that replace the guesswork — so every video you post has a real shot at the algorithm.</motion.p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:16 }}>
           {FEATURES.map((f, i) => (
             <motion.div key={f.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.08 }} className="sr-step-card">
@@ -536,27 +601,33 @@ export default function LandingPage() {
           <motion.div initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay:0.4 }}
             className="sr-step-card" style={{ display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center' }}>
             <div>
-              <div className="sr-step-num" style={{ textAlign:'center' }}>+</div>
-              <p style={{ fontFamily:'Roboto,sans-serif', fontSize:17, fontWeight:700, color:'rgba(255,255,255,0.2)', marginBottom:8 }}>More coming</p>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.15)', fontFamily:'Roboto,sans-serif' }}>Platform is actively growing</p>
+              <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(139,92,246,0.08)', border:'1px solid rgba(139,92,246,0.18)', borderRadius:50, padding:'5px 14px', marginBottom:16 }}>
+                <span className="sr-dot" />
+                <span style={{ fontSize:11, fontWeight:600, color:'rgba(139,92,246,0.7)', letterSpacing:'0.08em', textTransform:'uppercase', fontFamily:'Roboto,sans-serif' }}>Coming Soon</span>
+              </div>
+              <p style={{ fontFamily:'Roboto,sans-serif', fontSize:16, fontWeight:700, color:'rgba(255,255,255,0.25)', marginBottom:8 }}>More tools in the pipeline</p>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,0.12)', fontFamily:'Roboto,sans-serif', lineHeight:1.6 }}>YouTube SEO, trending topic radar, thumbnail analyser and more — early access members get every new tool first.</p>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how-it-works" className="sr-section" style={{ maxWidth:1100, margin:'0 auto', padding:'80px 32px', position:'relative', zIndex:20 }}>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>How It Works</motion.p>
-        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:12, letterSpacing:'-.02em' }}>From zero to algorithm-ready in one session.</motion.h2>
-        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:500, marginBottom:48, lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>No complex setup. No learning curve. Connect your channels and SocialRum immediately starts surfacing what to create, how to optimize it, and how to rank it.</motion.p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:20 }}>
-          {STEPS.map((s, i) => (
-            <motion.div key={s.num} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i*0.1 }} className="sr-step-card">
-              <div className="sr-step-num">{s.num}</div>
-              <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:18, fontWeight:700, color:'#fff', marginBottom:8 }}>{s.title}</h3>
-              <p style={{ fontSize:12, fontWeight:600, color:'#8b5cf6', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>{s.sub}</p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>{s.desc}</p>
-              <p style={{ marginTop:14, fontSize:11, color:'rgba(139,92,246,0.5)', fontStyle:'italic', fontFamily:'Roboto,sans-serif' }}>{s.note}</p>
+      {/* SCREENSHOTS */}
+      <section id="screenshots" className="sr-section" style={{ maxWidth:1100, margin:'0 auto', padding:'80px 32px', position:'relative', zIndex:20 }}>
+        <motion.p initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} style={{ color:'#8b5cf6', fontSize:12, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:12, fontFamily:'Roboto,sans-serif' }}>See It In Action</motion.p>
+        <motion.h2 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} style={{ fontFamily:'Roboto,sans-serif', fontSize:'clamp(22px,3.5vw,40px)', fontWeight:800, color:'#fff', marginBottom:48, letterSpacing:'-.02em' }}>Built for creators who want results, not just insights.</motion.h2>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(420px,1fr))', gap:28 }}>
+          {[
+            { file:'script', label:'AI Personalized Script', desc:'Scripts written in your niche, your language, and your voice — ready to film.' },
+            { file:'competitor', label:'Competitor Analyzer', desc:'Deep-dive on any creator profile. Spot the content gaps before your competition does.' },
+          ].map((item, i) => (
+            <motion.div key={item.file} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay: i * 0.1 }}
+              style={{ background:'rgba(139,92,246,0.03)', border:'1px solid rgba(139,92,246,0.12)', borderRadius:20, overflow:'hidden' }}>
+              <ScreenSlot file={item.file} label={item.label} />
+              <div style={{ padding:'18px 22px 24px' }}>
+                <h3 style={{ fontFamily:'Roboto,sans-serif', fontSize:17, fontWeight:700, color:'#fff', marginBottom:7 }}>{item.label}</h3>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, fontFamily:'Roboto,sans-serif' }}>{item.desc}</p>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -686,14 +757,26 @@ export default function LandingPage() {
 
             {step === 'status' && statusData && (
               <div className="sr-fade-in">
-                <div style={{ textAlign:'center', marginBottom:20 }}>
-                  <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:6, fontFamily:'Roboto,sans-serif' }}>Your position</p>
-                  {statusData.position
-                    ? <div style={{ fontSize:40, fontWeight:800, color:'#fff', lineHeight:1, fontFamily:'Roboto,sans-serif' }}>
-                        #{statusData.position}<span style={{ fontSize:15, color:'rgba(255,255,255,0.3)', fontWeight:400, marginLeft:8 }}>of {statusData.total_signups}</span>
-                      </div>
-                    : <div style={{ fontSize:17, fontWeight:600, color:'#a78bfa', fontFamily:'Roboto,sans-serif' }}>Pending email verification</div>
-                  }
+
+                {/* Royalty Badge */}
+                <div style={{ background:'linear-gradient(135deg,rgba(124,58,237,0.18),rgba(168,85,247,0.1))', border:'1px solid rgba(168,85,247,0.35)', borderRadius:18, padding:'18px 20px', marginBottom:16, textAlign:'center', position:'relative', overflow:'hidden' }}>
+                  <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, background:'rgba(168,85,247,0.15)', filter:'blur(20px)', borderRadius:'50%', pointerEvents:'none' }} />
+                  <div style={{ width:52, height:52, borderRadius:'50%', background:'linear-gradient(135deg,#7c3aed,#a855f7)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 10px', boxShadow:'0 0 24px rgba(139,92,246,0.5)' }}>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                      <path d="M2 20h20M5 20V10l7-7 7 7v10" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round"/>
+                      <path d="M3 10l9-8 9 8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M12 3L2 11h20L12 3z" fill="rgba(255,255,255,0.15)"/>
+                      <circle cx="12" cy="6" r="1.5" fill="#fff"/>
+                      <path d="M7 20v-5a2 2 0 012-2h6a2 2 0 012 2v5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <p style={{ fontSize:11, color:'rgba(168,85,247,0.8)', letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700, fontFamily:'Roboto,sans-serif', marginBottom:4 }}>You've earned</p>
+                  <p style={{ fontSize:20, fontWeight:800, color:'#fff', fontFamily:'Roboto,sans-serif', marginBottom:4, letterSpacing:'-0.01em' }}>Beta Royalty Badge 👑</p>
+                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.4)', fontFamily:'Roboto,sans-serif', lineHeight:1.5 }}>
+                    {statusData.status === 'verified'
+                      ? 'This exclusive badge will appear on your SocialRum profile at launch — only beta members get it.'
+                      : 'Verify your email to activate your Beta Royalty Badge and lock your spot.'}
+                  </p>
                 </div>
 
                 {/* Tier progress */}
@@ -754,23 +837,48 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ — visible copy must match the FAQPage JSON-LD below verbatim
+          (see FAQ_ITEMS above). Review before publishing. */}
+      <section id="faq" className="sr-section" style={{ maxWidth:800, margin:'0 auto', padding:'80px 32px', position:'relative', zIndex:20 }}>
+        <h2 style={{ fontSize:32, fontWeight:700, textAlign:'center', marginBottom:48 }}>Frequently Asked Questions</h2>
+        <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
+          {FAQ_ITEMS.map((item) => (
+            <div key={item.question} style={{ borderBottom:'1px solid rgba(139,92,246,0.15)', paddingBottom:24 }}>
+              <h3 style={{ fontSize:18, fontWeight:700, marginBottom:8 }}>{item.question}</h3>
+              <p style={{ fontSize:15, lineHeight:1.6, color:'rgba(255,255,255,0.65)' }}>{item.answer}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: FAQ_ITEMS.map((item) => ({
+            "@type": "Question",
+            name: item.question,
+            acceptedAnswer: { "@type": "Answer", text: item.answer },
+          })),
+        }}
+      />
+
       {/* FOOTER */}
       <footer className="sr-footer" style={{ borderTop:'1px solid rgba(139,92,246,0.08)', padding:'32px 64px', display:'flex', flexDirection:'column', gap:20, position:'relative', zIndex:20 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ width:28, height:28, borderRadius:8, overflow:'hidden', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <img src="/logo.png" alt="SocialRum" style={{ width:28, height:28, objectFit:'cover', borderRadius:8 }}
+              <img src="/socialrum-logo.png" alt="SocialRum" style={{ width:28, height:28, objectFit:'cover', borderRadius:8 }}
                 onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
             </div>
             <span style={{ fontFamily:'Roboto,sans-serif', fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.6)' }}>SocialRum</span>
           </div>
           <div className="sr-footer-links" style={{ display:'flex', gap:24 }}>
-            {['Features', 'How It Works', 'Blog', 'Early Access'].map(item => (
-              <a key={item} href={item === 'Blog' ? '/blog' : `#${item.toLowerCase().replace(/ /g,'-')}`}
+            {[['Features','#features'],['Screenshots','#screenshots'],['Blog','/blog'],['Early Access','#early-access']].map(([label,href]) => (
+              <a key={label} href={href}
                 style={{ color:'rgba(255,255,255,0.3)', textDecoration:'none', fontSize:13, fontFamily:'Roboto,sans-serif', transition:'color .2s' }}
                 onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.7)')}
                 onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.3)')}>
-                {item}
+                {label}
               </a>
             ))}
           </div>

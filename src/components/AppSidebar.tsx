@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Newspaper, FileText,
   PanelLeftClose, PanelLeft, LogOut, Settings,
   Sun, Moon, ChevronUp, Crown, Youtube, Instagram,
-  Search, Tag, Clapperboard, Captions,
+  Search, Tag, Clapperboard, Captions, Link2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -38,6 +38,7 @@ export default function AppSidebar() {
     { icon: Newspaper, label: t('nav.news'), path: "/news" },
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
     { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
+    { icon: Link2, label: "Reel Lookup", path: "/instagram/reel-lookup" },
     { icon: Clapperboard, label: "Studio", path: "/studio" },
     // { icon: Captions, label: "Captions", path: "/captions" }, // temporarily hidden
   ];
@@ -95,7 +96,7 @@ export default function AppSidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 h-16 border-b border-border shrink-0">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: ag }}>
-          <img src="/logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl object-cover"
+          <img src="/socialrum-logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
         {!collapsed && (

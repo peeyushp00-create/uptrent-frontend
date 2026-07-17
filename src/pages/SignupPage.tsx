@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Mic, MicOff, Check, Mail, RefreshCw, Plus, X } from "lucide-react";
+import SEO from "@/components/SEO";
 
 const NICHES = [
   "Finance", "Fitness", "Motivation", "Tech",
@@ -172,12 +173,13 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+      <SEO title="Sign Up — SocialRum" noindex />
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
         className="w-full max-w-md space-y-6">
 
         {/* Header */}
         <div className="flex flex-col items-center gap-3 text-center">
-          <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
+          <img src="/socialrum-logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
           <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
           <p className="text-sm text-muted-foreground">Join thousands of creators on SocialRum</p>
         </div>

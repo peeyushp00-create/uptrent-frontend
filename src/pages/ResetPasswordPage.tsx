@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import SEO from "@/components/SEO";
 
 const IG_GRAD = "linear-gradient(135deg, #7C3AED, #0D9488)";
 const IG = "#7C3AED";
@@ -40,9 +41,10 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background px-4">
+      <SEO title="Reset Password — SocialRum" noindex />
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
+          <img src="/socialrum-logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
           <h1 className="text-2xl font-bold text-foreground">Set New Password</h1>
           <p className="text-sm text-muted-foreground">Choose a strong password for your account</p>
         </div>

@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,11 +20,17 @@ import YouTubeScript from "./pages/YouTubeScript";
 import YouTubeAnalyzer from "./pages/YouTubeAnalyzer";
 import YouTubeTrending from "./pages/YouTubeTrending";
 import InstagramAnalyzer from "./pages/InstagramAnalyzer";
+import ReelLookup from "./pages/ReelLookup";
 import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
 import ContentStudio from "./pages/Contentstudio";
 // import VideoCaptioner from "./pages/VideoCaptioner"; // temporarily hidden
 import LandingPage from "./pages/LandingPage";
+import InstagramAnalyzerLanding from "./pages/marketing/InstagramAnalyzerLanding";
+import ScriptGeneratorLanding from "./pages/marketing/ScriptGeneratorLanding";
+import CaptionsLanding from "./pages/marketing/CaptionsLanding";
+import CreatorNewsLanding from "./pages/marketing/CreatorNewsLanding";
+import AboutPage from "./pages/marketing/AboutPage";
 import ReferralRedirect from "./pages/ReferralRedirect";
 import BlogPage from "@/pages/BlogPage";
 import AdminBlogPage from "@/pages/AdminBlogPage";
@@ -32,6 +39,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -42,6 +50,11 @@ const App = () => (
 
             {/* ── Public pages (no auth required) ── */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/instagram-analyzer" element={<InstagramAnalyzerLanding />} />
+            <Route path="/script-generator" element={<ScriptGeneratorLanding />} />
+            <Route path="/captions" element={<CaptionsLanding />} />
+            <Route path="/creator-news" element={<CreatorNewsLanding />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/r/:code" element={<ReferralRedirect />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/admin/blog" element={<AdminBlogPage />} />
@@ -64,6 +77,7 @@ const App = () => (
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
+              <Route path="/instagram/reel-lookup" element={<ReelLookup />} />
               <Route path="/youtube/seo" element={<YouTubeSEO />} />
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
@@ -79,6 +93,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

@@ -5,6 +5,7 @@ import {
   Upload, X, Edit3, Bold, Italic, List, Heading, Save,
   Calendar, Clock, ExternalLink
 } from 'lucide-react';
+import SEO from '@/components/SEO';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -219,6 +220,7 @@ export default function AdminBlogPage() {
   // ── Admin Dashboard ──
   return (
     <div style={{ minHeight: '100vh', background: '#03000a', color: '#fff' }}>
+      <SEO title="Admin — SocialRum" noindex />
       <style>{css}</style>
 
       {/* Header */}

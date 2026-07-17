@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil, Download, Star, MoreHorizontal } from "lucide-react";
 import {
@@ -760,6 +761,7 @@ export default function ScriptsPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: BG, color: TEXT }}>
+      <SEO title="Scripts — SocialRum" noindex />
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 px-5 h-16 flex items-center justify-between shrink-0"
@@ -847,7 +849,7 @@ export default function ScriptsPage() {
                 {loadingSaved ? (
                   <div className="flex justify-center pt-12">
                     <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
-                      <img src="/logo.png" alt="" className="w-6 h-6 object-cover rounded-full" />
+                      <img src="/socialrum-logo.png" alt="SocialRum" className="w-6 h-6 object-cover rounded-full" />
                     </motion.div>
                   </div>
                 ) : savedScripts.length === 0 ? (
@@ -970,7 +972,7 @@ export default function ScriptsPage() {
           {loadingConversation ? (
             <div className="flex items-center justify-center py-20">
               <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
-                <img src="/logo.png" alt="SocialRum" className="w-6 h-6 object-contain rounded-full" />
+                <img src="/socialrum-logo.png" alt="SocialRum" className="w-6 h-6 object-contain rounded-full" />
               </motion.div>
             </div>
           ) : !onboardingDone ? (
@@ -979,7 +981,7 @@ export default function ScriptsPage() {
               <div className="flex justify-start">
                 <div className="max-w-[85%] flex items-start gap-2.5">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-                    <img src="/logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                    <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
                   </div>
                   <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
                     Before we make your first video, a few quick questions to personalize your scripts.
@@ -993,7 +995,7 @@ export default function ScriptsPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[85%] flex items-start gap-2.5">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-                        <img src="/logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                        <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
                       </div>
                       <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
                         {q.question}
@@ -1014,7 +1016,7 @@ export default function ScriptsPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[85%] flex items-start gap-2.5">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-                        <img src="/logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                        <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
                       </div>
                       <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
                         <p>{ONBOARDING_QUESTIONS[onboardingStep].question}</p>
@@ -1042,7 +1044,7 @@ export default function ScriptsPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[85%] flex items-start gap-2.5">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-                        <img src="/logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                        <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 rounded-2xl rounded-tl-sm overflow-hidden" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
                         <div className="px-4 py-2.5 text-sm" style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}>
@@ -1080,7 +1082,7 @@ export default function ScriptsPage() {
           ) : messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-6 text-center">
               <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-                <img src="/logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
               </div>
               <div>
                 <p className="font-medium text-lg" style={{ color: TEXT }}>What script do you want to create?</p>
@@ -1110,7 +1112,7 @@ export default function ScriptsPage() {
               ) : (
                 <div className="max-w-[85%] flex items-start gap-2.5">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-                    <img src="/logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                    <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
                   </div>
 
                   {msg.error ? (
@@ -1258,7 +1260,7 @@ export default function ScriptsPage() {
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
                     <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
-                      <img src="/logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                      <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
                     </motion.div>
                   </div>
                   <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm"

@@ -4,6 +4,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // adjust path if needed
+import SEO from "@/components/SEO";
 
 const API = import.meta.env.VITE_API_URL;
 const PURPLE = "#7C3AED";
@@ -601,6 +602,7 @@ export default function ContentStudio() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+      <SEO title="Studio — SocialRum" noindex />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&display=swap" />
 
       {/* Page header */}

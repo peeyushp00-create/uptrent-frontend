@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { TrendingUp, Sparkles } from "lucide-react";
 import { useTranslation } from 'react-i18next';
+import SEO from '@/components/SEO';
 
 const YT_GRAD = "linear-gradient(135deg, #ff0000, #FFB86C)";
 const YT_COLOR = "#ff0000";
@@ -36,6 +37,7 @@ export default function YouTubeTrending() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="YouTube Trending — SocialRum" noindex />
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           <TrendingUp className="w-5 h-5" style={{ color: YT_COLOR }} />

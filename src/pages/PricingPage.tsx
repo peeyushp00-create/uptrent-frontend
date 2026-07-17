@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check, Crown, Zap, TrendingUp, BarChart2,
@@ -145,7 +146,7 @@ export default function PricingPage() {
         currency: order.currency,
         name: 'SocialRum',
         description: order.description,
-        image: '/logo.png',
+        image: '/socialrum-logo.png',
         order_id: order.order_id,
         prefill: { name: user.user_metadata?.full_name || '', email: user.email || '' },
         theme: { color: planKey.includes('pro') ? GOLD : IG },
@@ -184,6 +185,8 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* TODO: /pricing is currently auth-gated (see App.tsx) — revisit noindex once/if it moves to a public route */}
+      <SEO title="Pricing — SocialRum" noindex />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
         .cg{font-family:'Cormorant Garamond',serif!important}

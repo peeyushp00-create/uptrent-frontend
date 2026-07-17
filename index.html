@@ -3,20 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>SocialRum</title>
-    <meta name="description" content="SocialRum" />
+    <!--
+      Static <head> fallback for crawlers that don't execute JavaScript.
+      This app is a client-rendered SPA with no SSR/prerendering (see
+      src/components/SEO.tsx for the per-route react-helmet-async tags,
+      which only apply after JS runs). Keep this block accurate for the
+      homepage — it's the only SEO signal non-JS crawlers ever see.
+    -->
+    <title>SocialRum — Content Intelligence for Indian Creators</title>
+    <meta name="description" content="SocialRum is an AI content platform for Indian YouTube and Instagram creators. Generate ready-to-film scripts in your language, analyze competitors, write multilingual captions, and track trending topics — free to start." />
     <meta name="author" content="SocialRum" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <!-- TODO: Update og:title to match your application name -->
-    <meta property="og:title" content="SocialRum" />
-    <meta property="og:description" content="SocialRum" />
+    <link rel="canonical" href="https://www.socialrum.com/" />
+    <link rel="icon" type="image/png" href="/socialrum-logo.png" />
+    <meta property="og:title" content="SocialRum — Content Intelligence for Indian Creators" />
+    <meta property="og:description" content="SocialRum is an AI content platform for Indian YouTube and Instagram creators — generate scripts, analyze competitors, and write multilingual captions." />
     <meta property="og:type" content="website" />
-   <meta property="og:image" content="/og-image.png" />
+    <meta property="og:url" content="https://www.socialrum.com/" />
+    <meta property="og:site_name" content="SocialRum" />
+    <meta property="og:image" content="/socialrum-og-image.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@SocialRum" />
-   <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:title" content="SocialRum — Content Intelligence for Indian Creators" />
+    <meta name="twitter:description" content="SocialRum is an AI content platform for Indian YouTube and Instagram creators — generate scripts, analyze competitors, and write multilingual captions." />
+    <meta name="twitter:image" content="/socialrum-og-image.png" />
   </head>
 
   <body>

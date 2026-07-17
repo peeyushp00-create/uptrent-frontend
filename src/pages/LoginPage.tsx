@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Loader2, ArrowLeft } from "lucide-react";
+import SEO from "@/components/SEO";
 
 const IG_GRAD = "linear-gradient(135deg, #7C3AED, #0D9488)";
 const IG = "#7C3AED";
@@ -69,7 +70,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-center min-h-screen bg-background px-4">
         <div className="w-full max-w-sm space-y-6">
           <div className="flex flex-col items-center gap-3 text-center">
-            <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
+            <img src="/socialrum-logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
             <h1 className="text-2xl font-bold text-foreground">Forgot Password?</h1>
             <p className="text-sm text-muted-foreground">Enter your email and we'll send you a reset link</p>
           </div>
@@ -141,9 +142,10 @@ export default function LoginPage() {
   // ── LOGIN VIEW ──
   return (
     <div className="flex items-center justify-center min-h-screen bg-background px-4">
+      <SEO title="Log In — SocialRum" noindex />
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
+          <img src="/socialrum-logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
           <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
           <p className="text-sm text-muted-foreground">Sign in to your SocialRum account</p>
         </div>

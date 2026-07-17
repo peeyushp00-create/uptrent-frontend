@@ -1,8 +1,42 @@
+# Note: each User-agent block below is evaluated independently by crawlers —
+# a named bot does NOT inherit the "*" block's rules. The same Disallow list
+# is intentionally repeated under every group so naming a bot explicitly
+# (e.g. for AI crawlers) never accidentally grants it broader access than
+# everyone else gets under "*".
+
 User-agent: Googlebot
 Allow: /
+Disallow: /home
+Disallow: /insight
+Disallow: /news
+Disallow: /scripts
+Disallow: /settings
+Disallow: /pricing
+Disallow: /instagram/
+Disallow: /youtube/
+Disallow: /studio
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /r/
 
 User-agent: Bingbot
 Allow: /
+Disallow: /home
+Disallow: /insight
+Disallow: /news
+Disallow: /scripts
+Disallow: /settings
+Disallow: /pricing
+Disallow: /instagram/
+Disallow: /youtube/
+Disallow: /studio
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /r/
 
 User-agent: Twitterbot
 Allow: /
@@ -10,5 +44,94 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# AI answer-engine crawlers — explicitly allowed so ChatGPT/Perplexity/Gemini
+# can read and cite public pages. Same private-path exclusions as the
+# regular search bots above.
+User-agent: GPTBot
+Allow: /
+Disallow: /home
+Disallow: /insight
+Disallow: /news
+Disallow: /scripts
+Disallow: /settings
+Disallow: /pricing
+Disallow: /instagram/
+Disallow: /youtube/
+Disallow: /studio
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /r/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /home
+Disallow: /insight
+Disallow: /news
+Disallow: /scripts
+Disallow: /settings
+Disallow: /pricing
+Disallow: /instagram/
+Disallow: /youtube/
+Disallow: /studio
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /r/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /home
+Disallow: /insight
+Disallow: /news
+Disallow: /scripts
+Disallow: /settings
+Disallow: /pricing
+Disallow: /instagram/
+Disallow: /youtube/
+Disallow: /studio
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /r/
+
+# Google-Extended controls Gemini/Bard training & grounding access separately
+# from Googlebot's regular search indexing.
+User-agent: Google-Extended
+Allow: /
+Disallow: /home
+Disallow: /insight
+Disallow: /news
+Disallow: /scripts
+Disallow: /settings
+Disallow: /pricing
+Disallow: /instagram/
+Disallow: /youtube/
+Disallow: /studio
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /r/
+
 User-agent: *
 Allow: /
+Disallow: /home
+Disallow: /insight
+Disallow: /news
+Disallow: /scripts
+Disallow: /settings
+Disallow: /pricing
+Disallow: /instagram/
+Disallow: /youtube/
+Disallow: /studio
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /r/
+
+Sitemap: https://www.socialrum.com/sitemap.xml

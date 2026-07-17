@@ -47,7 +47,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         {/* Header */}
         <div className="flex flex-col items-center gap-3 text-center">
-          <img src="/logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
+          <img src="/socialrum-logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
           <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
           <p className="text-sm text-muted-foreground">Sign in to your SocialRum account</p>
         </div>
