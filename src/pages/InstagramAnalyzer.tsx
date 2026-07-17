@@ -1042,10 +1042,10 @@ export default function InstagramAnalyzer() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <a href={`https://www.instagram.com/${comp.username}/`} target="_blank" rel="noopener noreferrer"
-                      onClick={e => e.stopPropagation()}
+                    <button type="button"
+                      onClick={e => { e.stopPropagation(); setOpenCompetitor(comp); }}
                       className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-colors hidden sm:block"
-                      style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>View Profile</a>
+                      style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>View Profile</button>
                     <button onClick={e => { e.stopPropagation(); removeCompetitor(comp.username); }}
                       className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-[#757684] hover:text-red-500 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
