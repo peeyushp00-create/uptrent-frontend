@@ -67,6 +67,11 @@ const App = () => (
               <Route index element={<Index />} />
             </Route>
 
+            {/* Temporarily public while the scraper integration is tested. */}
+            <Route path="/instagram/analyzer" element={<AppLayout />}>
+              <Route index element={<InstagramAnalyzer />} />
+            </Route>
+
             {/* ── Protected app routes ── */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/insight" element={<InsightPage />} />
@@ -76,7 +81,6 @@ const App = () => (
               {/* <Route path="/trending" element={<CreatorLeaderboard />} /> */}
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/instagram/analyzer" element={<InstagramAnalyzer />} />
               <Route path="/instagram/reel-lookup" element={<ReelLookup />} />
               <Route path="/youtube/seo" element={<YouTubeSEO />} />
               <Route path="/youtube/script" element={<YouTubeScript />} />

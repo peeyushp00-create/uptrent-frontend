@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Loader2, ArrowLeft } from "lucide-react";
 import SEO from "@/components/SEO";
+import { getPostLoginPath } from "@/lib/authRedirect";
 
 const IG_GRAD = "linear-gradient(135deg, #7C3AED, #0D9488)";
 const IG = "#7C3AED";
@@ -18,6 +19,8 @@ export default function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const postLoginPath = getPostLoginPath(location.state);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +31,7 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate("/");
+      navigate(postLoginPath, { replace: true });
     }
   };
 
@@ -37,7 +40,7 @@ export default function LoginPage() {
     setError("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/` }
+      options: { redirectTo: `${window.location.origin}${postLoginPath}` }
     });
     if (error) {
       setError(error.message);
