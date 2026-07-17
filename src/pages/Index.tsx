@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, X, Sparkles, Instagram, Youtube, Play, Heart, Eye,
-  RefreshCw, Loader2, TrendingUp, FileText, Newspaper, Users
+  RefreshCw, Loader2, TrendingUp, FileText, Newspaper, Users, AlertTriangle, WifiOff
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
+import { getReelThumbnailSrc, getReelAltText, handleReelThumbnailError } from "@/lib/reelThumbnail";
+import { interpretReelSearchResponse } from "@/lib/reelSearchStatus";
 
 const PRIMARY = "#7C3AED";
 const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
@@ -94,6 +96,11 @@ export default function Index() {
   const [wordIndex, setWordIndex] = useState(0);
   const [videos, setVideos] = useState<any[]>(restored?.videos || []);
   const [videosLoading, setVideosLoading] = useState(false);
+  // Distinguishes *why* the results grid is empty — a successful search with
+  // zero matches reads very differently from "we couldn't reach the server"
+  // or "the reel provider is temporarily down". 'idle' = no search run yet.
+  const [videosStatus, setVideosStatus] = useState<"idle" | "ok" | "network_error" | "upstream_unavailable">("idle");
+  const [videosMessage, setVideosMessage] = useState<string | null>(null);
   const [chips, setChips] = useState<string[]>([]);
   const [chipsLoading, setChipsLoading] = useState(false);
   const [ytConnecting, setYtConnecting] = useState(false);
@@ -179,7 +186,7 @@ export default function Index() {
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     if (!search.trim()) {
-      setVideos([]); setVideosHasMore(false);
+      setVideos([]); setVideosHasMore(false); setVideosStatus("idle"); setVideosMessage(null);
       try { sessionStorage.removeItem(SESSION_KEY); } catch { }
       return;
     }
@@ -198,13 +205,20 @@ export default function Index() {
         const res = isIG
           ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=1&limit=${PAGE_SIZE}`)
           : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
-        const data = await res.json();
-        const newVideos = data.items || data.reels || [];
-        const hasMore = Boolean(data.has_more);
-        setVideos(newVideos);
-        setVideosHasMore(hasMore);
-        saveSession(search, newVideos, hasMore, 1);
-      } catch (e) { console.error(e); } finally { setVideosLoading(false); }
+
+        const data = res.ok ? await res.json().catch(() => null) : null;
+        const outcome = interpretReelSearchResponse(res.ok, data, isIG);
+
+        setVideos(outcome.videos);
+        setVideosHasMore(outcome.hasMore);
+        setVideosStatus(outcome.status);
+        setVideosMessage(outcome.message);
+        if (outcome.status !== "network_error") saveSession(search, outcome.videos, outcome.hasMore, 1);
+      } catch (e) {
+        console.error(e);
+        setVideos([]); setVideosHasMore(false);
+        setVideosStatus("network_error"); setVideosMessage(null);
+      } finally { setVideosLoading(false); }
     }, 600);
   }, [search, platform]);
 
@@ -369,7 +383,7 @@ export default function Index() {
 
         {/* Video Results */}
         <AnimatePresence>
-          {(videosLoading || videos.length > 0) && (
+          {(videosLoading || videosStatus !== "idle") && (
             <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }} className="w-full">
               <div className="flex items-center gap-2 mb-3">
                 {isIG ? <Instagram className="w-4 h-4" style={{ color:activeColor }} /> : <Youtube className="w-4 h-4" style={{ color:activeColor }} />}
@@ -381,6 +395,28 @@ export default function Index() {
                 <div className="grid grid-cols-3 gap-2">
                   {[1,2,3,4,5,6].map(i => <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl animate-pulse" style={{ aspectRatio:'9/16' }} />)}
                 </div>
+              ) : videos.length === 0 ? (
+                <div data-testid="reels-empty-state" className="flex flex-col items-center text-center gap-2 py-10 px-4 rounded-2xl border border-[#e1e3e4] bg-white dark:bg-gray-800 dark:border-gray-700">
+                  {videosStatus === "network_error" ? (
+                    <>
+                      <WifiOff className="w-6 h-6 text-[#757684]" />
+                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">Couldn't reach the server</p>
+                      <p className="text-xs text-[#757684] max-w-xs">Check your connection and try again.</p>
+                    </>
+                  ) : videosStatus === "upstream_unavailable" ? (
+                    <>
+                      <AlertTriangle className="w-6 h-6 text-[#f59e0b]" />
+                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">Reel search is temporarily unavailable</p>
+                      <p className="text-xs text-[#757684] max-w-xs">{videosMessage || "The reel provider is temporarily down. Please try again shortly."}</p>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-6 h-6 text-[#757684]" />
+                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">No reels found for "{search}"</p>
+                      <p className="text-xs text-[#757684] max-w-xs">Try a different keyword.</p>
+                    </>
+                  )}
+                </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {videos.map((video, i) => (
@@ -390,8 +426,10 @@ export default function Index() {
                       onClick={() => navigate('/insight', { state: { item: toInsightItem(video, isIG, search) } })}
                       className="relative rounded-2xl overflow-hidden cursor-pointer group"
                       style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
-                      <img src={proxyImg(video.thumbnail)} alt={video.caption} referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        onError={e => { (e.target as HTMLImageElement).style.opacity='0'; }} />
+                      <img src={getReelThumbnailSrc(video.thumbnail)} alt={getReelAltText(video.caption, video.username)}
+                        referrerPolicy="no-referrer" loading="lazy" decoding="async"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        onError={handleReelThumbnailError} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                       <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
                         style={{ background: isIG ? 'linear-gradient(45deg,#f09433,#bc1888)' : '#FF0000' }}>
