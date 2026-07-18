@@ -82,6 +82,7 @@ export default function Index() {
     const saved = localStorage.getItem("platform");
     return saved === "youtube" ? "YouTube" : "Instagram";
   });
+  const [instagramSearchMode, setInstagramSearchMode] = useState<"keyword" | "hashtag">("keyword");
 
   // ✅ Restore search + results from sessionStorage on mount so navigating
   // away (e.g. to /insight) and back doesn't lose the user's search.
@@ -203,7 +204,7 @@ export default function Index() {
       videosPageRef.current = 1;
       try {
         const res = isIG
-          ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=1&limit=${PAGE_SIZE}`)
+          ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&mode=${instagramSearchMode}&page=1&limit=${PAGE_SIZE}`)
           : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
 
         const data = res.ok ? await res.json().catch(() => null) : null;
@@ -220,14 +221,14 @@ export default function Index() {
         setVideosStatus("network_error"); setVideosMessage(null);
       } finally { setVideosLoading(false); }
     }, 600);
-  }, [search, platform]);
+  }, [search, platform, instagramSearchMode]);
 
   const loadMoreVideos = async () => {
     if (!isIG || videosLoadingMore) return;
     setVideosLoadingMore(true);
     try {
       const nextPage = videosPageRef.current + 1;
-      const res = await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&page=${nextPage}&limit=${PAGE_SIZE}`);
+      const res = await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&mode=${instagramSearchMode}&page=${nextPage}&limit=${PAGE_SIZE}`);
       const data = await res.json();
       const newItems = data.items || data.reels || [];
       const hasMore = Boolean(data.has_more);
@@ -362,11 +363,30 @@ export default function Index() {
 
         {/* Search Bar */}
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.6 }} className="w-full">
+          {isIG && (
+            <div className="flex gap-2 mb-2" aria-label="Instagram search mode">
+              {(["keyword", "hashtag"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setInstagramSearchMode(mode)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors"
+                  style={{
+                    color: instagramSearchMode === mode ? "white" : activeColor,
+                    background: instagramSearchMode === mode ? activeColor : "white",
+                    borderColor: activeColor,
+                  }}
+                >
+                  {mode === "keyword" ? "Keyword" : "# Hashtag"}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="relative flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder={isIG ? t('home.search_placeholder_ig') : ytChannel ? `Search ${ytChannel.channel_name} niche...` : t('home.search_placeholder_yt')}
+                placeholder={isIG ? (instagramSearchMode === "hashtag" ? "Search a hashtag (without #)..." : t('home.search_placeholder_ig')) : ytChannel ? `Search ${ytChannel.channel_name} niche...` : t('home.search_placeholder_yt')}
                 className="w-full pl-11 pr-10 py-4 rounded-2xl text-sm text-[#191c1d] placeholder:text-[#757684] outline-none transition-all"
                 style={{ background:'white', border:`2px solid ${search ? activeColor : '#e1e3e4'}`, boxShadow:search ? `0 0 0 4px ${activeColor}15` : 'none' }} />
               {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]"><X className="w-4 h-4" /></button>}
