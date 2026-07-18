@@ -867,6 +867,16 @@ export default function InstagramAnalyzer() {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
 
+  const handleUsernameChange = (value: string) => {
+    setHandle(value);
+    if (!value.trim()) {
+      setResult(null);
+      setHiker(null);
+      setError('');
+      setImgError(false);
+    }
+  };
+
   const filterReels = (reels: any[]) => {
     const r = [...reels];
     if (reelsFilter === 'top') return r.sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0));
@@ -917,7 +927,7 @@ export default function InstagramAnalyzer() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#757684] text-sm font-bold">@</span>
-              <input type="text" value={handle} onChange={e => setHandle(e.target.value)}
+              <input type="text" value={handle} onChange={e => handleUsernameChange(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') analyze(); }}
                 placeholder={t('analyzer.placeholder')}
                 className="w-full pl-8 pr-9 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 transition-all" />
@@ -1086,7 +1096,7 @@ export default function InstagramAnalyzer() {
                       onError={() => setImgError(true)} />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
-                      {(result?.profile_name || hiker?.profile?.full_name || handle)[0].toUpperCase()}
+                      {(result?.profile_name || hiker?.profile?.full_name || handle || '?').trim().charAt(0).toUpperCase() || '?'}
                     </div>
                   );
                 })()}
