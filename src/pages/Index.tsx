@@ -204,7 +204,7 @@ export default function Index() {
       videosPageRef.current = 1;
       try {
         const res = isIG
-          ? await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&mode=${instagramSearchMode}&page=1&limit=${PAGE_SIZE}`)
+          ? await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(search)}&mode=${instagramSearchMode}&page=1&limit=${PAGE_SIZE}`)
           : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
 
         const data = res.ok ? await res.json().catch(() => null) : null;
@@ -228,7 +228,7 @@ export default function Index() {
     setVideosLoadingMore(true);
     try {
       const nextPage = videosPageRef.current + 1;
-      const res = await fetch(`${BASE}/api/hiker/reels?keyword=${encodeURIComponent(search)}&mode=${instagramSearchMode}&page=${nextPage}&limit=${PAGE_SIZE}`);
+      const res = await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(search)}&mode=${instagramSearchMode}&page=${nextPage}&limit=${PAGE_SIZE}`);
       const data = await res.json();
       const newItems = data.items || data.reels || [];
       const hasMore = Boolean(data.has_more);
