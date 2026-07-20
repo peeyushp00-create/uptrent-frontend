@@ -1,7 +1,7 @@
-// Interprets a GET /api/hiker/reels response (or a failed/thrown fetch) into
+// Interprets a GET /api/instagram/search response (or a failed/thrown fetch) into
 // a status the UI can render distinctly, instead of treating every empty
-// result the same way. See backend/src/routes/hikerReels.js for the
-// source/upstream_available/message contract this reads.
+// result the same way. The backend returns `reels` plus an optional
+// `has_more` flag and a safe message when scraper discovery is unavailable.
 
 export type VideosStatus = "idle" | "ok" | "network_error" | "upstream_unavailable";
 
