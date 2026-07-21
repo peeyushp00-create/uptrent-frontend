@@ -74,8 +74,6 @@ export default function Index() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const searchTimeout = useRef<any>(null);
-
   const SESSION_KEY = "home_reels_session";
 
   const [platform, setPlatform] = useState<"Instagram" | "YouTube">(() => {
@@ -94,6 +92,8 @@ export default function Index() {
   })();
 
   const [search, setSearch] = useState(restored?.search || "");
+  const [submittedSearch, setSubmittedSearch] = useState(restored?.search || "");
+  const [searchRequestId, setSearchRequestId] = useState(0);
   const [wordIndex, setWordIndex] = useState(0);
   const [videos, setVideos] = useState<any[]>(restored?.videos || []);
   const [videosLoading, setVideosLoading] = useState(false);
@@ -123,7 +123,7 @@ export default function Index() {
   useEffect(() => {
     const handleCustom = (e: any) => {
       setPlatform(e.detail === "youtube" ? "YouTube" : "Instagram");
-      setVideos([]); setSearch('');
+      setVideos([]); setSearch(''); setSubmittedSearch('');
     };
     window.addEventListener("platformChanged", handleCustom);
     return () => window.removeEventListener("platformChanged", handleCustom);
@@ -185,8 +185,9 @@ export default function Index() {
   };
 
   useEffect(() => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    if (!search.trim()) {
+    const keyword = submittedSearch.trim();
+    if (!keyword) {
+      setVideosLoading(false);
       setVideos([]); setVideosHasMore(false); setVideosStatus("idle"); setVideosMessage(null);
       try { sessionStorage.removeItem(SESSION_KEY); } catch { }
       return;
@@ -199,13 +200,14 @@ export default function Index() {
       return;
     }
 
-    searchTimeout.current = setTimeout(async () => {
+    const controller = new AbortController();
+    const fetchVideos = async () => {
       setVideosLoading(true);
       videosPageRef.current = 1;
       try {
         const res = isIG
-          ? await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(search)}&mode=${instagramSearchMode}&page=1&limit=${PAGE_SIZE}`)
-          : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(search)}`);
+          ? await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(keyword)}&mode=${instagramSearchMode}&page=1&limit=${PAGE_SIZE}`, { signal: controller.signal })
+          : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(keyword)}`, { signal: controller.signal });
 
         const data = res.ok ? await res.json().catch(() => null) : null;
         const outcome = interpretReelSearchResponse(res.ok, data, isIG);
@@ -214,27 +216,41 @@ export default function Index() {
         setVideosHasMore(outcome.hasMore);
         setVideosStatus(outcome.status);
         setVideosMessage(outcome.message);
-        if (outcome.status !== "network_error") saveSession(search, outcome.videos, outcome.hasMore, 1);
+        if (outcome.status !== "network_error") saveSession(keyword, outcome.videos, outcome.hasMore, 1);
       } catch (e) {
+        if (controller.signal.aborted) return;
         console.error(e);
         setVideos([]); setVideosHasMore(false);
         setVideosStatus("network_error"); setVideosMessage(null);
-      } finally { setVideosLoading(false); }
-    }, 600);
-  }, [search, platform, instagramSearchMode]);
+      } finally {
+        if (!controller.signal.aborted) setVideosLoading(false);
+      }
+    };
+
+    fetchVideos();
+    return () => controller.abort();
+  }, [submittedSearch, searchRequestId, platform, instagramSearchMode]);
+
+  const submitSearch = (term = search) => {
+    const keyword = term.trim();
+    if (!keyword || videosLoading) return;
+    setSearch(keyword);
+    setSubmittedSearch(keyword);
+    setSearchRequestId(id => id + 1);
+  };
 
   const loadMoreVideos = async () => {
     if (!isIG || videosLoadingMore) return;
     setVideosLoadingMore(true);
     try {
       const nextPage = videosPageRef.current + 1;
-      const res = await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(search)}&mode=${instagramSearchMode}&page=${nextPage}&limit=${PAGE_SIZE}`);
+      const res = await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(submittedSearch)}&mode=${instagramSearchMode}&page=${nextPage}&limit=${PAGE_SIZE}`);
       const data = await res.json();
       const newItems = data.items || data.reels || [];
       const hasMore = Boolean(data.has_more);
       setVideos(prev => {
         const combined = [...prev, ...newItems];
-        saveSession(search, combined, hasMore, nextPage);
+        saveSession(submittedSearch, combined, hasMore, nextPage);
         return combined;
       });
       setVideosHasMore(hasMore);
@@ -386,13 +402,15 @@ export default function Index() {
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') submitSearch(); }}
                 placeholder={isIG ? (instagramSearchMode === "hashtag" ? "Search a hashtag (without #)..." : t('home.search_placeholder_ig')) : ytChannel ? `Search ${ytChannel.channel_name} niche...` : t('home.search_placeholder_yt')}
                 className="w-full pl-11 pr-10 py-4 rounded-2xl text-sm text-[#191c1d] placeholder:text-[#757684] outline-none transition-all"
                 style={{ background:'white', border:`2px solid ${search ? activeColor : '#e1e3e4'}`, boxShadow:search ? `0 0 0 4px ${activeColor}15` : 'none' }} />
-              {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]"><X className="w-4 h-4" /></button>}
+              {search && <button onClick={() => { setSearch(''); setSubmittedSearch(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]"><X className="w-4 h-4" /></button>}
             </div>
             <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
-              onClick={() => setSearch('')}
+              onClick={() => submitSearch()}
+              disabled={!search.trim() || videosLoading}
               className="px-6 py-4 rounded-2xl text-white font-bold text-sm flex items-center gap-2"
               style={{ background:activeGrad }}>
               <Sparkles className="w-4 h-4" />
@@ -408,7 +426,7 @@ export default function Index() {
               <div className="flex items-center gap-2 mb-3">
                 {isIG ? <Instagram className="w-4 h-4" style={{ color:activeColor }} /> : <Youtube className="w-4 h-4" style={{ color:activeColor }} />}
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color:activeColor }}>
-                  {isIG ? 'Instagram Reels' : 'YouTube Shorts'} for "{search}"
+                  {isIG ? 'Instagram Reels' : 'YouTube Shorts'} for "{submittedSearch}"
                 </p>
               </div>
               {videosLoading ? (
@@ -443,7 +461,7 @@ export default function Index() {
                     <motion.div key={video.id || i}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
-                      onClick={() => navigate('/insight', { state: { item: toInsightItem(video, isIG, search) } })}
+                      onClick={() => navigate('/insight', { state: { item: toInsightItem(video, isIG, submittedSearch) } })}
                       className="relative rounded-2xl overflow-hidden cursor-pointer group"
                       style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
                       <img src={getReelThumbnailSrc(video.thumbnail)} alt={getReelAltText(video.caption, video.username)}
@@ -523,7 +541,7 @@ export default function Index() {
                     <motion.button key={`${platform}-${chip}`}
                       initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }}
                       exit={{ opacity:0, scale:0.8 }} transition={{ delay:i * 0.03 }}
-                      onClick={() => setSearch(chip)}
+                      onClick={() => submitSearch(chip)}
                       whileHover={{ scale:1.05 }} whileTap={{ scale:0.97 }}
                       className="px-4 py-2 rounded-full text-xs font-bold transition-all border hover:shadow-sm flex items-center gap-1.5"
                       style={{ background:'white', borderColor: i < 6 && isIG ? `${activeColor}40` : '#e1e3e4', color:'#454652' }}>
@@ -606,7 +624,7 @@ export default function Index() {
                 <p className="text-xs font-semibold text-[#757684] mb-2">{t('home.your_niches')}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {user.user_metadata.niches.map((niche: string) => (
-                    <span key={niche} onClick={() => setSearch(niche)}
+                    <span key={niche} onClick={() => submitSearch(niche)}
                       className="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity"
                       style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
                       {niche}
