@@ -40,7 +40,7 @@ function toInsightItem(video: any, isIG: boolean, niche?: string) {
     isVideo: true,
     instagramUrl: isIG ? video.permalink : undefined,
     youtubeUrl: !isIG ? video.permalink : undefined,
-    views: formatNum(Number(video.views) || 0),
+    views: formatMetric(video.views),
     likes: formatNum(Number(video.likes) || 0),
     comments: formatNum(Number(video.comments) || 0),
     shares: formatNum(Number(video.shares) || 0),
@@ -68,6 +68,12 @@ function formatNum(n: number) {
   if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
   if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
   return String(n);
+}
+
+function formatMetric(value: unknown) {
+  if (value === null || value === undefined || value === '') return 'N/A';
+  const number = Number(value);
+  return Number.isFinite(number) ? formatNum(number) : 'N/A';
 }
 
 export default function Index() {
@@ -494,7 +500,7 @@ export default function Index() {
                         <p className="text-white text-[9px] font-semibold line-clamp-2 leading-tight mb-1">{video.caption}</p>
                         <div className="flex items-center gap-2">
                           <Eye className="w-2.5 h-2.5 text-white/70" />
-                          <span className="text-[8px] text-white/70">{formatNum(Number(video.views) || 0)}</span>
+                          <span className="text-[8px] text-white/70">{formatMetric(video.views)}</span>
                           <Heart className="w-2.5 h-2.5 text-white/70" />
                           <span className="text-[8px] text-white/70">{formatNum(Number(video.likes) || 0)}</span>
                         </div>
