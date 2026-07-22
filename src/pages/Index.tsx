@@ -168,7 +168,7 @@ export default function Index() {
   useEffect(() => { fetchSuggestions(); }, [platform]);
 
   // ✅ Search: Instagram → Indian reel search, YouTube → existing search
-  const PAGE_SIZE = 3; // show 3 reels per load, click Load More for the next 3
+  const PAGE_SIZE = 12; // show up to 12 reels per search/load
   const [videosHasMore, setVideosHasMore] = useState(restored?.hasMore || false);
   const [videosLoadingMore, setVideosLoadingMore] = useState(false);
   const videosPageRef = useRef(restored?.page || 1);
