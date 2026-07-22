@@ -15,6 +15,16 @@ const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
 const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
 const PRIMARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const HOME_REELS_SESSION_KEY = "home_reels_session";
+
+function loadHomeReelsSession() {
+  try {
+    const raw = sessionStorage.getItem(HOME_REELS_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 // ✅ Instagram CDN thumbnails are referrer-blocked → route them through our proxy
 const proxyImg = (url?: string) =>
@@ -80,23 +90,21 @@ export default function Index() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const SESSION_KEY = "home_reels_session";
+  const restored = useRef(loadHomeReelsSession()).current;
 
   const [platform, setPlatform] = useState<"Instagram" | "YouTube">(() => {
+    if (restored?.platform === "Instagram" || restored?.platform === "YouTube") {
+      return restored.platform;
+    }
     const saved = localStorage.getItem("platform");
     return saved === "youtube" ? "YouTube" : "Instagram";
   });
-  const [instagramSearchMode, setInstagramSearchMode] = useState<"keyword" | "hashtag">("keyword");
+  const [instagramSearchMode, setInstagramSearchMode] = useState<"keyword" | "hashtag">(
+    restored?.instagramSearchMode === "hashtag" ? "hashtag" : "keyword"
+  );
 
   // ✅ Restore search + results from sessionStorage on mount so navigating
   // away (e.g. to /insight) and back doesn't lose the user's search.
-  const restored = (() => {
-    try {
-      const raw = sessionStorage.getItem(SESSION_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  })();
-
   const [search, setSearch] = useState(restored?.search || "");
   const [submittedSearch, setSubmittedSearch] = useState(restored?.search || "");
   const [searchRequestId, setSearchRequestId] = useState(0);
@@ -128,12 +136,15 @@ export default function Index() {
 
   useEffect(() => {
     const handleCustom = (e: any) => {
-      setPlatform(e.detail === "youtube" ? "YouTube" : "Instagram");
+      const nextPlatform = e.detail === "youtube" ? "YouTube" : "Instagram";
+      if (platform === nextPlatform) return;
+      setPlatform(nextPlatform);
       setVideos([]); setSearch(''); setSubmittedSearch('');
+      try { sessionStorage.removeItem(HOME_REELS_SESSION_KEY); } catch { }
     };
     window.addEventListener("platformChanged", handleCustom);
     return () => window.removeEventListener("platformChanged", handleCustom);
-  }, []);
+  }, [platform]);
 
   useEffect(() => {
     const interval = setInterval(() => setWordIndex(i => (i + 1) % WORDS.length), 1800);
@@ -184,8 +195,13 @@ export default function Index() {
   // and back (or a refresh) within the same browser session.
   const saveSession = (nextSearch: string, nextVideos: any[], nextHasMore: boolean, nextPage: number) => {
     try {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-        search: nextSearch, videos: nextVideos, hasMore: nextHasMore, page: nextPage,
+      sessionStorage.setItem(HOME_REELS_SESSION_KEY, JSON.stringify({
+        search: nextSearch,
+        videos: nextVideos,
+        hasMore: nextHasMore,
+        page: nextPage,
+        platform,
+        instagramSearchMode,
       }));
     } catch { }
   };
@@ -195,7 +211,7 @@ export default function Index() {
     if (!keyword) {
       setVideosLoading(false);
       setVideos([]); setVideosHasMore(false); setVideosStatus("idle"); setVideosMessage(null);
-      try { sessionStorage.removeItem(SESSION_KEY); } catch { }
+      try { sessionStorage.removeItem(HOME_REELS_SESSION_KEY); } catch { }
       return;
     }
 
@@ -243,6 +259,14 @@ export default function Index() {
     setSearch(keyword);
     setSubmittedSearch(keyword);
     setSearchRequestId(id => id + 1);
+  };
+
+  const openInsight = (video: any) => {
+    // Save synchronously before leaving so browser Back restores this exact grid.
+    saveSession(submittedSearch, videos, videosHasMore, videosPageRef.current);
+    navigate('/insight', {
+      state: { item: toInsightItem(video, isIG, submittedSearch) },
+    });
   };
 
   const loadMoreVideos = async () => {
@@ -467,7 +491,7 @@ export default function Index() {
                     <motion.div key={video.id || i}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
-                      onClick={() => navigate('/insight', { state: { item: toInsightItem(video, isIG, submittedSearch) } })}
+                      onClick={() => openInsight(video)}
                       className="relative rounded-2xl overflow-hidden cursor-pointer group"
                       style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
                       <img src={getReelThumbnailSrc(video.thumbnail)} alt={getReelAltText(video.caption, video.username)}
