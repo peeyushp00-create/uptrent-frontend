@@ -115,7 +115,9 @@ export default function Index() {
   // Distinguishes *why* the results grid is empty — a successful search with
   // zero matches reads very differently from "we couldn't reach the server"
   // or "the reel provider is temporarily down". 'idle' = no search run yet.
-  const [videosStatus, setVideosStatus] = useState<"idle" | "ok" | "network_error" | "upstream_unavailable">("idle");
+  const [videosStatus, setVideosStatus] = useState<"idle" | "ok" | "network_error" | "upstream_unavailable">(
+    restored?.videos?.length ? "ok" : "idle"
+  );
   const [videosMessage, setVideosMessage] = useState<string | null>(null);
   const [chips, setChips] = useState<string[]>([]);
   const [chipsLoading, setChipsLoading] = useState(false);
