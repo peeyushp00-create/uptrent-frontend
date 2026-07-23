@@ -105,7 +105,8 @@ export default function Index() {
 
   // ✅ Restore search + results from sessionStorage on mount so navigating
   // away (e.g. to /insight) and back doesn't lose the user's search.
-  const [search, setSearch] = useState(restored?.search || "");
+  // Restore submitted results, but leave the visible input ready for a new search.
+  const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState(restored?.search || "");
   const [searchRequestId, setSearchRequestId] = useState(0);
   const [wordIndex, setWordIndex] = useState(0);
