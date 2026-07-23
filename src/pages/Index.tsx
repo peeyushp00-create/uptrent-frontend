@@ -16,6 +16,23 @@ const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
 const PRIMARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const HOME_REELS_SESSION_KEY = "home_reels_session";
+type ViewFilter = "all" | "10k-50k" | "50k-500k" | "500k-1m" | "1m-10m";
+
+const VIEW_FILTER_OPTIONS: { value: ViewFilter; label: string; min: number; max: number }[] = [
+  { value: "all", label: "10K–10M views", min: 10_000, max: 10_000_000 },
+  { value: "10k-50k", label: "10K–50K views", min: 10_000, max: 50_000 },
+  { value: "50k-500k", label: "50K–500K views", min: 50_000, max: 500_000 },
+  { value: "500k-1m", label: "500K–1M views", min: 500_000, max: 1_000_000 },
+  { value: "1m-10m", label: "1M–10M views", min: 1_000_000, max: 10_000_000 },
+];
+
+function filterInstagramVideos(videos: any[], filter: ViewFilter) {
+  const range = VIEW_FILTER_OPTIONS.find(option => option.value === filter) || VIEW_FILTER_OPTIONS[0];
+  return videos.filter(video => {
+    const views = Number(video.views);
+    return Number.isFinite(views) && views >= range.min && views <= range.max;
+  });
+}
 
 function loadHomeReelsSession() {
   try {
@@ -111,6 +128,11 @@ export default function Index() {
   const [searchRequestId, setSearchRequestId] = useState(0);
   const [wordIndex, setWordIndex] = useState(0);
   const [videos, setVideos] = useState<any[]>(restored?.videos || []);
+  const [viewFilter, setViewFilter] = useState<ViewFilter>(
+    VIEW_FILTER_OPTIONS.some(option => option.value === restored?.viewFilter)
+      ? restored.viewFilter
+      : "all"
+  );
   const [videosLoading, setVideosLoading] = useState(false);
   // Distinguishes *why* the results grid is empty — a successful search with
   // zero matches reads very differently from "we couldn't reach the server"
@@ -128,6 +150,7 @@ export default function Index() {
   const isIG = platform === "Instagram";
   const activeGrad = isIG ? PRIMARY_GRAD : YT_GRAD;
   const activeColor = isIG ? PRIMARY : '#ff0000';
+  const viewFilteredVideos = isIG ? filterInstagramVideos(videos, viewFilter) : videos;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -190,7 +213,6 @@ export default function Index() {
   // ✅ Search: Instagram → Indian reel search, YouTube → existing search
   const PAGE_SIZE = 12; // show up to 12 reels per search/load
   const DISCOVERY_POOL_SIZE = 50;
-  const MIN_INSTAGRAM_VIEWS = 50_000;
   const [videosHasMore, setVideosHasMore] = useState(restored?.hasMore || false);
   const [videosLoadingMore, setVideosLoadingMore] = useState(false);
   const videosPageRef = useRef(restored?.page || 1);
@@ -198,7 +220,13 @@ export default function Index() {
 
   // ✅ Persist current search results so they survive navigating to /insight
   // and back (or a refresh) within the same browser session.
-  const saveSession = (nextSearch: string, nextVideos: any[], nextHasMore: boolean, nextPage: number) => {
+  const saveSession = (
+    nextSearch: string,
+    nextVideos: any[],
+    nextHasMore: boolean,
+    nextPage: number,
+    nextViewFilter: ViewFilter = viewFilter,
+  ) => {
     try {
       sessionStorage.setItem(HOME_REELS_SESSION_KEY, JSON.stringify({
         search: nextSearch,
@@ -207,6 +235,7 @@ export default function Index() {
         page: nextPage,
         platform,
         instagramSearchMode,
+        viewFilter: nextViewFilter,
       }));
     } catch { }
   };
@@ -240,9 +269,11 @@ export default function Index() {
         const outcome = interpretReelSearchResponse(res.ok, data, isIG);
 
         const qualifiedVideos = isIG
-          ? outcome.videos.filter(video => Number(video.views) >= MIN_INSTAGRAM_VIEWS)
+          ? filterInstagramVideos(outcome.videos, "all")
           : outcome.videos;
-        const hasMore = isIG ? qualifiedVideos.length > PAGE_SIZE : outcome.hasMore;
+        const hasMore = isIG
+          ? filterInstagramVideos(qualifiedVideos, viewFilter).length > PAGE_SIZE
+          : outcome.hasMore;
 
         setVideos(qualifiedVideos);
         setVideosHasMore(hasMore);
@@ -278,8 +309,18 @@ export default function Index() {
     setVideosHasMore(false);
     setVideosStatus("idle");
     setVideosMessage(null);
+    setViewFilter("all");
     videosPageRef.current = 1;
     try { sessionStorage.removeItem(HOME_REELS_SESSION_KEY); } catch { }
+  };
+
+  const changeViewFilter = (nextFilter: ViewFilter) => {
+    const filtered = filterInstagramVideos(videos, nextFilter);
+    const hasMore = filtered.length > PAGE_SIZE;
+    setViewFilter(nextFilter);
+    videosPageRef.current = 1;
+    setVideosHasMore(hasMore);
+    saveSession(submittedSearch, videos, hasMore, 1, nextFilter);
   };
 
   const openInsight = (video: any) => {
@@ -294,7 +335,7 @@ export default function Index() {
     if (!isIG || videosLoadingMore) return;
     setVideosLoadingMore(true);
     const nextPage = videosPageRef.current + 1;
-    const hasMore = nextPage * PAGE_SIZE < videos.length;
+    const hasMore = nextPage * PAGE_SIZE < viewFilteredVideos.length;
     videosPageRef.current = nextPage;
     setVideosHasMore(hasMore);
     saveSession(submittedSearch, videos, hasMore, nextPage);
@@ -471,6 +512,18 @@ export default function Index() {
                 <p className="text-xs font-bold uppercase tracking-wider flex-1" style={{ color:activeColor }}>
                   {isIG ? 'Instagram Reels' : 'YouTube Shorts'} for "{submittedSearch}"
                 </p>
+                {isIG && (
+                  <select
+                    value={viewFilter}
+                    onChange={event => changeViewFilter(event.target.value as ViewFilter)}
+                    className="rounded-lg border border-[#e1e3e4] bg-white px-2 py-1 text-[11px] font-semibold text-[#454652] outline-none focus:border-[#7C3AED]"
+                    aria-label="Filter reels by views"
+                  >
+                    {VIEW_FILTER_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                )}
                 <button
                   type="button"
                   onClick={clearResults}
@@ -484,7 +537,7 @@ export default function Index() {
                 <div className="grid grid-cols-3 gap-2">
                   {[1,2,3,4,5,6].map(i => <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl animate-pulse" style={{ aspectRatio:'9/16' }} />)}
                 </div>
-              ) : videos.length === 0 ? (
+              ) : viewFilteredVideos.length === 0 ? (
                 <div data-testid="reels-empty-state" className="flex flex-col items-center text-center gap-2 py-10 px-4 rounded-2xl border border-[#e1e3e4] bg-white dark:bg-gray-800 dark:border-gray-700">
                   {videosStatus === "network_error" ? (
                     <>
@@ -501,14 +554,14 @@ export default function Index() {
                   ) : (
                     <>
                       <Search className="w-6 h-6 text-[#757684]" />
-                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">No reels above 50K views found for "{submittedSearch}"</p>
+                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">No reels in this view range found for "{submittedSearch}"</p>
                       <p className="text-xs text-[#757684] max-w-xs">Try a different keyword.</p>
                     </>
                   )}
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {videos.slice(0, isIG ? videosPageRef.current * PAGE_SIZE : videos.length).map((video, i) => (
+                  {viewFilteredVideos.slice(0, isIG ? videosPageRef.current * PAGE_SIZE : viewFilteredVideos.length).map((video, i) => (
                     <motion.div key={video.id || i}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
