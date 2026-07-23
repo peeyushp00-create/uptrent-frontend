@@ -187,6 +187,8 @@ export default function Index() {
 
   // ✅ Search: Instagram → Indian reel search, YouTube → existing search
   const PAGE_SIZE = 12; // show up to 12 reels per search/load
+  const DISCOVERY_POOL_SIZE = 50;
+  const MIN_INSTAGRAM_VIEWS = 50_000;
   const [videosHasMore, setVideosHasMore] = useState(restored?.hasMore || false);
   const [videosLoadingMore, setVideosLoadingMore] = useState(false);
   const videosPageRef = useRef(restored?.page || 1);
@@ -229,17 +231,22 @@ export default function Index() {
       videosPageRef.current = 1;
       try {
         const res = isIG
-          ? await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(keyword)}&mode=${instagramSearchMode}&page=1&limit=${PAGE_SIZE}`, { signal: controller.signal })
+          ? await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(keyword)}&mode=${instagramSearchMode}&page=1&limit=${DISCOVERY_POOL_SIZE}`, { signal: controller.signal })
           : await fetch(`${BASE}/api/search/youtube?q=${encodeURIComponent(keyword)}`, { signal: controller.signal });
 
         const data = res.ok ? await res.json().catch(() => null) : null;
         const outcome = interpretReelSearchResponse(res.ok, data, isIG);
 
-        setVideos(outcome.videos);
-        setVideosHasMore(outcome.hasMore);
+        const qualifiedVideos = isIG
+          ? outcome.videos.filter(video => Number(video.views) >= MIN_INSTAGRAM_VIEWS)
+          : outcome.videos;
+        const hasMore = isIG ? qualifiedVideos.length > PAGE_SIZE : outcome.hasMore;
+
+        setVideos(qualifiedVideos);
+        setVideosHasMore(hasMore);
         setVideosStatus(outcome.status);
         setVideosMessage(outcome.message);
-        if (outcome.status !== "network_error") saveSession(keyword, outcome.videos, outcome.hasMore, 1);
+        if (outcome.status !== "network_error") saveSession(keyword, qualifiedVideos, hasMore, 1);
       } catch (e) {
         if (controller.signal.aborted) return;
         console.error(e);
@@ -270,23 +277,15 @@ export default function Index() {
     });
   };
 
-  const loadMoreVideos = async () => {
+  const loadMoreVideos = () => {
     if (!isIG || videosLoadingMore) return;
     setVideosLoadingMore(true);
-    try {
-      const nextPage = videosPageRef.current + 1;
-      const res = await fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(submittedSearch)}&mode=${instagramSearchMode}&page=${nextPage}&limit=${PAGE_SIZE}`);
-      const data = await res.json();
-      const newItems = data.items || data.reels || [];
-      const hasMore = Boolean(data.has_more);
-      setVideos(prev => {
-        const combined = [...prev, ...newItems];
-        saveSession(submittedSearch, combined, hasMore, nextPage);
-        return combined;
-      });
-      setVideosHasMore(hasMore);
-      videosPageRef.current = nextPage;
-    } catch (e) { console.error(e); } finally { setVideosLoadingMore(false); }
+    const nextPage = videosPageRef.current + 1;
+    const hasMore = nextPage * PAGE_SIZE < videos.length;
+    videosPageRef.current = nextPage;
+    setVideosHasMore(hasMore);
+    saveSession(submittedSearch, videos, hasMore, nextPage);
+    setVideosLoadingMore(false);
   };
 
   const handleYtConnect = async () => {
@@ -481,14 +480,14 @@ export default function Index() {
                   ) : (
                     <>
                       <Search className="w-6 h-6 text-[#757684]" />
-                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">No reels found for "{search}"</p>
+                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">No reels above 50K views found for "{submittedSearch}"</p>
                       <p className="text-xs text-[#757684] max-w-xs">Try a different keyword.</p>
                     </>
                   )}
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {videos.map((video, i) => (
+                  {videos.slice(0, isIG ? videosPageRef.current * PAGE_SIZE : videos.length).map((video, i) => (
                     <motion.div key={video.id || i}
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
