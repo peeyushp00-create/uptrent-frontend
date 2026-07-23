@@ -271,6 +271,17 @@ export default function Index() {
     setSearchRequestId(id => id + 1);
   };
 
+  const clearResults = () => {
+    setSearch("");
+    setSubmittedSearch("");
+    setVideos([]);
+    setVideosHasMore(false);
+    setVideosStatus("idle");
+    setVideosMessage(null);
+    videosPageRef.current = 1;
+    try { sessionStorage.removeItem(HOME_REELS_SESSION_KEY); } catch { }
+  };
+
   const openInsight = (video: any) => {
     // Save synchronously before leaving so browser Back restores this exact grid.
     saveSession(submittedSearch, videos, videosHasMore, videosPageRef.current);
@@ -457,9 +468,17 @@ export default function Index() {
             <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }} className="w-full">
               <div className="flex items-center gap-2 mb-3">
                 {isIG ? <Instagram className="w-4 h-4" style={{ color:activeColor }} /> : <Youtube className="w-4 h-4" style={{ color:activeColor }} />}
-                <p className="text-xs font-bold uppercase tracking-wider" style={{ color:activeColor }}>
+                <p className="text-xs font-bold uppercase tracking-wider flex-1" style={{ color:activeColor }}>
                   {isIG ? 'Instagram Reels' : 'YouTube Shorts'} for "{submittedSearch}"
                 </p>
+                <button
+                  type="button"
+                  onClick={clearResults}
+                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#757684] hover:bg-[#f3f4f5] hover:text-[#191c1d] transition-colors"
+                  aria-label="Clear reel results"
+                >
+                  <X className="w-3.5 h-3.5" /> Clear
+                </button>
               </div>
               {videosLoading ? (
                 <div className="grid grid-cols-3 gap-2">
