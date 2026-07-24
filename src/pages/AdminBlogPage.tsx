@@ -6,6 +6,7 @@ import {
   Calendar, Clock, ExternalLink
 } from 'lucide-react';
 import SEO from '@/components/SEO';
+import { RATIO_PRESETS, cropToRatio, type RatioPreset } from '@/lib/imageCrop';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -53,7 +54,10 @@ export default function AdminBlogPage() {
   const [author, setAuthor] = useState('SocialRum Team');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+  const [selectedRatio, setSelectedRatio] = useState<RatioPreset>(RATIO_PRESETS[0]);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [publishMode, setPublishMode] = useState<'now' | 'draft' | 'schedule'>('now');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
@@ -80,27 +84,46 @@ export default function AdminBlogPage() {
 
   useEffect(() => { if (authed) fetchBlogs(); }, [authed]);
 
+  const applyCrop = async (file: File, ratio: RatioPreset) => {
+    try {
+      const blob = await cropToRatio(file, ratio.width, ratio.height);
+      setCroppedBlob(blob);
+      setImagePreview(URL.createObjectURL(blob));
+      setUploadError(null);
+    } catch {
+      setUploadError('Could not process that image. Try a different file.');
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    applyCrop(file, selectedRatio);
   };
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const handleRatioChange = (ratio: RatioPreset) => {
+    setSelectedRatio(ratio);
+    if (imageFile) applyCrop(imageFile, ratio);
+  };
+
+  const uploadImage = async (blob: Blob): Promise<{ url: string | null; error?: string }> => {
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
       const res = await fetch(`${SUPABASE_URL}/storage/v1/object/blog-images/${fileName}`, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': file.type, 'x-upsert': 'true' },
-        body: file,
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+        body: blob,
       });
-      if (!res.ok) return null;
-      return `${SUPABASE_URL}/storage/v1/object/public/blog-images/${fileName}`;
-    } catch { return null; }
-    finally { setUploading(false); }
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { url: null, error: body?.message || `Image upload failed (${res.status}).` };
+      }
+      return { url: `${SUPABASE_URL}/storage/v1/object/public/blog-images/${fileName}` };
+    } catch {
+      return { url: null, error: 'Network error while uploading image.' };
+    } finally { setUploading(false); }
   };
 
   // Rich text helpers
@@ -118,7 +141,8 @@ export default function AdminBlogPage() {
   const openNewForm = () => {
     setEditingBlog(null);
     setTitle(''); setDescription(''); setAuthor('SocialRum Team');
-    setImageFile(null); setImagePreview(null);
+    setImageFile(null); setImagePreview(null); setCroppedBlob(null);
+    setSelectedRatio(RATIO_PRESETS[0]); setUploadError(null);
     setPublishMode('now'); setScheduledDate(''); setScheduledTime('');
     setPreview(false);
     setShowForm(true);
@@ -128,7 +152,8 @@ export default function AdminBlogPage() {
     setEditingBlog(blog);
     setTitle(blog.title); setDescription(blog.description);
     setAuthor(blog.author); setImagePreview(blog.image_url || null);
-    setImageFile(null);
+    setImageFile(null); setCroppedBlob(null);
+    setSelectedRatio(RATIO_PRESETS[0]); setUploadError(null);
     setPublishMode(blog.published ? 'now' : 'draft');
     setPreview(false);
     setShowForm(true);
@@ -136,10 +161,24 @@ export default function AdminBlogPage() {
 
   const handlePost = async () => {
     if (!title.trim() || !description.trim()) return;
+    setUploadError(null);
     setSaving(true);
 
     let image_url: string | null = editingBlog?.image_url || null;
-    if (imageFile) image_url = await uploadImage(imageFile);
+    if (imageFile) {
+      if (!croppedBlob) {
+        setSaving(false);
+        setUploadError('Image is still processing — try again in a moment.');
+        return;
+      }
+      const result = await uploadImage(croppedBlob);
+      if (!result.url) {
+        setSaving(false);
+        setUploadError(result.error || 'Image upload failed.');
+        return;
+      }
+      image_url = result.url;
+    }
 
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const isPublished = publishMode === 'now';
@@ -189,6 +228,16 @@ export default function AdminBlogPage() {
   };
 
   const labelStyle: React.CSSProperties = { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: "'DM Sans', sans-serif" };
+
+  const previewBoxStyle = (ratio: RatioPreset): React.CSSProperties => ({
+    width: `min(100%, ${(320 * ratio.width) / ratio.height}px)`,
+    aspectRatio: `${ratio.width} / ${ratio.height}`,
+    margin: '0 auto',
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+    background: 'rgba(0,0,0,0.3)',
+  });
 
   // ── Login ──
   if (!authed) return (
@@ -264,6 +313,16 @@ export default function AdminBlogPage() {
           )}
         </AnimatePresence>
 
+        {/* Error toast */}
+        <AnimatePresence>
+          {uploadError && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: '#ef4444', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>
+              <X size={16} /> {uploadError}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ── Post Form ── */}
         <AnimatePresence>
           {showForm && (
@@ -290,7 +349,11 @@ export default function AdminBlogPage() {
               {preview ? (
                 // Preview mode
                 <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 16, overflow: 'hidden' }}>
-                  {imagePreview && <img src={imagePreview} alt="" style={{ width: '100%', height: 240, objectFit: 'cover' }} />}
+                  {imagePreview && (
+                    <div style={{ ...previewBoxStyle(selectedRatio), margin: 0, borderRadius: 0 }}>
+                      <img src={imagePreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
                   <div style={{ padding: 24 }}>
                     <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 24, fontWeight: 800, color: '#fff', marginBottom: 12 }}>{title || 'Untitled Post'}</h1>
                     <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>By {author} · Just now</p>
@@ -310,11 +373,19 @@ export default function AdminBlogPage() {
                   {/* Image upload */}
                   <div>
                     <label style={labelStyle}>Cover Image</label>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                      {RATIO_PRESETS.map(ratio => (
+                        <button key={ratio.label} onClick={() => handleRatioChange(ratio)}
+                          style={{ flex: 1, padding: '8px 6px', borderRadius: 8, border: `1px solid ${selectedRatio.label === ratio.label ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.1)'}`, background: selectedRatio.label === ratio.label ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)', color: selectedRatio.label === ratio.label ? '#a78bfa' : 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                          {ratio.label}
+                        </button>
+                      ))}
+                    </div>
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                     {imagePreview ? (
-                      <div style={{ position: 'relative' }}>
-                        <img src={imagePreview} alt="preview" style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 12 }} />
-                        <button onClick={() => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                      <div style={{ position: 'relative', ...previewBoxStyle(selectedRatio) }}>
+                        <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button onClick={() => { setImageFile(null); setImagePreview(null); setCroppedBlob(null); setUploadError(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                           style={{ position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <X size={16} />
                         </button>
