@@ -16,10 +16,11 @@ const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
 const PRIMARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const HOME_REELS_SESSION_KEY = "home_reels_session";
-type ViewFilter = "all" | "10k-50k" | "50k-500k" | "500k-1m" | "1m-10m";
+type ViewFilter = "all" | "10k-10m" | "10k-50k" | "50k-500k" | "500k-1m" | "1m-10m";
 
-const VIEW_FILTER_OPTIONS: { value: ViewFilter; label: string; min: number; max: number }[] = [
-  { value: "all", label: "10K–10M views", min: 10_000, max: 10_000_000 },
+const VIEW_FILTER_OPTIONS: { value: ViewFilter; label: string; min?: number; max?: number }[] = [
+  { value: "all", label: "All reels" },
+  { value: "10k-10m", label: "10K–10M views", min: 10_000, max: 10_000_000 },
   { value: "10k-50k", label: "10K–50K views", min: 10_000, max: 50_000 },
   { value: "50k-500k", label: "50K–500K views", min: 50_000, max: 500_000 },
   { value: "500k-1m", label: "500K–1M views", min: 500_000, max: 1_000_000 },
@@ -28,9 +29,10 @@ const VIEW_FILTER_OPTIONS: { value: ViewFilter; label: string; min: number; max:
 
 function filterInstagramVideos(videos: any[], filter: ViewFilter) {
   const range = VIEW_FILTER_OPTIONS.find(option => option.value === filter) || VIEW_FILTER_OPTIONS[0];
+  if (range.value === "all") return videos;
   return videos.filter(video => {
     const views = Number(video.views);
-    return Number.isFinite(views) && views >= range.min && views <= range.max;
+    return Number.isFinite(views) && views >= range.min! && views <= range.max!;
   });
 }
 
@@ -268,9 +270,7 @@ export default function Index() {
         const data = res.ok ? await res.json().catch(() => null) : null;
         const outcome = interpretReelSearchResponse(res.ok, data, isIG);
 
-        const qualifiedVideos = isIG
-          ? filterInstagramVideos(outcome.videos, "all")
-          : outcome.videos;
+        const qualifiedVideos = outcome.videos;
         const hasMore = isIG
           ? filterInstagramVideos(qualifiedVideos, viewFilter).length > PAGE_SIZE
           : outcome.hasMore;
