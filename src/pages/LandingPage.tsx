@@ -32,14 +32,6 @@ const FAQ_ITEMS = [
     question: 'What can I do with SocialRum?',
     answer: 'You can generate AI scripts tailored to your niche and language, analyze what’s working for competitors on Instagram and YouTube, write captions in multiple Indian languages, and track trending topics and creator-economy news.',
   },
-  {
-    question: 'How much does SocialRum cost?',
-    answer: 'SocialRum has a free plan (₹0/month, 3 AI script generations/month) and paid plans starting at ₹399/month (billed annually) that add more script generations, full trending data, and additional tools like the YouTube SEO optimizer.',
-  },
-  {
-    question: 'Is SocialRum free to try?',
-    answer: 'Yes. SocialRum’s free plan is free forever and requires no credit card — it includes 3 AI script generations per month, basic trending topics, and the Instagram Reels explorer.',
-  },
 ];
 
 const STATS = [
