@@ -197,40 +197,41 @@
    Apply this class to a migrated page's own root wrapper only.
    ════════════════════════════════════════════════════════════════════════ */
 .theme-redesign {
-  /* Mirrors :root (dark, default) */
+  /* Mirrors :root (dark, default) — deepened + more saturated for a
+     livelier, more atmospheric dark theme across the app pages. */
   --radius: 0.75rem;
 
-  --background: 0 0% 7%;
-  --foreground: 210 20% 95%;
-  --card: 0 0% 11%;
-  --card-foreground: 210 20% 95%;
-  --popover: 0 0% 11%;
-  --popover-foreground: 210 20% 95%;
-  --primary: 263 70% 57%;
+  --background: 0 0% 4%;
+  --foreground: 210 20% 96%;
+  --card: 240 8% 8%;
+  --card-foreground: 210 20% 96%;
+  --popover: 240 8% 8%;
+  --popover-foreground: 210 20% 96%;
+  --primary: 263 78% 62%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 14%;
-  --secondary-foreground: 210 10% 70%;
-  --muted: 0 0% 16%;
-  --muted-foreground: 0 0% 45%;
-  --accent: 0 0% 18%;
-  --accent-foreground: 210 20% 95%;
+  --secondary: 240 8% 11%;
+  --secondary-foreground: 210 10% 72%;
+  --muted: 240 8% 12%;
+  --muted-foreground: 0 0% 48%;
+  --accent: 240 8% 15%;
+  --accent-foreground: 210 20% 96%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 20%;
-  --input: 0 0% 14%;
-  --ring: 263 70% 57%;
+  --border: 240 8% 18%;
+  --input: 240 8% 11%;
+  --ring: 263 78% 62%;
 
-  --sidebar-background: 0 0% 9%;
-  --sidebar-foreground: 0 0% 70%;
-  --sidebar-primary: 263 70% 57%;
+  --sidebar-background: 240 10% 5%;
+  --sidebar-foreground: 0 0% 72%;
+  --sidebar-primary: 263 78% 62%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 15%;
-  --sidebar-accent-foreground: 210 20% 95%;
-  --sidebar-border: 0 0% 17%;
-  --sidebar-ring: 263 70% 57%;
+  --sidebar-accent: 240 8% 12%;
+  --sidebar-accent-foreground: 210 20% 96%;
+  --sidebar-border: 240 8% 14%;
+  --sidebar-ring: 263 78% 62%;
 
-  --redesign-shadow-glow: 0 4px 20px rgba(124, 58, 237, 0.25);
-  --redesign-shadow-elegant: 0 24px 70px -30px rgba(18, 23, 26, 0.24);
+  --redesign-shadow-glow: 0 6px 32px rgba(139, 92, 246, 0.4);
+  --redesign-shadow-elegant: 0 24px 70px -24px rgba(139, 92, 246, 0.22), 0 24px 70px -30px rgba(0, 0, 0, 0.5);
 }
 
 /* Mirrors .light */

@@ -168,9 +168,9 @@ export default function Index() {
       data-platform={isIG ? undefined : "youtube"}
     >
       {/* BG blob */}
-      <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }} transition={{ duration: 10, repeat: Infinity }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] pointer-events-none rounded-full bg-primary"
-        style={{ filter: "blur(80px)" }} />
+      <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.12, 0.22, 0.12] }} transition={{ duration: 8, repeat: Infinity }}
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[480px] pointer-events-none rounded-full bg-primary"
+        style={{ filter: "blur(90px)" }} />
 
       <div className="w-full max-w-xl relative z-10 flex flex-col items-center gap-8">
 
