@@ -7,7 +7,7 @@ const FEATURES = [
   { num: '01', title: 'AI Personalized Script', desc: 'Your niche, your language, your voice — a full ready-to-film script in 60 seconds. Hooks that stop the scroll, bodies that hold retention, CTAs that convert.', tags: ['Hook', 'Body', 'CTA'] },
   { num: '02', title: 'Competitor Analyzer', desc: "See exactly what's winning for top creators in your space — and which gaps they're leaving open. Find the opportunity before everyone else does.", tags: ['Instagram', 'YouTube'] },
   { num: '03', title: 'Content Editing Suite', desc: 'Captions in every Indian language, thumbnails, and descriptions tuned for the algorithm. Write once, optimise everywhere, post in minutes.', tags: ['हिंदी', 'தமிழ்', 'తెలుగు', 'English'] },
-  { num: '04', title: 'Creator News Feed', desc: 'Platform updates, trending topics, and creator economy signals — surfaced before they peak so you publish first and own the moment.', tags: ['YouTube', 'Instagram'] },
+  { num: '04', title: 'Trending Reels Analyzer', desc: 'Browse trending Reels by niche or hashtag with real views, likes, and virality scores — spot the format that\'s working before everyone else jumps on it.', tags: ['Instagram', 'YouTube'] },
 ];
 
 const STEPS = [
