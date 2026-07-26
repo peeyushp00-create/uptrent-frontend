@@ -920,6 +920,21 @@ export default function InstagramAnalyzer() {
       <header className="sticky top-0 z-40 bg-card border-b border-border px-5 h-16 flex items-center">
         <h1 className="font-bold text-xl" style={{ color: PRIMARY, fontFamily: 'Montserrat, sans-serif' }}>{t('analyzer.title')}</h1>
         <p className="text-sm text-muted-foreground ml-3 hidden sm:block">{t('analyzer.subtitle')}</p>
+        {(result || hiker) && !loading && (
+          <button
+            onClick={() => {
+              const blob = new Blob([JSON.stringify({ username: handle.replace('@', '').trim(), result, hiker }, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = `${handle.replace('@', '').trim()}-analysis.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border text-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
+          >
+            Export analysis
+          </button>
+        )}
       </header>
 
       <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-5">
@@ -1086,33 +1101,111 @@ export default function InstagramAnalyzer() {
         {(result || hiker) && !loading && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
 
-            {/* Profile Banner */}
-            <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
-              <div className="flex items-center gap-3 mb-3">
-                {(() => {
-                  // Use Supabase URL directly, proxy Instagram CDN URLs
-                  const picUrl = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || result?.stats?.profile_pic_url;
-                  const picSrc = picUrl ? (picUrl.includes('supabase') ? picUrl : `${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}`) : null;
-                  return picSrc && !imgError ? (
-                    <img src={picSrc} alt={handle}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
-                      onError={() => setImgError(true)} />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
-                      {(result?.profile_name || hiker?.profile?.full_name || handle || '?').trim().charAt(0).toUpperCase() || '?'}
-                    </div>
-                  );
-                })()}
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <p className="font-bold text-white">@{handle.replace('@', '')}</p>
-                    {(result?.stats?.is_verified || hiker?.profile?.is_verified) && <BadgeCheck className="w-4 h-4 text-blue-300" />}
+            {/* Profile summary row */}
+            <div className="panel p-4 flex items-center gap-3">
+              {(() => {
+                const picUrl = hiker?.profile?.profile_pic_url || hiker?.profile_pic_url || result?.stats?.profile_pic_url;
+                const picSrc = picUrl ? (picUrl.includes('supabase') ? picUrl : `${BASE}/api/instagram/img?u=${encodeURIComponent(picUrl)}`) : null;
+                return picSrc && !imgError ? (
+                  <img src={picSrc} alt={handle}
+                    className="w-12 h-12 rounded-full object-cover border border-border shrink-0"
+                    onError={() => setImgError(true)} />
+                ) : (
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0" style={{ background: PRIMARY_GRAD }}>
+                    {(result?.profile_name || hiker?.profile?.full_name || handle || '?').trim().charAt(0).toUpperCase() || '?'}
                   </div>
-                  <p className="text-xs text-white/70">{result?.data_source === 'real' || hiker ? '✓ Live data' : 'AI Analysis'}</p>
+                );
+              })()}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="font-bold text-foreground truncate">@{handle.replace('@', '')}</p>
+                  {(result?.stats?.is_verified || hiker?.profile?.is_verified) && <BadgeCheck className="w-4 h-4 text-blue-400 shrink-0" />}
+                </div>
+                {(hiker?.profile?.full_name || result?.profile_name) && (
+                  <p className="text-sm text-muted-foreground truncate">{hiker?.profile?.full_name || result?.profile_name}</p>
+                )}
+              </div>
+              {(hiker?.profile?.followers ?? result?.stats?.followers) != null && (
+                <span className="text-sm font-bold shrink-0" style={{ color: PRIMARY }}>
+                  {formatNum(hiker?.profile?.followers ?? result?.stats?.followers)} followers
+                </span>
+              )}
+            </div>
+            {result?.summary && (
+              <p className="text-sm text-muted-foreground leading-relaxed px-1">{result.summary}</p>
+            )}
+
+            {/* Stats — 4 core metrics, HikerAPI primary, ScrapeCreators fallback */}
+            {(() => {
+              const stats = {
+                avg_views: hiker?.profile?.avg_views ?? hiker?.stats?.avg_views,
+                avg_likes: hiker?.profile?.avg_likes ?? hiker?.stats?.avg_likes ?? result?.stats?.avg_likes,
+                avg_comments: hiker?.profile?.avg_comments ?? hiker?.stats?.avg_comments ?? result?.stats?.avg_comments,
+                engagement_rate: hiker?.profile?.engagement_rate ?? result?.stats?.engagement_rate,
+              };
+              const hasStats = stats.avg_views != null || stats.avg_likes != null || stats.engagement_rate != null;
+              if (!hasStats) return null;
+              const CARDS = [
+                { key: 'avg_views', label: 'Avg views', val: stats.avg_views != null ? formatNum(stats.avg_views) : null, bg: '#e3f2fd', color: '#1565c0' },
+                { key: 'avg_likes', label: 'Avg likes', val: stats.avg_likes != null ? formatNum(stats.avg_likes) : null, bg: '#fce4ec', color: '#880e4f' },
+                { key: 'avg_comments', label: 'Avg comments', val: stats.avg_comments != null ? formatNum(stats.avg_comments) : null, bg: '#fff3e0', color: '#e65100' },
+                { key: 'engagement_rate', label: 'Engagement rate', val: stats.engagement_rate != null ? `${stats.engagement_rate}%` : null, bg: '#e8f5e9', color: '#2e7d32' },
+              ].filter(c => c.val != null);
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {CARDS.map(card => (
+                    <div key={card.key} className="rounded-xl p-3.5 text-center" style={{ background: card.bg }}>
+                      <p className="font-bold text-lg" style={{ color: card.color }}>{card.val}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{card.label}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Top performing content — real reels/posts sorted by views */}
+            {hiker?.reels?.length > 0 && (() => {
+              const top = [...hiker.reels].sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0)).slice(0, 5);
+              return (
+                <div className="panel p-4">
+                  <div className="flex items-center gap-2 mb-3"><TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-foreground">Top performing content</h2></div>
+                  <div className="space-y-2">
+                    {top.map((reel: any, i: number) => (
+                      <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
+                        className="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-secondary transition-colors">
+                        <div className="relative w-11 h-14 rounded-lg overflow-hidden shrink-0 bg-[#1a1a2e]">
+                          <img src={getReelThumbnailSrc(reel.thumbnail)} alt={getReelAltText(reel.caption, reel.username)}
+                            referrerPolicy="no-referrer" loading="lazy" decoding="async"
+                            className="absolute inset-0 w-full h-full object-cover" onError={handleReelThumbnailError} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-foreground line-clamp-1">{reel.caption || 'Untitled reel'}</p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1"><Eye className="w-3 h-3" /> {formatNum(Number(reel.views) || 0)}</span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1"><Heart className="w-3 h-3" /> {formatNum(Number(reel.likes) || 0)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Viral content patterns — hooks driving the account's best-performing reels */}
+            {hiker?.top_hooks?.length > 0 && (
+              <div className="panel p-4">
+                <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-foreground">Viral content patterns</h2></div>
+                <div className="space-y-2.5">
+                  {hiker.top_hooks.map((h: any, i: number) => (
+                    <div key={i} onClick={() => h.permalink && window.open(h.permalink, '_blank')} className="cursor-pointer p-2 rounded-lg hover:bg-secondary">
+                      <p className="text-sm text-foreground leading-snug">"{h.hook}"</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{formatNum(h.views || 0)} views · {formatNum(h.likes || 0)} likes</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-              {result?.summary && <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>}
-            </div>
+            )}
 
             {/* Niche Detection */}
             {result?.niche && (
@@ -1144,71 +1237,6 @@ export default function InstagramAnalyzer() {
                 )}
               </div>
             )}
-
-            {/* Stats — HikerAPI primary, ScrapeCreators fallback */}
-            {(() => {
-              const stats = {
-                followers: hiker?.profile?.followers ?? result?.stats?.followers,
-                engagement_rate: hiker?.profile?.engagement_rate ?? result?.stats?.engagement_rate,
-                avg_likes: hiker?.profile?.avg_likes ?? hiker?.stats?.avg_likes ?? result?.stats?.avg_likes,
-                avg_comments: hiker?.profile?.avg_comments ?? hiker?.stats?.avg_comments ?? result?.stats?.avg_comments,
-                avg_views: hiker?.profile?.avg_views ?? hiker?.stats?.avg_views,
-                following: hiker?.profile?.following,
-                total_posts: hiker?.profile?.total_posts ?? result?.stats?.total_posts,
-              };
-              const hasStats = stats.followers != null || stats.avg_likes != null;
-              if (!hasStats) return null;
-              return (
-                <div className="panel p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
-                    <h2 className="font-bold text-base text-foreground">{t('analyzer.profile_stats')}</h2>
-                    <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Live</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {stats.followers != null && (
-                      <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
-                        <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-xs text-muted-foreground">{t('analyzer.followers')}</span></div>
-                        <p className="font-bold text-lg" style={{ color: PRIMARY }}>{formatNum(stats.followers)}</p>
-                      </div>
-                    )}
-                    {stats.engagement_rate != null && (
-                      <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
-                        <div className="flex items-center gap-2 mb-1"><TrendingUp className="w-3.5 h-3.5 text-green-600" /><span className="text-xs text-muted-foreground">{t('analyzer.engagement')}</span></div>
-                        <p className="font-bold text-lg text-green-700">{stats.engagement_rate}%</p>
-                      </div>
-                    )}
-                    {stats.avg_likes != null && (
-                      <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
-                        <div className="flex items-center gap-2 mb-1"><Heart className="w-3.5 h-3.5 text-pink-600" /><span className="text-xs text-muted-foreground">{t('analyzer.avg_likes')}</span></div>
-                        <p className="font-bold text-lg text-pink-700">{formatNum(stats.avg_likes)}</p>
-                      </div>
-                    )}
-                    {stats.avg_comments != null && (
-                      <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
-                        <div className="flex items-center gap-2 mb-1"><MessageCircle className="w-3.5 h-3.5 text-orange-600" /><span className="text-xs text-muted-foreground">{t('analyzer.avg_comments')}</span></div>
-                        <p className="font-bold text-lg text-orange-700">{formatNum(stats.avg_comments)}</p>
-                      </div>
-                    )}
-                    {stats.avg_views != null && (
-                      <div className="rounded-xl p-3.5" style={{ background: '#e3f2fd' }}>
-                        <div className="flex items-center gap-2 mb-1"><Eye className="w-3.5 h-3.5 text-blue-600" /><span className="text-xs text-muted-foreground">Avg Views</span></div>
-                        <p className="font-bold text-lg text-blue-700">{formatNum(stats.avg_views)}</p>
-                      </div>
-                    )}
-                    {stats.following != null && (
-                      <div className="rounded-xl p-3.5" style={{ background: '#f3e5f5' }}>
-                        <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5 text-purple-600" /><span className="text-xs text-muted-foreground">Following</span></div>
-                        <p className="font-bold text-lg text-purple-700">{formatNum(stats.following)}</p>
-                      </div>
-                    )}
-                  </div>
-                  {stats.total_posts && (
-                    <p className="text-xs text-muted-foreground mt-3 text-center">{t('analyzer.based_on')} {stats.total_posts.toLocaleString()} {t('analyzer.total_posts')}</p>
-                  )}
-                </div>
-              );
-            })()}
 
             {/* Content Pillars — ScrapeCreators or AI fallback */}
             {(() => {
@@ -1440,21 +1468,6 @@ export default function InstagramAnalyzer() {
                         <div key={i} className="flex items-center justify-between text-sm">
                           <span className="text-foreground truncate mr-2">🎵 {a.title}</span>
                           <span className="text-xs text-muted-foreground shrink-0">×{a.count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Best Hooks */}
-                {hiker.top_hooks?.length > 0 && (
-                  <div className="panel p-4">
-                    <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-foreground">Best Hooks</h3></div>
-                    <div className="space-y-2.5">
-                      {hiker.top_hooks.map((h: any, i: number) => (
-                        <div key={i} onClick={() => h.permalink && window.open(h.permalink, '_blank')} className="cursor-pointer p-2 rounded-lg hover:bg-secondary">
-                          <p className="text-sm text-foreground leading-snug">"{h.hook}"</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{formatNum(h.views || 0)} views · {formatNum(h.likes || 0)} likes</p>
                         </div>
                       ))}
                     </div>

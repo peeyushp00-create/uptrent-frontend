@@ -311,10 +311,14 @@ export default function SettingsPage() {
                 <div>
                   <div className="font-semibold">{name || 'Creator'}</div>
                   <div className="text-sm text-muted-foreground">{user?.email}</div>
+                  <div className="text-xs text-muted-foreground">{LANGUAGES.find(l => l.value === language)?.label || 'English'}</div>
                 </div>
               </div>
               <FormField label="Full name">
                 <input value={name} onChange={(e) => handleNameChange(e.target.value)} className="input" />
+              </FormField>
+              <FormField label="Email">
+                <input value={user?.email || ''} readOnly disabled className="input opacity-60 cursor-not-allowed" />
               </FormField>
               <FormField label={<span className="inline-flex items-center gap-1.5"><Instagram className="size-3.5 text-primary" /> Instagram username</span>}>
                 <input value={igUsername} onChange={(e) => handleIgUsernameChange(e.target.value)} placeholder="@ your_instagram_handle" className="input" />

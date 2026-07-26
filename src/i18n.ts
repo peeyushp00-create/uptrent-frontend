@@ -21,6 +21,11 @@ const resources = {
         news_feed: '📰 News Feed', scripts: '✍️ Scripts', trending: '📈 Trending',
         dashboard_stats: '📊 Dashboard Stats', subscribers: 'Subscribers', total_views: 'Total Views', videos: 'Videos',
         todays_news: "Today's News", articles: 'articles', trending_topics: 'Trending Topics', topics: 'topics', your_niches: 'Your Niches',
+        greeting_hey: 'Hey', greeting_welcome: 'welcome to your', greeting_highlight: 'creator agency',
+        greeting_subtitle: 'Trends, scripts, and strategy — tuned to your niche, your voice, and language.',
+        composer_placeholder: 'What should I post today?',
+        chip_trending: "What's trending in #{{niche}}", chip_script: "Write today's script",
+        chip_competitor: 'Analyze a competitor', chip_plan: 'Plan my week',
       },
       scripts: {
         title: 'Script Generator', content_type: 'Content Type:', duration: 'Duration:', history: 'History',

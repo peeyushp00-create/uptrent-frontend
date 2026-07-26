@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil, Download, Star, MoreHorizontal } from "lucide-react";
@@ -216,6 +216,7 @@ export default function ScriptsPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const T = theme === 'dark' ? DARK : LIGHT;
   const { BG, SURFACE, SURFACE_RAISED, BORDER, TEXT, TEXT_MUTED, ACCENT, ACCENT_SOLID } = T;
 
@@ -798,6 +799,16 @@ export default function ScriptsPage() {
               Script Generator
             </h1>
           )}
+          {userPlatform && (
+            <span className="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full shrink-0"
+              style={{ background: "hsl(var(--secondary))", color: ACCENT }}>
+              {userPlatform.toUpperCase()}
+            </span>
+          )}
+          <button onClick={() => navigate('/settings')}
+            className="text-xs font-medium shrink-0" style={{ color: TEXT_MUTED }}>
+            Personalize
+          </button>
           {userVoiceStyle && (
             <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
               style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
@@ -1083,13 +1094,24 @@ export default function ScriptsPage() {
               )}
             </div>
           ) : messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 gap-6 text-center">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-                <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-start">
+                <div className="max-w-[85%] flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                    <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm" style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT }}>
+                    {userNiche
+                      ? `Hey Creator — I've got your niche (${userNiche}) and voice ready. What script do you want to create today?`
+                      : "Hey Creator — what script do you want to create today? Describe it in your own words — topic, vibe, length, anything."}
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-lg" style={{ color: TEXT }}>What script do you want to create?</p>
-                <p className="text-sm mt-1.5" style={{ color: TEXT_MUTED }}>Describe it in your own words — topic, vibe, length, anything.</p>
+              <div className="pl-9">
+                <button onClick={() => handleSend(userNiche ? `Find trending patterns in ${userNiche}` : 'Find trending patterns')}
+                  className="chip">
+                  🔥 Find trending patterns
+                </button>
               </div>
             </div>
           )}

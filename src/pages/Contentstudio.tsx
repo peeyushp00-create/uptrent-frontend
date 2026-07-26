@@ -1115,8 +1115,8 @@ function VideoEditor() {
               <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
             </div>
             <div className="text-center relative">
-              <p className="text-base font-bold text-foreground">Start with a video</p>
-              <p className="text-sm text-muted-foreground mt-1">Upload a short-form video to add captions, overlays and music</p>
+              <p className="text-base font-bold text-foreground">Upload a video</p>
+              <p className="text-sm text-muted-foreground mt-1">Drop a Reel or Short here. We'll auto-detect the language, transcribe, and sync perfectly-timed captions.</p>
             </div>
             <label className="relative cursor-pointer px-6 py-3 rounded-xl text-white font-semibold text-sm hover:opacity-90 transition shadow-md" style={{ background: GRAD }}>
               Choose video

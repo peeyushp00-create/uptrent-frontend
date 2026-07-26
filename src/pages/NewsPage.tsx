@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, FileText, ArrowUp } from "lucide-react";
+import { ExternalLink, Loader2, X, RefreshCw, Sparkles, FileText, ArrowUp, Bookmark, BookmarkCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
@@ -10,10 +10,9 @@ import { getPageState, setPageState } from '@/lib/pageCache';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PRIMARY = "hsl(var(--primary))";
-const SECONDARY = "hsl(var(--primary))";
 const PRIMARY_GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
 const PRIMARY_CONTAINER = "hsl(var(--secondary))";
-const SECONDARY_CONTAINER = "hsl(var(--primary) / 0.5)";
+const SAVED_TOPICS_KEY = "news_saved_topics";
 
 interface NewsArticle {
   id?: string;
@@ -41,12 +40,6 @@ const TOPIC_EMOJIS: Record<string, string> = {
   Education: "📚", Fashion: "👗", Motivation: "🚀", Skincare: "✨",
   Yoga: "🧘", Comedy: "😂", RealEstate: "🏠", Jobs: "💼",
 };
-
-const DATE_FILTERS = [
-  { label: "Today", value: "today", desc: "Last 24 hours" },
-  { label: "Yesterday", value: "yesterday", desc: "24–48 hrs ago" },
-  { label: "All", value: "all", desc: "Last 7 days" },
-];
 
 const NICHE_TOPIC_MAP: Record<string, string> = {
   finance: "Finance", "stock market": "StockMarket", crypto: "Crypto",
@@ -154,6 +147,8 @@ const getImpact = (topic: string, summary: string): { level: 'high' | 'medium' |
   return { level: 'medium', text: 'Relevant update for your niche — good content opportunity' };
 };
 
+const FALLBACK_CATEGORIES = ['All', 'Tech', 'Business', 'Bollywood', 'Sports', 'Fitness'];
+
 export default function NewsPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -170,31 +165,22 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(!_saved?.articles?.length);
   const [error, setError] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
-  const [searchInput, setSearchInput] = useState(_saved?.searchInput ?? initialQuery);
-  const [query, setQuery] = useState(_saved?.query ?? initialQuery);
-  const [dateFilter, setDateFilter] = useState(_saved?.dateFilter ?? "today");
   const [trendingFilter, setTrendingFilter] = useState<string | null>(_saved?.trendingFilter ?? null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [customDate, setCustomDate] = useState<string | null>(_saved?.customDate ?? null);
-  const [pickerDay, setPickerDay] = useState('');
-  const [pickerMonth, setPickerMonth] = useState('');
-  const [pickerYear, setPickerYear] = useState('');
-  const [activeCategory, setActiveCategory] = useState(_saved?.activeCategory ?? 'All News');
-  const [region, setRegion] = useState<'in' | 'global'>(_saved?.region ?? 'in');
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [savedTopics, setSavedTopics] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(SAVED_TOPICS_KEY) || '[]'); } catch { return []; }
+  });
+  const region: 'in' | 'global' = 'in';
 
   // ── Page-state persistence ──
   const _stateRef = useRef<any>({});
   useEffect(() => {
-    _stateRef.current = { articles, allArticles, searchInput, query, dateFilter, trendingFilter, customDate, activeCategory, region };
+    _stateRef.current = { articles, allArticles, trendingFilter };
   });
   useEffect(() => () => { setPageState('news', _stateRef.current); }, []);
+
+  useEffect(() => { localStorage.setItem(SAVED_TOPICS_KEY, JSON.stringify(savedTopics)); }, [savedTopics]);
 
   const trendingTopics = useMemo<TrendingTopic[]>(() => {
     const counts: Record<string, number> = {};
@@ -207,12 +193,10 @@ export default function NewsPage() {
       .map(([topic, count]) => ({ topic, count, emoji: TOPIC_EMOJIS[topic] || '📰' }));
   }, [allArticles, userNiches]);
 
-  const fetchNews = async (filter: string, topicQuery?: string, trending?: string | null, date?: string, regionOverride?: 'in' | 'global') => {
+  const fetchNews = async (topicQuery?: string, trending?: string | null) => {
     setLoading(true); setError(null);
     try {
-      const activeRegion = regionOverride || region;
-      let url = `${BASE}/api/news?filter=${filter}&region=${activeRegion}`;
-      if (date) url += `&date=${date}`;
+      let url = `${BASE}/api/news?filter=today&region=${region}`;
       const activeQuery = trending || topicQuery;
       if (activeQuery) {
         const q = activeQuery.toLowerCase().trim();
@@ -244,28 +228,9 @@ export default function NewsPage() {
   useEffect(() => {
     fetch(`${BASE}/api/news?filter=today&region=${region}`)
       .then(r => r.json()).then(data => setAllArticles(Array.isArray(data) ? data : [])).catch(() => {});
-  }, [region]);
-
-  useEffect(() => { fetchNews(dateFilter, initialQuery || undefined, null); }, []);
-
-  useEffect(() => {
-    if (searchInput.trim().length > 0) {
-      const filtered = Object.keys(NICHE_TOPIC_MAP)
-        .filter(s => s.includes(searchInput.toLowerCase()) && s !== searchInput.toLowerCase())
-        .map(s => s.charAt(0).toUpperCase() + s.slice(1)).slice(0, 6);
-      setDropdownSuggestions(filtered);
-      setShowDropdown(filtered.length > 0);
-    } else { setShowDropdown(false); setDropdownSuggestions([]); }
-  }, [searchInput]);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-        inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  useEffect(() => { fetchNews(initialQuery || undefined, null); }, []);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -273,37 +238,14 @@ export default function NewsPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSearch = (q: string) => {
-    setQuery(q); setSearchInput(q); setShowDropdown(false);
-    setTrendingFilter(null); setCustomDate(null);
-    fetchNews(dateFilter, q || undefined, null);
-  };
-
-  const handleDateFilter = (filter: string) => {
-    setDateFilter(filter); setCustomDate(null);
-    fetchNews(filter, query || undefined, trendingFilter);
-  };
-
-  const handleTrendingFilter = (topic: string) => {
-    if (trendingFilter === topic) {
-      setTrendingFilter(null); setQuery(''); setSearchInput('');
-      fetchNews(dateFilter, undefined, null);
-    } else {
-      setTrendingFilter(topic); setQuery(''); setSearchInput('');
-      fetchNews(dateFilter, undefined, topic);
-    }
-  };
-
-  const handleRegionChange = (newRegion: 'in' | 'global') => {
-    if (newRegion === region) return;
-    setRegion(newRegion);
-    setTrendingFilter(null); setQuery(''); setSearchInput(''); setCustomDate(null);
-    fetchNews(dateFilter, undefined, null, undefined, newRegion);
+  const handleCategory = (topic: string | null) => {
+    setTrendingFilter(topic);
+    fetchNews(undefined, topic);
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchNews(dateFilter, query || undefined, trendingFilter, customDate || undefined);
+    await fetchNews(undefined, trendingFilter);
     setRefreshing(false);
   };
 
@@ -313,12 +255,18 @@ export default function NewsPage() {
     navigate('/scripts', { state: { prompt } });
   };
 
+  const toggleSaveTopic = (article: NewsArticle) => {
+    const key = article.id || article.title || article.headline || '';
+    if (!key) return;
+    setSavedTopics(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  };
+
   const impactData = selectedArticle ? getImpact(selectedArticle.topic || '', selectedArticle.summary || '') : null;
   const keyPoints = selectedArticle ? extractKeyPoints(selectedArticle.summary || '') : [];
 
-  const filterLabel = customDate
-    ? new Date(customDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-    : DATE_FILTERS.find(f => f.value === dateFilter)?.label || t('news.today');
+  const categoryList = trendingTopics.length > 0
+    ? trendingTopics.map(tt => ({ label: tt.topic, emoji: tt.emoji, value: tt.topic }))
+    : FALLBACK_CATEGORIES.filter(c => c !== 'All').map(c => ({ label: c, emoji: TOPIC_EMOJIS[c] || '📰', value: c }));
 
   return (
     <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
@@ -326,188 +274,33 @@ export default function NewsPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card border-b border-border px-5 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="font-bold text-xl text-primary" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            {t('news.title')}
-          </h1>
-          {userNiches.length > 0 && !query && !trendingFilter && (
-            <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
-              For You
-            </span>
-          )}
-        </div>
+        <h1 className="font-bold text-xl text-primary" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          {t('news.title')}
+        </h1>
         <button onClick={handleRefresh} disabled={refreshing}
           className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary dark:hover:bg-gray-800 transition-colors disabled:opacity-40">
           <RefreshCw className={`w-5 h-5 text-muted-foreground ${refreshing ? 'animate-spin' : ''}`} />
         </button>
       </header>
 
-      <main className="max-w-2xl mx-auto px-5 pt-4 pb-28 space-y-4">
+      <main className="max-w-4xl mx-auto px-5 pt-4 pb-28 space-y-4">
 
-        {/* Search + Filter */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input ref={inputRef} type="text" value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") handleSearch(searchInput); }}
-              onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
-              placeholder={t('common.search') + ' topics...'}
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" />
-            {searchInput && (
-              <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X className="w-4 h-4" />
-              </button>
-            )}
-            {showDropdown && dropdownSuggestions.length > 0 && (
-              <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-card border border-input rounded-xl shadow-lg z-50 overflow-hidden">
-                {dropdownSuggestions.map((s, i) => (
-                  <button key={i} onClick={() => handleSearch(s)}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-secondary text-left">
-                    <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Filter button */}
-          <div className="relative">
-            <button onClick={() => setShowFilterMenu(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-input bg-card text-sm font-medium text-foreground hover:border-primary transition-colors whitespace-nowrap"
-              style={(dateFilter !== 'today' || customDate) ? { borderColor: PRIMARY, color: PRIMARY } : {}}>
-              <SlidersHorizontal className="w-4 h-4" />
-              {filterLabel}
-            </button>
-            {showFilterMenu && (
-              <div className="absolute top-full right-0 mt-1 bg-card border border-input rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]">
-                {DATE_FILTERS.map(f => (
-                  <button key={f.value}
-                    onClick={(e) => { e.stopPropagation(); handleDateFilter(f.value); setShowFilterMenu(false); setShowDatePicker(false); }}
-                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-secondary text-left gap-4"
-                    style={dateFilter === f.value && !customDate ? { color: PRIMARY } : { color: 'hsl(var(--foreground))' }}>
-                    <span className="font-medium">{f.label}</span>
-                    <span className="text-xs text-muted-foreground">{f.desc}</span>
-                    {dateFilter === f.value && !customDate && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: PRIMARY }} />}
-                  </button>
-                ))}
-                <div className="border-t border-border" />
-                <button onClick={(e) => { e.stopPropagation(); setShowDatePicker(prev => !prev); }}
-                  className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-secondary"
-                  style={customDate ? { color: PRIMARY } : { color: 'hsl(var(--foreground))' }}>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span className="font-medium">{customDate ? filterLabel : 'Pick a Date'}</span>
-                  </div>
-                  {customDate && <div className="w-1.5 h-1.5 rounded-full" style={{ background: PRIMARY }} />}
-                </button>
-                {showDatePicker && (
-                  <div className="px-4 pb-4 pt-2 space-y-3 border-t border-border" onClick={e => e.stopPropagation()}>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Day</p>
-                        <select value={pickerDay} onChange={e => setPickerDay(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-input bg-card text-sm outline-none">
-                          <option value="">DD</option>
-                          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
-                            <option key={d} value={String(d).padStart(2, '0')}>{String(d).padStart(2, '0')}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Month</p>
-                        <select value={pickerMonth} onChange={e => setPickerMonth(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-input bg-card text-sm outline-none">
-                          <option value="">MM</option>
-                          {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
-                            <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Year</p>
-                        <select value={pickerYear} onChange={e => setPickerYear(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-input bg-card text-sm outline-none">
-                          <option value="">YYYY</option>
-                          {[2025, 2026].map(y => <option key={y} value={String(y)}>{y}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => { setCustomDate(null); setPickerDay(''); setPickerMonth(''); setPickerYear(''); setDateFilter('today'); setShowDatePicker(false); setShowFilterMenu(false); fetchNews('today', query || undefined, trendingFilter); }}
-                        className="flex-1 py-2 rounded-lg border border-input text-xs text-muted-foreground hover:text-foreground">
-                        Reset
-                      </button>
-                      <button onClick={() => {
-                        if (!pickerDay || !pickerMonth || !pickerYear) return;
-                        const dateStr = `${pickerYear}-${pickerMonth}-${pickerDay}`;
-                        setCustomDate(dateStr); setDateFilter('custom');
-                        setShowDatePicker(false); setShowFilterMenu(false);
-                        fetchNews('custom', undefined, null, dateStr);
-                      }} disabled={!pickerDay || !pickerMonth || !pickerYear}
-                        className="flex-1 py-2 rounded-lg text-white text-xs font-medium disabled:opacity-40"
-                        style={{ background: PRIMARY_GRAD }}>
-                        Show News
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Region toggle */}
-        <div className="flex gap-1.5">
-          <button onClick={() => handleRegionChange('in')}
-            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-            style={region === 'in' ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
-            🇮🇳 India
-          </button>
-          <button onClick={() => handleRegionChange('global')}
-            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-            style={region === 'global' ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
-            🌍 Global
-          </button>
-        </div>
-
-        {/* Category chips */}
+        {/* Category pills */}
         <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          {trendingTopics.length > 0 ? (
-            <>
-              <button
-                onClick={() => { setTrendingFilter(null); setQuery(''); setSearchInput(''); fetchNews(dateFilter, undefined, null); }}
-                className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                style={!trendingFilter ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
-                {t('news.all')}
-              </button>
-              {trendingTopics.map(tt => (
-                <button key={tt.topic} onClick={() => handleTrendingFilter(tt.topic)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                  style={trendingFilter === tt.topic ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
-                  {tt.emoji} {tt.topic}
-                </button>
-              ))}
-            </>
-          ) : (
-            ['All News', 'Finance', 'Tech', 'Sports', 'Bollywood', 'Fitness'].map(cat => (
-              <button key={cat}
-                onClick={() => { setActiveCategory(cat); if (cat !== 'All News') handleTrendingFilter(cat); else { setTrendingFilter(null); fetchNews(dateFilter, undefined, null); } }}
-                className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                style={activeCategory === cat ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
-                {cat}
-              </button>
-            ))
-          )}
+          <button
+            onClick={() => handleCategory(null)}
+            className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
+            style={!trendingFilter ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
+            {t('news.all')}
+          </button>
+          {categoryList.map(cat => (
+            <button key={cat.value} onClick={() => handleCategory(cat.value)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
+              style={trendingFilter === cat.value ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
+              {cat.emoji} {cat.label}
+            </button>
+          ))}
         </div>
-
-        {/* Article count */}
-        {!loading && (
-          <p className="text-xs text-muted-foreground">
-            <span className="font-semibold" style={{ color: PRIMARY }}>{articles.length}</span> {t('home.articles')}
-            {(query || trendingFilter) && <span> for "<span style={{ color: PRIMARY }}>{trendingFilter || query}</span>"</span>}
-          </p>
-        )}
 
         {/* Loading */}
         {loading && (
@@ -524,7 +317,7 @@ export default function NewsPage() {
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ background: PRIMARY_CONTAINER }}>📰</div>
             <p className="font-semibold text-foreground">{t('news.no_news')}</p>
             <p className="text-sm text-muted-foreground">Fresh news will appear here soon</p>
-            <button onClick={() => { setCustomDate(null); setTrendingFilter(null); handleDateFilter('all'); }}
+            <button onClick={() => handleCategory(null)}
               className="text-sm px-5 py-2.5 rounded-full text-white font-semibold mt-1"
               style={{ background: PRIMARY_GRAD }}>
               Show All News
@@ -532,120 +325,46 @@ export default function NewsPage() {
           </div>
         )}
 
-        {/* Articles */}
+        {/* Article grid */}
         {!loading && !error && articles.length > 0 && (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {articles.map((item, i) => {
               const headline = item.title || item.headline || "Untitled";
               const timeAgo = getTimeAgo(item.published_at || '', t);
               const topic = item.topic || '';
-              const imgSrc = item.image_url || getCategoryImage(headline, topic, item.id);
+              const key = item.id || item.title || item.headline || String(i);
+              const isSaved = savedTopics.includes(key);
 
-              /* ── Hero card (first article) ── */
-              if (i === 0) {
-                return (
-                  <motion.article key={item.id || i}
-                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ y: -2, boxShadow: '0 8px 32px rgba(124,58,237,0.13)' }}
-                    className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border cursor-pointer active:scale-[0.99] transition-all duration-200 group"
-                    onClick={() => setSelectedArticle(item)}>
-                    {/* Image with gradient overlay */}
-                    <div className="relative w-full overflow-hidden" style={{ height: 220 }}>
-                      <img src={imgSrc} alt={headline}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                      {/* Topic badge top-left */}
-                      {topic && (
-                        <span className="chip absolute top-3 left-3 bg-card/90 text-foreground backdrop-blur">
-                          {TOPIC_EMOJIS[topic] || '📰'} {topic}
-                        </span>
-                      )}
-                      {/* Title over gradient */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <h2 className="font-bold text-[17px] text-white leading-snug line-clamp-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                          {headline}
-                        </h2>
-                      </div>
-                    </div>
-                    {/* Footer row */}
-                    <div className="px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-semibold truncate" style={{ color: PRIMARY }}>{item.source}</span>
-                        <span className="text-muted-foreground text-[11px] shrink-0">· {timeAgo}</span>
-                        {item.summary && (
-                          <span className="hidden sm:block text-xs text-muted-foreground line-clamp-1 ml-1">— {item.summary}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => handleGenerateScript(item)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors"
-                          style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
-                          <FileText className="w-3 h-3" /> Script
-                        </button>
-                        {item.url && (
-                          <button onClick={() => window.open(item.url, '_blank')}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-                            style={{ background: 'hsl(var(--secondary))' }}>
-                            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </motion.article>
-                );
-              }
-
-              /* ── Regular cards ── */
               return (
-                <motion.article key={item.id || i}
+                <motion.article key={key}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  whileHover={{ y: -2, boxShadow: '0 6px 24px rgba(124,58,237,0.10)' }}
-                  className="bg-card rounded-2xl overflow-hidden border border-border cursor-pointer active:scale-[0.99] transition-all duration-200 group hover:border-purple-200"
+                  className="panel p-4 flex flex-col cursor-pointer"
                   onClick={() => setSelectedArticle(item)}>
-                  <div className="flex gap-3 p-3">
-                    {/* Thumbnail with zoom on hover */}
-                    <div className="shrink-0 rounded-xl overflow-hidden bg-gray-100" style={{ width: 88, height: 88 }}>
-                      <img src={imgSrc} alt=""
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        onError={e => { (e.target as HTMLImageElement).src = getCategoryImage(headline, topic, item.id); }} />
-                    </div>
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                      {/* Topic + time */}
-                      <div className="flex items-center gap-2 mb-1">
-                        {topic && (
-                          <span className="chip shrink-0 text-[9px] px-1.5 py-0.5">
-                            {TOPIC_EMOJIS[topic] || '📰'} {topic}
-                          </span>
-                        )}
-                        <span className="text-muted-foreground text-[10px] ml-auto shrink-0">{timeAgo}</span>
-                      </div>
-                      {/* Headline */}
-                      <h3 className="font-semibold text-[13px] text-foreground leading-snug line-clamp-2 transition-colors group-hover:text-purple-700"
-                        style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                        {headline}
-                      </h3>
-                      {/* Source + actions */}
-                      <div className="flex items-center justify-between mt-1.5">
-                        <span className="text-[11px] font-semibold truncate" style={{ color: PRIMARY }}>{item.source}</span>
-                        <div className="flex items-center gap-0.5 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => handleGenerateScript(item)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-purple-100 active:bg-purple-50"
-                            style={{ background: '#f5f3ff' }}>
-                            <FileText className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                          </button>
-                          {item.url && (
-                            <button onClick={() => window.open(item.url, '_blank')}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 active:bg-gray-100"
-                              style={{ background: 'hsl(var(--secondary))' }}>
-                              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    {topic && (
+                      <span className="chip text-[10px]">{TOPIC_EMOJIS[topic] || '📰'} {topic}</span>
+                    )}
+                    <span className="text-muted-foreground text-[11px]">· {timeAgo}</span>
+                    <span className="text-[11px] font-semibold ml-auto truncate" style={{ color: PRIMARY }}>{item.source}</span>
+                  </div>
+                  <h3 className="font-bold text-[15px] text-foreground leading-snug line-clamp-2 mb-1.5" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                    {headline}
+                  </h3>
+                  {item.summary && (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3 flex-1">{item.summary}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-auto" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => toggleSaveTopic(item)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-border text-foreground hover:border-primary transition-colors">
+                      {isSaved ? <BookmarkCheck className="w-3.5 h-3.5" style={{ color: PRIMARY }} /> : <Bookmark className="w-3.5 h-3.5" />}
+                      {isSaved ? 'Saved' : 'Save topic'}
+                    </button>
+                    <button onClick={() => handleGenerateScript(item)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-primary-foreground"
+                      style={{ background: PRIMARY_GRAD }}>
+                      <FileText className="w-3.5 h-3.5" /> Generate content
+                    </button>
                   </div>
                 </motion.article>
               );
