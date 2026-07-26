@@ -4,9 +4,11 @@ import {
   Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb,
   User, Users, Heart, MessageCircle, BarChart2, BadgeCheck, Eye,
   Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target, Image,
+  Download, Instagram, Search,
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getPageState, setPageState } from '@/lib/pageCache';
 import { getReelThumbnailSrc, getReelAltText, handleReelThumbnailError } from '@/lib/reelThumbnail';
 import SEO from '@/components/SEO';
@@ -683,6 +685,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 export default function InstagramAnalyzer() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const _saved = getPageState('igAnalyzer');
 
   const [handle, setHandle] = useState(_saved?.handle ?? '');
@@ -708,6 +711,24 @@ export default function InstagramAnalyzer() {
   const [compLoading, setCompLoading] = useState(false);
   const [compError, setCompError] = useState('');
   const [openCompetitor, setOpenCompetitor] = useState<CompetitorCard | null>(null);
+  const [trendingReels, setTrendingReels] = useState<any[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
+
+  // ── Trending reels — real data for the pre-search empty state, keyed off
+  // the creator's own niche (falls back to a generic keyword). ──
+  useEffect(() => {
+    if (result || hiker) return;
+    const keyword = user?.user_metadata?.niches?.[0] || 'trending';
+    setTrendingLoading(true);
+    fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(keyword)}&mode=keyword&page=1&limit=8`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const list = Array.isArray(data) ? data : Array.isArray(data?.videos) ? data.videos : [];
+        setTrendingReels(list.slice(0, 8));
+      })
+      .catch(() => setTrendingReels([]))
+      .finally(() => setTrendingLoading(false));
+  }, []);
 
   // ── Page-state persistence ──
   const _stateRef = useRef<any>({});
@@ -917,11 +938,16 @@ export default function InstagramAnalyzer() {
         )}
       </AnimatePresence>
 
-      <header className="sticky top-0 z-40 bg-card border-b border-border px-5 h-16 flex items-center">
-        <h1 className="font-bold text-xl" style={{ color: PRIMARY, fontFamily: 'Montserrat, sans-serif' }}>{t('analyzer.title')}</h1>
-        <p className="text-sm text-muted-foreground ml-3 hidden sm:block">{t('analyzer.subtitle')}</p>
-        {(result || hiker) && !loading && (
+      <main className="max-w-2xl mx-auto px-5 pt-8 pb-28 space-y-5">
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 pb-5 border-b border-border">
+          <div>
+            <h1 className="font-heading text-3xl md:text-4xl font-bold text-foreground">{t('analyzer.title')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('analyzer.subtitle')}</p>
+          </div>
           <button
+            disabled={!(result || hiker) || loading}
             onClick={() => {
               const blob = new Blob([JSON.stringify({ username: handle.replace('@', '').trim(), result, hiker }, null, 2)], { type: 'application/json' });
               const url = URL.createObjectURL(blob);
@@ -930,25 +956,23 @@ export default function InstagramAnalyzer() {
               a.click();
               URL.revokeObjectURL(url);
             }}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border text-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-border text-foreground hover:border-primary hover:text-primary transition-colors shrink-0 disabled:opacity-40 disabled:hover:border-border disabled:hover:text-foreground"
           >
-            Export analysis
+            <Download className="w-3.5 h-3.5" /> Export analysis
           </button>
-        )}
-      </header>
-
-      <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-5">
+        </div>
 
         {/* Search */}
         <div className="panel p-4">
-          <p className="text-sm text-muted-foreground mb-3">{t('analyzer.description')}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('analyzer.username_label')}</p>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">@</span>
+              <Instagram className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <span className="absolute left-9 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">@</span>
               <input type="text" value={handle} onChange={e => handleUsernameChange(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') analyze(); }}
                 placeholder={t('analyzer.placeholder')}
-                className="w-full pl-8 pr-9 py-3 rounded-xl border border-input bg-secondary text-foreground placeholder:text-muted-foreground outline-none text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                className="w-full pl-14 pr-9 py-3 rounded-xl border border-input bg-secondary text-foreground placeholder:text-muted-foreground outline-none text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
               {handle && (
                 <button onClick={() => { setHandle(''); setResult(null); setHiker(null); }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -957,9 +981,10 @@ export default function InstagramAnalyzer() {
               )}
             </div>
             <button onClick={analyze} disabled={loading || !handle.trim()}
-              className="px-5 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-60 hover:shadow-lg transition-all"
+              className="px-5 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-60 hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
               style={{ background: PRIMARY_GRAD }}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('analyzer.analyze_btn')}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart2 className="w-4 h-4" />}
+              {t('analyzer.analyze_account')}
             </button>
             {(result || hiker) && !loading && (
               <button
@@ -978,6 +1003,53 @@ export default function InstagramAnalyzer() {
           </div>
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
+
+        {/* Empty state — shown before a profile has been analyzed */}
+        {!loading && !result && !hiker && !error && (
+          <div className="panel p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: PRIMARY_CONTAINER }}>
+              <Search className="w-8 h-8" style={{ color: PRIMARY }} />
+            </div>
+            <p className="font-bold text-foreground mb-1">{t('analyzer.empty_title')}</p>
+            <p className="text-sm text-muted-foreground">{t('analyzer.empty_desc')}</p>
+          </div>
+        )}
+
+        {/* Trending reels — real reels for the creator's niche, browsable before analyzing anyone */}
+        {!((result || hiker) && !loading) && (trendingLoading || trendingReels.length > 0) && (
+          <div className="panel p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
+              <h2 className="font-bold text-sm text-foreground">{t('analyzer.trending_reels')}</h2>
+            </div>
+            {trendingLoading ? (
+              <div className="flex gap-2 overflow-x-auto">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="rounded-xl animate-pulse bg-secondary shrink-0" style={{ aspectRatio: '9/16', width: '110px' }} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
+                {trendingReels.map((reel: any, i: number) => (
+                  <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
+                    className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
+                    <img src={getReelThumbnailSrc(reel.thumbnail)} alt={getReelAltText(reel.caption, reel.username)}
+                      referrerPolicy="no-referrer" loading="lazy" decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={handleReelThumbnailError} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Eye className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.views) || 0)}</span>
+                        <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.likes) || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Competitor Tracker — hidden while viewing search results */}
         {!((result || hiker) && !loading) && (
@@ -1642,16 +1714,6 @@ export default function InstagramAnalyzer() {
           </motion.div>
         )}
 
-        {/* Empty state */}
-        {!loading && !result && !hiker && !error && (
-          <div className="panel p-8 text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: PRIMARY_CONTAINER }}>
-              <User className="w-8 h-8" style={{ color: PRIMARY }} />
-            </div>
-            <p className="font-bold text-foreground mb-1">{t('analyzer.empty_title')}</p>
-            <p className="text-sm text-muted-foreground">{t('analyzer.empty_desc')}</p>
-          </div>
-        )}
       </main>
     </div>
   );
