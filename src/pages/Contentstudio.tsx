@@ -1,11 +1,12 @@
-// ContentStudio.tsx — Studio editor (Stage 4: captions + overlays + music)
-// Upload -> transcribe/edit/style captions -> Pexels overlays -> music kit.
-// Export comes in Stage 5. Uses /api/captioner and /api/studio backends.
+// ContentStudio.tsx — Studio workspace, matching Lovable's Ideas/Scripts/Video/Drafts/Calendar
+// tab layout. Video tab keeps the real editor (transcribe, overlays, music, export) —
+// Ideas/Scripts/Drafts are cosmetic like Lovable's; Calendar is Lovable's real localStorage planner.
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // adjust path if needed
 import SEO from "@/components/SEO";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Pencil, Trash2, Copy, FileText, Lightbulb, Calendar as CalendarIcon, Repeat, Link2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL;
 const PURPLE = "hsl(var(--primary))";
@@ -48,8 +49,506 @@ function buildSegments(words: Word[]): Segment[] {
 }
 function reindex(segs: Segment[]): Segment[] { return segs.map((s, i) => ({ ...s, id: i })); }
 
-export default function ContentStudio() {
+// ============================================================================
+// Studio shell — matches Lovable's studio.tsx tab structure exactly.
+// ============================================================================
+
+const TABS = ["Ideas", "Scripts", "Video", "Drafts", "Calendar"] as const;
+type Tab = (typeof TABS)[number];
+
+const studioCache: { tab: Tab; planner: "week" | "month" } = { tab: "Ideas", planner: "week" };
+
+const IDEAS = [
+  "AI side hustle that pays $50/day",
+  "3 hooks that always go viral",
+  "Behind the scenes of my edit setup",
+  "Why nobody is watching your Shorts",
+];
+
+const SCRIPTS_CARDS = [
+  { title: "ChatGPT weekly content system", platform: "Reels", updated: "2d ago" },
+  { title: "5 underrated AI tools in 2026", platform: "YT Shorts", updated: "4d ago" },
+  { title: "How I edit a Reel in 9 minutes", platform: "Reels", updated: "1w ago" },
+];
+
+const DRAFTS = [
+  { title: "Faceless YouTube case study", status: "Outline", progress: 35 },
+  { title: "Morning routine remix", status: "Recording", progress: 70 },
+];
+
+export default function StudioPage() {
   const { theme } = useTheme();
+  const [tab, setTabState] = useState<Tab>(studioCache.tab);
+  const setTab = (t: Tab) => { studioCache.tab = t; setTabState(t); };
+  const isVideo = tab === "Video";
+
+  return (
+    <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
+      <SEO title="Studio — SocialRum" noindex />
+      <div className="max-w-6xl mx-auto p-6">
+        {!isVideo && (
+          <div className="mb-6">
+            <h1 className="font-heading text-2xl font-bold">Studio</h1>
+            <p className="text-sm text-muted-foreground mt-1">Your ideas, scripts, drafts and content calendar — one workspace.</p>
+          </div>
+        )}
+
+        <div className={`flex flex-wrap gap-2 border-b border-border ${isVideo ? "mb-3" : "mb-6"}`}>
+          {TABS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
+                tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {tab === "Ideas" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {IDEAS.map((i) => (
+              <StudioCard key={i} icon={Lightbulb} title={i} subtitle="Saved idea" />
+            ))}
+          </div>
+        )}
+
+        {tab === "Scripts" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {SCRIPTS_CARDS.map((s) => (
+              <StudioCard key={s.title} icon={FileText} title={s.title} subtitle={`${s.platform} · ${s.updated}`} />
+            ))}
+          </div>
+        )}
+
+        {tab === "Video" && <VideoEditor />}
+
+        {tab === "Drafts" && (
+          <div className="space-y-3">
+            {DRAFTS.map((d) => (
+              <div key={d.title} className="panel p-5 flex flex-wrap items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium">{d.title}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{d.status} — {d.progress}% complete</div>
+                  <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${d.progress}%` }} />
+                  </div>
+                </div>
+                <StudioActions />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === "Calendar" && <CalendarTab />}
+      </div>
+    </div>
+  );
+}
+
+function StudioCard({ icon: Icon, title, subtitle }: { icon: React.ComponentType<{ className?: string }>; title: string; subtitle: string }) {
+  return (
+    <div className="panel p-5 flex flex-col">
+      <div className="flex items-start justify-between">
+        <div className="size-9 grid place-items-center rounded-lg bg-primary/15 text-primary">
+          <Icon className="size-4" />
+        </div>
+        <StudioActions compact />
+      </div>
+      <div className="mt-4 font-heading font-semibold leading-snug">{title}</div>
+      <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+    </div>
+  );
+}
+
+function StudioActions({ compact }: { compact?: boolean }) {
+  const cls = `inline-flex items-center gap-1 ${compact ? "px-2 py-1 text-[11px]" : "px-2.5 py-1.5 text-xs"} rounded-md border border-input hover:bg-muted`;
+  return (
+    <div className="flex gap-1.5">
+      <button className={cls}><Pencil className="size-3" /> Edit</button>
+      <button className={cls}><Copy className="size-3" /> Duplicate</button>
+      <button className={`${cls} hover:text-destructive`}><Trash2 className="size-3" /> Delete</button>
+    </div>
+  );
+}
+
+// ============================================================================
+// Calendar tab — ported from Lovable's studio.tsx (real dates, localStorage,
+// drag-to-reschedule, recurrence, linking to an idea/script). Self-contained,
+// no backend needed.
+// ============================================================================
+
+type Recurrence = "none" | "daily" | "weekly" | "monthly";
+type LinkKind = "none" | "idea" | "script";
+type CalEvent = {
+  id: string;
+  date: string;
+  time: string;
+  duration?: number;
+  title: string;
+  note?: string;
+  recurrence?: Recurrence;
+  recurrenceEnd?: string;
+  linkKind?: LinkKind;
+  linkValue?: string;
+};
+
+const CAL_STORAGE_KEY = "socialrum.calendar.events.v2";
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+function toISO(d: Date) {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function parseISO(s: string) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+function startOfWeek(d: Date) { const x = new Date(d); x.setDate(d.getDate() - d.getDay()); x.setHours(0, 0, 0, 0); return x; }
+function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(d.getDate() + n); return x; }
+function sameDay(a: Date, b: Date) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+function diffDays(from: Date, to: Date) { return Math.round((parseISO(toISO(to)).getTime() - parseISO(toISO(from)).getTime()) / 86400000); }
+
+function occursOn(e: CalEvent, target: Date): boolean {
+  const base = parseISO(e.date);
+  if (sameDay(base, target)) return true;
+  if (!e.recurrence || e.recurrence === "none") return false;
+  if (target < base) return false;
+  if (e.recurrenceEnd && target > parseISO(e.recurrenceEnd)) return false;
+  if (e.recurrence === "daily") return true;
+  if (e.recurrence === "weekly") return base.getDay() === target.getDay();
+  if (e.recurrence === "monthly") return base.getDate() === target.getDate();
+  return false;
+}
+function eventsOn(events: CalEvent[], target: Date) {
+  return events.filter((e) => occursOn(e, target)).sort((a, b) => a.time.localeCompare(b.time));
+}
+
+function useEvents() {
+  const [events, setEvents] = useState<CalEvent[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { const raw = localStorage.getItem(CAL_STORAGE_KEY); return raw ? (JSON.parse(raw) as CalEvent[]) : []; } catch { return []; }
+  });
+  const persist = (next: CalEvent[]) => {
+    setEvents(next);
+    try { localStorage.setItem(CAL_STORAGE_KEY, JSON.stringify(next)); } catch {}
+  };
+  return {
+    events,
+    upsert: (e: CalEvent) => {
+      const exists = events.some((x) => x.id === e.id);
+      persist(exists ? events.map((x) => (x.id === e.id ? e : x)) : [...events, e]);
+    },
+    remove: (id: string) => persist(events.filter((x) => x.id !== id)),
+    move: (id: string, newDate: string) => {
+      const target = events.find((x) => x.id === id);
+      if (!target) return;
+      const delta = diffDays(parseISO(target.date), parseISO(newDate));
+      if (delta === 0) return;
+      const updated: CalEvent = { ...target, date: newDate };
+      if (target.recurrenceEnd) updated.recurrenceEnd = toISO(addDays(parseISO(target.recurrenceEnd), delta));
+      persist(events.map((x) => (x.id === id ? updated : x)));
+    },
+  };
+}
+
+function CalendarTab() {
+  const [planner, setPlannerState] = useState<"week" | "month">(studioCache.planner);
+  const setPlanner = (p: "week" | "month") => { studioCache.planner = p; setPlannerState(p); };
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <CalendarIcon className="size-4 text-primary" />
+        <div className="inline-flex p-1 rounded-lg bg-muted">
+          <button onClick={() => setPlanner("week")} className={`px-3 py-1.5 text-xs rounded-md ${planner === "week" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Weekly</button>
+          <button onClick={() => setPlanner("month")} className={`px-3 py-1.5 text-xs rounded-md ${planner === "month" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Monthly</button>
+        </div>
+      </div>
+      {planner === "week" ? <WeekPlanner /> : <MonthPlanner />}
+    </div>
+  );
+}
+
+function EventDialog({ open, onClose, onSave, onDelete, initial, date }: {
+  open: boolean; onClose: () => void; onSave: (e: CalEvent) => void; onDelete?: (id: string) => void; initial?: CalEvent; date: string;
+}) {
+  const [title, setTitle] = useState("");
+  const [time, setTime] = useState("09:00");
+  const [duration, setDuration] = useState<number>(30);
+  const [note, setNote] = useState("");
+  const [recurrence, setRecurrence] = useState<Recurrence>("none");
+  const [recurrenceEnd, setRecurrenceEnd] = useState<string>("");
+  const [linkKind, setLinkKind] = useState<LinkKind>("none");
+  const [linkValue, setLinkValue] = useState<string>("");
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle(initial?.title ?? ""); setTime(initial?.time ?? "09:00"); setDuration(initial?.duration ?? 30);
+    setNote(initial?.note ?? ""); setRecurrence(initial?.recurrence ?? "none"); setRecurrenceEnd(initial?.recurrenceEnd ?? "");
+    setLinkKind(initial?.linkKind ?? "none"); setLinkValue(initial?.linkValue ?? "");
+  }, [open, initial]);
+
+  if (!open) return null;
+  const linkOptions = linkKind === "idea" ? IDEAS : linkKind === "script" ? SCRIPTS_CARDS.map((s) => s.title) : [];
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={onClose}>
+      <div className="panel p-6 w-full max-w-lg bg-card max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-xs text-muted-foreground">{parseISO(date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</div>
+            <div className="font-heading text-lg font-semibold mt-0.5">{initial ? "Edit event" : "New event"}</div>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-muted-foreground">Title</label>
+            <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Reel — AI tools"
+              className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Time</label>
+              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Duration (min)</label>
+              <input type="number" min={5} step={5} value={duration} onChange={(e) => setDuration(Math.max(5, Number(e.target.value) || 30))}
+                className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground flex items-center gap-1.5"><Repeat className="size-3" /> Repeat</label>
+            <div className="mt-1 grid grid-cols-4 gap-1.5">
+              {(["none", "daily", "weekly", "monthly"] as Recurrence[]).map((r) => (
+                <button key={r} type="button" onClick={() => setRecurrence(r)}
+                  className={`h-9 rounded-md text-xs border capitalize ${recurrence === r ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-muted"}`}>{r}</button>
+              ))}
+            </div>
+            {recurrence !== "none" && (
+              <div className="mt-2">
+                <label className="text-xs text-muted-foreground">Ends on (optional)</label>
+                <input type="date" value={recurrenceEnd} min={date} onChange={(e) => setRecurrenceEnd(e.target.value)}
+                  className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" />
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground flex items-center gap-1.5"><Link2 className="size-3" /> Link to</label>
+            <div className="mt-1 grid grid-cols-3 gap-1.5">
+              {(["none", "idea", "script"] as LinkKind[]).map((k) => (
+                <button key={k} type="button" onClick={() => { setLinkKind(k); setLinkValue(""); }}
+                  className={`h-9 rounded-md text-xs border capitalize ${linkKind === k ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-muted"}`}>
+                  {k === "none" ? "None" : k}
+                </button>
+              ))}
+            </div>
+            {linkKind !== "none" && (
+              <select value={linkValue} onChange={(e) => setLinkValue(e.target.value)} className="mt-2 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+                <option value="">Choose a {linkKind}…</option>
+                {linkOptions.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+              </select>
+            )}
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Notes</label>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center mt-5">
+          <div>
+            {initial && onDelete && (
+              <button onClick={() => { onDelete(initial.id); onClose(); }} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-input hover:text-destructive">
+                <Trash2 className="size-3" /> Delete
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-3 py-1.5 text-xs rounded-md border border-input hover:bg-muted">Cancel</button>
+            <button
+              disabled={!title.trim()}
+              onClick={() => {
+                onSave({
+                  id: initial?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                  date: initial?.date ?? date, time, duration, title: title.trim(),
+                  note: note.trim() || undefined, recurrence,
+                  recurrenceEnd: recurrence !== "none" && recurrenceEnd ? recurrenceEnd : undefined,
+                  linkKind: linkKind !== "none" ? linkKind : undefined,
+                  linkValue: linkKind !== "none" && linkValue ? linkValue : undefined,
+                });
+                onClose();
+              }}
+              className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground disabled:opacity-50"
+            >
+              {initial ? "Save changes" : "Add event"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventPill({ e, onClick, onDragStart, compact }: { e: CalEvent; onClick: (ev: React.MouseEvent) => void; onDragStart: (ev: React.DragEvent) => void; compact?: boolean }) {
+  const recurring = e.recurrence && e.recurrence !== "none";
+  if (compact) {
+    return (
+      <div draggable onDragStart={onDragStart} onClick={onClick}
+        className="text-[10px] px-1 py-0.5 rounded bg-primary/15 text-primary truncate flex items-center gap-1 cursor-grab active:cursor-grabbing hover:bg-primary/25" title={e.title}>
+        {recurring && <Repeat className="size-2.5 shrink-0" />}
+        <span className="truncate">{e.time} {e.title}</span>
+      </div>
+    );
+  }
+  return (
+    <div draggable onDragStart={onDragStart} onClick={onClick} className="w-full text-left p-2 rounded-md bg-primary/10 border border-primary/30 hover:bg-primary/20 cursor-grab active:cursor-grabbing">
+      <div className="text-[11px] text-primary font-semibold flex items-center gap-1">
+        {e.time}{e.duration ? ` · ${e.duration}m` : ""}
+        {recurring && <Repeat className="size-3 opacity-70" />}
+      </div>
+      <div className="text-xs mt-0.5 truncate">{e.title}</div>
+      {e.linkValue && <div className="text-[10px] text-muted-foreground truncate mt-0.5 flex items-center gap-1"><Link2 className="size-2.5" /> {e.linkValue}</div>}
+    </div>
+  );
+}
+
+function WeekPlanner() {
+  const { events, upsert, remove, move } = useEvents();
+  const [cursor, setCursor] = useState(() => startOfWeek(new Date()));
+  const [editing, setEditing] = useState<{ date: string; event?: CalEvent } | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
+
+  const today = new Date();
+  const days = Array.from({ length: 7 }, (_, i) => addDays(cursor, i));
+  const rangeLabel = `${days[0].toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${days[6].toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+
+  const onDrop = (iso: string) => (ev: React.DragEvent) => {
+    ev.preventDefault();
+    const id = ev.dataTransfer.getData("text/event-id");
+    if (id) move(id, iso);
+    setDragOver(null);
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setCursor(addDays(cursor, -7))} className="px-2.5 py-1.5 text-xs rounded-md border border-input hover:bg-muted">‹</button>
+          <button onClick={() => setCursor(startOfWeek(new Date()))} className="px-2.5 py-1.5 text-xs rounded-md border border-input hover:bg-muted">Today</button>
+          <button onClick={() => setCursor(addDays(cursor, 7))} className="px-2.5 py-1.5 text-xs rounded-md border border-input hover:bg-muted">›</button>
+          <div className="ml-2 text-sm font-medium">{rangeLabel}</div>
+        </div>
+        <div className="text-[11px] text-muted-foreground">Tip: drag events between days to reschedule.</div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
+        {days.map((d) => {
+          const iso = toISO(d);
+          const dayEvents = eventsOn(events, d);
+          const isToday = sameDay(d, today);
+          const isDragOver = dragOver === iso;
+          return (
+            <div key={iso} onDragOver={(ev) => { ev.preventDefault(); setDragOver(iso); }} onDragLeave={() => setDragOver((cur) => (cur === iso ? null : cur))} onDrop={onDrop(iso)}
+              className={`panel p-3 min-h-44 flex flex-col transition-colors ${isToday ? "ring-1 ring-primary" : ""} ${isDragOver ? "bg-primary/10 ring-2 ring-primary" : ""}`}>
+              <div className="flex items-baseline justify-between mb-2">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{DAY_NAMES[d.getDay()]}</div>
+                  <div className={`text-lg font-heading font-semibold leading-none mt-0.5 ${isToday ? "text-primary" : ""}`}>{d.getDate()}</div>
+                </div>
+                <button onClick={() => setEditing({ date: iso })} className="size-6 grid place-items-center rounded-md hover:bg-muted text-muted-foreground" aria-label="Add event">+</button>
+              </div>
+              <div className="space-y-1.5 flex-1">
+                {dayEvents.map((e) => (
+                  <EventPill key={e.id} e={e} onClick={() => setEditing({ date: iso, event: e })} onDragStart={(ev) => ev.dataTransfer.setData("text/event-id", e.id)} />
+                ))}
+                {dayEvents.length === 0 && (
+                  <button onClick={() => setEditing({ date: iso })} className="w-full text-[11px] text-muted-foreground/70 hover:text-foreground py-2 border border-dashed border-border rounded-md">+ Add</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <EventDialog open={!!editing} date={editing?.date ?? toISO(new Date())} initial={editing?.event} onClose={() => setEditing(null)} onSave={upsert} onDelete={remove} />
+    </>
+  );
+}
+
+function MonthPlanner() {
+  const { events, upsert, remove, move } = useEvents();
+  const [cursor, setCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
+  const [editing, setEditing] = useState<{ date: string; event?: CalEvent } | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
+
+  const today = new Date();
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const onDrop = (iso: string) => (ev: React.DragEvent) => {
+    ev.preventDefault();
+    const id = ev.dataTransfer.getData("text/event-id");
+    if (id) move(id, iso);
+    setDragOver(null);
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setCursor(new Date(year, month - 1, 1))} className="px-2.5 py-1.5 text-xs rounded-md border border-input hover:bg-muted">‹</button>
+          <button onClick={() => { const d = new Date(); d.setDate(1); setCursor(d); }} className="px-2.5 py-1.5 text-xs rounded-md border border-input hover:bg-muted">Today</button>
+          <button onClick={() => setCursor(new Date(year, month + 1, 1))} className="px-2.5 py-1.5 text-xs rounded-md border border-input hover:bg-muted">›</button>
+          <div className="ml-2 text-sm font-medium">{MONTH_NAMES[month]} {year}</div>
+        </div>
+        <div className="text-[11px] text-muted-foreground">Tip: drag events to a different day.</div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1.5">
+        {DAY_NAMES.map((d) => (<div key={d} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground py-1">{d}</div>))}
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} className="aspect-square" />;
+          const iso = toISO(d);
+          const dayEvents = eventsOn(events, d);
+          const isToday = sameDay(d, today);
+          const isDragOver = dragOver === iso;
+          return (
+            <div key={i} onDragOver={(ev) => { ev.preventDefault(); setDragOver(iso); }} onDragLeave={() => setDragOver((cur) => (cur === iso ? null : cur))} onDrop={onDrop(iso)}
+              onClick={() => setEditing({ date: iso })}
+              className={`min-h-20 text-left p-1.5 rounded-md border bg-card hover:border-primary/60 transition-colors cursor-pointer ${isToday ? "border-primary ring-1 ring-primary/30" : "border-border"} ${isDragOver ? "bg-primary/10 ring-2 ring-primary" : ""}`}>
+              <div className={`text-xs font-medium ${isToday ? "text-primary" : ""}`}>{d.getDate()}</div>
+              <div className="mt-1 space-y-0.5" onClick={(ev) => ev.stopPropagation()}>
+                {dayEvents.slice(0, 2).map((e) => (
+                  <EventPill key={e.id} e={e} compact onClick={(ev) => { ev.stopPropagation(); setEditing({ date: iso, event: e }); }} onDragStart={(ev) => ev.dataTransfer.setData("text/event-id", e.id)} />
+                ))}
+                {dayEvents.length > 2 && <div className="text-[10px] text-muted-foreground">+{dayEvents.length - 2} more</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <EventDialog open={!!editing} date={editing?.date ?? toISO(new Date())} initial={editing?.event} onClose={() => setEditing(null)} onSave={upsert} onDelete={remove} />
+    </>
+  );
+}
+
+// ============================================================================
+// Video tab — the real editor: upload, AssemblyAI transcribe, Pexels overlays,
+// music sync, canvas export. Unchanged from the working implementation, just
+// no longer renders its own page header (the shared tab bar above replaces it).
+// ============================================================================
+
+function VideoEditor() {
   const [file, setFile] = useState<File | null>(() => savedStudioState?.file ?? null);
   const [videoUrl, setVideoUrl] = useState(() => savedStudioState?.videoUrl ?? "");
   const [hostedUrl, setHostedUrl] = useState(() => savedStudioState?.hostedUrl ?? "");
@@ -603,20 +1102,8 @@ export default function ContentStudio() {
   const TL_BG = "#1e1e24", TL_LINE = "#3a3a44", TL_TEXT = "#cbd5e1";
 
   return (
-    <div className={`theme-redesign ${theme} max-w-6xl mx-auto p-6 bg-background text-foreground`}>
-      <SEO title="Studio — SocialRum" noindex />
+    <div>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&display=swap" />
-
-      {/* Page header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm" style={{ background: GRAD }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-        </div>
-        <div>
-          <h1 className="text-xl font-extrabold text-foreground leading-tight" style={{ fontFamily: 'Space Grotesk, Montserrat, sans-serif' }}>Studio</h1>
-          <p className="text-[11px] text-muted-foreground">Upload · Caption · Overlay · Music · Export</p>
-        </div>
-      </div>
 
       {!hasVideo && (
         <div className="space-y-6">
