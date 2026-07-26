@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Newspaper, FileText,
   PanelLeftClose, PanelLeft, LogOut, Settings,
   Sun, Moon, ChevronUp, Crown, Youtube, Instagram,
-  Search, Tag, Clapperboard, Captions, Compass,
+  Search, Tag, Clapperboard, Captions,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -36,7 +36,6 @@ export default function AppSidebar() {
     // Trending hidden for now -- re-add this line to bring it back:
     // { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
     { icon: Newspaper, label: t('nav.news'), path: "/news" },
-    { icon: Compass, label: "Discover", path: "/discover" },
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
     { icon: Search, label: t('nav.analyzer'), path: "/instagram/analyzer" },
     { icon: Clapperboard, label: "Studio", path: "/studio" },

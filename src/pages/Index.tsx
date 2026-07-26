@@ -58,7 +58,7 @@ export default function Index() {
       const data = await res.json().catch(() => ({}));
       if (data.mode === "research") {
         setAssistantMessages((prev) => prev.filter((m) => !(m.role === "assistant" && m.pending)));
-        navigate('/discover', { state: { q: data.topic || q } });
+        navigate('/news', { state: { query: data.topic || q } });
         return;
       }
       const answer = data.answer || (data.error ? `Sorry — I couldn't answer that (${data.error}).` : "Sorry — I couldn't answer that just now.");
@@ -79,7 +79,7 @@ export default function Index() {
   }
 
   const CHIPS = [
-    { emoji: "📈", label: t('home.chip_trending', { niche }), action: () => navigate('/discover', { state: { q: niche } }) },
+    { emoji: "📈", label: t('home.chip_trending', { niche }), action: () => navigate('/news', { state: { query: niche } }) },
     { emoji: "✏️", label: t('home.chip_script'), action: () => navigate('/scripts', { state: { topic: niche, niche } }) },
     { emoji: "👤", label: t('home.chip_competitor'), action: () => navigate(isIG ? '/instagram/analyzer' : '/youtube/analyzer') },
     { emoji: "📅", label: t('home.chip_plan'), action: () => navigate('/studio') },

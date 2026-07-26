@@ -23,7 +23,6 @@ import InstagramAnalyzer from "./pages/InstagramAnalyzer";
 import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
 import ContentStudio from "./pages/Contentstudio";
-import DiscoverPage from "./pages/DiscoverPage";
 // import VideoCaptioner from "./pages/VideoCaptioner"; // temporarily hidden
 import LandingPage from "./pages/LandingPage";
 import InstagramAnalyzerLanding from "./pages/marketing/InstagramAnalyzerLanding";
@@ -76,7 +75,6 @@ const App = () => (
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/insight" element={<InsightPage />} />
               <Route path="/news" element={<NewsPage />} />
-              <Route path="/discover" element={<DiscoverPage />} />
               <Route path="/scripts" element={<ScriptsPage />} />
               {/* /trending route hidden for now — uncomment below + import above to re-enable */}
               {/* <Route path="/trending" element={<CreatorLeaderboard />} /> */}
