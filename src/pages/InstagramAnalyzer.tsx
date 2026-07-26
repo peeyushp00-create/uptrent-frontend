@@ -4,7 +4,7 @@ import {
   Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb,
   User, Users, Heart, MessageCircle, BarChart2, BadgeCheck, Eye,
   Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target, Image,
-  Download, Instagram, Search,
+  Download, Instagram, Search, Flame,
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -1196,12 +1196,30 @@ export default function InstagramAnalyzer() {
                 {(hiker?.profile?.full_name || result?.profile_name) && (
                   <p className="text-sm text-muted-foreground truncate">{hiker?.profile?.full_name || result?.profile_name}</p>
                 )}
+                {hiker?.profile?.biography && (
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 max-w-md">{hiker.profile.biography}</p>
+                )}
               </div>
-              {(hiker?.profile?.followers ?? result?.stats?.followers) != null && (
-                <span className="text-sm font-bold shrink-0" style={{ color: PRIMARY }}>
-                  {formatNum(hiker?.profile?.followers ?? result?.stats?.followers)} followers
-                </span>
-              )}
+              <div className="flex items-center gap-4 shrink-0">
+                {(hiker?.profile?.followers ?? result?.stats?.followers) != null && (
+                  <div className="text-center">
+                    <p className="font-bold text-sm text-foreground leading-none">{formatNum(hiker?.profile?.followers ?? result?.stats?.followers)}</p>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">Followers</p>
+                  </div>
+                )}
+                {hiker?.profile?.following != null && (
+                  <div className="text-center">
+                    <p className="font-bold text-sm text-foreground leading-none">{formatNum(hiker.profile.following)}</p>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">Following</p>
+                  </div>
+                )}
+                {(hiker?.profile?.total_posts ?? result?.stats?.total_posts) != null && (
+                  <div className="text-center">
+                    <p className="font-bold text-sm text-foreground leading-none">{formatNum(hiker?.profile?.total_posts ?? result?.stats?.total_posts)}</p>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">Posts</p>
+                  </div>
+                )}
+              </div>
             </div>
             {result?.summary && (
               <p className="text-sm text-muted-foreground leading-relaxed px-1">{result.summary}</p>
@@ -1278,6 +1296,69 @@ export default function InstagramAnalyzer() {
                 </div>
               </div>
             )}
+
+            {/* Competitor insights — narrative summary of posting cadence, audience
+                scale, and dominant content signal, derived from the same real
+                Hiker data used elsewhere on this page. */}
+            {hiker?.profile && (() => {
+              const reels = hiker.reels || [];
+              const dayCount: Record<string, number> = {};
+              const hourCount: Record<number, number> = {};
+              reels.forEach((r: any) => {
+                if (!r.posted_at) return;
+                const d = new Date(r.posted_at);
+                const day = DAYS_SHORT[d.getDay()];
+                const hourIST = (d.getUTCHours() + 5) % 24;
+                dayCount[day] = (dayCount[day] || 0) + 1;
+                hourCount[hourIST] = (hourCount[hourIST] || 0) + 1;
+              });
+              const bestDay = Object.entries(dayCount).sort((a, b) => b[1] - a[1])[0]?.[0];
+              const bestHourRaw = Object.entries(hourCount).sort((a, b) => b[1] - a[1])[0]?.[0];
+              const bestHour = bestHourRaw !== undefined ? parseInt(bestHourRaw) : null;
+              const dated = reels.filter((r: any) => r.posted_at).sort((a: any, b: any) => new Date(a.posted_at).getTime() - new Date(b.posted_at).getTime());
+              const postsPerWeek = dated.length >= 2
+                ? (() => {
+                    const weeks = (new Date(dated[dated.length - 1].posted_at).getTime() - new Date(dated[0].posted_at).getTime()) / (7 * 24 * 3600 * 1000);
+                    return weeks > 0 ? dated.length / weeks : null;
+                  })()
+                : null;
+              const engagementRate = hiker.profile.engagement_rate ?? result?.stats?.engagement_rate;
+              const topPattern = hiker.top_hooks?.[0];
+
+              return (
+                <div className="panel p-5">
+                  <h2 className="font-bold text-base text-foreground mb-4">Competitor insights</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    <div className="rounded-xl border border-border p-3.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: PRIMARY }}>
+                        <Clock className="w-3.5 h-3.5" /> Posting cadence
+                      </div>
+                      <p className="text-foreground leading-relaxed">
+                        {postsPerWeek ? `${postsPerWeek.toFixed(1)} posts / week` : 'Not enough data yet'}
+                        {bestDay ? ` — best day appears to be ${bestDay}${bestHour != null ? `, around ${bestHour % 12 || 12}:00 ${bestHour >= 12 ? 'PM' : 'AM'} IST` : ''}.` : '.'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-border p-3.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: PRIMARY }}>
+                        <Users className="w-3.5 h-3.5" /> Audience scale
+                      </div>
+                      <p className="text-foreground leading-relaxed">
+                        {formatNum(hiker.profile.followers)} followers · {engagementRate != null ? `${engagementRate}%` : 'N/A'} engagement rate
+                        {engagementRate != null ? ` — ${engagementRate > 3 ? 'above' : 'in line with'} the 1–3% Instagram baseline.` : " — this account hides like counts, so engagement can't be computed."}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-border p-3.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: PRIMARY }}>
+                        <Flame className="w-3.5 h-3.5" /> Content signal
+                      </div>
+                      <p className="text-foreground leading-relaxed">
+                        {topPattern ? `Leans hardest on hooks like "${topPattern.hook}". Steal the framing, not the topic.` : 'Mixed formats — no dominant pattern yet.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Niche Detection */}
             {result?.niche && (

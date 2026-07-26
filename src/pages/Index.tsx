@@ -1,12 +1,50 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, ArrowRight } from "lucide-react";
+import { Sparkles, Send, ArrowRight, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
+import { supabase } from "@/lib/supabase";
+import { listSavedScripts } from "@/lib/api";
+import { LifeCalendar } from "@/components/LifeCalendar";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const ONBOARD_KEY = "socialrum:calendar-onboarded";
+const AGE_KEY = "socialrum:calendar-confirmed-age";
+
+type Greeting = { line1: string; line2: string; highlight: string };
+
+function pickGreeting(name: string, isFirstVisit: boolean, hour: number): Greeting {
+  const first = name || "there";
+  if (isFirstVisit) {
+    return { line1: `Hey ${first},`, line2: "welcome to your creator agency.", highlight: "creator agency" };
+  }
+  if (hour >= 17 && hour < 23) {
+    return { line1: `Hey ${first},`, line2: "prime posting hours ahead.", highlight: "prime posting hours" };
+  }
+  const pool: Greeting[] = [
+    { line1: `Hey ${first},`, line2: "what are we making today?", highlight: "making today" },
+    { line1: `Welcome back, ${first}.`, line2: "let's create something good.", highlight: "something good" },
+    { line1: `Hey ${first},`, line2: "your creator agency is ready.", highlight: "creator agency" },
+  ];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function renderHighlighted(g: Greeting) {
+  const idx = g.line2.toLowerCase().indexOf(g.highlight.toLowerCase());
+  if (idx < 0) return g.line2;
+  const before = g.line2.slice(0, idx);
+  const match = g.line2.slice(idx, idx + g.highlight.length);
+  const after = g.line2.slice(idx + g.highlight.length);
+  return (
+    <>
+      {before}
+      <span className="relative inline-block px-3 rounded-lg bg-primary/[0.22] text-primary">{match}</span>
+      {after}
+    </>
+  );
+}
 
 type AssistantCta = { label: string; feature: "trending" | "scripts" | "studio" | "news"; query?: string };
 type AssistantMsg =
@@ -25,6 +63,45 @@ export default function Index() {
 
   const niche = (user?.user_metadata?.niches?.[0] || 'content').toLowerCase();
   const firstName = (user?.user_metadata?.full_name || user?.email || 'Creator').split(/[\s@]/)[0];
+
+  // ── Life calendar — real saved-script count decides "first visit", real
+  // age comes from the user's profile (confirmed once via the onboarding
+  // modal below, persisted to Supabase like every other profile field). ──
+  const [savedScriptCount, setSavedScriptCount] = useState(0);
+  useEffect(() => {
+    if (!user?.id) return;
+    listSavedScripts(user.id).then(res => setSavedScriptCount(res.saved?.length || 0)).catch(() => {});
+  }, [user?.id]);
+  const isFirstVisit = savedScriptCount === 0;
+
+  const [mounted, setMounted] = useState(false);
+  const [greeting, setGreeting] = useState<Greeting>({ line1: `Hey ${firstName},`, line2: "welcome to your creator agency.", highlight: "creator agency" });
+  useEffect(() => {
+    setMounted(true);
+    setGreeting(pickGreeting(firstName, isFirstVisit, new Date().getHours()));
+  }, [firstName, isFirstVisit]);
+
+  const age = Number(user?.user_metadata?.age) || 25;
+  const [showOnboard, setShowOnboard] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const onboarded = localStorage.getItem(ONBOARD_KEY);
+      const lastConfirmed = Number(localStorage.getItem(AGE_KEY));
+      if (!user.user_metadata?.age) { setShowOnboard(!onboarded); return; }
+      if (!onboarded) setShowOnboard(true);
+      else if (Number.isFinite(lastConfirmed) && lastConfirmed !== age) setShowOnboard(true);
+    } catch {}
+  }, [user, age]);
+
+  async function completeOnboard(confirmedAge: number) {
+    await supabase.auth.updateUser({ data: { age: confirmedAge } });
+    try {
+      localStorage.setItem(ONBOARD_KEY, "1");
+      localStorage.setItem(AGE_KEY, String(confirmedAge));
+    } catch {}
+    setShowOnboard(false);
+  }
 
   // ── Ask-anything assistant — the sole interaction surface on Home, wired to
   // our own Express endpoint at /api/home/intent (rewired from the Lovable
@@ -98,14 +175,13 @@ export default function Index() {
       <div className="w-full max-w-xl relative z-10 flex flex-col items-center gap-8">
 
         {/* Greeting */}
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&display=swap" />
         <div className="text-center space-y-3">
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-            className="font-heading text-3xl md:text-4xl font-bold leading-tight text-foreground">
-            {t('home.greeting_hey')} {firstName},<br />
-            {t('home.greeting_welcome')}{' '}
-            <span className="inline-block px-2 py-0.5 rounded-lg bg-primary/15 text-primary">
-              {t('home.greeting_highlight')}
-            </span>.
+            className="font-normal leading-[1.08] tracking-[-0.02em] text-3xl md:text-4xl text-foreground"
+            style={{ fontFamily: '"Fraunces", Georgia, serif' }}>
+            <div>{mounted ? greeting.line1 : `Hey ${firstName},`}</div>
+            <div className="mt-1">{mounted ? renderHighlighted(greeting) : "welcome to your creator agency."}</div>
           </motion.h1>
 
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
@@ -207,6 +283,95 @@ export default function Index() {
             </AnimatePresence>
           </motion.div>
         )}
+
+        {/* Life calendar — a gentle push to start creating today */}
+        {mounted && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+            <LifeCalendar age={age} />
+          </motion.div>
+        )}
+      </div>
+
+      {showOnboard && (
+        <CalendarOnboarding
+          key={age}
+          initialAge={age}
+          onClose={() => {
+            try {
+              localStorage.setItem(ONBOARD_KEY, "1");
+              localStorage.setItem(AGE_KEY, String(age));
+            } catch {}
+            setShowOnboard(false);
+          }}
+          onConfirm={completeOnboard}
+        />
+      )}
+    </div>
+  );
+}
+
+function CalendarOnboarding({
+  initialAge, onConfirm, onClose,
+}: {
+  initialAge: number;
+  onConfirm: (age: number) => void;
+  onClose: () => void;
+}) {
+  const [val, setVal] = useState(String(initialAge));
+  const n = /^\d{1,3}$/.test(val.trim()) ? parseInt(val, 10) : NaN;
+  const ok = Number.isFinite(n) && n >= 13 && n <= 100;
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center px-4 bg-black/60" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-3xl border border-border bg-card p-6 md:p-7 shadow-2xl relative">
+        <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 text-muted-foreground hover:text-foreground">
+          <X className="size-4" />
+        </button>
+
+        <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+          A quick note before you start
+        </div>
+        <h2 className="mt-2 text-2xl leading-[1.15] tracking-[-0.01em]" style={{ fontFamily: '"Fraunces", Georgia, serif' }}>
+          Meet your life calendar.
+        </h2>
+        <p className="mt-3 text-[13.5px] text-muted-foreground leading-relaxed">
+          Each square is one year of a roughly 80-year life. Filled squares are
+          behind you. The bright square is <span className="text-foreground">right now</span>.
+          The empty ones are every video you haven't posted yet.
+        </p>
+
+        <div className="mt-5">
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            Confirm your age
+            <span className="ml-2 text-[10px] opacity-70">Used to generate your calendar</span>
+          </label>
+          <input
+            type="number" min={13} max={100} value={val}
+            onChange={(e) => setVal(e.target.value.replace(/[^\d]/g, "").slice(0, 3))}
+            className="w-full px-4 py-3 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-ring"
+            autoFocus
+          />
+          {!ok && val.length > 0 && (
+            <div className="mt-1.5 text-[11px] text-destructive">
+              Please enter a realistic age between 13 and 100.
+            </div>
+          )}
+        </div>
+
+        {ok && (
+          <div className="mt-5 rounded-2xl border border-border bg-muted/30 p-4">
+            <LifeCalendar age={n} compact />
+          </div>
+        )}
+
+        <button
+          disabled={!ok}
+          onClick={() => ok && onConfirm(n)}
+          className="mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40"
+        >
+          This is me — show my calendar <ArrowRight className="size-4" />
+        </button>
       </div>
     </div>
   );

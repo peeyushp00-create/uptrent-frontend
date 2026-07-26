@@ -6,7 +6,10 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // adjust path if needed
 import SEO from "@/components/SEO";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Pencil, Trash2, Copy, FileText, Lightbulb, Calendar as CalendarIcon, Repeat, Link2 } from "lucide-react";
+import {
+  Pencil, Trash2, Copy, FileText, Lightbulb, Calendar as CalendarIcon, Repeat, Link2,
+  Download, Loader2,
+} from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL;
 const PURPLE = "hsl(var(--primary))";
@@ -20,12 +23,75 @@ type PexItem = { id: number; kind: "image" | "video"; thumb: string; url: string
 type Music = { key: string; label: string; url: string };
 
 const FONTS = [
-  { key: "Poppins", label: "Poppins", css: "'Poppins', sans-serif" },
-  { key: "Montserrat", label: "Montserrat", css: "'Montserrat', sans-serif" },
-  { key: "Anton", label: "Anton", css: "'Anton', sans-serif" },
-  { key: "BebasNeue", label: "Bebas Neue", css: "'Bebas Neue', sans-serif" },
-  { key: "Inter", label: "Inter", css: "'Inter', sans-serif" },
+  { id: "'Poppins',sans-serif", label: "Poppins" },
+  { id: "'Montserrat',sans-serif", label: "Montserrat" },
+  { id: "'Anton',sans-serif", label: "Anton" },
+  { id: "'Bebas Neue',sans-serif", label: "Bebas Neue" },
+  { id: "'Inter',sans-serif", label: "Inter" },
+  { id: "'Space Grotesk',sans-serif", label: "Space Grotesk" },
+  { id: "'Playfair Display',serif", label: "Playfair" },
+  { id: "'Caveat',cursive", label: "Caveat" },
 ];
+
+// ── Caption style system — templates + per-property overrides, matching
+// Lovable's "Social Spark Studio" caption editor exactly. ──
+type CapPosition = "bottom" | "middle" | "top";
+type CapAnimation = "none" | "fade" | "pop" | "slide";
+type TemplateId = "minimal" | "bold" | "modern" | "podcast" | "creator" | "business" | "news" | "glow";
+
+type CaptionStyle = {
+  fontFamily: string;
+  fontSize: number;   // rem
+  fontWeight: number; // 400..900
+  textColor: string;
+  highlightColor: string;
+  background: "" | "solid" | "pill";
+  bgColor: string;
+  position: CapPosition;
+  animation: CapAnimation;
+  uppercase: boolean;
+};
+
+const TEMPLATES: Record<TemplateId, { label: string; style: CaptionStyle }> = {
+  minimal: { label: "Minimal", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.5, fontWeight: 600, textColor: "#ffffff", highlightColor: "#c4b5fd", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  bold: { label: "Bold", style: { fontFamily: "'Anton',sans-serif", fontSize: 2.25, fontWeight: 800, textColor: "#ffffff", highlightColor: "#facc15", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
+  modern: { label: "Modern", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#a78bfa", background: "pill", bgColor: "#0f172a", position: "bottom", animation: "slide", uppercase: false } },
+  podcast: { label: "Podcast", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.25, fontWeight: 500, textColor: "#f5f5f4", highlightColor: "#fbbf24", background: "solid", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  creator: { label: "Creator", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
+  business: { label: "Business", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.5, fontWeight: 700, textColor: "#ffffff", highlightColor: "#fde68a", background: "solid", bgColor: "#1e293b", position: "bottom", animation: "fade", uppercase: false } },
+  news: { label: "News", style: { fontFamily: "'Bebas Neue',sans-serif", fontSize: 1.8, fontWeight: 700, textColor: "#ffffff", highlightColor: "#ef4444", background: "solid", bgColor: "#dc2626", position: "bottom", animation: "slide", uppercase: true } },
+  glow: { label: "Glow", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#f0abfc", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: true } },
+};
+
+type LangId = "auto" | "en" | "hi" | "ml" | "ta" | "te" | "kn" | "mr" | "gu" | "bn" | "pa";
+const LANGUAGES: { id: LangId; label: string; native?: string; roman?: string }[] = [
+  { id: "auto", label: "Auto Detect" },
+  { id: "en", label: "English" },
+  { id: "hi", label: "Hindi", native: "हिंदी", roman: "Hinglish" },
+  { id: "ml", label: "Malayalam", native: "മലയാളം", roman: "Manglish" },
+  { id: "ta", label: "Tamil", native: "தமிழ்", roman: "Tanglish" },
+  { id: "te", label: "Telugu", native: "తెలుగు", roman: "Tenglish" },
+  { id: "kn", label: "Kannada", native: "ಕನ್ನಡ", roman: "Kanglish" },
+  { id: "mr", label: "Marathi", native: "मराठी", roman: "Minglish" },
+  { id: "gu", label: "Gujarati", native: "ગુજરાતી", roman: "Gunglish" },
+  { id: "bn", label: "Bengali", native: "বাংলা", roman: "Benglish" },
+  { id: "pa", label: "Punjabi", native: "ਪੰਜਾਬੀ", roman: "Punglish" },
+];
+function langHasRoman(id: LangId) { return LANGUAGES.find(l => l.id === id)?.roman != null; }
+
+function toSRT(segs: Segment[]) {
+  const stamp = (s: number) => {
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60), ms = Math.floor((s - Math.floor(s)) * 1000);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")},${String(ms).padStart(3, "0")}`;
+  };
+  return segs.map((s, i) => `${i + 1}\n${stamp(s.start)} --> ${stamp(s.end)}\n${s.text}\n`).join("\n");
+}
+function downloadText(name: string, content: string) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 // Preset music — paste your own hosted royalty-free MP3 URLs.
 const MUSIC: Music[] = [
@@ -548,22 +614,103 @@ function MonthPlanner() {
 // no longer renders its own page header (the shared tab bar above replaces it).
 // ============================================================================
 
+function SearchReplace({ onReplace }: { onReplace: (find: string, repl: string) => void }) {
+  const [find, setFind] = useState("");
+  const [repl, setRepl] = useState("");
+  return (
+    <div className="flex gap-1">
+      <input value={find} onChange={e => setFind(e.target.value)} placeholder="Find"
+        className="flex-1 min-w-0 h-7 rounded-md bg-background border border-border px-2 text-[11px]" />
+      <input value={repl} onChange={e => setRepl(e.target.value)} placeholder="Replace"
+        className="flex-1 min-w-0 h-7 rounded-md bg-background border border-border px-2 text-[11px]" />
+      <button onClick={() => onReplace(find, repl)} disabled={!find}
+        className="h-7 px-2 rounded-md bg-muted text-[11px] hover:bg-accent disabled:opacity-50">Go</button>
+    </div>
+  );
+}
+
 function VideoEditor() {
   const [file, setFile] = useState<File | null>(() => savedStudioState?.file ?? null);
   const [videoUrl, setVideoUrl] = useState(() => savedStudioState?.videoUrl ?? "");
   const [hostedUrl, setHostedUrl] = useState(() => savedStudioState?.hostedUrl ?? "");
   const [duration, setDuration] = useState(() => savedStudioState?.duration ?? 0);
   const [time, setTime] = useState(() => savedStudioState?.time ?? 0);
-  const [segments, setSegments] = useState<Segment[]>(() => savedStudioState?.segments ?? []);
+  const [segments, setSegmentsRaw] = useState<Segment[]>(() => savedStudioState?.segments ?? []);
   const [status, setStatus] = useState<"idle" | "uploading" | "transcribing" | "ready">(() => savedStudioState?.status ?? "idle");
   const [error, setError] = useState(() => savedStudioState?.error ?? "");
 
-  const [font, setFont] = useState(() => savedStudioState?.font ?? FONTS[0]);
-  const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">(() => savedStudioState?.captionPos ?? "bottom");
-  const [showBox, setShowBox] = useState(() => savedStudioState?.showBox ?? true);
-  const [textColor, setTextColor] = useState(() => savedStudioState?.textColor ?? "#ffffff");
-  const [boxColor, setBoxColor] = useState(() => savedStudioState?.boxColor ?? "#000000");
+  // ── Caption style (templates) + language/romanization — matches Lovable's
+  // "Social Spark Studio" caption editor exactly. ──
+  const [template, setTemplateState] = useState<TemplateId>(() => savedStudioState?.template ?? "minimal");
+  const [style, setStyle] = useState<CaptionStyle>(() => savedStudioState?.style ?? TEMPLATES.minimal.style);
+  const [wordHighlight, setWordHighlight] = useState<boolean>(() => savedStudioState?.wordHighlight ?? true);
+  const [showMoreStyle, setShowMoreStyle] = useState(false);
+  const [offset, setOffset] = useState<number>(() => savedStudioState?.offset ?? 0);
+  const [language, setLanguageState] = useState<LangId>(() => savedStudioState?.language ?? "auto");
+  const [useRoman, setUseRomanState] = useState<boolean>(() => savedStudioState?.useRoman ?? false);
+  const [detectedLang, setDetectedLang] = useState<LangId | null>(() => savedStudioState?.detectedLang ?? null);
+  const [nativeSegs, setNativeSegs] = useState<Segment[]>(() => savedStudioState?.nativeSegs ?? []);
+  const [romanSegs, setRomanSegs] = useState<Segment[]>(() => savedStudioState?.romanSegs ?? []);
+  const [romanizing, setRomanizing] = useState(false);
   const [history, setHistory] = useState<Segment[][]>(() => savedStudioState?.history ?? []);
+
+  // Keep the active cache (native or roman) in sync with user edits, same
+  // pattern as Lovable's editor — every existing setSegments(...) call site
+  // below keeps working unchanged.
+  const setSegments = (updater: Segment[] | ((prev: Segment[]) => Segment[])) => {
+    setSegmentsRaw(prev => {
+      const next = typeof updater === "function" ? (updater as (p: Segment[]) => Segment[])(prev) : updater;
+      if (useRoman) setRomanSegs(next); else setNativeSegs(next);
+      return next;
+    });
+  };
+
+  const patchStyle = (p: Partial<CaptionStyle>) => setStyle(s => ({ ...s, ...p }));
+  const setTemplate = (id: TemplateId) => { setTemplateState(id); setStyle(TEMPLATES[id].style); };
+
+  const effectiveLang: LangId = language !== "auto" ? language : (detectedLang ?? "auto");
+  const canRomanize = langHasRoman(effectiveLang);
+
+  const setLanguage = (v: LangId) => {
+    setLanguageState(v);
+    if (!langHasRoman(v) && !langHasRoman(detectedLang ?? "auto")) setUseRomanState(false);
+  };
+
+  const setUseRoman = async (v: boolean) => {
+    if (!canRomanize) return;
+    setUseRomanState(v);
+    if (v) {
+      if (romanSegs.length) { setSegmentsRaw(romanSegs); return; }
+      if (nativeSegs.length) {
+        setRomanizing(true);
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const res = await fetch(`${API}/api/captioner/romanize`, {
+            method: "POST",
+            headers: { "content-type": "application/json", ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+            body: JSON.stringify({ language: effectiveLang, segments: nativeSegs }),
+          });
+          const j = await res.json();
+          if (!res.ok) throw new Error(j.error || "Romanization failed");
+          const romanized: Segment[] = j.segments ?? [];
+          setRomanSegs(romanized);
+          setSegmentsRaw(romanized);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Romanization failed");
+          setUseRomanState(false);
+        } finally {
+          setRomanizing(false);
+        }
+      }
+    } else if (nativeSegs.length) {
+      setSegmentsRaw(nativeSegs);
+    }
+  };
+
+  const exportSrt = () => {
+    if (!segments.length) return;
+    downloadText(`${(file?.name || "captions").replace(/\.[^.]+$/, "")}.srt`, toSRT(segments));
+  };
 
   // overlays
   const [overlays, setOverlays] = useState<Overlay[]>(() => savedStudioState?.overlays ?? []);
@@ -609,7 +756,7 @@ function VideoEditor() {
   const _stateRef = useRef<any>();
   _stateRef.current = {
     file, videoUrl, hostedUrl, duration, time, segments, status, error,
-    font, captionPos, showBox, textColor, boxColor, history,
+    template, style, wordHighlight, offset, language, useRoman, detectedLang, nativeSegs, romanSegs, history,
     overlays, selOverlay,
     showPex, pexTab, pexQ, pexType, pexItems, pexLoading, uploadingOverlay,
     music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, uploadingMusic, uploadedMusic,
@@ -649,8 +796,31 @@ function VideoEditor() {
   const hasMusic = music.key !== "none";
   const trackWidth = Math.max(duration * PX_PER_SEC, 400);
 
-  const activeId = useMemo(() => { const seg = segments.find(s => time >= s.start && time < s.end); return seg ? seg.id : null; }, [segments, time]);
-  const activeText = activeId != null ? segments.find(s => s.id === activeId)?.text : "";
+  const capTime = time + offset;
+  const activeId = useMemo(() => { const seg = segments.find(s => capTime >= s.start && capTime < s.end); return seg ? seg.id : null; }, [segments, capTime]);
+  const activeSeg = activeId != null ? segments.find(s => s.id === activeId) : null;
+  const activeText = activeSeg?.text || "";
+
+  function renderActiveCaption() {
+    if (!activeSeg) return null;
+    const rawWords = activeSeg.text.split(/\s+/);
+    const words = style.uppercase ? rawWords.map(w => w.toUpperCase()) : rawWords;
+    if (!wordHighlight || words.length < 2) {
+      return <span>{style.uppercase ? activeSeg.text.toUpperCase() : activeSeg.text}</span>;
+    }
+    const dur = Math.max(0.001, activeSeg.end - activeSeg.start);
+    const progress = (capTime - activeSeg.start) / dur;
+    const hi = Math.min(words.length - 1, Math.max(0, Math.floor(progress * words.length)));
+    return (
+      <>
+        {words.map((w, i) => (
+          <span key={i} style={i === hi ? { color: style.highlightColor } : undefined}>
+            {w}{i < words.length - 1 ? " " : ""}
+          </span>
+        ))}
+      </>
+    );
+  }
   const activeOverlays = useMemo(() => overlays.filter(o => time >= o.start && time < o.start + o.length), [overlays, time]);
   const activeHalfOverlay = useMemo(() => activeOverlays.find(o => o.mode === "half") || null, [activeOverlays]);
 
@@ -675,7 +845,7 @@ function VideoEditor() {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(() => saveProjectRef.current(), 5000);
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
-  }, [hostedUrl, segments, font, captionPos, showBox, textColor, boxColor,
+  }, [hostedUrl, segments, template, style,
       overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume]);
 
   // overlay drag
@@ -731,6 +901,7 @@ function VideoEditor() {
   async function transcribe() {
     if (!file) return;
     setError(""); setStatus("uploading");
+    setNativeSegs([]); setRomanSegs([]); setUseRomanState(false);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Please sign in again.");
@@ -742,7 +913,7 @@ function VideoEditor() {
       setStatus("transcribing");
       const res = await fetch(`${API}/api/captioner/transcribe`, {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ videoUrl: pub.publicUrl }),
+        body: JSON.stringify({ videoUrl: pub.publicUrl, language: language === "auto" ? undefined : language }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Transcription failed"); }
       const { transcriptId } = await res.json();
@@ -751,7 +922,16 @@ function VideoEditor() {
         await new Promise(r => setTimeout(r, 3000));
         const sRes = await fetch(`${API}/api/captioner/transcribe/${transcriptId}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
         const s = await sRes.json();
-        if (s.status === "completed") { setSegments(buildSegments(s.words || [])); setStatus("ready"); return; }
+        if (s.status === "completed") {
+          const built = buildSegments(s.words || []);
+          setNativeSegs(built);
+          setSegmentsRaw(built);
+          const langKey = (s.language || "").toLowerCase().slice(0, 2);
+          const known = LANGUAGES.find(l => l.id === langKey);
+          if (known) setDetectedLang(known.id);
+          setStatus("ready");
+          return;
+        }
         if (s.status === "error") throw new Error("Transcription failed");
       }
       throw new Error("Transcription timed out");
@@ -874,7 +1054,7 @@ function VideoEditor() {
         user_id: session.user.id,
         name: (segments[0]?.text || file?.name || "Studio project").slice(0, 40),
         video_url: url,
-        data: { segments, font: font.key, captionPos, showBox, textColor, boxColor, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume },
+        data: { segments, template, style, wordHighlight, language, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume },
         updated_at: new Date().toISOString(),
       };
       if (projectId) await supabase.from("studio_projects").update(payload).eq("id", projectId);
@@ -901,10 +1081,12 @@ function VideoEditor() {
   function loadProject(p: { id: string; name: string; video_url: string; data: any }) {
     const d = p.data || {};
     setVideoUrl(p.video_url); setHostedUrl(p.video_url); setFile(null);
-    setSegments(d.segments || []); setHistory([]);
-    setFont(FONTS.find(f => f.key === d.font) || FONTS[0]);
-    setCaptionPos(d.captionPos || "bottom"); setShowBox(d.showBox ?? true);
-    setTextColor(d.textColor || "#ffffff"); setBoxColor(d.boxColor || "#000000");
+    setNativeSegs(d.segments || []); setRomanSegs([]); setUseRomanState(false);
+    setSegmentsRaw(d.segments || []); setHistory([]);
+    setTemplateState(d.template || "minimal");
+    setStyle(d.style || TEMPLATES[(d.template as TemplateId) || "minimal"].style);
+    setWordHighlight(d.wordHighlight ?? true);
+    setLanguageState(d.language || "auto"); setDetectedLang(null);
     setOverlays(d.overlays || []);
     setMusic(d.music || MUSIC[0]); setMusicStart(d.musicStart || 0);
     setSongTrim(d.songTrim || 0); setVolume(d.volume ?? 0.25);
@@ -1034,20 +1216,23 @@ function VideoEditor() {
           }
 
           // Captions
-          const seg = segments.find(s => t >= s.start && t < s.end);
+          const seg = segments.find(s => (t + offset) >= s.start && (t + offset) < s.end);
           if (seg?.text) {
-            const fs = Math.round(W * 0.044);
-            ctx.font = `600 ${fs}px ${font.css}`;
+            const fs = Math.round(W * 0.0293 * style.fontSize);
+            ctx.font = `${style.fontWeight} ${fs}px ${style.fontFamily}`;
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
             const x = W / 2;
-            const y = captionPos === "top" ? H * 0.1 : captionPos === "middle" ? H * 0.5 : H * 0.88;
+            const y = style.position === "top" ? H * 0.1 : style.position === "middle" ? H * 0.5 : H * 0.88;
             const pad = fs * 0.5;
-            const tw = ctx.measureText(seg.text).width;
-            if (showBox) {
-              ctx.fillStyle = boxColor;
-              ctx.beginPath(); ctx.roundRect(x - tw / 2 - pad, y - fs / 2 - pad / 2, tw + pad * 2, fs + pad, 8); ctx.fill();
+            const text = style.uppercase ? seg.text.toUpperCase() : seg.text;
+            const tw = ctx.measureText(text).width;
+            if (style.background) {
+              ctx.fillStyle = style.bgColor;
+              ctx.beginPath();
+              ctx.roundRect(x - tw / 2 - pad, y - fs / 2 - pad / 2, tw + pad * 2, fs + pad, style.background === "pill" ? 999 : 8);
+              ctx.fill();
             }
-            ctx.fillStyle = textColor; ctx.fillText(seg.text, x, y);
+            ctx.fillStyle = style.textColor; ctx.fillText(text, x, y);
           }
 
           if (v.ended || v.currentTime >= duration - 0.05) {
@@ -1095,7 +1280,16 @@ function VideoEditor() {
     }
   }
 
-  const capTop = captionPos === "top" ? { top: "10%" } : captionPos === "middle" ? { top: "45%" } : { bottom: "10%" };
+  const capTop = style.position === "top" ? { top: "10%" } : style.position === "middle" ? { top: "45%" } : { bottom: "10%" };
+  const capAnimClass = style.animation === "fade" ? "animate-in fade-in duration-300"
+    : style.animation === "pop" ? "animate-in zoom-in-95 fade-in duration-200"
+    : style.animation === "slide" ? "animate-in slide-in-from-bottom-2 fade-in duration-200"
+    : "";
+  const capWrapStyle: React.CSSProperties = style.background === "solid"
+    ? { backgroundColor: style.bgColor, padding: "0.35em 0.7em", borderRadius: "0.35em" }
+    : style.background === "pill"
+    ? { backgroundColor: style.bgColor, padding: "0.35em 0.9em", borderRadius: 9999 }
+    : {};
   const sel = overlays.find(o => o.id === selOverlay) || null;
 
   // dark timeline styles
@@ -1157,6 +1351,7 @@ function VideoEditor() {
             <div className="flex items-center gap-2">
               <button onClick={() => {
                 setFile(null); setVideoUrl(""); setHostedUrl(""); setSegments([]);
+                setNativeSegs([]); setRomanSegs([]); setUseRomanState(false); setDetectedLang(null);
                 setOverlays([]); setMusic(MUSIC[0]); setStatus("idle"); setHistory([]);
               }} className="text-sm font-semibold text-muted-foreground hover:text-foreground transition">← New</button>
               <div className="w-px h-4 bg-border mx-1" />
@@ -1217,7 +1412,21 @@ function VideoEditor() {
                 ))}
                 {activeText && (
                   <div className="absolute left-0 right-0 px-3 text-center pointer-events-none" style={capTop}>
-                    <span className="inline-block px-2.5 py-1 rounded-md text-sm" style={{ fontFamily: font.css, color: textColor, background: showBox ? boxColor : "transparent", lineHeight: 1.25 }}>{activeText}</span>
+                    <span
+                      key={activeId}
+                      className={`inline-block ${capAnimClass}`}
+                      style={{
+                        ...capWrapStyle,
+                        fontFamily: style.fontFamily,
+                        fontSize: `${style.fontSize * 0.62}rem`,
+                        fontWeight: style.fontWeight,
+                        color: style.textColor,
+                        textShadow: style.background === "" ? "0 2px 8px rgba(0,0,0,0.7)" : undefined,
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {renderActiveCaption()}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1277,44 +1486,128 @@ function VideoEditor() {
                 <div className="panel p-4 space-y-4">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Caption Style</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Style</p>
                   </div>
+
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">Font</p>
-                    <div className="flex flex-wrap gap-2">
-                      {FONTS.map(f => (
-                        <button key={f.key} onClick={() => setFont(f)}
-                          className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
-                          style={font.key === f.key ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15`, fontFamily: f.css } : { fontFamily: f.css }}>
-                          {f.label}
-                        </button>
-                      ))}
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">Template</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {(Object.keys(TEMPLATES) as TemplateId[]).map(id => {
+                        const tpl = TEMPLATES[id];
+                        const active = template === id;
+                        return (
+                          <button key={id} onClick={() => setTemplate(id)}
+                            className="rounded-lg border overflow-hidden text-left transition-all"
+                            style={active ? { borderColor: PURPLE, boxShadow: `0 0 0 1px ${PURPLE}66` } : { borderColor: "hsl(var(--border))" }}>
+                            <div className="h-9 grid place-items-center px-2" style={{ backgroundImage: "linear-gradient(135deg, rgba(30,30,40,0.9), rgba(10,10,20,0.9))" }}>
+                              <span style={{ fontFamily: tpl.style.fontFamily, fontWeight: tpl.style.fontWeight, color: tpl.style.textColor, textTransform: tpl.style.uppercase ? "uppercase" : "none", fontSize: "0.8rem", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>Aa</span>
+                            </div>
+                            <div className="px-2 py-1 bg-card"><div className="text-[10px] font-medium leading-tight">{tpl.label}</div></div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
+
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">Position</p>
-                    <div className="flex gap-2">
-                      {(["top", "middle", "bottom"] as const).map(p => (
-                        <button key={p} onClick={() => setCaptionPos(p)}
-                          className="flex-1 px-3 py-1.5 rounded-lg border border-border text-sm capitalize font-medium transition"
-                          style={captionPos === p ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
-                          {p}
-                        </button>
-                      ))}
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Font</p>
+                    <select value={style.fontFamily} onChange={e => patchStyle({ fontFamily: e.target.value })}
+                      className="w-full h-8 rounded-md bg-background border border-border px-2 text-xs">
+                      {FONTS.map(f => (<option key={f.id} value={f.id}>{f.label}</option>))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Size {style.fontSize.toFixed(2)}</p>
+                      <input type="range" min={0.8} max={3.5} step={0.05} value={style.fontSize} onChange={e => patchStyle({ fontSize: parseFloat(e.target.value) })} className="w-full accent-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Weight</p>
+                      <div className="grid grid-cols-4 gap-1">
+                        {[400, 600, 700, 900].map(w => (
+                          <button key={w} onClick={() => patchStyle({ fontWeight: w })}
+                            className="h-7 rounded text-[10px] border font-medium"
+                            style={style.fontWeight === w ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{w}</button>
+                        ))}
+                      </div>
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Text</span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <input type="color" value={style.textColor} onChange={e => patchStyle({ textColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                        <input type="text" value={style.textColor} onChange={e => patchStyle({ textColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
+                      </div>
+                    </label>
+                    <label className="block">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Highlight</span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <input type="color" value={style.highlightColor} onChange={e => patchStyle({ highlightColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                        <input type="text" value={style.highlightColor} onChange={e => patchStyle({ highlightColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
+                      </div>
+                    </label>
+                  </div>
+
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">Style</p>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <button onClick={() => setShowBox(v => !v)}
-                        className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
-                        style={showBox ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
-                        {showBox ? "Box: on" : "Box: off"}
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Background</p>
+                    <div className="grid grid-cols-3 gap-1">
+                      {([{ id: "" as const, label: "None" }, { id: "solid" as const, label: "Box" }, { id: "pill" as const, label: "Pill" }]).map(b => (
+                        <button key={b.id} onClick={() => patchStyle({ background: b.id })}
+                          className="h-7 rounded text-[10px] border font-medium"
+                          style={style.background === b.id ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{b.label}</button>
+                      ))}
+                    </div>
+                    {style.background && (
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <input type="color" value={style.bgColor} onChange={e => patchStyle({ bgColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                        <input type="text" value={style.bgColor} onChange={e => patchStyle({ bgColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Position</p>
+                      <div className="grid grid-cols-3 gap-1">
+                        {(["top", "middle", "bottom"] as CapPosition[]).map(p => (
+                          <button key={p} onClick={() => patchStyle({ position: p })}
+                            className="h-7 rounded text-[10px] border capitalize font-medium"
+                            style={style.position === p ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{p.charAt(0)}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Animation</p>
+                      <select value={style.animation} onChange={e => patchStyle({ animation: e.target.value as CapAnimation })}
+                        className="w-full h-7 rounded-md bg-background border border-border px-2 text-xs capitalize">
+                        {(["none", "fade", "pop", "slide"] as CapAnimation[]).map(a => (<option key={a} value={a}>{a}</option>))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <label className="flex items-center justify-between text-xs">
+                    <span>Word highlight</span>
+                    <button onClick={() => setWordHighlight(v => !v)}
+                      className="relative w-9 h-5 rounded-full transition" style={{ background: wordHighlight ? PURPLE : "hsl(var(--muted))" }}>
+                      <span className="absolute top-0.5 size-4 bg-white rounded-full transition" style={{ left: wordHighlight ? 16 : 2 }} />
+                    </button>
+                  </label>
+
+                  <button onClick={() => setShowMoreStyle(v => !v)} className="w-full flex items-center justify-between text-[11px] text-muted-foreground hover:text-foreground pt-1">
+                    <span>More</span><span>{showMoreStyle ? "▲" : "▼"}</span>
+                  </button>
+                  {showMoreStyle && (
+                    <label className="flex items-center justify-between text-xs pt-1 border-t border-border">
+                      <span>Uppercase</span>
+                      <button onClick={() => patchStyle({ uppercase: !style.uppercase })}
+                        className="relative w-9 h-5 rounded-full transition" style={{ background: style.uppercase ? PURPLE : "hsl(var(--muted))" }}>
+                        <span className="absolute top-0.5 size-4 bg-white rounded-full transition" style={{ left: style.uppercase ? 16 : 2 }} />
                       </button>
-                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">Text<input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" /></label>
-                      {showBox && <label className="flex items-center gap-1.5 text-xs text-muted-foreground">Box<input type="color" value={boxColor} onChange={e => setBoxColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" /></label>}
-                    </div>
-                  </div>
+                    </label>
+                  )}
                 </div>
               )}
             </div>
@@ -1335,6 +1628,53 @@ function VideoEditor() {
                       <span className="text-xs text-muted-foreground">{segments.length} lines</span>
                     </div>
                   </div>
+
+                  {/* Language + romanization */}
+                  <div className="flex gap-2 mb-2">
+                    <select
+                      value={useRoman ? `${language}-roman` : language}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v.endsWith("-roman")) { setLanguage(v.slice(0, -"-roman".length) as LangId); void setUseRoman(true); }
+                        else { setLanguage(v as LangId); void setUseRoman(false); }
+                      }}
+                      disabled={romanizing}
+                      className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs">
+                      {LANGUAGES.flatMap(l => {
+                        const label = l.native ? `${l.label} — ${l.native}` : l.label;
+                        const rows = [<option key={l.id} value={l.id}>{label}</option>];
+                        if (l.roman) rows.push(<option key={`${l.id}-roman`} value={`${l.id}-roman`}>{l.roman} (Romanized)</option>);
+                        return rows;
+                      })}
+                    </select>
+                    <button onClick={transcribe} disabled={status === "uploading" || status === "transcribing"}
+                      title="Re-transcribe" className="h-8 px-2 rounded-md border border-border text-xs hover:bg-accent inline-flex items-center gap-1" style={{ color: PURPLE }}>
+                      Re-transcribe
+                    </button>
+                  </div>
+                  {romanizing && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
+                      <Loader2 className="size-3 animate-spin" /> Converting…
+                    </div>
+                  )}
+
+                  {/* Search & replace */}
+                  <SearchReplace onReplace={(find, repl) => {
+                    if (!find) return;
+                    const re = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+                    pushHistory();
+                    setSegments(prev => prev.map(s => ({ ...s, text: s.text.replace(re, repl) })));
+                  }} />
+
+                  {/* Caption offset */}
+                  <div className="mt-2 mb-3">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                      <span>Caption offset</span>
+                      <span className="tabular-nums">{offset >= 0 ? "+" : ""}{offset.toFixed(2)}s</span>
+                    </div>
+                    <input type="range" min={-2} max={2} step={0.05} value={offset} onChange={e => setOffset(parseFloat(e.target.value))} className="w-full accent-purple-600" />
+                  </div>
+
                   <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
                     {segments.map(s => { const active = s.id === activeId; return (
                       <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
@@ -1353,6 +1693,11 @@ function VideoEditor() {
                         </div>
                       </div>); })}
                   </div>
+                  <button onClick={exportSrt} disabled={!segments.length}
+                    className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-white text-xs font-semibold disabled:opacity-50"
+                    style={{ background: GRAD }}>
+                    <Download className="size-3" /> Export .srt
+                  </button>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card flex items-center justify-center text-sm text-muted-foreground p-10 text-center">Transcribe to edit captions here.</div>

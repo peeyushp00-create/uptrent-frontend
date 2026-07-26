@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil, Download, Star, MoreHorizontal } from "lucide-react";
+import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil, Download, Star } from "lucide-react";
 import {
   generateScriptFromMessage, transcribeAudio,
   listConversations, getConversation, createConversation, appendMessage, renameConversation, deleteConversation,
@@ -141,6 +141,36 @@ function formatDuration(seconds: number): string {
   return mins % 1 === 0 ? `${mins}min` : `${mins.toFixed(1)}min`;
 }
 
+// ── Refinement chips — quick one-click rewrites shown under every script,
+// matching Lovable's Improve/Stronger hook/Shorten/Match my voice pattern.
+// Mapped onto the existing per-section rewriteSection() API. ──
+const PRIMARY_REFINE_CHIPS: { mode: string; label: string; section: 'hook' | 'body' | 'cta' }[] = [
+  { mode: 'more_viral', label: 'Improve', section: 'body' },
+  { mode: 'stronger_hook', label: 'Stronger hook', section: 'hook' },
+  { mode: 'shorter', label: 'Shorten', section: 'body' },
+  { mode: 'match_voice', label: 'Match my voice', section: 'body' },
+];
+const MORE_REFINE_CHIPS: { mode: string; label: string; section: 'hook' | 'body' | 'cta' }[] = [
+  { mode: 'add_humor', label: 'Add humor', section: 'body' },
+  { mode: 'more_educational', label: 'More educational', section: 'body' },
+  { mode: 'longer', label: 'Make longer', section: 'body' },
+  { mode: 'more_conversational', label: 'More conversational', section: 'body' },
+  { mode: 'add_storytelling', label: 'Add storytelling', section: 'body' },
+  { mode: 'better_retention', label: 'Better retention', section: 'cta' },
+];
+const REFINE_INSTRUCTIONS: Record<string, string> = {
+  more_viral: 'Make the whole script more engaging, punchy, and viral-worthy',
+  stronger_hook: 'Make the hook more attention-grabbing and impossible to scroll past',
+  shorter: 'Make it noticeably shorter and punchier without losing the point',
+  match_voice: 'Rewrite to match my personal voice, tone, and speaking style exactly',
+  add_humor: 'Add more humor and wit',
+  more_educational: 'Make it more educational and informative',
+  longer: 'Expand it with more detail and depth',
+  more_conversational: 'Make it sound more conversational and natural, like talking to a friend',
+  add_storytelling: 'Add a storytelling angle with a clear narrative arc',
+  better_retention: 'Rewrite to maximize watch-through and retention',
+};
+
 function findProviderAndTier(modelKey: string): { provider: Provider; tier: ModelTier } {
   for (const provider of PROVIDERS) {
     const tier = provider.tiers.find(t => t.key === modelKey);
@@ -195,7 +225,7 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   text?: string;
-  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string; is_saved?: boolean };
+  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string; is_saved?: boolean; is_personalized?: boolean };
   error?: boolean;
   timestamp: number;
 }
@@ -327,8 +357,10 @@ export default function ScriptsPage() {
   const [currentConvTitle, setCurrentConvTitle] = useState<string | null>(null);
 
   // Batch 2 state
-  const [rewritingMsgId, setRewritingMsgId] = useState<string | null>(null); // which card has dropdown open
+  const [rewritingMsgId, setRewritingMsgId] = useState<string | null>(null); // which card has the "More" refine dropdown open
   const [rewritingSection, setRewritingSection] = useState(false); // loading state for rewrite
+  const [editingField, setEditingField] = useState<{ msgId: string; field: 'hook' | 'body' | 'cta' } | null>(null);
+  const [editDraft, setEditDraft] = useState('');
   const [showSavedPanel, setShowSavedPanel] = useState(false);
   const [savedScripts, setSavedScripts] = useState<SavedScriptMessage[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
@@ -503,7 +535,7 @@ export default function ScriptsPage() {
 
       const assistantMsg: ChatMessage = result.needs_clarification
         ? { id: `${Date.now()}-a`, role: 'assistant', text: result.question, timestamp: Date.now() }
-        : { id: `${Date.now()}-a`, role: 'assistant', script: result, timestamp: Date.now() };
+        : { id: `${Date.now()}-a`, role: 'assistant', script: { ...result, is_personalized: !!userVoiceStyle }, timestamp: Date.now() };
       setMessages(prev => [...prev, assistantMsg]);
 
       // Persist the assistant's reply, then refresh the sidebar (title/ordering may have changed)
@@ -641,6 +673,21 @@ export default function ScriptsPage() {
       setRewritingSection(false);
     }
   };
+
+  // Manual inline edit of a single field (double-click or the Edit button) —
+  // client-side only, same as rewriteSection: the edit isn't re-persisted to
+  // the stored message row, only reflected in the live chat state.
+  const startEditField = (msgId: string, field: 'hook' | 'body' | 'cta', current: string) => {
+    setEditingField({ msgId, field });
+    setEditDraft(current);
+  };
+  const saveEditField = () => {
+    if (!editingField) return;
+    const { msgId, field } = editingField;
+    setMessages(prev => prev.map(m => m.id === msgId && m.script ? { ...m, script: { ...m.script, [field]: editDraft } } : m));
+    setEditingField(null);
+  };
+  const cancelEditField = () => setEditingField(null);
 
   const handleToggleSave = async (msgId: string, currentlySaved: boolean) => {
     if (!user?.id) return;
@@ -1198,64 +1245,101 @@ export default function ScriptsPage() {
                             style={{ color: copied === `all-${msg.id}` ? (theme === 'dark' ? '#4ADE80' : '#16a34a') : TEXT_MUTED }}>
                             {copied === `all-${msg.id}` ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                           </button>
-                          {/* Rewrite section dropdown */}
-                          <div className="relative">
-                            <button onClick={() => setRewritingMsgId(prev => prev === msg.id ? null : msg.id)}
-                              title="Rewrite a section" style={{ color: TEXT_MUTED }}>
-                              <MoreHorizontal className="w-3.5 h-3.5" />
-                            </button>
-                            <AnimatePresence>
-                              {rewritingMsgId === msg.id && (
-                                <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                                  className="absolute right-0 top-full mt-1 w-52 rounded-2xl overflow-hidden z-50"
-                                  style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
-                                  <p className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: TEXT_MUTED, borderBottom: `1px solid ${BORDER}` }}>Rewrite section</p>
-                                  {[
-                                    { section: 'hook' as const, label: 'Make hook more shocking' },
-                                    { section: 'hook' as const, label: 'Make hook a question' },
-                                    { section: 'body' as const, label: 'Make it funnier' },
-                                    { section: 'body' as const, label: 'Make it shorter' },
-                                    { section: 'body' as const, label: 'Add more detail' },
-                                    { section: 'cta' as const, label: 'Stronger CTA' },
-                                    { section: 'cta' as const, label: 'More casual CTA' },
-                                  ].map(opt => (
-                                    <button key={opt.label}
-                                      disabled={rewritingSection}
-                                      onClick={() => handleRewriteSection(msg.id, opt.section, opt.label, msg.script)}
-                                      className="w-full text-left px-4 py-2 text-xs transition-colors disabled:opacity-40"
-                                      style={{ color: TEXT_MUTED }}
-                                      onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
-                                      onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
-                                      {opt.label}
-                                    </button>
-                                  ))}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
                         </div>
                       </div>
 
-                      {/* Script body */}
+                      {msg.script.is_personalized && (
+                        <div className="mx-4 mt-3 rounded-xl px-3 py-2 text-[11px]" style={{ border: `1px solid ${ACCENT}4D`, background: `${ACCENT}0D`, color: TEXT_MUTED }}>
+                          <span className="font-semibold" style={{ color: ACCENT }}>Voice style used</span> — personalized to your recorded tone and phrasing.
+                        </div>
+                      )}
+
+                      {/* Script body — each field is inline-editable (double-click or Edit) */}
                       <div className="p-4 space-y-3">
-                        {msg.script.hook && (
-                          <div className="rounded-xl p-3.5" style={{ border: `1px solid ${BORDER}` }}>
-                            <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: TEXT_MUTED }}>Hook</span>
-                            <p className="text-sm leading-relaxed mt-1.5" style={{ color: TEXT }}>{msg.script.hook}</p>
-                          </div>
-                        )}
-                        {msg.script.body && (
-                          <div className="rounded-xl p-3.5" style={{ border: `1px solid ${BORDER}` }}>
-                            <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: TEXT_MUTED }}>Body</span>
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed mt-1.5" style={{ color: TEXT }}>{msg.script.body}</p>
-                          </div>
-                        )}
-                        {msg.script.cta && (
-                          <div className="rounded-xl p-3.5" style={{ border: `1px solid ${BORDER}` }}>
-                            <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: TEXT_MUTED }}>Call to action</span>
-                            <p className="text-sm leading-relaxed mt-1.5" style={{ color: TEXT }}>{msg.script.cta}</p>
-                          </div>
-                        )}
+                        {(['hook', 'body', 'cta'] as const).map(field => {
+                          const label = field === 'hook' ? 'Hook' : field === 'body' ? 'Body' : 'Call to action';
+                          const value = msg.script?.[field] || '';
+                          if (!value) return null;
+                          const isEditing = editingField?.msgId === msg.id && editingField.field === field;
+                          return (
+                            <div key={field} className="group rounded-xl p-3.5" style={{ border: `1px solid ${BORDER}` }}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: TEXT_MUTED }}>{label}</span>
+                                {!isEditing && (
+                                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => startEditField(msg.id, field, value)}
+                                      className="inline-flex items-center gap-1 text-[10px]" style={{ color: TEXT_MUTED }}>
+                                      <Pencil className="w-3 h-3" /> Edit
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              {isEditing ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    autoFocus
+                                    value={editDraft}
+                                    onChange={e => setEditDraft(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Escape') cancelEditField(); if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveEditField(); }}
+                                    rows={Math.max(2, editDraft.split('\n').length + 1)}
+                                    className="w-full rounded-lg p-2.5 text-sm outline-none resize-y"
+                                    style={{ background: SURFACE_RAISED, border: `1px solid ${ACCENT}`, color: TEXT }}
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={saveEditField} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium" style={{ background: ACCENT_SOLID, color: '#fff' }}>
+                                      <Check className="w-3 h-3" /> Save
+                                    </button>
+                                    <button onClick={cancelEditField} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px]" style={{ color: TEXT_MUTED }}>
+                                      <X className="w-3 h-3" /> Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p onDoubleClick={() => startEditField(msg.id, field, value)}
+                                  className="text-sm whitespace-pre-wrap leading-relaxed cursor-text" style={{ color: TEXT }}>
+                                  {value}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Refinement chips */}
+                      <div className="px-4 pb-2 flex flex-wrap items-center gap-2">
+                        {PRIMARY_REFINE_CHIPS.map(c => (
+                          <button key={c.mode} disabled={rewritingSection}
+                            onClick={() => handleRewriteSection(msg.id, c.section, REFINE_INSTRUCTIONS[c.mode], msg.script)}
+                            className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors disabled:opacity-40"
+                            style={{ background: 'hsl(var(--secondary))', color: TEXT }}>
+                            {c.label}
+                          </button>
+                        ))}
+                        <div className="relative">
+                          <button onClick={() => setRewritingMsgId(prev => prev === msg.id ? null : msg.id)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors" style={{ color: TEXT_MUTED }}>
+                            More <ChevronDown className="w-3 h-3" />
+                          </button>
+                          <AnimatePresence>
+                            {rewritingMsgId === msg.id && (
+                              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                                className="absolute left-0 bottom-full mb-1 w-52 rounded-2xl overflow-hidden z-50"
+                                style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
+                                {MORE_REFINE_CHIPS.map(c => (
+                                  <button key={c.mode}
+                                    disabled={rewritingSection}
+                                    onClick={() => { handleRewriteSection(msg.id, c.section, REFINE_INSTRUCTIONS[c.mode], msg.script); setRewritingMsgId(null); }}
+                                    className="w-full text-left px-4 py-2 text-xs transition-colors disabled:opacity-40"
+                                    style={{ color: TEXT_MUTED }}
+                                    onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
+                                    onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
+                                    {c.label}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       </div>
 
                       {/* Regenerate */}
