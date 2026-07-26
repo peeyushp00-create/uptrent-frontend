@@ -187,3 +187,176 @@
   background: #3b1d8a30;
   color: #a78bfa;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Redesign theme — Lovable's page layouts/components, recolored to
+   SocialRum's own purple brand (same values as :root/.light below) instead
+   of Lovable's lime-green, so migrated pages match the sidebar/landing page.
+   Scoped under `.theme-redesign` — never applied to `:root`/`.light`/`.dark`
+   directly, so LandingPage and any not-yet-migrated page are unaffected.
+   Apply this class to a migrated page's own root wrapper only.
+   ════════════════════════════════════════════════════════════════════════ */
+.theme-redesign {
+  /* Mirrors :root (dark, default) */
+  --radius: 0.75rem;
+
+  --background: 0 0% 7%;
+  --foreground: 210 20% 95%;
+  --card: 0 0% 11%;
+  --card-foreground: 210 20% 95%;
+  --popover: 0 0% 11%;
+  --popover-foreground: 210 20% 95%;
+  --primary: 263 70% 57%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 14%;
+  --secondary-foreground: 210 10% 70%;
+  --muted: 0 0% 16%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 0% 18%;
+  --accent-foreground: 210 20% 95%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 20%;
+  --input: 0 0% 14%;
+  --ring: 263 70% 57%;
+
+  --sidebar-background: 0 0% 9%;
+  --sidebar-foreground: 0 0% 70%;
+  --sidebar-primary: 263 70% 57%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent-foreground: 210 20% 95%;
+  --sidebar-border: 0 0% 17%;
+  --sidebar-ring: 263 70% 57%;
+
+  --redesign-shadow-glow: 0 4px 20px rgba(124, 58, 237, 0.25);
+  --redesign-shadow-elegant: 0 24px 70px -30px rgba(18, 23, 26, 0.24);
+}
+
+/* Mirrors .light */
+.theme-redesign.light {
+  --background: 0 0% 97%;
+  --foreground: 224 39% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 39% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 39% 12%;
+  --primary: 263 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 214 32% 93%;
+  --secondary-foreground: 224 39% 20%;
+  --muted: 214 32% 93%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 214 32% 89%;
+  --accent-foreground: 224 39% 12%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 86%;
+  --input: 214 32% 89%;
+  --ring: 263 70% 50%;
+
+  --sidebar-background: 0 0% 99%;
+  --sidebar-foreground: 224 39% 30%;
+  --sidebar-primary: 263 70% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 214 32% 92%;
+  --sidebar-accent-foreground: 224 39% 12%;
+  --sidebar-border: 214 32% 88%;
+  --sidebar-ring: 263 70% 50%;
+
+  --redesign-shadow-glow: 0 4px 20px rgba(124, 58, 237, 0.15);
+}
+
+/* YouTube platform keeps the redesign's layouts but swaps in YouTube's signal red. */
+.theme-redesign[data-platform="youtube"] {
+  --primary: 0 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 0 100% 45%;
+  --accent-foreground: 0 0% 100%;
+  --ring: 0 100% 50%;
+  --sidebar-primary: 0 100% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-ring: 0 100% 50%;
+}
+
+.theme-redesign {
+  font-family: var(--font-body);
+}
+
+.theme-redesign h1,
+.theme-redesign h2,
+.theme-redesign h3,
+.theme-redesign h4 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.035em;
+}
+
+.theme-redesign ::selection {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Ported utility classes (Lovable used Tailwind v4 @utility; this app is v3,
+   so these are plain scoped classes instead). */
+.theme-redesign .panel {
+  background: linear-gradient(145deg, color-mix(in oklab, hsl(var(--card)) 98%, white), hsl(var(--card)));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) + 8px);
+  box-shadow: var(--redesign-shadow-elegant);
+}
+
+.theme-redesign .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+}
+
+.theme-redesign .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.theme-redesign.app-canvas {
+  isolation: isolate;
+}
+
+.theme-redesign.app-canvas::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 82% 8%, color-mix(in oklab, hsl(var(--primary)) 18%, transparent), transparent 26rem),
+    linear-gradient(120deg, transparent 0 72%, color-mix(in oklab, hsl(var(--foreground)) 3%, transparent) 72% 72.1%, transparent 72.1%);
+}
+
+.theme-redesign .input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--input));
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.theme-redesign .signal-grid {
+  background-image:
+    linear-gradient(color-mix(in oklab, hsl(var(--foreground)) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, hsl(var(--foreground)) 5%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}

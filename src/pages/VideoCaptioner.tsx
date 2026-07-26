@@ -5,8 +5,8 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // <-- adjust import to your project
 
 const API = import.meta.env.VITE_API_URL;
-const PURPLE = "#7C3AED";
-const GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
+const PURPLE = "hsl(var(--primary))";
+const GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
 
 type Word = { id: number; start: number; end: number; text: string };
 type Segment = { id: number; start: number; end: number; text: string };

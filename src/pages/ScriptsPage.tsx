@@ -17,26 +17,29 @@ import { supabase } from "@/lib/supabase";
 // Light tokens: clean white surfaces, dark text.
 // Dark tokens: near-black surfaces, off-white text.
 // Single restrained accent in both, minimal borders instead of tinted boxes.
+// Both palettes point at the `.theme-redesign` CSS variables (see index.css),
+// which already flip between light/dark via the `.dark` class — so there's
+// no need for two separate hardcoded hex palettes any more.
 const LIGHT = {
-  BG: "#f8f9fa",
-  SURFACE: "#ffffff",
-  SURFACE_RAISED: "#ffffff",
-  BORDER: "#e1e3e4",
-  TEXT: "#191c1d",
-  TEXT_MUTED: "#757684",
-  ACCENT: "#7C3AED",
-  ACCENT_SOLID: "#7C3AED",
+  BG: "hsl(var(--background))",
+  SURFACE: "hsl(var(--card))",
+  SURFACE_RAISED: "hsl(var(--card))",
+  BORDER: "hsl(var(--border))",
+  TEXT: "hsl(var(--foreground))",
+  TEXT_MUTED: "hsl(var(--muted-foreground))",
+  ACCENT: "hsl(var(--primary))",
+  ACCENT_SOLID: "hsl(var(--primary))",
 };
 
 const DARK = {
-  BG: "#0A0A0B",
-  SURFACE: "#141416",
-  SURFACE_RAISED: "#1A1A1D",
-  BORDER: "#262629",
-  TEXT: "#F5F5F4",
-  TEXT_MUTED: "#8A8A8E",
-  ACCENT: "#A78BFA",
-  ACCENT_SOLID: "#7C3AED",
+  BG: "hsl(var(--background))",
+  SURFACE: "hsl(var(--card))",
+  SURFACE_RAISED: "hsl(var(--card))",
+  BORDER: "hsl(var(--border))",
+  TEXT: "hsl(var(--foreground))",
+  TEXT_MUTED: "hsl(var(--muted-foreground))",
+  ACCENT: "hsl(var(--primary))",
+  ACCENT_SOLID: "hsl(var(--primary))",
 };
 
 const CONTENT_TYPES = [
@@ -760,7 +763,7 @@ export default function ScriptsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: BG, color: TEXT }}>
+    <div className={`theme-redesign ${theme} min-h-screen flex flex-col`} style={{ background: BG, color: TEXT }}>
       <SEO title="Scripts — SocialRum" noindex />
 
       {/* ── Header ── */}
@@ -933,7 +936,7 @@ export default function ScriptsPage() {
                   <div key={conv.id}
                     onClick={() => handleSwitchConversation(conv.id)}
                     className="group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm cursor-pointer transition-colors"
-                    style={{ background: conv.id === conversationId ? (theme === 'dark' ? '#1A1A1D' : '#f3f4f5') : 'transparent' }}>
+                    style={{ background: conv.id === conversationId ? 'hsl(var(--secondary))' : 'transparent' }}>
                     <MessageSquare className="w-3.5 h-3.5 shrink-0" style={{ color: TEXT_MUTED }} />
                     {renamingId === conv.id ? (
                       <input
@@ -1183,7 +1186,7 @@ export default function ScriptsPage() {
                               {rewritingMsgId === msg.id && (
                                 <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
                                   className="absolute right-0 top-full mt-1 w-52 rounded-2xl overflow-hidden z-50"
-                                  style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+                                  style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
                                   <p className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: TEXT_MUTED, borderBottom: `1px solid ${BORDER}` }}>Rewrite section</p>
                                   {[
                                     { section: 'hook' as const, label: 'Make hook more shocking' },
@@ -1294,7 +1297,7 @@ export default function ScriptsPage() {
                 {showContentTypeMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl overflow-hidden z-50 max-h-72 overflow-y-auto"
-                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
                     {CONTENT_TYPES.map(c => (
                       <button key={c.id} onClick={() => { setContentType(c.id); setShowContentTypeMenu(false); }}
                         className="w-full flex items-center px-4 py-2.5 text-sm text-left transition-colors"
@@ -1319,7 +1322,7 @@ export default function ScriptsPage() {
                 {showDurationMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="absolute bottom-full left-0 mb-2 w-48 rounded-2xl overflow-hidden z-50"
-                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
                     {(['auto', 15, 30, 60, 90, 120] as const).map(d => (
                       <button key={d} onClick={() => { setSelectedDuration(d); setShowCustomDurationInput(false); setShowDurationMenu(false); }}
                         className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
@@ -1372,7 +1375,7 @@ export default function ScriptsPage() {
                 {showAiModelMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl overflow-hidden z-50 max-h-96 overflow-y-auto"
-                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
                     {PROVIDERS.map(p => {
                       const isExpanded = hoveredProviderId === p.id || selectedProvider.id === p.id;
                       return (
@@ -1424,7 +1427,7 @@ export default function ScriptsPage() {
                 {showLanguageMenu && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="absolute bottom-full left-0 mb-2 w-44 rounded-2xl overflow-hidden z-50"
-                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: theme === 'dark' ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
                     {LANGUAGES.map(l => (
                       <button key={l.id} onClick={() => {
                         setSelectedLanguage(l.id);

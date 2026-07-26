@@ -3,17 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, X, Sparkles, Instagram, Youtube, Play, Heart, Eye,
-  RefreshCw, Loader2, TrendingUp, FileText, Newspaper, Users, AlertTriangle, WifiOff
+  RefreshCw, Loader2, TrendingUp, FileText, Newspaper, Users, AlertTriangle, WifiOff, Send, ArrowRight
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
 import { getReelThumbnailSrc, getReelAltText, handleReelThumbnailError } from "@/lib/reelThumbnail";
 import { interpretReelSearchResponse } from "@/lib/reelSearchStatus";
 
-const PRIMARY = "#7C3AED";
-const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
-const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
-const PRIMARY_CONTAINER = "#ede9fe";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const HOME_REELS_SESSION_KEY = "home_reels_session";
 type ViewFilter = "all" | "10k-10m" | "10k-50k" | "50k-500k" | "500k-1m" | "1m-10m";
@@ -105,10 +102,16 @@ function formatMetric(value: unknown) {
   return Number.isFinite(number) ? formatNum(number) : 'N/A';
 }
 
+type AssistantCta = { label: string; feature: "trending" | "scripts" | "studio" | "news"; query?: string };
+type AssistantMsg =
+  | { role: "user"; text: string }
+  | { role: "assistant"; text: string; cta?: AssistantCta; pending?: boolean };
+
 export default function Index() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const restored = useRef(loadHomeReelsSession()).current;
 
   const [platform, setPlatform] = useState<"Instagram" | "YouTube">(() => {
@@ -150,8 +153,6 @@ export default function Index() {
 
   const ytChannel = user?.user_metadata?.youtube_channel || null;
   const isIG = platform === "Instagram";
-  const activeGrad = isIG ? PRIMARY_GRAD : YT_GRAD;
-  const activeColor = isIG ? PRIMARY : '#ff0000';
   const viewFilteredVideos = isIG ? filterInstagramVideos(videos, viewFilter) : videos;
 
   useEffect(() => {
@@ -352,13 +353,71 @@ export default function Index() {
     } catch (e) { console.error(e); setYtConnecting(false); }
   };
 
+  // ── Ask-anything assistant (new — ported from the Lovable redesign's home
+  // chat composer, rewired onto our own Express endpoint at /api/home/intent
+  // instead of its Lovable-gateway version). Sits above the existing search;
+  // doesn't replace it. ──
+  const [assistantMessages, setAssistantMessages] = useState<AssistantMsg[]>([]);
+  const [assistantQuery, setAssistantQuery] = useState("");
+  const [assistantSending, setAssistantSending] = useState(false);
+  const assistantStarted = assistantMessages.length > 0;
+  const niche = (user?.user_metadata?.niches?.[0] || 'content').toLowerCase();
+  const firstName = (user?.user_metadata?.full_name || user?.email || 'there').split(/[\s@]/)[0];
+
+  function runAssistantCta(cta: AssistantCta) {
+    const q = cta.query?.trim() || niche;
+    if (cta.feature === "trending") navigate(isIG ? `/instagram/analyzer` : `/youtube/trending`, { state: { query: q } });
+    else if (cta.feature === "scripts") navigate('/scripts', { state: { topic: q, niche } });
+    else if (cta.feature === "studio") navigate('/studio');
+    else if (cta.feature === "news") navigate('/news');
+  }
+
+  async function submitAssistant(e: React.FormEvent) {
+    e.preventDefault();
+    const q = assistantQuery.trim();
+    if (!q || assistantSending) return;
+    setAssistantQuery("");
+    setAssistantMessages((prev) => [...prev, { role: "user", text: q }, { role: "assistant", text: "", pending: true }]);
+    setAssistantSending(true);
+    try {
+      const res = await fetch(`${BASE}/api/home/intent`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: q, niche, name: firstName }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.mode === "research") {
+        setAssistantMessages((prev) => prev.filter((m) => !(m.role === "assistant" && m.pending)));
+        navigate('/discover', { state: { q: data.topic || q } });
+        return;
+      }
+      const answer = data.answer || (data.error ? `Sorry — I couldn't answer that (${data.error}).` : "Sorry — I couldn't answer that just now.");
+      setAssistantMessages((prev) => {
+        const next = prev.filter((m) => !(m.role === "assistant" && m.pending));
+        next.push({ role: "assistant", text: answer });
+        return next;
+      });
+    } catch (err) {
+      setAssistantMessages((prev) => {
+        const next = prev.filter((m) => !(m.role === "assistant" && m.pending));
+        next.push({ role: "assistant", text: `Sorry — something went wrong: ${(err as Error).message}` });
+        return next;
+      });
+    } finally {
+      setAssistantSending(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900 relative overflow-hidden flex flex-col items-center px-5 py-12">
+    <div
+      className={`theme-redesign ${theme} min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col items-center px-5 py-12`}
+      data-platform={isIG ? undefined : "youtube"}
+    >
 
       {/* BG blob */}
       <motion.div animate={{ scale:[1,1.15,1], opacity:[0.06,0.12,0.06] }} transition={{ duration:10, repeat:Infinity }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] pointer-events-none rounded-full"
-        style={{ background:`radial-gradient(ellipse, ${activeColor}40, transparent 65%)`, filter:"blur(80px)" }} />
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] pointer-events-none rounded-full bg-primary"
+        style={{ filter:"blur(80px)" }} />
 
       {/* Floating tags */}
       {FLOATING_TAGS.map((tag, i) => (
@@ -366,8 +425,8 @@ export default function Index() {
           initial={{ opacity:0, y:20 }}
           animate={{ opacity:[0,0.6,0.6,0], y:[20,0,0,-20] }}
           transition={{ duration:4, delay:tag.delay, repeat:Infinity, repeatDelay:3 }}
-          className="absolute hidden md:block text-xs font-bold px-3 py-1.5 rounded-full pointer-events-none"
-          style={{ left:tag.x, top:tag.y, background: isIG ? PRIMARY_CONTAINER : '#ffebee', color: activeColor }}>
+          className="absolute hidden md:block text-xs font-bold px-3 py-1.5 rounded-full pointer-events-none bg-secondary text-primary"
+          style={{ left:tag.x, top:tag.y }}>
           {tag.text}
         </motion.div>
       ))}
@@ -377,27 +436,25 @@ export default function Index() {
         {/* Headline */}
         <div className="text-center space-y-3">
           <motion.div initial={{ opacity:0, y:-20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest"
-            style={{ background: isIG ? PRIMARY_CONTAINER : '#ffebee', color: activeColor }}>
+            className="eyebrow chip text-primary">
             <motion.span animate={{ opacity:[1,0.2,1] }} transition={{ duration:1.5, repeat:Infinity }}
-              className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: activeColor }} />
+              className="w-1.5 h-1.5 rounded-full inline-block bg-primary" />
             {t('home.badge')}
           </motion.div>
 
           <motion.h1 initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}
-            className="text-5xl md:text-6xl font-bold leading-tight">
+            className="font-heading text-5xl md:text-6xl font-bold leading-tight">
             <AnimatePresence mode="wait">
               <motion.span key={wordIndex}
                 initial={{ opacity:0, y:30, filter:'blur(8px)' }}
                 animate={{ opacity:1, y:0, filter:'blur(0px)' }}
                 exit={{ opacity:0, scale:0.95, filter:'blur(8px)' }}
                 transition={{ duration:0.3 }}
-                className="block overflow-hidden"
-                style={{ background:activeGrad, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+                className="block overflow-hidden gradient-text">
                 {WORDS[wordIndex]}
               </motion.span>
             </AnimatePresence>
-            <span className="block text-[#191c1d] dark:text-white text-3xl md:text-4xl mt-1">
+            <span className="block text-foreground text-3xl md:text-4xl mt-1">
               {ytChannel && !isIG
                 ? `Welcome, ${ytChannel.channel_name.split(' ')[0]}!`
                 : 'Content that gets discovered'}
@@ -405,12 +462,84 @@ export default function Index() {
           </motion.h1>
 
           <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.4 }}
-            className="text-[#757684] text-base max-w-md mx-auto">
+            className="text-muted-foreground text-base max-w-md mx-auto">
             {ytChannel && !isIG
               ? `${formatNum(Number(ytChannel.subscribers || 0))} ${t('home.subscribers')} · ${formatNum(Number(ytChannel.video_count || 0))} ${t('home.videos')} · Let's grow 🚀`
               : t('home.subtitle')}
           </motion.p>
         </div>
+
+        {/* Ask-anything composer (new) */}
+        <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.45 }} className="w-full">
+          {!assistantStarted ? (
+            <form onSubmit={submitAssistant} className="w-full">
+              <div className="chat-input-glow flex items-center gap-3 rounded-2xl border border-input bg-card py-2 pl-4 pr-2">
+                <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+                  <Sparkles className="size-4" />
+                </div>
+                <input
+                  value={assistantQuery}
+                  onChange={(e) => setAssistantQuery(e.target.value)}
+                  placeholder="Ask anything — what should I post today?"
+                  className="flex-1 bg-transparent outline-none text-[15px] py-3 placeholder:text-muted-foreground min-w-0"
+                />
+                <button
+                  type="submit"
+                  aria-label="Send"
+                  disabled={assistantSending || !assistantQuery.trim()}
+                  className="shrink-0 grid place-items-center size-10 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 transition"
+                >
+                  <Send className="size-4" />
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="panel flex flex-col gap-3 p-4 max-h-[360px] overflow-y-auto">
+              {assistantMessages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                  {m.role === "user" ? (
+                    <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-md text-sm bg-primary text-primary-foreground">
+                      {m.text}
+                    </div>
+                  ) : (
+                    <div className="max-w-[92%] text-sm leading-relaxed text-foreground">
+                      {m.pending ? (
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                          <span className="size-1.5 rounded-full bg-current animate-pulse" />
+                          <span className="size-1.5 rounded-full bg-current animate-pulse [animation-delay:120ms]" />
+                          <span className="size-1.5 rounded-full bg-current animate-pulse [animation-delay:240ms]" />
+                        </span>
+                      ) : (
+                        <>
+                          <div>{m.text}</div>
+                          {m.cta && (
+                            <button
+                              onClick={() => runAssistantCta(m.cta!)}
+                              className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:opacity-90"
+                            >
+                              {m.cta.label} <ArrowRight className="size-3.5" />
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <form onSubmit={submitAssistant} className="flex items-center gap-2 pt-2 border-t border-border">
+                <input
+                  value={assistantQuery}
+                  onChange={(e) => setAssistantQuery(e.target.value)}
+                  placeholder="Reply…"
+                  className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+                />
+                <button type="submit" disabled={assistantSending || !assistantQuery.trim()} className="text-primary disabled:opacity-40">
+                  <Send className="size-4" />
+                </button>
+              </form>
+            </div>
+          )}
+        </motion.div>
 
         {/* Channel connect / status */}
         <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.5 }}
@@ -422,25 +551,23 @@ export default function Index() {
                 exit={{ opacity:0, scale:0.9, y:-8 }} transition={{ duration:0.3 }}
                 whileHover={{ scale:1.05 }} whileTap={{ scale:0.97 }}
                 onClick={() => navigate('/settings')}
-                className="flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-sm font-bold text-white"
-                style={{ background:PRIMARY_GRAD, boxShadow:'0 4px 20px #7C3AED40' }}>
+                className="flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-sm font-bold bg-primary text-primary-foreground shadow-[var(--redesign-shadow-glow)]">
                 <Instagram className="w-4 h-4" /> {t('home.connect_instagram')}
               </motion.button>
             ) : ytChannel ? (
               <motion.div key="yt-connected"
                 initial={{ opacity:0, scale:0.9, y:8 }} animate={{ opacity:1, scale:1, y:0 }}
                 exit={{ opacity:0, scale:0.9, y:-8 }} transition={{ duration:0.3 }}
-                className="flex items-center gap-3 px-5 py-3 rounded-2xl border"
-                style={{ background:'#fff1f1', borderColor:'#ff000030' }}>
+                className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-border bg-secondary">
                 {ytChannel.channel_thumbnail && <img src={ytChannel.channel_thumbnail} alt="" className="w-9 h-9 rounded-full shrink-0" />}
                 <div className="text-left">
-                  <p className="text-sm font-bold text-red-600">{ytChannel.channel_name}</p>
+                  <p className="text-sm font-bold text-primary">{ytChannel.channel_name}</p>
                   <div className="flex gap-3">
-                    <span className="text-xs text-red-400">{formatNum(Number(ytChannel.subscribers || 0))} {t('home.subscribers')}</span>
-                    <span className="text-xs text-red-400">{formatNum(Number(ytChannel.video_count || 0))} {t('home.videos')}</span>
+                    <span className="text-xs text-muted-foreground">{formatNum(Number(ytChannel.subscribers || 0))} {t('home.subscribers')}</span>
+                    <span className="text-xs text-muted-foreground">{formatNum(Number(ytChannel.video_count || 0))} {t('home.videos')}</span>
                   </div>
                 </div>
-                <button onClick={() => navigate('/settings')} className="text-xs text-red-300 hover:text-red-500 ml-1">⚙️</button>
+                <button onClick={() => navigate('/settings')} className="text-xs text-muted-foreground hover:text-foreground ml-1">⚙️</button>
               </motion.div>
             ) : (
               <motion.button key="yt-connect"
@@ -448,15 +575,14 @@ export default function Index() {
                 exit={{ opacity:0, scale:0.9, y:-8 }} transition={{ duration:0.3 }}
                 whileHover={{ scale:1.05 }} whileTap={{ scale:0.97 }}
                 onClick={handleYtConnect} disabled={ytConnecting}
-                className="flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-sm font-bold text-white disabled:opacity-70"
-                style={{ background:YT_GRAD, boxShadow:'0 4px 20px #ff000040' }}>
+                className="flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-sm font-bold bg-primary text-primary-foreground disabled:opacity-70 shadow-[var(--redesign-shadow-glow)]">
                 {ytConnecting
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('home.connecting')}</>
                   : <><Youtube className="w-4 h-4" /> {t('home.connect_youtube')}</>}
               </motion.button>
             )}
           </AnimatePresence>
-          <p className="text-xs text-[#757684]">
+          <p className="text-xs text-muted-foreground">
             {!isIG && ytChannel ? '✅ ' + t('home.connected') : t('home.connect_hint')}
           </p>
         </motion.div>
@@ -470,12 +596,9 @@ export default function Index() {
                   key={mode}
                   type="button"
                   onClick={() => setInstagramSearchMode(mode)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors"
-                  style={{
-                    color: instagramSearchMode === mode ? "white" : activeColor,
-                    background: instagramSearchMode === mode ? activeColor : "white",
-                    borderColor: activeColor,
-                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                    instagramSearchMode === mode ? "bg-primary text-primary-foreground border-primary" : "bg-card text-primary border-primary"
+                  }`}
                 >
                   {mode === "keyword" ? "Keyword" : "# Hashtag"}
                 </button>
@@ -484,19 +607,17 @@ export default function Index() {
           )}
           <div className="relative flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') submitSearch(); }}
                 placeholder={isIG ? (instagramSearchMode === "hashtag" ? "Search a hashtag (without #)..." : t('home.search_placeholder_ig')) : ytChannel ? `Search ${ytChannel.channel_name} niche...` : t('home.search_placeholder_yt')}
-                className="w-full pl-11 pr-10 py-4 rounded-2xl text-sm text-[#191c1d] placeholder:text-[#757684] outline-none transition-all"
-                style={{ background:'white', border:`2px solid ${search ? activeColor : '#e1e3e4'}`, boxShadow:search ? `0 0 0 4px ${activeColor}15` : 'none' }} />
-              {search && <button onClick={() => { setSearch(''); setSubmittedSearch(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684]"><X className="w-4 h-4" /></button>}
+                className={`w-full pl-11 pr-10 py-4 rounded-2xl text-sm bg-card text-foreground placeholder:text-muted-foreground outline-none transition-all border-2 ${search ? "border-primary ring-4 ring-primary/15" : "border-border"}`} />
+              {search && <button onClick={() => { setSearch(''); setSubmittedSearch(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"><X className="w-4 h-4" /></button>}
             </div>
             <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
               onClick={() => submitSearch()}
               disabled={!search.trim() || videosLoading}
-              className="px-6 py-4 rounded-2xl text-white font-bold text-sm flex items-center gap-2"
-              style={{ background:activeGrad }}>
+              className="px-6 py-4 rounded-2xl text-primary-foreground font-bold text-sm flex items-center gap-2 bg-primary disabled:opacity-50">
               <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">Discover</span>
             </motion.button>
@@ -508,15 +629,15 @@ export default function Index() {
           {(videosLoading || videosStatus !== "idle") && (
             <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }} className="w-full">
               <div className="flex items-center gap-2 mb-3">
-                {isIG ? <Instagram className="w-4 h-4" style={{ color:activeColor }} /> : <Youtube className="w-4 h-4" style={{ color:activeColor }} />}
-                <p className="text-xs font-bold uppercase tracking-wider flex-1" style={{ color:activeColor }}>
+                {isIG ? <Instagram className="w-4 h-4 text-primary" /> : <Youtube className="w-4 h-4 text-primary" />}
+                <p className="text-xs font-bold uppercase tracking-wider flex-1 text-primary">
                   {isIG ? 'Instagram Reels' : 'YouTube Shorts'} for "{submittedSearch}"
                 </p>
                 {isIG && (
                   <select
                     value={viewFilter}
                     onChange={event => changeViewFilter(event.target.value as ViewFilter)}
-                    className="rounded-lg border border-[#e1e3e4] bg-white px-2 py-1 text-[11px] font-semibold text-[#454652] outline-none focus:border-[#7C3AED]"
+                    className="rounded-lg border border-border bg-card px-2 py-1 text-[11px] font-semibold text-foreground outline-none focus:border-primary"
                     aria-label="Filter reels by views"
                   >
                     {VIEW_FILTER_OPTIONS.map(option => (
@@ -527,7 +648,7 @@ export default function Index() {
                 <button
                   type="button"
                   onClick={clearResults}
-                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#757684] hover:bg-[#f3f4f5] hover:text-[#191c1d] transition-colors"
+                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                   aria-label="Clear reel results"
                 >
                   <X className="w-3.5 h-3.5" /> Clear
@@ -535,27 +656,27 @@ export default function Index() {
               </div>
               {videosLoading ? (
                 <div className="grid grid-cols-3 gap-2">
-                  {[1,2,3,4,5,6].map(i => <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl animate-pulse" style={{ aspectRatio:'9/16' }} />)}
+                  {[1,2,3,4,5,6].map(i => <div key={i} className="bg-card rounded-2xl animate-pulse" style={{ aspectRatio:'9/16' }} />)}
                 </div>
               ) : viewFilteredVideos.length === 0 ? (
-                <div data-testid="reels-empty-state" className="flex flex-col items-center text-center gap-2 py-10 px-4 rounded-2xl border border-[#e1e3e4] bg-white dark:bg-gray-800 dark:border-gray-700">
+                <div data-testid="reels-empty-state" className="flex flex-col items-center text-center gap-2 py-10 px-4 rounded-2xl border border-border bg-card">
                   {videosStatus === "network_error" ? (
                     <>
-                      <WifiOff className="w-6 h-6 text-[#757684]" />
-                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">Couldn't reach the server</p>
-                      <p className="text-xs text-[#757684] max-w-xs">Check your connection and try again.</p>
+                      <WifiOff className="w-6 h-6 text-muted-foreground" />
+                      <p className="text-sm font-semibold text-foreground">Couldn't reach the server</p>
+                      <p className="text-xs text-muted-foreground max-w-xs">Check your connection and try again.</p>
                     </>
                   ) : videosStatus === "upstream_unavailable" ? (
                     <>
-                      <AlertTriangle className="w-6 h-6 text-[#f59e0b]" />
-                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">Reel search is temporarily unavailable</p>
-                      <p className="text-xs text-[#757684] max-w-xs">{videosMessage || "The reel provider is temporarily down. Please try again shortly."}</p>
+                      <AlertTriangle className="w-6 h-6 text-destructive" />
+                      <p className="text-sm font-semibold text-foreground">Reel search is temporarily unavailable</p>
+                      <p className="text-xs text-muted-foreground max-w-xs">{videosMessage || "The reel provider is temporarily down. Please try again shortly."}</p>
                     </>
                   ) : (
                     <>
-                      <Search className="w-6 h-6 text-[#757684]" />
-                      <p className="text-sm font-semibold text-[#191c1d] dark:text-white">No reels in this view range found for "{submittedSearch}"</p>
-                      <p className="text-xs text-[#757684] max-w-xs">Try a different keyword.</p>
+                      <Search className="w-6 h-6 text-muted-foreground" />
+                      <p className="text-sm font-semibold text-foreground">No reels in this view range found for "{submittedSearch}"</p>
+                      <p className="text-xs text-muted-foreground max-w-xs">Try a different keyword.</p>
                     </>
                   )}
                 </div>
@@ -566,20 +687,18 @@ export default function Index() {
                       initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                       transition={{ delay:i * 0.05 }}
                       onClick={() => openInsight(video)}
-                      className="relative rounded-2xl overflow-hidden cursor-pointer group"
-                      style={{ aspectRatio:'9/16', background:'#1a1a2e' }}>
+                      className="relative rounded-2xl overflow-hidden cursor-pointer group bg-card"
+                      style={{ aspectRatio:'9/16' }}>
                       <img src={getReelThumbnailSrc(video.thumbnail)} alt={getReelAltText(video.caption, video.username)}
                         referrerPolicy="no-referrer" loading="lazy" decoding="async"
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         onError={handleReelThumbnailError} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                      <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
-                        style={{ background: isIG ? 'linear-gradient(45deg,#f09433,#bc1888)' : '#FF0000' }}>
+                      <div className={`absolute top-2 left-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold ${isIG ? "bg-gradient-to-br from-fuchsia-500 to-purple-600" : "bg-red-600"}`}>
                         {isIG ? 'Reels' : 'Shorts'}
                       </div>
                       {video.virality?.label && (
-                        <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold"
-                          style={{ background: video.virality.score >= 65 ? '#16a34a' : '#7C3AED' }}>
+                        <div className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-white text-[8px] font-bold ${video.virality.score >= 65 ? 'bg-green-600' : 'bg-primary'}`}>
                           {video.virality.label}
                         </div>
                       )}
@@ -589,8 +708,7 @@ export default function Index() {
                             e.stopPropagation();
                             if (video.permalink) window.open(video.permalink, '_blank');
                           }}
-                          className="w-10 h-10 rounded-full flex items-center justify-center"
-                          style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(4px)' }}>
+                          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/20 backdrop-blur">
                           <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
                         </button>
                       </div>
@@ -611,8 +729,7 @@ export default function Index() {
                 <button
                   onClick={loadMoreVideos}
                   disabled={videosLoadingMore}
-                  className="mx-auto mt-4 block px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-transform active:scale-95 disabled:opacity-60 flex items-center gap-2"
-                  style={{ background: activeColor }}>
+                  className="mx-auto mt-4 block px-6 py-2.5 rounded-full text-sm font-semibold text-primary-foreground bg-primary transition-transform active:scale-95 disabled:opacity-60 flex items-center gap-2">
                   {videosLoadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</> : 'Load More'}
                 </button>
               )}
@@ -624,19 +741,18 @@ export default function Index() {
         {!search && (
           <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.7 }} className="w-full">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {ytChannel && !isIG ? `🎯 ${t('home.trending_ideas')}` : isIG ? t('home.trending_ideas') : t('home.popular_topics')}
               </p>
               <button onClick={fetchSuggestions} disabled={chipsLoading}
-                className="flex items-center gap-1 text-xs font-bold transition-colors disabled:opacity-40"
-                style={{ color:activeColor }}>
+                className="flex items-center gap-1 text-xs font-bold transition-colors disabled:opacity-40 text-primary">
                 <RefreshCw className={`w-3 h-3 ${chipsLoading ? 'animate-spin' : ''}`} />
                 {t('home.refresh')}
               </button>
             </div>
             {chipsLoading ? (
               <div className="flex flex-wrap gap-2">
-                {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="h-8 w-24 rounded-full bg-white animate-pulse border border-[#e1e3e4]" />)}
+                {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="h-8 w-24 rounded-full bg-card animate-pulse border border-border" />)}
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -647,9 +763,8 @@ export default function Index() {
                       exit={{ opacity:0, scale:0.8 }} transition={{ delay:i * 0.03 }}
                       onClick={() => submitSearch(chip)}
                       whileHover={{ scale:1.05 }} whileTap={{ scale:0.97 }}
-                      className="px-4 py-2 rounded-full text-xs font-bold transition-all border hover:shadow-sm flex items-center gap-1.5"
-                      style={{ background:'white', borderColor: i < 6 && isIG ? `${activeColor}40` : '#e1e3e4', color:'#454652' }}>
-                      {i < 6 && isIG && <span style={{ color: activeColor }}>🔥</span>}
+                      className={`chip transition-all hover:shadow-sm ${i < 6 && isIG ? "border-primary/40" : ""}`}>
+                      {i < 6 && isIG && <span className="text-primary">🔥</span>}
                       {chip}
                     </motion.button>
                   ))}
@@ -669,7 +784,7 @@ export default function Index() {
               { label: t('home.trending'), path:"/trending" },
             ].map((item, i) => (
               <button key={i} onClick={() => navigate(item.path)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold border border-[#e1e3e4] bg-white text-[#454652] hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors">
+                className="px-4 py-2 rounded-xl text-xs font-semibold border border-border bg-card text-foreground hover:border-primary hover:text-primary transition-colors">
                 {item.label}
               </button>
             ))}
@@ -680,23 +795,22 @@ export default function Index() {
         {!search && (
           <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:1.0 }}
             className="w-full space-y-3">
-            <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider">{t('home.dashboard_stats')}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('home.dashboard_stats')}</p>
 
             {ytChannel && !isIG && (
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { icon: Users, label: t('home.subscribers'), val: formatNum(Number(ytChannel.subscribers || 0)), color: '#ff0000', bg: '#ffebee' },
-                  { icon: Eye, label: t('home.total_views'), val: formatNum(Number(ytChannel.total_views || 0)), color: '#ff6b35', bg: '#fff3e0' },
-                  { icon: FileText, label: t('home.videos'), val: formatNum(Number(ytChannel.video_count || 0)), color: '#ff9900', bg: '#fff8e1' },
+                  { icon: Users, label: t('home.subscribers'), val: formatNum(Number(ytChannel.subscribers || 0)) },
+                  { icon: Eye, label: t('home.total_views'), val: formatNum(Number(ytChannel.total_views || 0)) },
+                  { icon: FileText, label: t('home.videos'), val: formatNum(Number(ytChannel.video_count || 0)) },
                 ].map((stat, i) => (
                   <motion.div key={i}
                     initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                     transition={{ delay: 1.1 + i * 0.05 }}
-                    className="rounded-2xl p-3 text-center border"
-                    style={{ background: stat.bg, borderColor: `${stat.color}20` }}>
-                    <stat.icon className="w-4 h-4 mx-auto mb-1" style={{ color: stat.color }} />
-                    <p className="font-bold text-sm text-[#191c1d]">{stat.val}</p>
-                    <p className="text-[10px] text-[#757684]">{stat.label}</p>
+                    className="rounded-2xl p-3 text-center border border-border bg-secondary">
+                    <stat.icon className="w-4 h-4 mx-auto mb-1 text-primary" />
+                    <p className="font-bold text-sm text-foreground">{stat.val}</p>
+                    <p className="text-[10px] text-muted-foreground">{stat.label}</p>
                   </motion.div>
                 ))}
               </div>
@@ -704,33 +818,31 @@ export default function Index() {
 
             <div className="grid grid-cols-2 gap-2">
               {[
-                { icon: Newspaper, label: t('home.todays_news'), val: platformStats.news, sublabel: t('home.articles'), color: PRIMARY, bg: PRIMARY_CONTAINER, path: '/news' },
-                { icon: TrendingUp, label: t('home.trending_topics'), val: platformStats.topics, sublabel: t('home.topics'), color: '#059669', bg: '#d1fae5', path: '/trending' },
+                { icon: Newspaper, label: t('home.todays_news'), val: platformStats.news, sublabel: t('home.articles'), path: '/news' },
+                { icon: TrendingUp, label: t('home.trending_topics'), val: platformStats.topics, sublabel: t('home.topics'), path: '/trending' },
               ].map((stat, i) => (
                 <motion.button key={i}
                   initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
                   transition={{ delay: 1.2 + i * 0.05 }}
                   onClick={() => navigate(stat.path)}
-                  className="rounded-2xl p-4 text-left border hover:shadow-md transition-all"
-                  style={{ background: stat.bg, borderColor: `${stat.color}20` }}>
+                  className="rounded-2xl p-4 text-left border border-border bg-secondary hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-2">
-                    <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                    <span className="text-[10px] font-semibold" style={{ color: stat.color }}>View →</span>
+                    <stat.icon className="w-4 h-4 text-primary" />
+                    <span className="text-[10px] font-semibold text-primary">View →</span>
                   </div>
-                  <p className="font-bold text-xl text-[#191c1d]">{stat.val}</p>
-                  <p className="text-xs text-[#757684]">{stat.sublabel} · {stat.label}</p>
+                  <p className="font-bold text-xl text-foreground">{stat.val}</p>
+                  <p className="text-xs text-muted-foreground">{stat.sublabel} · {stat.label}</p>
                 </motion.button>
               ))}
             </div>
 
             {user?.user_metadata?.niches?.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4]">
-                <p className="text-xs font-semibold text-[#757684] mb-2">{t('home.your_niches')}</p>
+              <div className="bg-card rounded-2xl p-4 border border-border">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">{t('home.your_niches')}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {user.user_metadata.niches.map((niche: string) => (
                     <span key={niche} onClick={() => submitSearch(niche)}
-                      className="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity"
-                      style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                      className="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity bg-secondary text-primary">
                       {niche}
                     </span>
                   ))}

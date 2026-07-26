@@ -5,10 +5,11 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase"; // adjust path if needed
 import SEO from "@/components/SEO";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const API = import.meta.env.VITE_API_URL;
-const PURPLE = "#7C3AED";
-const GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
+const PURPLE = "hsl(var(--primary))";
+const GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
 const PX_PER_SEC = 80;
 
 type Word = { id: number; start: number; end: number; text: string };
@@ -48,6 +49,7 @@ function buildSegments(words: Word[]): Segment[] {
 function reindex(segs: Segment[]): Segment[] { return segs.map((s, i) => ({ ...s, id: i })); }
 
 export default function ContentStudio() {
+  const { theme } = useTheme();
   const [file, setFile] = useState<File | null>(() => savedStudioState?.file ?? null);
   const [videoUrl, setVideoUrl] = useState(() => savedStudioState?.videoUrl ?? "");
   const [hostedUrl, setHostedUrl] = useState(() => savedStudioState?.hostedUrl ?? "");
@@ -601,7 +603,7 @@ export default function ContentStudio() {
   const TL_BG = "#1e1e24", TL_LINE = "#3a3a44", TL_TEXT = "#cbd5e1";
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className={`theme-redesign ${theme} max-w-6xl mx-auto p-6 bg-background text-foreground`}>
       <SEO title="Studio — SocialRum" noindex />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&display=swap" />
 
@@ -646,7 +648,7 @@ export default function ContentStudio() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {projects.slice(0, 8).map(p => (
                   <button key={p.id} onClick={() => loadProject(p)}
-                    className="rounded-2xl border border-border bg-card p-3 text-left transition hover:shadow-md group">
+                    className="panel p-3 text-left transition group">
                     <div className="w-full rounded-xl overflow-hidden mb-2 bg-muted" style={{ aspectRatio: "9/16", maxHeight: 140 }}>
                       <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
                     </div>
@@ -735,7 +737,7 @@ export default function ContentStudio() {
               {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
 
               {sel && (
-                <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+                <div className="panel p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
@@ -771,7 +773,7 @@ export default function ContentStudio() {
               )}
 
               {!hasCaptions ? (
-                <div className="rounded-2xl border border-border bg-card p-5 text-center space-y-3">
+                <div className="panel p-5 text-center space-y-3">
                   <div className="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg font-bold" style={{ background: `${PURPLE}15`, color: PURPLE }}>T</div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Auto-captions</p>
@@ -785,7 +787,7 @@ export default function ContentStudio() {
                   {error && <p className="text-red-500 text-xs">{error}</p>}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+                <div className="panel p-4 space-y-4">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Caption Style</p>
@@ -833,7 +835,7 @@ export default function ContentStudio() {
             {/* right column: transcript + music */}
             <div className="space-y-5">
               {hasCaptions ? (
-                <div className="rounded-2xl border border-border bg-card p-4">
+                <div className="panel p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
@@ -870,7 +872,7 @@ export default function ContentStudio() {
               )}
 
               {/* Music */}
-              <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <div className="panel p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
@@ -966,7 +968,7 @@ export default function ContentStudio() {
                 <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Video</div>
                 <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Captions</div>
                 <div className="h-10 flex items-center px-3 gap-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
-                  <button onClick={() => { setShowPex(true); setPexTab("pexels"); if (!pexItems.length) searchPexels(); }} className="text-[10px] font-semibold" style={{ color: "#a78bfa" }}>+ Add</button>
+                  <button onClick={() => { setShowPex(true); setPexTab("pexels"); if (!pexItems.length) searchPexels(); }} className="text-[10px] font-semibold" style={{ color: "hsl(var(--primary))" }}>+ Add</button>
                 </div>
                 <div className="h-10 flex items-center px-3">Music</div>
               </div>
@@ -981,7 +983,7 @@ export default function ContentStudio() {
                   </div>
                   {/* Captions */}
                   <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
-                    {segments.map(s => (<div key={s.id} className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center" style={{ left: s.start * PX_PER_SEC, width: Math.max((s.end - s.start) * PX_PER_SEC, 10), background: "#4c1d95", color: "#ede9fe" }}>{s.text.slice(0, 12)}</div>))}
+                    {segments.map(s => (<div key={s.id} className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center" style={{ left: s.start * PX_PER_SEC, width: Math.max((s.end - s.start) * PX_PER_SEC, 10), background: "hsl(var(--primary) / 0.35)", color: "hsl(var(--primary-foreground))" }}>{s.text.slice(0, 12)}</div>))}
                   </div>
                   {/* Overlays */}
                   <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
@@ -1067,7 +1069,7 @@ export default function ContentStudio() {
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl" style={{ background: `${PURPLE}15` }}>🖼️</div>
                 <p className="font-bold text-foreground">Upload an image or video</p>
                 <p className="text-sm text-muted-foreground text-center max-w-xs">It will be added at the current playhead position as an overlay.</p>
-                <label className="cursor-pointer px-6 py-3 rounded-xl text-white font-semibold hover:opacity-90 transition shadow-sm" style={{ background: uploadingOverlay ? "#a78bfa" : GRAD }}>
+                <label className="cursor-pointer px-6 py-3 rounded-xl text-white font-semibold hover:opacity-90 transition shadow-sm" style={{ background: uploadingOverlay ? "hsl(var(--primary) / 0.5)" : GRAD }}>
                   {uploadingOverlay ? "Uploading…" : "Choose file"}
                   <input type="file" accept="image/*,video/*" onChange={uploadOverlayFile} className="hidden" disabled={uploadingOverlay} />
                 </label>
@@ -1121,7 +1123,7 @@ export default function ContentStudio() {
                           {new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                         </p>
                         {p.data?.segments?.length > 0 && (
-                          <p className="text-[10px] mt-0.5" style={{ color: "#a78bfa" }}>{p.data.segments.length} caption lines</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: "hsl(var(--primary))" }}>{p.data.segments.length} caption lines</p>
                         )}
                       </div>
                       {renamingId !== p.id && <span className="shrink-0 text-xs font-semibold" style={{ color: PURPLE }}>Open →</span>}

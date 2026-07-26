@@ -6,13 +6,14 @@ import {
   Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target, Image,
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getPageState, setPageState } from '@/lib/pageCache';
 import { getReelThumbnailSrc, getReelAltText, handleReelThumbnailError } from '@/lib/reelThumbnail';
 import SEO from '@/components/SEO';
 
-const PRIMARY = "#7C3AED";
-const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #9f6fef)";
-const PRIMARY_CONTAINER = "#ede9fe";
+const PRIMARY = "hsl(var(--primary))";
+const PRIMARY_GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
+const PRIMARY_CONTAINER = "hsl(var(--secondary))";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -67,6 +68,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   onBack: () => void;
   onUpdate?: (username: string, hikerData: any) => void;
 }) {
+  const { theme } = useTheme();
   const result = competitor.fullData;
   const [hiker, setHiker] = useState<any>(competitor.hikerData);
   const [hikerLoading, setHikerLoading] = useState(false);
@@ -164,12 +166,12 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   return (
     <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed inset-0 z-50 bg-[#f8f9fa] dark:bg-gray-900 overflow-y-auto">
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-4 h-14 flex items-center gap-3">
+      className={`theme-redesign ${theme} fixed inset-0 z-50 bg-background overflow-y-auto`}>
+      <header className="sticky top-0 z-40 bg-card border-b border-border px-4 h-14 flex items-center gap-3">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: PRIMARY }}>
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
-        <span className="text-sm font-bold text-[#191c1d] dark:text-white truncate">@{competitor.username}</span>
+        <span className="text-sm font-bold text-foreground truncate">@{competitor.username}</span>
         {competitor.is_verified && <BadgeCheck className="w-4 h-4 text-blue-400 shrink-0" />}
       </header>
 
@@ -227,52 +229,52 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
           if (!hasStats && !hikerLoading) return null;
           if (hikerLoading && !hasStats) return null;
           return (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+            <div className="panel p-5">
               <div className="flex items-center gap-2 mb-4">
                 <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
-                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Profile Stats</h2>
+                <h2 className="font-bold text-sm text-foreground">Profile Stats</h2>
                 <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Live</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {stats.followers != null && (
                   <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
-                    <div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-xs text-[#757684]">Followers</span></div>
+                    <div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-xs text-muted-foreground">Followers</span></div>
                     <p className="font-bold text-lg" style={{ color: PRIMARY }}>{formatNum(stats.followers)}</p>
                   </div>
                 )}
                 {stats.following != null && (
                   <div className="rounded-xl p-3.5" style={{ background: '#f3e5f5' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-purple-600" /><span className="text-xs text-[#757684]">Following</span></div>
+                    <div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-purple-600" /><span className="text-xs text-muted-foreground">Following</span></div>
                     <p className="font-bold text-lg text-purple-700">{formatNum(stats.following)}</p>
                   </div>
                 )}
                 {stats.engagement_rate != null && (
                   <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><TrendingUp className="w-3.5 h-3.5 text-green-600" /><span className="text-xs text-[#757684]">Engagement</span></div>
+                    <div className="flex items-center gap-1.5 mb-1"><TrendingUp className="w-3.5 h-3.5 text-green-600" /><span className="text-xs text-muted-foreground">Engagement</span></div>
                     <p className="font-bold text-lg text-green-700">{stats.engagement_rate}%</p>
                   </div>
                 )}
                 {stats.avg_views != null && (
                   <div className="rounded-xl p-3.5" style={{ background: '#e3f2fd' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><Eye className="w-3.5 h-3.5 text-blue-600" /><span className="text-xs text-[#757684]">Avg Views</span></div>
+                    <div className="flex items-center gap-1.5 mb-1"><Eye className="w-3.5 h-3.5 text-blue-600" /><span className="text-xs text-muted-foreground">Avg Views</span></div>
                     <p className="font-bold text-lg text-blue-700">{formatNum(stats.avg_views)}</p>
                   </div>
                 )}
                 {stats.avg_likes != null && (
                   <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><Heart className="w-3.5 h-3.5 text-pink-600" /><span className="text-xs text-[#757684]">Avg Likes</span></div>
+                    <div className="flex items-center gap-1.5 mb-1"><Heart className="w-3.5 h-3.5 text-pink-600" /><span className="text-xs text-muted-foreground">Avg Likes</span></div>
                     <p className="font-bold text-lg text-pink-700">{formatNum(stats.avg_likes)}</p>
                   </div>
                 )}
                 {stats.avg_comments != null && (
                   <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><MessageCircle className="w-3.5 h-3.5 text-orange-600" /><span className="text-xs text-[#757684]">Avg Comments</span></div>
+                    <div className="flex items-center gap-1.5 mb-1"><MessageCircle className="w-3.5 h-3.5 text-orange-600" /><span className="text-xs text-muted-foreground">Avg Comments</span></div>
                     <p className="font-bold text-lg text-orange-700">{formatNum(stats.avg_comments)}</p>
                   </div>
                 )}
               </div>
               {stats.total_posts && (
-                <p className="text-xs text-[#757684] mt-3 text-center">{stats.total_posts.toLocaleString()} total posts</p>
+                <p className="text-xs text-muted-foreground mt-3 text-center">{stats.total_posts.toLocaleString()} total posts</p>
               )}
             </div>
           );
@@ -280,11 +282,11 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* Niche Detection */}
         {result?.niche && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+          <div className="panel p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4" style={{ color: PRIMARY }} />
-                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Niche</h2>
+                <h2 className="font-bold text-sm text-foreground">Niche</h2>
               </div>
               {result.niche_score && (
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
@@ -321,18 +323,18 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
           const isAI = scrapeNames.length === 0 && aiPillars.length > 0;
           if (pillars.length === 0 && !pillarsLoading) return null;
           return (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+            <div className="panel p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
-                  <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Content Pillars</h2>
+                  <h2 className="font-bold text-sm text-foreground">Content Pillars</h2>
                 </div>
                 {isAI && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>AI</span>}
               </div>
               {pillarsLoading && pillars.length === 0 ? (
                 <div className="flex items-center gap-2 py-1">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: PRIMARY }} />
-                  <span className="text-xs text-[#757684]">Analysing content themes…</span>
+                  <span className="text-xs text-muted-foreground">Analysing content themes…</span>
                 </div>
               ) : (
                 <>
@@ -373,15 +375,15 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* Posting Tips */}
         {result?.posting_tips?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-            <div className="flex items-center gap-2 mb-4"><Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posting Tips</h2></div>
+          <div className="panel p-5">
+            <div className="flex items-center gap-2 mb-4"><Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">Posting Tips</h2></div>
             <div className="space-y-2.5">
               {result.posting_tips.map((tip: string, i: number) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: PRIMARY_CONTAINER }}>
                     <span className="text-[9px] font-bold" style={{ color: PRIMARY }}>{i + 1}</span>
                   </div>
-                  <p className="text-sm text-[#454652] dark:text-gray-200 leading-relaxed">{tip}</p>
+                  <p className="text-sm text-foreground leading-relaxed">{tip}</p>
                 </div>
               ))}
             </div>
@@ -390,13 +392,13 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* What they post */}
         {result?.reel_ideas?.length > 0 && (result?.stats?.total_posts ?? 0) > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-            <div className="flex items-center gap-2 mb-4"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">What Kind of Content They Post</h2></div>
+          <div className="panel p-5">
+            <div className="flex items-center gap-2 mb-4"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">What Kind of Content They Post</h2></div>
             <div className="space-y-2">
               {result.reel_ideas.map((idea: string, i: number) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f8f9fa] dark:hover:bg-gray-700 transition-colors">
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-background transition-colors">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: PRIMARY_GRAD }}>{i + 1}</div>
-                  <p className="text-sm text-[#454652] dark:text-gray-200 flex-1">{idea}</p>
+                  <p className="text-sm text-foreground flex-1">{idea}</p>
                 </div>
               ))}
             </div>
@@ -405,9 +407,9 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* Hashtags */}
         {result?.hashtags?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+          <div className="panel p-5">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Hashtags They Use</h2></div>
+              <div className="flex items-center gap-2"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">Hashtags They Use</h2></div>
               <button onClick={() => copyText(result.hashtags.map((h: string) => `#${h}`).join(' '), 'hashtags')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
                 {copied === 'hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy all</>}
               </button>
@@ -416,7 +418,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
               {result.hashtags.map((tag: string, i: number) => (
                 <button key={i} onClick={() => copyText(`#${tag}`, `tag-${i}`)}
                   className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80"
-                  style={i % 3 === 0 ? { background: PRIMARY_CONTAINER, color: PRIMARY } : i % 3 === 1 ? { background: '#e8f5e9', color: '#2e7d32' } : { background: '#e7e8e9', color: '#454652' }}>
+                  style={i % 3 === 0 ? { background: PRIMARY_CONTAINER, color: PRIMARY } : i % 3 === 1 ? { background: '#e8f5e9', color: '#2e7d32' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
                   #{tag}
                 </button>
               ))}
@@ -447,31 +449,31 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
             return `${h % 12 || 12}:00 ${h >= 12 ? 'PM' : 'AM'} IST`;
           })() : null;
           return (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+            <div className="panel p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="w-4 h-4" style={{ color: PRIMARY }} />
-                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posting Patterns</h2>
+                <h2 className="font-bold text-sm text-foreground">Posting Patterns</h2>
                 <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Real Data</span>
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
                 {bestDay && (
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
                     <Calendar className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                    <span className="text-xs text-[#757684]">Best day:</span>
+                    <span className="text-xs text-muted-foreground">Best day:</span>
                     <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestDay}</span>
                   </div>
                 )}
                 {bestHour && (
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
                     <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                    <span className="text-xs text-[#757684]">Best time:</span>
+                    <span className="text-xs text-muted-foreground">Best time:</span>
                     <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestHour}</span>
                   </div>
                 )}
               </div>
               {Object.values(dayCount).some(v => v > 0) && (
                 <div className="mb-4">
-                  <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider mb-2">Posts by Day</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Posts by Day</p>
                   <div className="flex items-end gap-1.5 h-14">
                     {DAYS_SHORT.map(day => (
                       <div key={day} className="flex-1 flex flex-col items-center gap-1">
@@ -480,7 +482,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                           minHeight: dayCount[day] > 0 ? '3px' : '0',
                           background: day === bestDay ? PRIMARY : PRIMARY_CONTAINER,
                         }} />
-                        <span className="text-[9px] font-bold" style={{ color: day === bestDay ? PRIMARY : '#757684' }}>{day}</span>
+                        <span className="text-[9px] font-bold" style={{ color: day === bestDay ? PRIMARY : 'hsl(var(--muted-foreground))' }}>{day}</span>
                       </div>
                     ))}
                   </div>
@@ -488,7 +490,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
               )}
               {Object.values(hourCount).some(v => v > 0) && (
                 <div>
-                  <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider mb-2">Posts by Time (IST)</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Posts by Time (IST)</p>
                   <div className="flex items-end gap-0.5 h-10">
                     {Array.from({ length: 24 }, (_, h) => (
                       <div key={h} className="flex-1 rounded-t-sm" style={{
@@ -499,7 +501,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                     ))}
                   </div>
                   <div className="flex justify-between mt-1">
-                    {HOURS_LABELS.map(h => <span key={h} className="text-[8px] text-[#757684]">{h}</span>)}
+                    {HOURS_LABELS.map(h => <span key={h} className="text-[8px] text-muted-foreground">{h}</span>)}
                   </div>
                 </div>
               )}
@@ -509,21 +511,21 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* Reels */}
         {hikerLoading && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-6 text-center">
+          <div className="panel p-6 text-center">
             <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" style={{ color: PRIMARY }} />
-            <p className="text-xs text-[#757684]">Fetching latest reels & posts…</p>
+            <p className="text-xs text-muted-foreground">Fetching latest reels & posts…</p>
           </div>
         )}
 
         {/* Top Audio */}
         {!hikerLoading && hiker?.top_audio?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-            <div className="flex items-center gap-2 mb-3"><Music className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Top Audio</h2></div>
+          <div className="panel p-4">
+            <div className="flex items-center gap-2 mb-3"><Music className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">Top Audio</h2></div>
             <div className="space-y-1.5">
               {hiker.top_audio.map((a: any, i: number) => (
                 <div key={i} className="flex items-center justify-between text-sm">
-                  <span className="text-[#454652] dark:text-gray-200 truncate mr-2">🎵 {a.title}</span>
-                  <span className="text-xs text-[#757684] shrink-0">×{a.count}</span>
+                  <span className="text-foreground truncate mr-2">🎵 {a.title}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">×{a.count}</span>
                 </div>
               ))}
             </div>
@@ -532,13 +534,13 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* Best Hooks */}
         {!hikerLoading && hiker?.top_hooks?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-            <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Best Hooks</h2></div>
+          <div className="panel p-4">
+            <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">Best Hooks</h2></div>
             <div className="space-y-2.5">
               {hiker.top_hooks.map((h: any, i: number) => (
-                <div key={i} onClick={() => h.permalink && window.open(h.permalink, '_blank')} className="cursor-pointer p-2 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-gray-700">
-                  <p className="text-sm text-[#191c1d] dark:text-white leading-snug">"{h.hook}"</p>
-                  <p className="text-[10px] text-[#757684] mt-0.5">{formatNum(h.views || 0)} views · {formatNum(h.likes || 0)} likes</p>
+                <div key={i} onClick={() => h.permalink && window.open(h.permalink, '_blank')} className="cursor-pointer p-2 rounded-lg hover:bg-secondary">
+                  <p className="text-sm text-foreground leading-snug">"{h.hook}"</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{formatNum(h.views || 0)} views · {formatNum(h.likes || 0)} likes</p>
                 </div>
               ))}
             </div>
@@ -546,8 +548,8 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         )}
 
         {!hikerLoading && hiker?.reels?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-            <div className="flex items-center gap-2 mb-3"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Their Reels ({hiker.reels.length})</h2></div>
+          <div className="panel p-4">
+            <div className="flex items-center gap-2 mb-3"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">Their Reels ({hiker.reels.length})</h2></div>
             <div className="flex gap-1.5 mb-3 flex-wrap">
               {([['top', 'Top Views'], ['latest', 'Latest'], ['liked', 'Most Liked'], ['viral', 'Viral']] as const).map(([val, label]) => (
                 <button key={val} onClick={() => setReelsFilter(val)}
@@ -605,11 +607,11 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* Posts — image grid */}
         {!hikerLoading && hiker?.posts?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+          <div className="panel p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} />
-                <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Posted Images ({hiker.posts.length})</h2>
+                <h2 className="font-bold text-sm text-foreground">Posted Images ({hiker.posts.length})</h2>
               </div>
               {hiker.posts.length > 9 && (
                 <button onClick={() => setPostsExpanded(v => !v)} className="text-xs font-bold" style={{ color: PRIMARY }}>
@@ -661,8 +663,8 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 
         {/* Top Hashtags */}
         {!hikerLoading && hiker?.top_hashtags?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-            <div className="flex items-center gap-2 mb-3"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Hashtags They Use</h2></div>
+          <div className="panel p-4">
+            <div className="flex items-center gap-2 mb-3"><Hash className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">Hashtags They Use</h2></div>
             <div className="flex flex-wrap gap-2">
               {hiker.top_hashtags.map((h: any, i: number) => (
                 <span key={i} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>
@@ -680,6 +682,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function InstagramAnalyzer() {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const _saved = getPageState('igAnalyzer');
 
   const [handle, setHandle] = useState(_saved?.handle ?? '');
@@ -895,7 +898,7 @@ export default function InstagramAnalyzer() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+    <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
       <SEO title="Instagram Analyzer — SocialRum" noindex />
       <style>{`
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -914,26 +917,26 @@ export default function InstagramAnalyzer() {
         )}
       </AnimatePresence>
 
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center">
+      <header className="sticky top-0 z-40 bg-card border-b border-border px-5 h-16 flex items-center">
         <h1 className="font-bold text-xl" style={{ color: PRIMARY, fontFamily: 'Montserrat, sans-serif' }}>{t('analyzer.title')}</h1>
-        <p className="text-sm text-[#757684] ml-3 hidden sm:block">{t('analyzer.subtitle')}</p>
+        <p className="text-sm text-muted-foreground ml-3 hidden sm:block">{t('analyzer.subtitle')}</p>
       </header>
 
       <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-5">
 
         {/* Search */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-          <p className="text-sm text-[#757684] mb-3">{t('analyzer.description')}</p>
+        <div className="panel p-4">
+          <p className="text-sm text-muted-foreground mb-3">{t('analyzer.description')}</p>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#757684] text-sm font-bold">@</span>
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">@</span>
               <input type="text" value={handle} onChange={e => handleUsernameChange(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') analyze(); }}
                 placeholder={t('analyzer.placeholder')}
-                className="w-full pl-8 pr-9 py-3 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 transition-all" />
+                className="w-full pl-8 pr-9 py-3 rounded-xl border border-input bg-secondary text-foreground placeholder:text-muted-foreground outline-none text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
               {handle && (
                 <button onClick={() => { setHandle(''); setResult(null); setHiker(null); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -963,11 +966,11 @@ export default function InstagramAnalyzer() {
 
         {/* Competitor Tracker — hidden while viewing search results */}
         {!((result || hiker) && !loading) && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+        <div className="panel p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4" style={{ color: PRIMARY }} />
-              <h2 className="font-bold text-sm text-[#191c1d] dark:text-white">Competitor Tracker</h2>
+              <h2 className="font-bold text-sm text-foreground">Competitor Tracker</h2>
               {competitors.length > 0 && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{competitors.length}</span>
               )}
@@ -985,26 +988,26 @@ export default function InstagramAnalyzer() {
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                 <div className="flex gap-2 mb-3">
                   <div className="relative flex-1">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#757684] text-sm font-bold">@</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">@</span>
                     <input autoFocus type="text" value={compInput} onChange={e => setCompInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') addCompetitor(); if (e.key === 'Escape') setAddingCompetitor(false); }}
                       placeholder="Enter competitor username"
-                      className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-[#c5c5d4] bg-[#f8f9fa] dark:bg-gray-700 dark:border-gray-600 text-[#191c1d] dark:text-white placeholder:text-[#757684] outline-none text-sm focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 transition-all" />
+                      className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-input bg-secondary text-foreground placeholder:text-muted-foreground outline-none text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                   </div>
                   <button onClick={addCompetitor} disabled={compLoading || !compInput.trim()}
                     className="px-4 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60" style={{ background: PRIMARY_GRAD }}>
                     {compLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
                   </button>
                   <button onClick={() => { setAddingCompetitor(false); setCompInput(''); setCompError(''); }}
-                    className="px-3 py-2.5 rounded-xl border border-[#e1e3e4] dark:border-gray-600 text-[#757684] hover:text-[#191c1d] dark:hover:text-white transition-colors">
+                    className="px-3 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
                 {compError && <p className="text-red-500 text-xs mb-2">{compError}</p>}
                 {compLoading && (
-                  <div className="flex items-center gap-2 py-2 px-3 rounded-xl bg-[#f8f9fa] dark:bg-gray-700 mb-2">
+                  <div className="flex items-center gap-2 py-2 px-3 rounded-xl bg-secondary mb-2">
                     <Loader2 className="w-4 h-4 animate-spin" style={{ color: PRIMARY }} />
-                    <p className="text-xs text-[#757684]">Fetching @{compInput.replace('@', '')}…</p>
+                    <p className="text-xs text-muted-foreground">Fetching @{compInput.replace('@', '')}…</p>
                   </div>
                 )}
               </motion.div>
@@ -1015,13 +1018,13 @@ export default function InstagramAnalyzer() {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: PRIMARY_CONTAINER }}>
                 <Users className="w-5 h-5" style={{ color: PRIMARY }} />
               </div>
-              <p className="text-xs text-[#757684]">Add competitors to track and compare their profiles</p>
+              <p className="text-xs text-muted-foreground">Add competitors to track and compare their profiles</p>
             </div>
           ) : (
             <div className="space-y-2 mt-1">
               {competitors.map(comp => (
                 <motion.div key={comp.username} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-[#e1e3e4] dark:border-gray-700 cursor-pointer hover:border-[#7C3AED]/40 hover:bg-[#faf9ff] dark:hover:bg-gray-700 transition-all"
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border cursor-pointer hover:border-primary/40 hover:bg-secondary transition-all"
                   onClick={() => setOpenCompetitor(comp)}>
                   {/* Profile pic */}
                   {(() => {
@@ -1031,7 +1034,7 @@ export default function InstagramAnalyzer() {
                       <img
                         src={proxiedUrl}
                         alt={comp.username}
-                        className="w-10 h-10 rounded-full object-cover border border-[#e1e3e4] shrink-0"
+                        className="w-10 h-10 rounded-full object-cover border border-border shrink-0"
                         onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     );
                     return (
@@ -1042,13 +1045,13 @@ export default function InstagramAnalyzer() {
                   })()}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-bold text-[#191c1d] dark:text-white truncate">@{comp.username}</p>
+                      <p className="text-sm font-bold text-foreground truncate">@{comp.username}</p>
                       {comp.is_verified && <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
-                      {comp.followers && <span className="text-xs text-[#757684]"><span className="font-semibold text-[#454652] dark:text-gray-300">{formatNum(comp.followers)}</span> followers</span>}
-                      {comp.engagement_rate && <span className="text-xs text-[#757684]"><span className="font-semibold text-green-600">{comp.engagement_rate}%</span> eng.</span>}
-                      {comp.hikerData?.reels?.length > 0 && <span className="text-xs text-[#757684]"><span className="font-semibold" style={{ color: PRIMARY }}>{comp.hikerData.reels.length}</span> reels</span>}
+                      {comp.followers && <span className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">{formatNum(comp.followers)}</span> followers</span>}
+                      {comp.engagement_rate && <span className="text-xs text-muted-foreground"><span className="font-semibold text-green-600">{comp.engagement_rate}%</span> eng.</span>}
+                      {comp.hikerData?.reels?.length > 0 && <span className="text-xs text-muted-foreground"><span className="font-semibold" style={{ color: PRIMARY }}>{comp.hikerData.reels.length}</span> reels</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -1057,7 +1060,7 @@ export default function InstagramAnalyzer() {
                       className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-colors hidden sm:block"
                       style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>View Profile</button>
                     <button onClick={e => { e.stopPropagation(); removeCompetitor(comp.username); }}
-                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-[#757684] hover:text-red-500 transition-colors">
+                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-muted-foreground hover:text-red-500 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -1070,12 +1073,12 @@ export default function InstagramAnalyzer() {
 
         {/* Loading */}
         {loading && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] p-8 flex flex-col items-center gap-3">
+          <div className="panel p-8 flex flex-col items-center gap-3">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
               <Sparkles className="w-8 h-8" style={{ color: PRIMARY }} />
             </motion.div>
-            <p className="text-sm font-semibold text-[#191c1d] dark:text-white">{t('analyzer.analyzing')} @{handle.replace('@', '')}…</p>
-            <p className="text-xs text-[#757684]">{t('analyzer.fetching')}</p>
+            <p className="text-sm font-semibold text-foreground">{t('analyzer.analyzing')} @{handle.replace('@', '')}…</p>
+            <p className="text-xs text-muted-foreground">{t('analyzer.fetching')}</p>
           </div>
         )}
 
@@ -1113,11 +1116,11 @@ export default function InstagramAnalyzer() {
 
             {/* Niche Detection */}
             {result?.niche && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+              <div className="panel p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Target className="w-4 h-4" style={{ color: PRIMARY }} />
-                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white">Niche</h2>
+                    <h2 className="font-bold text-base text-foreground">Niche</h2>
                   </div>
                   {result.niche_score && (
                     <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
@@ -1156,52 +1159,52 @@ export default function InstagramAnalyzer() {
               const hasStats = stats.followers != null || stats.avg_likes != null;
               if (!hasStats) return null;
               return (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="panel p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
-                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.profile_stats')}</h2>
+                    <h2 className="font-bold text-base text-foreground">{t('analyzer.profile_stats')}</h2>
                     <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Live</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     {stats.followers != null && (
                       <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
-                        <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-xs text-[#757684]">{t('analyzer.followers')}</span></div>
+                        <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-xs text-muted-foreground">{t('analyzer.followers')}</span></div>
                         <p className="font-bold text-lg" style={{ color: PRIMARY }}>{formatNum(stats.followers)}</p>
                       </div>
                     )}
                     {stats.engagement_rate != null && (
                       <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
-                        <div className="flex items-center gap-2 mb-1"><TrendingUp className="w-3.5 h-3.5 text-green-600" /><span className="text-xs text-[#757684]">{t('analyzer.engagement')}</span></div>
+                        <div className="flex items-center gap-2 mb-1"><TrendingUp className="w-3.5 h-3.5 text-green-600" /><span className="text-xs text-muted-foreground">{t('analyzer.engagement')}</span></div>
                         <p className="font-bold text-lg text-green-700">{stats.engagement_rate}%</p>
                       </div>
                     )}
                     {stats.avg_likes != null && (
                       <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
-                        <div className="flex items-center gap-2 mb-1"><Heart className="w-3.5 h-3.5 text-pink-600" /><span className="text-xs text-[#757684]">{t('analyzer.avg_likes')}</span></div>
+                        <div className="flex items-center gap-2 mb-1"><Heart className="w-3.5 h-3.5 text-pink-600" /><span className="text-xs text-muted-foreground">{t('analyzer.avg_likes')}</span></div>
                         <p className="font-bold text-lg text-pink-700">{formatNum(stats.avg_likes)}</p>
                       </div>
                     )}
                     {stats.avg_comments != null && (
                       <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
-                        <div className="flex items-center gap-2 mb-1"><MessageCircle className="w-3.5 h-3.5 text-orange-600" /><span className="text-xs text-[#757684]">{t('analyzer.avg_comments')}</span></div>
+                        <div className="flex items-center gap-2 mb-1"><MessageCircle className="w-3.5 h-3.5 text-orange-600" /><span className="text-xs text-muted-foreground">{t('analyzer.avg_comments')}</span></div>
                         <p className="font-bold text-lg text-orange-700">{formatNum(stats.avg_comments)}</p>
                       </div>
                     )}
                     {stats.avg_views != null && (
                       <div className="rounded-xl p-3.5" style={{ background: '#e3f2fd' }}>
-                        <div className="flex items-center gap-2 mb-1"><Eye className="w-3.5 h-3.5 text-blue-600" /><span className="text-xs text-[#757684]">Avg Views</span></div>
+                        <div className="flex items-center gap-2 mb-1"><Eye className="w-3.5 h-3.5 text-blue-600" /><span className="text-xs text-muted-foreground">Avg Views</span></div>
                         <p className="font-bold text-lg text-blue-700">{formatNum(stats.avg_views)}</p>
                       </div>
                     )}
                     {stats.following != null && (
                       <div className="rounded-xl p-3.5" style={{ background: '#f3e5f5' }}>
-                        <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5 text-purple-600" /><span className="text-xs text-[#757684]">Following</span></div>
+                        <div className="flex items-center gap-2 mb-1"><Users className="w-3.5 h-3.5 text-purple-600" /><span className="text-xs text-muted-foreground">Following</span></div>
                         <p className="font-bold text-lg text-purple-700">{formatNum(stats.following)}</p>
                       </div>
                     )}
                   </div>
                   {stats.total_posts && (
-                    <p className="text-xs text-[#757684] mt-3 text-center">{t('analyzer.based_on')} {stats.total_posts.toLocaleString()} {t('analyzer.total_posts')}</p>
+                    <p className="text-xs text-muted-foreground mt-3 text-center">{t('analyzer.based_on')} {stats.total_posts.toLocaleString()} {t('analyzer.total_posts')}</p>
                   )}
                 </div>
               );
@@ -1219,18 +1222,18 @@ export default function InstagramAnalyzer() {
               const isAI = scrapeNames.length === 0 && aiPillars.length > 0;
               if (pillars.length === 0 && !pillarsLoading) return null;
               return (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="panel p-5">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
-                      <h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.content_pillars')}</h2>
+                      <h2 className="font-bold text-base text-foreground">{t('analyzer.content_pillars')}</h2>
                     </div>
                     {isAI && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>AI</span>}
                   </div>
                   {pillarsLoading && pillars.length === 0 ? (
                     <div className="flex items-center gap-2 py-1">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: PRIMARY }} />
-                      <span className="text-xs text-[#757684]">Analysing content themes…</span>
+                      <span className="text-xs text-muted-foreground">Analysing content themes…</span>
                     </div>
                   ) : (
                     <>
@@ -1271,13 +1274,13 @@ export default function InstagramAnalyzer() {
 
             {/* Reel Ideas */}
             {result?.reel_ideas?.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-                <div className="flex items-center gap-2 mb-4"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.reel_ideas')}</h2></div>
+              <div className="panel p-5">
+                <div className="flex items-center gap-2 mb-4"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-foreground">{t('analyzer.reel_ideas')}</h2></div>
                 <div className="space-y-2">
                   {result.reel_ideas.map((idea: string, i: number) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f8f9fa] dark:hover:bg-gray-700 transition-colors">
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-background transition-colors">
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: PRIMARY_GRAD }}>{i + 1}</div>
-                      <p className="text-sm text-[#454652] dark:text-gray-200 flex-1">{idea}</p>
+                      <p className="text-sm text-foreground flex-1">{idea}</p>
                     </div>
                   ))}
                 </div>
@@ -1286,15 +1289,15 @@ export default function InstagramAnalyzer() {
 
             {/* Posting Tips */}
             {result?.posting_tips?.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
-                <div className="flex items-center gap-2 mb-4"><Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-[#191c1d] dark:text-white">{t('analyzer.posting_tips')}</h2></div>
+              <div className="panel p-5">
+                <div className="flex items-center gap-2 mb-4"><Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-foreground">{t('analyzer.posting_tips')}</h2></div>
                 <div className="space-y-2.5">
                   {result.posting_tips.map((tip: string, i: number) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: PRIMARY_CONTAINER }}>
                         <span className="text-[9px] font-bold" style={{ color: PRIMARY }}>{i + 1}</span>
                       </div>
-                      <p className="text-sm text-[#454652] dark:text-gray-200 leading-relaxed">{tip}</p>
+                      <p className="text-sm text-foreground leading-relaxed">{tip}</p>
                     </div>
                   ))}
                 </div>
@@ -1336,10 +1339,10 @@ export default function InstagramAnalyzer() {
                 : null;
 
               return (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5">
+                <div className="panel p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <Clock className="w-4 h-4" style={{ color: PRIMARY }} />
-                    <h2 className="font-bold text-base text-[#191c1d] dark:text-white">Posting Patterns</h2>
+                    <h2 className="font-bold text-base text-foreground">Posting Patterns</h2>
                     <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Real Data</span>
                   </div>
 
@@ -1348,14 +1351,14 @@ export default function InstagramAnalyzer() {
                     {bestDay && (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
                         <Calendar className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                        <span className="text-xs text-[#757684]">Best day:</span>
+                        <span className="text-xs text-muted-foreground">Best day:</span>
                         <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestDay}</span>
                       </div>
                     )}
                     {bestHour && (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
                         <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                        <span className="text-xs text-[#757684]">Best time:</span>
+                        <span className="text-xs text-muted-foreground">Best time:</span>
                         <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestHour}</span>
                       </div>
                     )}
@@ -1370,7 +1373,7 @@ export default function InstagramAnalyzer() {
                   {/* Days bar chart */}
                   {Object.values(dayCount).some(v => v > 0) && (
                     <div className="mb-5">
-                      <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider mb-2">Posts by Day</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Posts by Day</p>
                       <div className="flex items-end gap-1.5 h-16">
                         {DAYS_SHORT.map(day => (
                           <div key={day} className="flex-1 flex flex-col items-center gap-1">
@@ -1379,7 +1382,7 @@ export default function InstagramAnalyzer() {
                               minHeight: dayCount[day] > 0 ? '4px' : '0',
                               background: day === bestDay ? PRIMARY : PRIMARY_CONTAINER,
                             }} />
-                            <span className="text-[9px] font-bold" style={{ color: day === bestDay ? PRIMARY : '#757684' }}>{day}</span>
+                            <span className="text-[9px] font-bold" style={{ color: day === bestDay ? PRIMARY : 'hsl(var(--muted-foreground))' }}>{day}</span>
                           </div>
                         ))}
                       </div>
@@ -1389,7 +1392,7 @@ export default function InstagramAnalyzer() {
                   {/* Hours bar chart */}
                   {Object.values(hourCount).some(v => v > 0) && (
                     <div>
-                      <p className="text-xs font-semibold text-[#757684] uppercase tracking-wider mb-2">Posts by Time (IST)</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Posts by Time (IST)</p>
                       <div className="flex items-end gap-0.5 h-12">
                         {Array.from({ length: 24 }, (_, h) => (
                           <div key={h} className="flex-1 rounded-t-sm transition-all" style={{
@@ -1400,13 +1403,13 @@ export default function InstagramAnalyzer() {
                         ))}
                       </div>
                       <div className="flex justify-between mt-1">
-                        {HOURS_LABELS.map(h => <span key={h} className="text-[8px] text-[#757684]">{h}</span>)}
+                        {HOURS_LABELS.map(h => <span key={h} className="text-[8px] text-muted-foreground">{h}</span>)}
                       </div>
                     </div>
                   )}
 
                   {reels.length === 0 && (
-                    <p className="text-xs text-[#757684] text-center py-2">No reel data available for posting patterns</p>
+                    <p className="text-xs text-muted-foreground text-center py-2">No reel data available for posting patterns</p>
                   )}
                 </div>
               );
@@ -1419,24 +1422,24 @@ export default function InstagramAnalyzer() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 mt-4">
             <div className="flex items-center gap-2">
               <Play className="w-4 h-4" style={{ color: PRIMARY }} />
-              <h2 className="font-bold text-base text-[#191c1d] dark:text-white">Reels & Deep Insights</h2>
+              <h2 className="font-bold text-base text-foreground">Reels & Deep Insights</h2>
             </div>
             {hikerLoading && !hiker ? (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-8 text-center">
+              <div className="panel p-8 text-center">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: PRIMARY }} />
-                <p className="text-sm text-[#757684] mt-2">Fetching reels…</p>
+                <p className="text-sm text-muted-foreground mt-2">Fetching reels…</p>
               </div>
             ) : hiker && (hiker.reels?.length > 0 || hiker.stats) ? (
               <>
                 {/* Audio */}
                 {hiker.top_audio?.length > 0 && (
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-                    <div className="flex items-center gap-2 mb-3"><Music className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Top Audio</h3></div>
+                  <div className="panel p-4">
+                    <div className="flex items-center gap-2 mb-3"><Music className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-foreground">Top Audio</h3></div>
                     <div className="space-y-1.5">
                       {hiker.top_audio.map((a: any, i: number) => (
                         <div key={i} className="flex items-center justify-between text-sm">
-                          <span className="text-[#454652] dark:text-gray-200 truncate mr-2">🎵 {a.title}</span>
-                          <span className="text-xs text-[#757684] shrink-0">×{a.count}</span>
+                          <span className="text-foreground truncate mr-2">🎵 {a.title}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">×{a.count}</span>
                         </div>
                       ))}
                     </div>
@@ -1445,13 +1448,13 @@ export default function InstagramAnalyzer() {
 
                 {/* Best Hooks */}
                 {hiker.top_hooks?.length > 0 && (
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-                    <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Best Hooks</h3></div>
+                  <div className="panel p-4">
+                    <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-foreground">Best Hooks</h3></div>
                     <div className="space-y-2.5">
                       {hiker.top_hooks.map((h: any, i: number) => (
-                        <div key={i} onClick={() => h.permalink && window.open(h.permalink, '_blank')} className="cursor-pointer p-2 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-gray-700">
-                          <p className="text-sm text-[#191c1d] dark:text-white leading-snug">"{h.hook}"</p>
-                          <p className="text-[10px] text-[#757684] mt-0.5">{formatNum(h.views || 0)} views · {formatNum(h.likes || 0)} likes</p>
+                        <div key={i} onClick={() => h.permalink && window.open(h.permalink, '_blank')} className="cursor-pointer p-2 rounded-lg hover:bg-secondary">
+                          <p className="text-sm text-foreground leading-snug">"{h.hook}"</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{formatNum(h.views || 0)} views · {formatNum(h.likes || 0)} likes</p>
                         </div>
                       ))}
                     </div>
@@ -1460,9 +1463,9 @@ export default function InstagramAnalyzer() {
 
                 {/* Reels Grid */}
                 {hiker.reels?.length > 0 && (
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+                  <div className="panel p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Reels ({hiker.reels.length})</h3></div>
+                      <div className="flex items-center gap-2"><Play className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-foreground">Reels ({hiker.reels.length})</h3></div>
                     </div>
                     <div className="flex gap-1.5 mb-3 flex-wrap">
                       {([['top', 'Top Views'], ['latest', 'Latest'], ['liked', 'Most Liked'], ['viral', 'Viral']] as const).map(([val, label]) => (
@@ -1542,8 +1545,8 @@ export default function InstagramAnalyzer() {
                 {(hiker.posts?.length > 0 || result?.sc_posts?.length > 0) && (() => {
                   const displayPosts = hiker.posts?.length > 0 ? hiker.posts : result?.sc_posts || [];
                   return (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
-                      <div className="flex items-center gap-2 mb-3"><MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Posts ({displayPosts.length})</h3></div>
+                    <div className="panel p-4">
+                      <div className="flex items-center gap-2 mb-3"><MessageCircle className="w-4 h-4" style={{ color: PRIMARY }} /><h3 className="font-bold text-sm text-foreground">Posts ({displayPosts.length})</h3></div>
                       <div className="flex gap-1.5 mb-3 flex-wrap">
                         {([['top', 'Top'], ['latest', 'Latest'], ['liked', 'Most Liked']] as const).map(([val, label]) => (
                           <button key={val} onClick={() => setPostsFilter(val)}
@@ -1594,11 +1597,11 @@ export default function InstagramAnalyzer() {
 
                 {/* Real hashtags from HikerAPI only */}
                 {hiker.top_hashtags?.length > 0 && (
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-4">
+                  <div className="panel p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Hash className="w-4 h-4" style={{ color: PRIMARY }} />
-                        <h3 className="font-bold text-sm text-[#191c1d] dark:text-white">Hashtags They Use ({hiker.top_hashtags.length})</h3>
+                        <h3 className="font-bold text-sm text-foreground">Hashtags They Use ({hiker.top_hashtags.length})</h3>
                       </div>
                       <button onClick={() => copyText(hiker.top_hashtags.map((h: any) => h.tag).join(' '), 'all-hashtags')} className="text-xs font-bold flex items-center gap-1" style={{ color: PRIMARY }}>
                         {copied === 'all-hashtags' ? <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy all</>}
@@ -1619,8 +1622,8 @@ export default function InstagramAnalyzer() {
 
               </>
             ) : hiker ? (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] dark:border-gray-700 p-5 text-center">
-                <p className="text-sm text-[#757684]">No public reels found for this account.</p>
+              <div className="panel p-5 text-center">
+                <p className="text-sm text-muted-foreground">No public reels found for this account.</p>
               </div>
             ) : null}
           </motion.div>
@@ -1628,12 +1631,12 @@ export default function InstagramAnalyzer() {
 
         {/* Empty state */}
         {!loading && !result && !hiker && !error && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e1e3e4] p-8 text-center">
+          <div className="panel p-8 text-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: PRIMARY_CONTAINER }}>
               <User className="w-8 h-8" style={{ color: PRIMARY }} />
             </div>
-            <p className="font-bold text-[#191c1d] dark:text-white mb-1">{t('analyzer.empty_title')}</p>
-            <p className="text-sm text-[#757684]">{t('analyzer.empty_desc')}</p>
+            <p className="font-bold text-foreground mb-1">{t('analyzer.empty_title')}</p>
+            <p className="text-sm text-muted-foreground">{t('analyzer.empty_desc')}</p>
           </div>
         )}
       </main>

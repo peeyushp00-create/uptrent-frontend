@@ -4,11 +4,13 @@ import { supabase } from "@/lib/supabase";
 import { Loader2, ArrowLeft } from "lucide-react";
 import SEO from "@/components/SEO";
 import { getPostLoginPath } from "@/lib/authRedirect";
+import { useTheme } from "@/contexts/ThemeContext";
 
-const IG_GRAD = "linear-gradient(135deg, #7C3AED, #0D9488)";
-const IG = "#7C3AED";
+const IG_GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
+const IG = "hsl(var(--primary))";
 
 export default function LoginPage() {
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -70,7 +72,7 @@ export default function LoginPage() {
   // ── FORGOT PASSWORD VIEW ──
   if (view === 'forgot') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background px-4">
+      <div className={`theme-redesign ${theme} flex items-center justify-center min-h-screen bg-background text-foreground px-4`}>
         <div className="w-full max-w-sm space-y-6">
           <div className="flex flex-col items-center gap-3 text-center">
             <img src="/socialrum-logo.png" alt="SocialRum" className="w-12 h-12 rounded-xl" />
@@ -88,7 +90,7 @@ export default function LoginPage() {
                 onChange={e => setResetEmail(e.target.value)}
                 required
                 className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-                onFocus={e => e.target.style.borderColor = `${IG}60`}
+                onFocus={e => e.target.style.borderColor = "hsl(var(--primary) / 0.38)"}
                 onBlur={e => e.target.style.borderColor = ''}
               />
             </div>
@@ -114,11 +116,11 @@ export default function LoginPage() {
   // ── RESET LINK SENT VIEW ──
   if (view === 'forgot_sent') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background px-4">
+      <div className={`theme-redesign ${theme} flex items-center justify-center min-h-screen bg-background text-foreground px-4`}>
         <div className="w-full max-w-sm space-y-6 text-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
-              style={{ background: `${IG}15` }}>
+              style={{ background: "hsl(var(--primary) / 0.08)" }}>
               📧
             </div>
             <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
@@ -129,7 +131,7 @@ export default function LoginPage() {
           </div>
 
           <div className="p-4 rounded-xl text-sm text-muted-foreground"
-            style={{ background: `${IG}08`, border: `1px solid ${IG}20` }}>
+            style={{ background: "hsl(var(--primary) / 0.03)", border: "1px solid hsl(var(--primary) / 0.13)" }}>
             Click the link in the email to reset your password. Check your spam folder if you don't see it.
           </div>
 
@@ -144,7 +146,7 @@ export default function LoginPage() {
 
   // ── LOGIN VIEW ──
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+    <div className={`theme-redesign ${theme} flex items-center justify-center min-h-screen bg-background text-foreground px-4`}>
       <SEO title="Log In — SocialRum" noindex />
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
@@ -181,7 +183,7 @@ export default function LoginPage() {
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('password')?.focus(); } }}
               required
               className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-              onFocus={e => e.target.style.borderColor = `${IG}60`}
+              onFocus={e => e.target.style.borderColor = "hsl(var(--primary) / 0.38)"}
               onBlur={e => e.target.style.borderColor = ''}
             />
           </div>
@@ -201,7 +203,7 @@ export default function LoginPage() {
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleLogin(e as any); } }}
               required
               className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-              onFocus={e => e.target.style.borderColor = `${IG}60`}
+              onFocus={e => e.target.style.borderColor = "hsl(var(--primary) / 0.38)"}
               onBlur={e => e.target.style.borderColor = ''}
             />
           </div>

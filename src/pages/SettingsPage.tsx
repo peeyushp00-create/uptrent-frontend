@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import {
-  Settings, User, Target, Globe, Palette, Save, Loader2, Check,
-  Mic, MicOff, MessageSquare, Star, Send, ThumbsUp, Zap, Bug, Lightbulb,
-  Youtube, Unlink, CheckCircle2, Instagram
+  User, Settings2 as SettingsIcon, Mic, MessageSquare, CreditCard, Instagram, Youtube, Globe, Check,
+  Star, Send, Square, Loader2, Sparkles as SparklesIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
@@ -39,33 +39,36 @@ const STYLES = [
 ];
 
 const PLATFORMS = [
-  { value: "instagram", label: "Instagram" },
-  { value: "youtube", label: "YouTube" },
+  { value: "instagram", label: "Instagram", icon: Instagram },
+  { value: "youtube", label: "YouTube", icon: Youtube },
   { value: "both", label: "Both" },
 ];
 
-const BLUE_GRADIENT = "linear-gradient(135deg, #7C3AED, #0D9488)";
-const BLUE = "#7C3AED";
+type Tab = "profile" | "preferences" | "voice" | "billing" | "feedback";
+const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "profile", label: "Profile", icon: User },
+  { id: "preferences", label: "Preferences", icon: SettingsIcon },
+  { id: "voice", label: "Voice", icon: Mic },
+  { id: "billing", label: "Billing", icon: CreditCard },
+  { id: "feedback", label: "Feedback", icon: MessageSquare },
+];
 
-const sampleText = {
-  hindi: "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं।",
-  english: "Hey guys, welcome back! Today I want to share some really important tips that I have personally used.",
-  tamil: "வணக்கம் நண்பர்களே! இன்று நான் உங்களுடன் சில முக்கியமான tips பகிர்ந்துகொள்ள விரும்புகிறேன்.",
-  telugu: "నమస్కారం నేస్తాలు! ఈరోజు నేను మీతో కొన్ని చాలా ముఖ్యమైన tips share చేయాలనుకుంటున్నాను.",
-  malayalam: "നമസ്കാരം സുഹൃത്തുക്കളേ! ഇന്ന് ഞാൻ നിങ്ങളുമായി ചില പ്രധാനപ്പെട്ട tips പങ്കിടാൻ ആഗ്രഹിക്കുന്നു.",
-};
-
-const langMap: Record<string, string> = {
-  english: 'en', hindi: 'hi', tamil: 'ta', telugu: 'te', malayalam: 'ml'
-};
+const FEEDBACK_CATEGORIES = [
+  { id: "general", label: "Feedback", icon: MessageSquare },
+  { id: "feature", label: "Feature Request", icon: SparklesIcon },
+  { id: "bug", label: "Bug Report", icon: Square },
+  { id: "performance", label: "Performance", icon: SettingsIcon },
+];
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const navigate = useNavigate();
 
   const _saved = getPageState('settings');
 
-  const [activeTab, setActiveTab] = useState(_saved?.activeTab ?? "profile");
+  const [active, setActive] = useState<Tab>(_saved?.activeTab ?? "profile");
   const [voiceSaving, setVoiceSaving] = useState(false);
   const [voiceSaved, setVoiceSaved] = useState(false);
   const [name, setName] = useState(user?.user_metadata?.full_name || '');
@@ -86,43 +89,25 @@ export default function SettingsPage() {
   const [analyzingVoice, setAnalyzingVoice] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
 
-  // ✅ MediaRecorder refs for Whisper
   const mediaRecorderRef = useRef<any>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<any>(null);
   const autoSaveTimer = useRef<any>(null);
 
   const _stateRef = useRef<any>({});
-  useEffect(() => {
-    _stateRef.current = { activeTab, voiceStyle };
-  });
+  useEffect(() => { _stateRef.current = { activeTab: active, voiceStyle }; });
   useEffect(() => () => { setPageState('settings', _stateRef.current); }, []);
 
   const [feedbackCategory, setFeedbackCategory] = useState("general");
   const [feedbackRating, setFeedbackRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState("");
-  const [savingIndicator, setSavingIndicator] = useState(false);
   const [ytChannel, setYtChannel] = useState<any>(user?.user_metadata?.youtube_channel || null);
   const [ytConnecting, setYtConnecting] = useState(false);
   const [ytDisconnecting, setYtDisconnecting] = useState(false);
-
-  const TABS = [
-    { id: "profile", label: t('settings.profile'), icon: User },
-    { id: "preferences", label: t('settings.preferences'), icon: Palette },
-    { id: "voice", label: t('settings.voice'), icon: Mic },
-    { id: "feedback", label: t('settings.feedback'), icon: MessageSquare },
-  ];
-
-  const FEEDBACK_CATEGORIES = [
-    { id: "general", label: t('settings.feedback'), icon: MessageSquare },
-    { id: "feature", label: "Feature Request", icon: Lightbulb },
-    { id: "bug", label: "Bug Report", icon: Bug },
-    { id: "performance", label: "Performance", icon: Zap },
-  ];
+  const [paymentStatus, setPaymentStatus] = useState<{ active: boolean; plan?: string; renews_at?: string } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -131,6 +116,12 @@ export default function SettingsPage() {
       window.location.reload();
     }
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`${BASE}/api/payment/status?user_id=${user.id}`)
+      .then(r => r.json()).then(setPaymentStatus).catch(() => {});
+  }, [user?.id]);
 
   const handleYtConnect = async () => {
     if (!user?.id) return;
@@ -159,15 +150,18 @@ export default function SettingsPage() {
   const autoSave = useCallback(async (updates: Record<string, any>) => {
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
-      setSavingIndicator(true);
       await supabase.auth.updateUser({ data: updates });
-      setSavingIndicator(false);
     }, 800);
   }, []);
 
   const handleNameChange = (val: string) => {
     setName(val);
     autoSave({ full_name: val, niche: niches[0] || '', niches, language, style, platform, instagram_username: igUsername });
+  };
+
+  const handleIgUsernameChange = (val: string) => {
+    setIgUsername(val);
+    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style, platform, instagram_username: val });
   };
 
   const toggleNiche = (n: string) => {
@@ -179,7 +173,7 @@ export default function SettingsPage() {
   const handleLanguageChange = (val: string) => {
     setLanguage(val);
     localStorage.setItem('userLanguage', val);
-    i18n.changeLanguage(langMap[val] || 'en');
+    i18n.changeLanguage({ english: 'en', hindi: 'hi', tamil: 'ta', telugu: 'te', malayalam: 'ml' }[val] || 'en');
     autoSave({ full_name: name, niche: niches[0] || '', niches, language: val, style, platform, instagram_username: igUsername });
   };
 
@@ -194,23 +188,14 @@ export default function SettingsPage() {
     autoSave({ full_name: name, niche: niches[0] || '', niches, language, style, platform: val, instagram_username: igUsername });
   };
 
-  const handleIgUsernameChange = (val: string) => {
-    const clean = val.replace('@', '').trim();
-    setIgUsername(clean);
-    autoSave({ full_name: name, niche: niches[0] || '', niches, language, style, platform, instagram_username: clean });
-  };
-
-  // ✅ NEW: MediaRecorder-based recording for Whisper
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
-
       mediaRecorder.ondataavailable = (e: BlobEvent) => chunksRef.current.push(e.data);
       mediaRecorder.start();
-
       setIsRecording(true);
       setVoiceStyle('');
       setRecordingTime(0);
@@ -228,7 +213,6 @@ export default function SettingsPage() {
   const stopRecording = () => {
     const mediaRecorder = mediaRecorderRef.current;
     if (!mediaRecorder) return;
-
     mediaRecorder.onstop = async () => {
       clearInterval(timerRef.current);
       setIsRecording(false);
@@ -236,7 +220,6 @@ export default function SettingsPage() {
       const audioBlob = new Blob(chunksRef.current, { type: mimeType });
       await analyzeVoice(audioBlob);
     };
-
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
   };
@@ -290,406 +273,359 @@ export default function SettingsPage() {
 
   const avatarInitials = name
     ? name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-    : user?.email?.[0].toUpperCase() || 'U';
-
-  const currentLangLabel = LANGUAGES.find(l => l.value === language)?.label || 'English';
+    : user?.email?.[0]?.toUpperCase() || 'U';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
       <SEO title="Settings — SocialRum" noindex />
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <Settings className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">{t('settings.title')}</h1>
-          <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
-            {savingIndicator
-              ? <><Loader2 className="w-3 h-3 animate-spin" /> {t('settings.saving')}</>
-              : <><Check className="w-3 h-3 text-green-400" /> {t('settings.auto_saved')}</>}
-          </span>
-        </div>
-      </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-4 pb-24 space-y-4">
+      <main className="max-w-3xl mx-auto px-5 py-8">
+        <h1 className="font-heading text-2xl font-bold mb-1">Settings</h1>
+        <p className="text-sm text-muted-foreground mb-6">Auto-saved. Tune how SocialRum works for you.</p>
 
-        {/* Tab bar */}
-        <div className="flex gap-1 p-1 rounded-2xl bg-card border border-border">
-          {TABS.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all"
-              style={activeTab === tab.id
-                ? { background: BLUE_GRADIENT, color: "#fff" }
-                : { color: "hsl(var(--muted-foreground))" }}>
-              <tab.icon className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
+        <div className="mb-6 flex flex-wrap gap-2 p-1 rounded-xl bg-muted w-fit">
+          {TABS.map((tabDef) => {
+            const Icon = tabDef.icon;
+            const on = active === tabDef.id;
+            return (
+              <button
+                key={tabDef.id}
+                onClick={() => setActive(tabDef.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  on ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="size-4" /> {tabDef.label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* ── PROFILE TAB ── */}
-        {activeTab === "profile" && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <User className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.profile')}
-              </h2>
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold shrink-0"
-                  style={{ background: BLUE_GRADIENT }}>{avatarInitials}</div>
+        {active === "profile" && (
+          <div className="space-y-6">
+            <Panel icon={User} title="Profile">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="size-14 rounded-full bg-gradient-to-br from-primary to-ring text-primary-foreground grid place-items-center font-heading font-bold text-lg">
+                  {avatarInitials}
+                </div>
                 <div>
-                  <p className="font-medium text-foreground">{name || 'Your Name'}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <p className="text-xs mt-0.5" style={{ color: BLUE }}>🌐 {currentLangLabel}</p>
+                  <div className="font-semibold">{name || 'Creator'}</div>
+                  <div className="text-sm text-muted-foreground">{user?.email}</div>
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('settings.full_name')}</label>
-                <input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder={t('settings.full_name')}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none transition-colors text-sm"
-                  onFocus={e => e.target.style.borderColor = `${BLUE}60`}
-                  onBlur={e => e.target.style.borderColor = ''} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('settings.email')}</label>
-                <input type="email" value={user?.email || ''} disabled
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background text-muted-foreground text-sm opacity-60 cursor-not-allowed" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Instagram className="w-3.5 h-3.5 text-pink-500" /> {t('settings.instagram_username')}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">@</span>
-                  <input type="text" value={igUsername} onChange={e => handleIgUsernameChange(e.target.value)}
-                    placeholder="your_instagram_handle"
-                    className="w-full pl-8 pr-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none transition-colors text-sm"
-                    onFocus={e => e.target.style.borderColor = '#ec489960'}
-                    onBlur={e => e.target.style.borderColor = ''} />
-                </div>
-                {igUsername && (
-                  <p className="text-xs text-green-500 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> {t('settings.scripts_personalized')} @{igUsername}
-                  </p>
-                )}
-              </div>
-            </div>
+              <FormField label="Full name">
+                <input value={name} onChange={(e) => handleNameChange(e.target.value)} className="input" />
+              </FormField>
+              <FormField label={<span className="inline-flex items-center gap-1.5"><Instagram className="size-3.5 text-primary" /> Instagram username</span>}>
+                <input value={igUsername} onChange={(e) => handleIgUsernameChange(e.target.value)} placeholder="@ your_instagram_handle" className="input" />
+              </FormField>
+            </Panel>
 
-            {/* YouTube Connect */}
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Youtube className="w-4 h-4 text-red-500" /> {t('settings.youtube_channel')}
-              </h2>
+            <Panel icon={Instagram} title="Instagram Account" iconClass="text-pink-500">
+              <p className="text-sm text-muted-foreground mb-4">Connect your Instagram Business or Creator account to sync followers, posts, views, likes and comments.</p>
+              <button
+                onClick={() => alert("Instagram connect is coming soon.")}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 text-white text-sm font-semibold hover:opacity-90"
+              >
+                <Instagram className="size-4" /> Connect Instagram
+              </button>
+              <p className="text-xs text-muted-foreground text-center mt-3">Read-only access · Revoke anytime from Meta Accounts Center</p>
+            </Panel>
+
+            <Panel icon={Youtube} title="YouTube Channel" iconClass="text-red-500">
               {ytChannel ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                    {ytChannel.channel_thumbnail && <img src={ytChannel.channel_thumbnail} alt="" className="w-10 h-10 rounded-full shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                        <p className="font-semibold text-sm text-green-800 truncate">{ytChannel.channel_name}</p>
-                      </div>
-                      <div className="flex gap-3 mt-0.5 flex-wrap">
-                        <span className="text-xs text-green-600">{Number(ytChannel.subscribers || 0).toLocaleString()} {t('home.subscribers')}</span>
-                        <span className="text-xs text-green-600">{Number(ytChannel.video_count || 0).toLocaleString()} {t('home.videos')}</span>
-                      </div>
-                    </div>
+                <div className="flex items-center gap-3">
+                  {ytChannel.channel_thumbnail && <img src={ytChannel.channel_thumbnail} alt="" className="size-10 rounded-full" />}
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm">{ytChannel.channel_name}</div>
+                    <div className="text-xs text-muted-foreground">Connected</div>
                   </div>
                   <button onClick={handleYtDisconnect} disabled={ytDisconnecting}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 text-red-500 text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
-                    {ytDisconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
-                    {t('settings.disconnect')}
+                    className="px-3 py-2 rounded-lg border border-input text-xs font-medium hover:bg-muted disabled:opacity-50">
+                    {ytDisconnecting ? <Loader2 className="size-3.5 animate-spin" /> : "Disconnect"}
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">Connect your YouTube channel to get personalized content ideas.</p>
+                <>
+                  <p className="text-sm text-muted-foreground mb-4">Connect your YouTube channel to get personalized content ideas.</p>
                   <button onClick={handleYtConnect} disabled={ytConnecting}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #ff0000, #cc0000)' }}>
-                    {ytConnecting ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('home.connecting')}</> : <><Youtube className="w-4 h-4" /> {t('settings.connect_youtube')}</>}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-600 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60">
+                    {ytConnecting ? <Loader2 className="size-4 animate-spin" /> : <Youtube className="size-4" />} Connect YouTube Channel
                   </button>
-                  <p className="text-xs text-center text-muted-foreground">{t('settings.connected_hint')}</p>
-                </div>
+                </>
               )}
-            </div>
+              <p className="text-xs text-muted-foreground text-center mt-3">Read-only access · Revoke anytime in Google Account settings</p>
+            </Panel>
 
-            {/* Niches */}
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-              <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Target className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.content_niches')}
-                {niches.length > 0 && <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ background: "#7C3AED15", color: BLUE }}>{niches.length} {t('settings.selected')}</span>}
-              </h2>
+            <Panel icon={SparklesIcon} title="Content Niches" rightSlot={<span className="text-xs text-primary">{niches.length} selected</span>}>
               <div className="flex flex-wrap gap-2">
-                {NICHES.map((n) => (
-                  <button key={n} onClick={() => toggleNiche(n)}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
-                    style={niches.includes(n)
-                      ? { background: BLUE_GRADIENT, color: "#fff", borderColor: "transparent" }
-                      : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    {niches.includes(n) && '✓ '}{n}
-                  </button>
-                ))}
+                {NICHES.map((n) => {
+                  const on = niches.includes(n);
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => toggleNiche(n)}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                        on ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {on && <Check className="inline size-3 mr-1" />}
+                      {n}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          </motion.div>
+            </Panel>
+          </div>
         )}
 
-        {/* ── PREFERENCES TAB ── */}
-        {activeTab === "preferences" && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="p-3 rounded-2xl flex items-center gap-3" style={{ background: `${BLUE}10`, border: `1px solid ${BLUE}25` }}>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BLUE_GRADIENT }}>
-                <Check className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-foreground">{t('settings.current_settings')}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t('settings.language_label')} <span style={{ color: BLUE }}>{currentLangLabel}</span> · {t('settings.style_label')} <span style={{ color: BLUE }}>{style}</span>
-                </p>
+        {active === "preferences" && (
+          <div className="space-y-6">
+            <div className="panel p-4 flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-primary/15 text-primary grid place-items-center"><Check className="size-4" /></div>
+              <div className="text-sm">
+                <div className="font-semibold">Current settings</div>
+                <div className="text-muted-foreground">
+                  Language: <span className="text-primary">{(LANGUAGES.find(l => l.value === language)?.label || 'English').split(" ")[0]}</span> · Style: <span className="text-primary">{(STYLES.find(s => s.value === style)?.label || '').split(" ")[0].toLowerCase()}</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-              <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Palette className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.platform')}
-              </h2>
-              <div className="flex gap-2">
-                {PLATFORMS.map((p) => (
-                  <button key={p.value} onClick={() => handlePlatformChange(p.value)}
-                    className="flex-1 py-3 rounded-xl border text-sm font-medium transition-all"
-                    style={platform === p.value
-                      ? { background: BLUE_GRADIENT, color: "#fff", borderColor: "transparent" }
-                      : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    {p.label}
-                  </button>
-                ))}
+            <Panel icon={SparklesIcon} title="Platform">
+              <div className="grid grid-cols-3 gap-3">
+                {PLATFORMS.map((p) => {
+                  const Icon = p.icon;
+                  const on = platform === p.value;
+                  return (
+                    <button
+                      key={p.value}
+                      onClick={() => handlePlatformChange(p.value)}
+                      className={`px-4 py-3 rounded-xl border text-sm font-medium transition inline-flex items-center justify-center gap-2 ${
+                        on ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50 text-muted-foreground"
+                      }`}
+                    >
+                      {Icon && <Icon className="size-4" />} {p.label}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            </Panel>
 
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-              <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Globe className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.script_language')}
-              </h2>
-              <p className="text-xs text-muted-foreground">All scripts and app UI will use this language</p>
-              <div className="flex flex-col gap-2">
-                {LANGUAGES.map((l) => (
-                  <button key={l.value} onClick={() => handleLanguageChange(l.value)}
-                    className="w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left flex items-center justify-between"
-                    style={language === l.value
-                      ? { background: BLUE_GRADIENT, color: "#fff", borderColor: "transparent" }
-                      : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    <span>{l.label}</span>
-                    {language === l.value && <Check className="w-4 h-4" />}
-                  </button>
-                ))}
+            <Panel icon={Globe} title="Script Language" subtitle="All scripts and app UI will use this language">
+              <div className="space-y-2">
+                {LANGUAGES.map((l) => {
+                  const on = language === l.value;
+                  return (
+                    <button
+                      key={l.value}
+                      onClick={() => handleLanguageChange(l.value)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition ${
+                        on ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <span className="text-sm font-medium">{l.label}</span>
+                      {on && <Check className="size-4" />}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            </Panel>
 
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-              <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Palette className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.content_style')}
-              </h2>
-              <div className="flex flex-col gap-2">
-                {STYLES.map((s) => (
-                  <button key={s.value} onClick={() => handleStyleChange(s.value)}
-                    className="w-full py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left flex items-center justify-between"
-                    style={style === s.value
-                      ? { background: BLUE_GRADIENT, color: "#fff", borderColor: "transparent" }
-                      : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    <span>{s.label}</span>
-                    {style === s.value && <Check className="w-4 h-4" />}
-                  </button>
-                ))}
+            <Panel icon={SparklesIcon} title="Content Style">
+              <div className="space-y-2">
+                {STYLES.map((s) => {
+                  const on = style === s.value;
+                  return (
+                    <button
+                      key={s.value}
+                      onClick={() => handleStyleChange(s.value)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition ${
+                        on ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <span className="text-sm font-medium">{s.label}</span>
+                      {on && <Check className="size-4" />}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          </motion.div>
+            </Panel>
+          </div>
         )}
 
-        {/* ── VOICE TAB ── */}
-        {activeTab === "voice" && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Mic className="w-4 h-4" style={{ color: BLUE }} /> {t('settings.voice_style')}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Record your voice so we can personalize scripts to match your natural speaking style.
-                Powered by OpenAI Whisper — works with all Indian languages.
+        {active === "voice" && (
+          <div className="space-y-6">
+            <Panel icon={Mic} title="Voice personalization" subtitle="Record 30–60 seconds. No script — just be yourself.">
+              <p className="text-sm text-muted-foreground mb-4">
+                Talk naturally about anything. We'll learn your tone, slang, and pacing, and use that style for every script we generate for you.
               </p>
-              <div className="p-3 rounded-xl bg-secondary/30 border border-border space-y-1">
-                <p className="text-xs font-medium" style={{ color: BLUE }}>📖 Read this text aloud while recording:</p>
-                <p className="text-sm text-foreground leading-relaxed">
-                  {sampleText[language as keyof typeof sampleText] || sampleText.english}
-                </p>
+
+              <div className={`rounded-2xl border p-5 transition ${voiceStyle ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-muted/30"}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Your recording</div>
+                  <div className={`text-xs font-medium ${isRecording ? "text-red-500" : "text-muted-foreground"}`}>
+                    {isRecording ? `● Recording · ${recordingTime}s` : voiceStyle ? "Captured" : "Not recording"}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    disabled={analyzingVoice}
+                    className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-60 ${
+                      isRecording ? "bg-red-500" : "bg-gradient-to-r from-primary to-ring"
+                    }`}
+                  >
+                    {analyzingVoice
+                      ? <><Loader2 className="size-4 animate-spin" /> Analyzing…</>
+                      : isRecording
+                        ? <><Square className="size-4" /> Stop recording ({recordingTime}s)</>
+                        : <><Mic className="size-4" /> {voiceStyle ? "Record again" : "Start recording"}</>}
+                  </button>
+                </div>
               </div>
 
-              {voiceStyle && !analyzingVoice && (
-                <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30">
-                  <p className="text-xs text-green-400 mb-1">{t('settings.voice_analyzed')}</p>
-                  <p className="text-sm text-foreground">{voiceStyle}</p>
-                </div>
-              )}
-
-              {analyzingVoice && (
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" /> {t('settings.analyzing')}
-                </div>
-              )}
-
-              {isRecording && (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-sm text-red-500 font-medium">Recording... {recordingTime}s / 60s</span>
+              {voiceStyle && (
+                <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">Detected voice style</div>
+                  <div className="text-sm">{voiceStyle}</div>
                 </div>
               )}
 
               <button
-                onClick={isRecording ? stopRecording : startRecording}
-                className={`w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-all ${isRecording ? 'bg-red-500 animate-pulse' : ''}`}
-                style={!isRecording ? { background: BLUE_GRADIENT } : {}}>
-                {isRecording
-                  ? <><MicOff className="w-4 h-4" /> {t('settings.stop_recording')} ({recordingTime}s)</>
-                  : <><Mic className="w-4 h-4" /> {voiceStyle ? t('settings.re_record') : t('settings.record_voice')}</>}
+                disabled={!voiceStyle || voiceSaving}
+                onClick={handleSaveVoice}
+                className="mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary to-ring text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {voiceSaving ? <><Loader2 className="size-4 animate-spin" /> Saving…</> : voiceSaved ? <><Check className="size-4" /> Saved</> : <><Check className="size-4" /> Save voice style</>}
               </button>
-
-              {voiceStyle && !analyzingVoice && (
-                <button onClick={handleSaveVoice} disabled={voiceSaving}
-                  className="w-full py-3 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>
-                  {voiceSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('settings.saving')}</>
-                    : voiceSaved ? <><Check className="w-4 h-4" /> Saved!</>
-                    : <><Save className="w-4 h-4" /> {t('settings.save_voice')}</>}
-                </button>
-              )}
-            </div>
-          </motion.div>
+              <p className="text-xs text-muted-foreground mt-4">
+                Every script from now on is generated in your language and style — same slang, same rhythm, same word choice.
+              </p>
+            </Panel>
+          </div>
         )}
 
-        {/* ── FEEDBACK TAB ── */}
-        {activeTab === "feedback" && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <AnimatePresence mode="wait">
-              {feedbackSubmitted ? (
-                <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center py-16 gap-5 text-center">
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-                    className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: BLUE_GRADIENT }}>
-                    <Check className="w-8 h-8 text-white" />
-                  </motion.div>
-                  <div>
-                    <h2 className="text-xl font-bold text-foreground mb-2">Thank You! 🎉</h2>
-                    <p className="text-muted-foreground text-sm max-w-sm">Your feedback has been saved and sent to our team.</p>
+        {active === "billing" && (
+          <div className="space-y-6">
+            <Panel icon={CreditCard} title="Current plan">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="font-heading text-2xl font-semibold">
+                    {paymentStatus?.active ? (paymentStatus.plan || 'Pro') : 'Free'}
                   </div>
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium"
-                    style={{ background: "#7C3AED15", border: "1px solid #7C3AED30", color: BLUE }}>
-                    <ThumbsUp className="w-3.5 h-3.5" /> Saved to database + emailed to team ✅
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {paymentStatus?.active && paymentStatus.renews_at
+                      ? `Renews on ${new Date(paymentStatus.renews_at).toLocaleDateString()}`
+                      : "You're on the free plan"}
                   </div>
-                  <button onClick={() => { setFeedbackSubmitted(false); setFeedbackRating(0); setFeedbackMessage(""); setFeedbackError(""); }}
-                    className="px-6 py-2 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                    Submit Another
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.div key="form" className="space-y-4">
-                  <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-                    <h2 className="font-semibold text-foreground text-sm flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" style={{ color: BLUE }} /> Category
-                    </h2>
-                    <div className="grid grid-cols-2 gap-2">
-                      {FEEDBACK_CATEGORIES.map((cat) => (
-                        <button key={cat.id} onClick={() => setFeedbackCategory(cat.id)}
-                          className="flex items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-all text-left"
-                          style={feedbackCategory === cat.id
-                            ? { background: "#7C3AED15", borderColor: "#7C3AED50", color: BLUE }
-                            : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                          <cat.icon className="w-3.5 h-3.5 shrink-0" />{cat.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-                    <h2 className="font-semibold text-foreground text-sm">Overall Rating</h2>
-                    <div className="flex items-center justify-center gap-3">
-                      {[1, 2, 3, 4, 5].map((r) => (
-                        <motion.button key={r} whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}
-                          onClick={() => setFeedbackRating(r)}
-                          onMouseEnter={() => setHoveredRating(r)}
-                          onMouseLeave={() => setHoveredRating(0)}>
-                          <Star className="w-8 h-8 transition-all"
-                            style={{ fill: r <= (hoveredRating || feedbackRating) ? BLUE : "transparent", color: r <= (hoveredRating || feedbackRating) ? BLUE : "hsl(var(--border))" }} />
-                        </motion.button>
-                      ))}
-                    </div>
-                    {(hoveredRating || feedbackRating) > 0 && (
-                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        className="text-center text-xs font-medium" style={{ color: BLUE }}>
-                        {["Poor", "Fair", "Good", "Great", "Excellent"][(hoveredRating || feedbackRating) - 1]}
-                      </motion.p>
-                    )}
-                  </div>
-
-                  <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-                    <h2 className="font-semibold text-foreground text-sm">Your Feedback</h2>
-                    <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value.slice(0, 500))}
-                      placeholder="Tell us what you think..." rows={4}
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground outline-none text-sm resize-none transition-all"
-                      onFocus={e => { e.target.style.borderColor = "#7C3AED50"; }}
-                      onBlur={e => { e.target.style.borderColor = ""; }} />
-                    <p className="text-xs text-muted-foreground text-right">{feedbackMessage.length}/500</p>
-                  </div>
-
-                  {feedbackError && <p className="text-xs text-red-400 text-center">{feedbackError}</p>}
-
-                  <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                    onClick={handleFeedbackSubmit}
-                    disabled={feedbackLoading || !feedbackMessage.trim() || feedbackRating === 0}
-                    className="w-full py-3.5 rounded-2xl text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                    style={{ background: BLUE_GRADIENT }}>
-                    {feedbackLoading
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
-                      : <><Send className="w-4 h-4" /> {t('common.submit')}</>}
-                  </motion.button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {!feedbackSubmitted && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 border-t border-border pt-4">
-                  <h3 className="font-semibold text-foreground text-sm">Recent Reviews</h3>
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#7C3AED15", color: BLUE }}>3</span>
                 </div>
-                {[
-                  { name: "Rahul S.", rating: 5, text: "Amazing platform! The script generator saved me hours every week.", time: "2 days ago", niche: "Finance Creator" },
-                  { name: "Priya M.", rating: 5, text: "Love the trending topics feature. Helps me stay relevant!", time: "5 days ago", niche: "Fitness Creator" },
-                  { name: "Arjun K.", rating: 4, text: "Great tool overall. Would love more YouTube analytics features.", time: "1 week ago", niche: "Tech Creator" },
-                ].map((review, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                    className="bg-card border border-border rounded-2xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: BLUE_GRADIENT }}>{review.name[0]}</div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{review.name}</p>
-                          <p className="text-xs text-muted-foreground">{review.niche}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{review.time}</span>
-                    </div>
-                    <div className="flex items-center gap-0.5 mb-2">
-                      {Array.from({ length: 5 }).map((_, j) => (
-                        <Star key={j} className="w-3 h-3" style={{ fill: j < review.rating ? BLUE : "transparent", color: j < review.rating ? BLUE : "hsl(var(--border))" }} />
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{review.text}</p>
-                  </motion.div>
+                <button onClick={() => navigate('/pricing')} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90">
+                  {paymentStatus?.active ? "Manage plan" : "Upgrade"}
+                </button>
+              </div>
+            </Panel>
+          </div>
+        )}
+
+        {active === "feedback" && (
+          <div className="space-y-6">
+            <Panel icon={MessageSquare} title="Category">
+              <div className="grid grid-cols-2 gap-3">
+                {FEEDBACK_CATEGORIES.map((c) => {
+                  const Icon = c.icon;
+                  const on = feedbackCategory === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setFeedbackCategory(c.id)}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition ${
+                        on ? "bg-primary/15 border-primary text-foreground" : "border-border hover:border-primary/50 text-muted-foreground"
+                      }`}
+                    >
+                      <Icon className="size-4 text-primary" /> {c.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Panel>
+
+            <div className="panel p-6">
+              <div className="font-semibold mb-3">Overall Rating</div>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button key={n} onClick={() => setFeedbackRating(n)}>
+                    <Star className={`size-8 ${n <= feedbackRating ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                  </button>
                 ))}
               </div>
+            </div>
+
+            <div className="panel p-6">
+              <div className="font-semibold mb-3">Your Feedback</div>
+              {feedbackSubmitted ? (
+                <p className="text-sm text-primary flex items-center gap-2"><Check className="size-4" /> Thanks — your feedback was submitted.</p>
+              ) : (
+                <>
+                  <textarea
+                    value={feedbackMessage}
+                    onChange={(e) => setFeedbackMessage(e.target.value.slice(0, 500))}
+                    placeholder="Tell us what you think..."
+                    className="w-full h-32 bg-background border border-input rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-ring resize-none"
+                  />
+                  <div className="text-xs text-muted-foreground text-right mt-1">{feedbackMessage.length}/500</div>
+                  {feedbackError && <p className="text-sm text-destructive mt-1">{feedbackError}</p>}
+                </>
+              )}
+            </div>
+
+            {!feedbackSubmitted && (
+              <button
+                disabled={!feedbackMessage.trim() || feedbackRating === 0 || feedbackLoading}
+                onClick={handleFeedbackSubmit}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary to-ring text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {feedbackLoading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Submit
+              </button>
             )}
-          </motion.div>
+          </div>
         )}
+      </main>
+    </div>
+  );
+}
+
+function Panel({
+  icon: Icon, title, subtitle, children, rightSlot, iconClass,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  rightSlot?: React.ReactNode;
+  iconClass?: string;
+}) {
+  return (
+    <section className="panel p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Icon className={`size-4 ${iconClass ?? "text-primary"}`} />
+          <div>
+            <div className="font-semibold">{title}</div>
+            {subtitle && <div className="text-xs text-muted-foreground mt-0.5">{subtitle}</div>}
+          </div>
+        </div>
+        {rightSlot}
       </div>
+      {children}
+    </section>
+  );
+}
+
+function FormField({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="mb-4">
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">{label}</div>
+      {children}
     </div>
   );
 }

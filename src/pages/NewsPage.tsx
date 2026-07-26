@@ -4,15 +4,16 @@ import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, Loader2, X, Search, RefreshCw, TrendingUp, Sparkles, AlertTriangle, ArrowUpRight, SlidersHorizontal, Calendar, FileText, ArrowUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
 import { getPageState, setPageState } from '@/lib/pageCache';
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const PRIMARY = "#7C3AED";
-const SECONDARY = "#7C3AED";
-const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #7C3AED)";
-const PRIMARY_CONTAINER = "#ede9fe";
-const SECONDARY_CONTAINER = "#b78efe";
+const PRIMARY = "hsl(var(--primary))";
+const SECONDARY = "hsl(var(--primary))";
+const PRIMARY_GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
+const PRIMARY_CONTAINER = "hsl(var(--secondary))";
+const SECONDARY_CONTAINER = "hsl(var(--primary) / 0.5)";
 
 interface NewsArticle {
   id?: string;
@@ -153,26 +154,12 @@ const getImpact = (topic: string, summary: string): { level: 'high' | 'medium' |
   return { level: 'medium', text: 'Relevant update for your niche — good content opportunity' };
 };
 
-const getTagStyle = (topic: string) => {
-  const colors: Record<string, { bg: string; text: string }> = {
-    Finance: { bg: '#e8f5e9', text: '#2e7d32' },
-    Tech: { bg: '#e3f2fd', text: '#1565c0' },
-    Sports: { bg: '#fff3e0', text: '#e65100' },
-    Bollywood: { bg: '#fce4ec', text: '#880e4f' },
-    Fitness: { bg: '#f3e5f5', text: '#6a1b9a' },
-    Gaming: { bg: '#e8eaf6', text: '#283593' },
-    Food: { bg: '#fff8e1', text: '#f57f17' },
-    Travel: { bg: '#e0f7fa', text: '#006064' },
-    Crypto: { bg: '#ede9fe', text: '#4527a0' },
-  };
-  return colors[topic] || { bg: '#ede9fe', text: '#4527a0' };
-};
-
 export default function NewsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const initialQuery = (location.state as any)?.query || "";
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
 
@@ -334,13 +321,13 @@ export default function NewsPage() {
     : DATE_FILTERS.find(f => f.value === dateFilter)?.label || t('news.today');
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+    <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
       <SEO title="News — SocialRum" noindex />
 
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-card border-b border-border px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="font-bold text-xl text-[#7C3AED] dark:text-blue-400" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          <h1 className="font-bold text-xl text-primary" style={{ fontFamily: 'Montserrat, sans-serif' }}>
             {t('news.title')}
           </h1>
           {userNiches.length > 0 && !query && !trendingFilter && (
@@ -350,8 +337,8 @@ export default function NewsPage() {
           )}
         </div>
         <button onClick={handleRefresh} disabled={refreshing}
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#f3f4f5] dark:hover:bg-gray-800 transition-colors disabled:opacity-40">
-          <RefreshCw className={`w-5 h-5 text-[#757684] ${refreshing ? 'animate-spin' : ''}`} />
+          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary dark:hover:bg-gray-800 transition-colors disabled:opacity-40">
+          <RefreshCw className={`w-5 h-5 text-muted-foreground ${refreshing ? 'animate-spin' : ''}`} />
         </button>
       </header>
 
@@ -360,24 +347,24 @@ export default function NewsPage() {
         {/* Search + Filter */}
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#757684]" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input ref={inputRef} type="text" value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") handleSearch(searchInput); }}
               onFocus={() => { if (dropdownSuggestions.length > 0) setShowDropdown(true); }}
               placeholder={t('common.search') + ' topics...'}
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#c5c5d4] bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white text-[#191c1d] placeholder:text-[#757684] outline-none text-sm transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20" />
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" />
             {searchInput && (
-              <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#757684] hover:text-[#191c1d]">
+              <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                 <X className="w-4 h-4" />
               </button>
             )}
             {showDropdown && dropdownSuggestions.length > 0 && (
-              <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-[#c5c5d4] dark:border-gray-600 rounded-xl shadow-lg z-50 overflow-hidden">
+              <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-card border border-input rounded-xl shadow-lg z-50 overflow-hidden">
                 {dropdownSuggestions.map((s, i) => (
                   <button key={i} onClick={() => handleSearch(s)}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#191c1d] dark:text-white hover:bg-[#f3f4f5] dark:hover:bg-gray-700 text-left">
-                    <Search className="w-3.5 h-3.5 text-[#757684] shrink-0" />{s}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-secondary text-left">
+                    <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{s}
                   </button>
                 ))}
               </div>
@@ -387,26 +374,26 @@ export default function NewsPage() {
           {/* Filter button */}
           <div className="relative">
             <button onClick={() => setShowFilterMenu(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-[#454652] dark:text-gray-300 hover:border-[#7C3AED] transition-colors whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-input bg-card text-sm font-medium text-foreground hover:border-primary transition-colors whitespace-nowrap"
               style={(dateFilter !== 'today' || customDate) ? { borderColor: PRIMARY, color: PRIMARY } : {}}>
               <SlidersHorizontal className="w-4 h-4" />
               {filterLabel}
             </button>
             {showFilterMenu && (
-              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-[#c5c5d4] dark:border-gray-600 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]">
+              <div className="absolute top-full right-0 mt-1 bg-card border border-input rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px]">
                 {DATE_FILTERS.map(f => (
                   <button key={f.value}
                     onClick={(e) => { e.stopPropagation(); handleDateFilter(f.value); setShowFilterMenu(false); setShowDatePicker(false); }}
-                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-[#f3f4f5] dark:hover:bg-gray-700 text-left gap-4"
+                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-secondary text-left gap-4"
                     style={dateFilter === f.value && !customDate ? { color: PRIMARY } : { color: 'hsl(var(--foreground))' }}>
                     <span className="font-medium">{f.label}</span>
-                    <span className="text-xs text-[#757684]">{f.desc}</span>
+                    <span className="text-xs text-muted-foreground">{f.desc}</span>
                     {dateFilter === f.value && !customDate && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: PRIMARY }} />}
                   </button>
                 ))}
-                <div className="border-t border-[#e1e3e4] dark:border-gray-700" />
+                <div className="border-t border-border" />
                 <button onClick={(e) => { e.stopPropagation(); setShowDatePicker(prev => !prev); }}
-                  className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-[#f3f4f5] dark:hover:bg-gray-700"
+                  className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-secondary"
                   style={customDate ? { color: PRIMARY } : { color: 'hsl(var(--foreground))' }}>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
@@ -415,12 +402,12 @@ export default function NewsPage() {
                   {customDate && <div className="w-1.5 h-1.5 rounded-full" style={{ background: PRIMARY }} />}
                 </button>
                 {showDatePicker && (
-                  <div className="px-4 pb-4 pt-2 space-y-3 border-t border-[#e1e3e4] dark:border-gray-700" onClick={e => e.stopPropagation()}>
+                  <div className="px-4 pb-4 pt-2 space-y-3 border-t border-border" onClick={e => e.stopPropagation()}>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <p className="text-xs text-[#757684] mb-1">Day</p>
+                        <p className="text-xs text-muted-foreground mb-1">Day</p>
                         <select value={pickerDay} onChange={e => setPickerDay(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none">
+                          className="w-full px-2 py-1.5 rounded-lg border border-input bg-card text-sm outline-none">
                           <option value="">DD</option>
                           {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                             <option key={d} value={String(d).padStart(2, '0')}>{String(d).padStart(2, '0')}</option>
@@ -428,9 +415,9 @@ export default function NewsPage() {
                         </select>
                       </div>
                       <div>
-                        <p className="text-xs text-[#757684] mb-1">Month</p>
+                        <p className="text-xs text-muted-foreground mb-1">Month</p>
                         <select value={pickerMonth} onChange={e => setPickerMonth(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none">
+                          className="w-full px-2 py-1.5 rounded-lg border border-input bg-card text-sm outline-none">
                           <option value="">MM</option>
                           {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
                             <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
@@ -438,9 +425,9 @@ export default function NewsPage() {
                         </select>
                       </div>
                       <div>
-                        <p className="text-xs text-[#757684] mb-1">Year</p>
+                        <p className="text-xs text-muted-foreground mb-1">Year</p>
                         <select value={pickerYear} onChange={e => setPickerYear(e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-[#c5c5d4] dark:border-gray-600 bg-white dark:bg-gray-700 text-sm outline-none">
+                          className="w-full px-2 py-1.5 rounded-lg border border-input bg-card text-sm outline-none">
                           <option value="">YYYY</option>
                           {[2025, 2026].map(y => <option key={y} value={String(y)}>{y}</option>)}
                         </select>
@@ -448,7 +435,7 @@ export default function NewsPage() {
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => { setCustomDate(null); setPickerDay(''); setPickerMonth(''); setPickerYear(''); setDateFilter('today'); setShowDatePicker(false); setShowFilterMenu(false); fetchNews('today', query || undefined, trendingFilter); }}
-                        className="flex-1 py-2 rounded-lg border border-[#c5c5d4] text-xs text-[#757684] hover:text-[#191c1d]">
+                        className="flex-1 py-2 rounded-lg border border-input text-xs text-muted-foreground hover:text-foreground">
                         Reset
                       </button>
                       <button onClick={() => {
@@ -474,12 +461,12 @@ export default function NewsPage() {
         <div className="flex gap-1.5">
           <button onClick={() => handleRegionChange('in')}
             className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-            style={region === 'in' ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+            style={region === 'in' ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
             🇮🇳 India
           </button>
           <button onClick={() => handleRegionChange('global')}
             className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-            style={region === 'global' ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+            style={region === 'global' ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
             🌍 Global
           </button>
         </div>
@@ -491,13 +478,13 @@ export default function NewsPage() {
               <button
                 onClick={() => { setTrendingFilter(null); setQuery(''); setSearchInput(''); fetchNews(dateFilter, undefined, null); }}
                 className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                style={!trendingFilter ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+                style={!trendingFilter ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
                 {t('news.all')}
               </button>
               {trendingTopics.map(tt => (
                 <button key={tt.topic} onClick={() => handleTrendingFilter(tt.topic)}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                  style={trendingFilter === tt.topic ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+                  style={trendingFilter === tt.topic ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
                   {tt.emoji} {tt.topic}
                 </button>
               ))}
@@ -507,7 +494,7 @@ export default function NewsPage() {
               <button key={cat}
                 onClick={() => { setActiveCategory(cat); if (cat !== 'All News') handleTrendingFilter(cat); else { setTrendingFilter(null); fetchNews(dateFilter, undefined, null); } }}
                 className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                style={activeCategory === cat ? { background: PRIMARY, color: '#fff' } : { background: '#e7e8e9', color: '#454652' }}>
+                style={activeCategory === cat ? { background: PRIMARY, color: '#fff' } : { background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }}>
                 {cat}
               </button>
             ))
@@ -516,7 +503,7 @@ export default function NewsPage() {
 
         {/* Article count */}
         {!loading && (
-          <p className="text-xs text-[#757684]">
+          <p className="text-xs text-muted-foreground">
             <span className="font-semibold" style={{ color: PRIMARY }}>{articles.length}</span> {t('home.articles')}
             {(query || trendingFilter) && <span> for "<span style={{ color: PRIMARY }}>{trendingFilter || query}</span>"</span>}
           </p>
@@ -526,7 +513,7 @@ export default function NewsPage() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: PRIMARY }} />
-            <p className="text-sm text-[#757684]">{t('news.loading')}</p>
+            <p className="text-sm text-muted-foreground">{t('news.loading')}</p>
           </div>
         )}
 
@@ -535,8 +522,8 @@ export default function NewsPage() {
         {!loading && !error && articles.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ background: PRIMARY_CONTAINER }}>📰</div>
-            <p className="font-semibold text-[#191c1d] dark:text-white">{t('news.no_news')}</p>
-            <p className="text-sm text-[#757684]">Fresh news will appear here soon</p>
+            <p className="font-semibold text-foreground">{t('news.no_news')}</p>
+            <p className="text-sm text-muted-foreground">Fresh news will appear here soon</p>
             <button onClick={() => { setCustomDate(null); setTrendingFilter(null); handleDateFilter('all'); }}
               className="text-sm px-5 py-2.5 rounded-full text-white font-semibold mt-1"
               style={{ background: PRIMARY_GRAD }}>
@@ -552,7 +539,6 @@ export default function NewsPage() {
               const headline = item.title || item.headline || "Untitled";
               const timeAgo = getTimeAgo(item.published_at || '', t);
               const topic = item.topic || '';
-              const tagStyle = getTagStyle(topic);
               const imgSrc = item.image_url || getCategoryImage(headline, topic, item.id);
 
               /* ── Hero card (first article) ── */
@@ -561,7 +547,7 @@ export default function NewsPage() {
                   <motion.article key={item.id || i}
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                     whileHover={{ y: -2, boxShadow: '0 8px 32px rgba(124,58,237,0.13)' }}
-                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-[#e1e3e4] dark:border-gray-700 cursor-pointer active:scale-[0.99] transition-all duration-200 group"
+                    className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border cursor-pointer active:scale-[0.99] transition-all duration-200 group"
                     onClick={() => setSelectedArticle(item)}>
                     {/* Image with gradient overlay */}
                     <div className="relative w-full overflow-hidden" style={{ height: 220 }}>
@@ -571,8 +557,7 @@ export default function NewsPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                       {/* Topic badge top-left */}
                       {topic && (
-                        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase"
-                          style={{ background: tagStyle.bg, color: tagStyle.text }}>
+                        <span className="chip absolute top-3 left-3 bg-card/90 text-foreground backdrop-blur">
                           {TOPIC_EMOJIS[topic] || '📰'} {topic}
                         </span>
                       )}
@@ -587,9 +572,9 @@ export default function NewsPage() {
                     <div className="px-4 py-3 flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-xs font-semibold truncate" style={{ color: PRIMARY }}>{item.source}</span>
-                        <span className="text-[#757684] text-[11px] shrink-0">· {timeAgo}</span>
+                        <span className="text-muted-foreground text-[11px] shrink-0">· {timeAgo}</span>
                         {item.summary && (
-                          <span className="hidden sm:block text-xs text-[#757684] line-clamp-1 ml-1">— {item.summary}</span>
+                          <span className="hidden sm:block text-xs text-muted-foreground line-clamp-1 ml-1">— {item.summary}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
@@ -601,8 +586,8 @@ export default function NewsPage() {
                         {item.url && (
                           <button onClick={() => window.open(item.url, '_blank')}
                             className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-                            style={{ background: '#f3f4f5' }}>
-                            <ExternalLink className="w-3.5 h-3.5 text-[#757684]" />
+                            style={{ background: 'hsl(var(--secondary))' }}>
+                            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
                         )}
                       </div>
@@ -617,7 +602,7 @@ export default function NewsPage() {
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   whileHover={{ y: -2, boxShadow: '0 6px 24px rgba(124,58,237,0.10)' }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-[#e1e3e4] dark:border-gray-700 cursor-pointer active:scale-[0.99] transition-all duration-200 group hover:border-purple-200"
+                  className="bg-card rounded-2xl overflow-hidden border border-border cursor-pointer active:scale-[0.99] transition-all duration-200 group hover:border-purple-200"
                   onClick={() => setSelectedArticle(item)}>
                   <div className="flex gap-3 p-3">
                     {/* Thumbnail with zoom on hover */}
@@ -631,15 +616,14 @@ export default function NewsPage() {
                       {/* Topic + time */}
                       <div className="flex items-center gap-2 mb-1">
                         {topic && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase shrink-0"
-                            style={{ background: tagStyle.bg, color: tagStyle.text }}>
+                          <span className="chip shrink-0 text-[9px] px-1.5 py-0.5">
                             {TOPIC_EMOJIS[topic] || '📰'} {topic}
                           </span>
                         )}
-                        <span className="text-[#757684] text-[10px] ml-auto shrink-0">{timeAgo}</span>
+                        <span className="text-muted-foreground text-[10px] ml-auto shrink-0">{timeAgo}</span>
                       </div>
                       {/* Headline */}
-                      <h3 className="font-semibold text-[13px] text-[#191c1d] dark:text-white leading-snug line-clamp-2 transition-colors group-hover:text-purple-700"
+                      <h3 className="font-semibold text-[13px] text-foreground leading-snug line-clamp-2 transition-colors group-hover:text-purple-700"
                         style={{ fontFamily: 'Montserrat, sans-serif' }}>
                         {headline}
                       </h3>
@@ -655,8 +639,8 @@ export default function NewsPage() {
                           {item.url && (
                             <button onClick={() => window.open(item.url, '_blank')}
                               className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 active:bg-gray-100"
-                              style={{ background: '#f3f4f5' }}>
-                              <ExternalLink className="w-3.5 h-3.5 text-[#757684]" />
+                              style={{ background: 'hsl(var(--secondary))' }}>
+                              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                             </button>
                           )}
                         </div>
@@ -683,7 +667,7 @@ export default function NewsPage() {
               drag="y" dragConstraints={{ top: 0 }} dragElastic={0.15}
               onDragEnd={(_, info) => { if (info.offset.y > 120) setSelectedArticle(null); }}
               onClick={e => e.stopPropagation()}
-              className="bg-white dark:bg-gray-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col"
+              className="bg-card w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col"
               style={{ maxHeight: '92vh' }}>
 
               {/* Drag handle */}
@@ -707,12 +691,11 @@ export default function NewsPage() {
                     <X className="w-4 h-4" />
                   </button>
                   {/* Topic badge */}
-                  {selectedArticle.topic && (() => { const ts = getTagStyle(selectedArticle.topic); return (
-                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase"
-                      style={{ background: ts.bg, color: ts.text }}>
+                  {selectedArticle.topic && (
+                    <span className="chip absolute top-3 left-3 bg-card/90 text-foreground backdrop-blur">
                       {TOPIC_EMOJIS[selectedArticle.topic] || '📰'} {selectedArticle.topic}
                     </span>
-                  ); })()}
+                  )}
                   {/* Title over image */}
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <h2 className="font-bold text-[18px] text-white leading-snug"
@@ -733,7 +716,7 @@ export default function NewsPage() {
                     </div>
                     <span className="text-sm font-semibold" style={{ color: PRIMARY }}>{selectedArticle.source}</span>
                     {selectedArticle.published_at && (
-                      <span className="text-xs text-[#757684] ml-auto shrink-0">{getTimeAgo(selectedArticle.published_at, t)}</span>
+                      <span className="text-xs text-muted-foreground ml-auto shrink-0">{getTimeAgo(selectedArticle.published_at, t)}</span>
                     )}
                   </div>
 
@@ -748,7 +731,7 @@ export default function NewsPage() {
                         <div key={idx} className="flex items-start gap-3">
                           <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
                             style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>{idx + 1}</span>
-                          <p className="text-[13px] leading-relaxed text-gray-700 dark:text-gray-300">{point}.</p>
+                          <p className="text-[13px] leading-relaxed text-gray-700">{point}.</p>
                         </div>
                       ))}
                     </div>
@@ -756,7 +739,7 @@ export default function NewsPage() {
 
                   {/* Summary fallback */}
                   {keyPoints.length === 0 && selectedArticle.summary && (
-                    <p className="text-[13px] text-[#454652] dark:text-gray-300 leading-relaxed">{selectedArticle.summary}</p>
+                    <p className="text-[13px] text-foreground leading-relaxed">{selectedArticle.summary}</p>
                   )}
 
                   {/* Creator impact */}
@@ -786,7 +769,7 @@ export default function NewsPage() {
               </div>
 
               {/* Fixed CTA bar */}
-              <div className="shrink-0 px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 flex gap-2.5">
+              <div className="shrink-0 px-4 py-3 border-t border-gray-100 bg-card flex gap-2.5">
                 <button onClick={() => handleGenerateScript(selectedArticle)}
                   className="flex-1 py-3 rounded-2xl border-2 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
                   style={{ borderColor: PRIMARY, color: PRIMARY }}>

@@ -5,6 +5,7 @@ import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Mic, MicOff, Check, Mail, RefreshCw, Plus, X } from "lucide-react";
 import SEO from "@/components/SEO";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const NICHES = [
   "Finance", "Fitness", "Motivation", "Tech",
@@ -23,8 +24,8 @@ const LANGUAGES = [
   { value: "manglish", label: "Manglish (Malayalam + English)" },
 ];
 
-const IG_GRAD = "linear-gradient(135deg, #7C3AED, #0D9488)";
-const IG = "#7C3AED";
+const IG_GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
+const IG = "hsl(var(--primary))";
 
 const SAMPLE_TEXTS: Record<string, string> = {
   hindi: "नमस्ते दोस्तों! आज मैं आपके साथ कुछ बहुत जरूरी बातें शेयर करना चाहता हूं। मैंने देखा है कि बहुत सारे क्रिएटर्स सही कंटेंट बनाने में struggle करते हैं। लेकिन असल में यह इतना मुश्किल नहीं है।",
@@ -37,6 +38,7 @@ const SAMPLE_TEXTS: Record<string, string> = {
 };
 
 export default function SignupPage() {
+  const { theme } = useTheme();
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -172,7 +174,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+    <div className={`theme-redesign ${theme} min-h-screen flex items-center justify-center bg-background text-foreground px-4 py-12`}>
       <SEO title="Sign Up — SocialRum" noindex />
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
         className="w-full max-w-md space-y-6">
@@ -237,7 +239,7 @@ export default function SignupPage() {
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('signup-email')?.focus(); } }}
                   required
                   className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-                  onFocus={e => e.target.style.borderColor = `${IG}60`}
+                  onFocus={e => e.target.style.borderColor = "hsl(var(--primary) / 0.38)"}
                   onBlur={e => e.target.style.borderColor = ''} />
               </div>
               <div className="space-y-1.5">
@@ -247,7 +249,7 @@ export default function SignupPage() {
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('signup-password')?.focus(); } }}
                   required
                   className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-                  onFocus={e => e.target.style.borderColor = `${IG}60`}
+                  onFocus={e => e.target.style.borderColor = "hsl(var(--primary) / 0.38)"}
                   onBlur={e => e.target.style.borderColor = ''} />
               </div>
               <div className="space-y-1.5">
@@ -257,7 +259,7 @@ export default function SignupPage() {
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); goToStep2(); } }}
                   required minLength={6}
                   className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-                  onFocus={e => e.target.style.borderColor = `${IG}60`}
+                  onFocus={e => e.target.style.borderColor = "hsl(var(--primary) / 0.38)"}
                   onBlur={e => e.target.style.borderColor = ''} />
               </div>
               {error && <p className="text-sm text-red-400">{error}</p>}
@@ -295,7 +297,7 @@ export default function SignupPage() {
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomNiche(); } }}
                     placeholder="Type your own niche..."
                     className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all"
-                    onFocus={e => e.target.style.borderColor = `${IG}60`}
+                    onFocus={e => e.target.style.borderColor = "hsl(var(--primary) / 0.38)"}
                     onBlur={e => e.target.style.borderColor = ''} />
                   <button type="button" onClick={addCustomNiche}
                     className="px-4 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-1.5"
@@ -308,7 +310,7 @@ export default function SignupPage() {
                     <p className="text-xs text-muted-foreground w-full">Custom:</p>
                     {niches.filter(n => !NICHES.includes(n)).map(n => (
                       <span key={n} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
-                        style={{ background: `${IG}20`, color: IG, border: `1px solid ${IG}40` }}>
+                        style={{ background: "hsl(var(--primary) / 0.13)", color: IG, border: "1px solid hsl(var(--primary) / 0.25)" }}>
                         {n}
                         <button type="button" onClick={() => removeNiche(n)} className="ml-0.5 hover:opacity-70">
                           <X className="w-3 h-3" />
@@ -368,7 +370,7 @@ export default function SignupPage() {
                 ].map((b, i) => (
                   <div key={i} className="flex items-start gap-3 p-3 rounded-xl border"
                     style={b.highlight
-                      ? { background: `${IG}10`, borderColor: `${IG}30` }
+                      ? { background: "hsl(var(--primary) / 0.06)", borderColor: "hsl(var(--primary) / 0.19)" }
                       : { background: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }}>
                     <span className="text-lg">{b.emoji}</span>
                     <div>
@@ -389,7 +391,7 @@ export default function SignupPage() {
               {recordingDone && !analyzingVoice && !voiceStyle && (
                 <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                   className="p-3 rounded-xl border flex items-center gap-3"
-                  style={{ background: `${IG}10`, borderColor: `${IG}30` }}>
+                  style={{ background: "hsl(var(--primary) / 0.06)", borderColor: "hsl(var(--primary) / 0.19)" }}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: IG_GRAD }}>
                     <Check className="w-4 h-4 text-white" />
                   </div>
@@ -470,13 +472,13 @@ export default function SignupPage() {
             className="flex flex-col items-center text-center gap-4 py-4">
             <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 2, repeat: Infinity }}
               className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: `${IG}15`, border: `2px solid ${IG}30` }}>
+              style={{ background: "hsl(var(--primary) / 0.08)", border: "2px solid hsl(var(--primary) / 0.19)" }}>
               <Mail className="w-8 h-8" style={{ color: IG }} />
             </motion.div>
             <div className="space-y-1">
               <h2 className="text-lg font-bold text-foreground">Check your email!</h2>
               <p className="text-xs text-muted-foreground">Verification link sent to</p>
-              <p className="text-sm font-semibold px-3 py-1 rounded-xl" style={{ background: `${IG}15`, color: IG }}>
+              <p className="text-sm font-semibold px-3 py-1 rounded-xl" style={{ background: "hsl(var(--primary) / 0.08)", color: IG }}>
                 {email}
               </p>
               <p className="text-xs text-muted-foreground pt-1">
