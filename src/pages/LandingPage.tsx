@@ -35,7 +35,7 @@ const FAQ_ITEMS = [
 ];
 
 const STATS = [
-  { value: '5', label: 'Creator Tools' },
+  { value: '4', label: 'Creator Tools' },
   { value: '20+', label: 'Content Niches' },
   { value: 'Free', label: 'Early Access Tier' },
   { value: '100%', label: 'Made for India' },
