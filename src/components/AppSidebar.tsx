@@ -90,7 +90,8 @@ export default function AppSidebar() {
   const showChannelPic = !!channelThumbnail && !avatarError;
 
   return (
-    <aside className={`flex flex-col h-screen border-r border-border bg-card transition-all duration-300 relative ${collapsed ? "w-16" : "w-60"}`}>
+    <aside className={`flex flex-col h-screen border-r border-border transition-all duration-300 relative ${collapsed ? "w-16" : "w-60"}`}
+      style={{ background: "hsl(var(--sidebar-background))" }}>
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 h-16 border-b border-border shrink-0">
