@@ -5,10 +5,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
 import { getPageState, setPageState } from '@/lib/pageCache';
 import SEO from '@/components/SEO';
+import { useTheme } from "@/contexts/ThemeContext";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const YT_GRAD = "linear-gradient(135deg, #ff0000, #FFB86C)";
-const YT_COLOR = "#ff0000";
+// Theme-driven — resolves to red because these components render inside a
+// `.theme-redesign[data-platform="youtube"]` wrapper (see index.css).
+const YT_GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))";
+const YT_COLOR = "hsl(var(--primary))";
 
 const SCRIPT_SUGGESTIONS = [
   "5 Ways to Save Money India", "How to start investing India",
@@ -163,6 +166,7 @@ function SeriesCalendar({ startDate, parts, frequency, accentColor, accentGrad }
 export default function YouTubeScript() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const _saved = getPageState('ytScript');
   const [activeView, setActiveView] = useState<"generate" | "history" | "calendar">(_saved?.activeView ?? "generate");
   const [topic, setTopic] = useState(() => _saved?.topic ?? (localStorage.getItem('yt_script_topic') || ""));
@@ -306,7 +310,7 @@ export default function YouTubeScript() {
   const ResultCard = ({ r, prefix = '' }: { r: any; prefix?: string }) => (
     <div className="space-y-3">
       {r.title && (
-        <div className="rounded-2xl p-4" style={{ background: `${YT_COLOR}10`, border: `1px solid ${YT_COLOR}30` }}>
+        <div className="rounded-2xl p-4" style={{ background: `hsl(var(--primary) / 0.06)`, border: `1px solid hsl(var(--primary) / 0.19)` }}>
           <p className="text-xs font-bold uppercase mb-1" style={{ color: YT_COLOR }}>🎯 Title</p>
           <p className="text-sm text-foreground font-medium">{r.title}</p>
         </div>
@@ -342,7 +346,7 @@ export default function YouTubeScript() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div data-platform="youtube" className={`theme-redesign ${theme} min-h-screen bg-background`}>
       <SEO title="YouTube Script — SocialRum" noindex />
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
@@ -350,13 +354,13 @@ export default function YouTubeScript() {
           <h1 className="text-lg font-bold text-foreground">YouTube Script</h1>
           <button onClick={() => setActiveView(activeView === "history" ? "generate" : "history")}
             className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={activeView === "history" ? { background: YT_GRAD, color: "#fff" } : { background: `${YT_COLOR}15`, color: YT_COLOR, border: `1px solid ${YT_COLOR}30` }}>
+            style={activeView === "history" ? { background: YT_GRAD, color: "#fff" } : { background: `hsl(var(--primary) / 0.08)`, color: YT_COLOR, border: `1px solid hsl(var(--primary) / 0.19)` }}>
             <Clock className="w-3.5 h-3.5" />
             {t('scripts.history')} {history.length > 0 && <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-xs" style={{ background: "rgba(255,255,255,0.25)" }}>{history.length}</span>}
           </button>
           <button onClick={() => setActiveView(activeView === "calendar" ? "generate" : "calendar")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={activeView === "calendar" ? { background: YT_GRAD, color: "#fff" } : { background: `${YT_COLOR}15`, color: YT_COLOR, border: `1px solid ${YT_COLOR}30` }}>
+            style={activeView === "calendar" ? { background: YT_GRAD, color: "#fff" } : { background: `hsl(var(--primary) / 0.08)`, color: YT_COLOR, border: `1px solid hsl(var(--primary) / 0.19)` }}>
             📅
           </button>
         </div>
@@ -389,7 +393,7 @@ export default function YouTubeScript() {
                 {history.map(entry => (
                   <div key={entry.id} className="rounded-2xl border border-border bg-card overflow-hidden">
                     <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === entry.id ? null : entry.id)}>
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm" style={{ background: `${YT_COLOR}15`, color: YT_COLOR }}>{entry.topic[0].toUpperCase()}</div>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm" style={{ background: `hsl(var(--primary) / 0.08)`, color: YT_COLOR }}>{entry.topic[0].toUpperCase()}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">{entry.topic}</p>
                         <p className="text-xs text-muted-foreground">{formatTime(entry.timestamp)} · {entry.duration} min</p>
@@ -446,7 +450,7 @@ export default function YouTubeScript() {
             <div className="relative">
               <input ref={inputRef} value={topic} onChange={e => setTopic(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") handleGenerate(); if (e.key === "Escape") setShowDropdown(false); }}
-                onFocus={e => { if (dropdownSuggestions.length > 0) setShowDropdown(true); e.target.style.borderColor = `${YT_COLOR}60`; }}
+                onFocus={e => { if (dropdownSuggestions.length > 0) setShowDropdown(true); e.target.style.borderColor = `hsl(var(--primary) / 0.38)`; }}
                 onBlur={e => { e.target.style.borderColor = ''; }}
                 placeholder="Enter video topic..."
                 className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all" />
@@ -466,7 +470,7 @@ export default function YouTubeScript() {
               {showSubCategories && subCat && !result && (
                 <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                   className="rounded-2xl border p-4 space-y-3"
-                  style={{ borderColor: `${YT_COLOR}30`, background: `${YT_COLOR}08` }}>
+                  style={{ borderColor: `hsl(var(--primary) / 0.19)`, background: `hsl(var(--primary) / 0.03)` }}>
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{subCat.emoji}</span>
                     <p className="text-sm font-semibold text-foreground">{subCat.label}</p>
@@ -476,9 +480,9 @@ export default function YouTubeScript() {
                       <motion.button key={s} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.03 }}
                         onClick={() => handleGenerate(s)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all"
-                        style={{ borderColor: `${YT_COLOR}30`, color: YT_COLOR, background: `${YT_COLOR}08` }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${YT_COLOR}20`; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${YT_COLOR}08`; }}>
+                        style={{ borderColor: `hsl(var(--primary) / 0.19)`, color: YT_COLOR, background: `hsl(var(--primary) / 0.03)` }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `hsl(var(--primary) / 0.13)`; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `hsl(var(--primary) / 0.03)`; }}>
                         <ChevronRight className="w-3 h-3" />{s}
                       </motion.button>
                     ))}
@@ -494,7 +498,7 @@ export default function YouTubeScript() {
                   {SCRIPT_SUGGESTIONS.slice(0, 8).map(s => (
                     <button key={s} onClick={() => setTopic(s)}
                       className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${YT_COLOR}60`; (e.currentTarget as HTMLElement).style.color = YT_COLOR; }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `hsl(var(--primary) / 0.38)`; (e.currentTarget as HTMLElement).style.color = YT_COLOR; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.color = ''; }}>
                       {s}
                     </button>
@@ -552,7 +556,7 @@ export default function YouTubeScript() {
               {showSeriesPrompt && (
                 <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                   className="rounded-2xl p-5 space-y-4"
-                  style={{ background: `${YT_COLOR}08`, border: `2px solid ${YT_COLOR}40` }}>
+                  style={{ background: `hsl(var(--primary) / 0.03)`, border: `2px solid hsl(var(--primary) / 0.25)` }}>
                   {seriesStep === 'prompt' && (
                     <>
                       <div className="flex items-start gap-3">

@@ -8,30 +8,22 @@ import {
   Target, MousePointerClick, TrendingUp, Play, Instagram,
   Youtube, ArrowRight, CheckCircle2, Zap, Award, Hash
 } from "lucide-react";
-
-const PRIMARY = "#7C3AED";
-const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
-const PRIMARY_CONTAINER = "#ede9fe";
-const YT_COLOR = "#ff0000";
-const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
-const YT_CONTAINER = "#ffebee";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function InsightPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const item = state?.item || state?.video;
   const [picError, setPicError] = useState(false);
 
   if (!item) { navigate("/home"); return null; }
 
   const isIG = item.platform === "instagram";
-  const ac = isIG ? PRIMARY : YT_COLOR;
-  const ag = isIG ? PRIMARY_GRAD : YT_GRAD;
-  const acBg = isIG ? PRIMARY_CONTAINER : YT_CONTAINER;
 
   const viralityColor = item.virality >= 90 ? "#f59e0b"
     : item.virality >= 80 ? "#22c55e"
-    : item.virality >= 70 ? "#7C3AED" : "#60a5fa";
+    : item.virality >= 70 ? "#a855f7" : "#60a5fa";
 
   const stats = isIG ? [
     { icon: Eye,           label: "Views",     val: item.views,              color: "#60a5fa" },
@@ -57,23 +49,23 @@ export default function InsightPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-900">
+    <div data-platform={isIG ? "instagram" : "youtube"} className={`theme-redesign ${theme} min-h-screen bg-background`}>
       <SEO title="Insight — SocialRum" noindex />
 
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-[#e1e3e4] dark:border-gray-700 px-5 h-16 flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-card border-b border-border px-5 h-16 flex items-center gap-3">
         <button onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-[#f3f4f5] dark:hover:bg-gray-800 transition-colors border border-[#e1e3e4] dark:border-gray-700">
-          <ArrowLeft className="w-4 h-4 text-[#757684]" />
+          className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-accent transition-colors border border-border">
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </button>
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {isIG
-            ? <Instagram className="w-4 h-4 shrink-0" style={{ color: ac }} />
-            : <Youtube className="w-4 h-4 shrink-0" style={{ color: ac }} />}
-          <h1 className="font-bold text-sm text-[#191c1d] dark:text-white truncate">
+            ? <Instagram className="w-4 h-4 shrink-0 text-primary" />
+            : <Youtube className="w-4 h-4 shrink-0 text-primary" />}
+          <h1 className="font-bold text-sm text-foreground truncate">
             {isIG ? "Reel" : "Short"} Insight
           </h1>
-          <span className="text-xs text-[#757684] truncate">@{item.user}</span>
+          <span className="text-xs text-muted-foreground truncate">@{item.user}</span>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shrink-0"
           style={{ background: `${viralityColor}18`, border: `1px solid ${viralityColor}35`, color: viralityColor }}>
@@ -110,8 +102,7 @@ export default function InsightPage() {
 
           {/* Badges */}
           <div className="absolute top-4 left-4 flex gap-2">
-            <div className="px-2.5 py-1 rounded-full text-xs font-bold text-white"
-              style={{ background: ag }}>
+            <div className="px-2.5 py-1 rounded-full text-xs font-bold text-primary-foreground bg-gradient-to-br from-primary to-accent">
               {isIG ? 'Reels' : 'Shorts'}
             </div>
             {item.boosted && (
@@ -134,8 +125,9 @@ export default function InsightPage() {
                     onError={() => setPicError(true)}
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: ag }}>{item.avatar || item.name?.[0] || '?'}</div>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground bg-gradient-to-br from-primary to-accent">
+                    {item.avatar || item.name?.[0] || '?'}
+                  </div>
                 )}
                 <div>
                   <p className="text-white text-xs font-semibold">{item.name}</p>
@@ -152,18 +144,18 @@ export default function InsightPage() {
 
         {/* Virality score */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.08 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+          className="bg-card rounded-2xl p-4 border border-border">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#757684] mb-0.5">Virality Score</p>
-              <p className="text-xs text-[#757684]">Based on engagement, reach & algorithm signals</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Virality Score</p>
+              <p className="text-xs text-muted-foreground">Based on engagement, reach & algorithm signals</p>
             </div>
-            <span className="text-4xl font-bold" style={{ color: viralityColor }}>{item.virality}<span className="text-sm text-[#757684] font-normal">/100</span></span>
+            <span className="text-4xl font-bold" style={{ color: viralityColor }}>{item.virality}<span className="text-sm text-muted-foreground font-normal">/100</span></span>
           </div>
-          <div className="w-full h-3 rounded-full bg-[#f3f4f5] dark:bg-gray-700 overflow-hidden">
+          <div className="w-full h-3 rounded-full bg-muted overflow-hidden">
             <motion.div initial={{ width:0 }} animate={{ width:`${item.virality}%` }}
               transition={{ duration:1.2, ease:[0.16,1,0.3,1], delay:0.3 }}
-              className="h-3 rounded-full" style={{ background: ag }} />
+              className="h-3 rounded-full bg-gradient-to-br from-primary to-accent" />
           </div>
           <p className="text-xs mt-2 font-semibold" style={{ color: viralityColor }}>
             {item.virality >= 90 ? "🔥 Top 5% — Extremely Viral"
@@ -174,8 +166,8 @@ export default function InsightPage() {
 
         {/* Stats grid */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.12 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#757684] mb-3">
+          className="bg-card rounded-2xl p-4 border border-border">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
             {isIG ? "Engagement Breakdown" : "Performance Metrics"}
           </p>
           <div className="grid grid-cols-3 gap-2">
@@ -186,8 +178,8 @@ export default function InsightPage() {
                 className="flex flex-col gap-1.5 p-3 rounded-xl"
                 style={{ background:`${s.color}12`, border:`1px solid ${s.color}20` }}>
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
-                <p className="font-bold text-sm text-[#191c1d] dark:text-white">{s.val}</p>
-                <p className="text-[10px] text-[#757684]">{s.label}</p>
+                <p className="font-bold text-sm text-foreground">{s.val}</p>
+                <p className="text-[10px] text-muted-foreground">{s.label}</p>
               </motion.div>
             ))}
           </div>
@@ -196,8 +188,8 @@ export default function InsightPage() {
         {/* Boost + Platform row */}
         <div className="grid grid-cols-2 gap-3">
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.16 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#757684] mb-3">Boost Status</p>
+            className="bg-card rounded-2xl p-4 border border-border">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Boost Status</p>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                 style={{ background: item.boosted ? '#3b82f615' : '#22c55e15' }}>
@@ -205,24 +197,23 @@ export default function InsightPage() {
                   ? <Zap className="w-4 h-4 text-blue-400" />
                   : <CheckCircle2 className="w-4 h-4 text-green-400" />}
               </div>
-              <p className="font-bold text-sm text-[#191c1d] dark:text-white">{item.boosted ? "Paid Boost" : "Organic"}</p>
+              <p className="font-bold text-sm text-foreground">{item.boosted ? "Paid Boost" : "Organic"}</p>
             </div>
-            <p className="text-xs text-[#757684]">{item.boosted ? "Paid ads used to amplify" : "Algorithm pushed naturally"}</p>
+            <p className="text-xs text-muted-foreground">{item.boosted ? "Paid ads used to amplify" : "Algorithm pushed naturally"}</p>
           </motion.div>
 
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.18 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#757684] mb-3">Platform</p>
+            className="bg-card rounded-2xl p-4 border border-border">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Platform</p>
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: acBg }}>
-                {isIG ? <Instagram className="w-4 h-4" style={{ color:ac }} /> : <Youtube className="w-4 h-4" style={{ color:ac }} />}
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary/15">
+                {isIG ? <Instagram className="w-4 h-4 text-primary" /> : <Youtube className="w-4 h-4 text-primary" />}
               </div>
-              <p className="font-bold text-sm text-[#191c1d] dark:text-white">{isIG ? "Instagram" : "YouTube"}</p>
+              <p className="font-bold text-sm text-foreground">{isIG ? "Instagram" : "YouTube"}</p>
             </div>
             <div className="flex flex-wrap gap-1">
               {(item.hashtags || []).slice(0,2).map((h: string, i: number) => (
-                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-md font-medium"
-                  style={{ background: acBg, color: ac }}>{h}</span>
+                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-primary/15 text-primary">{h}</span>
               ))}
             </div>
           </motion.div>
@@ -230,30 +221,30 @@ export default function InsightPage() {
 
         {/* Why viral */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+          className="bg-card rounded-2xl p-4 border border-border">
           <div className="flex items-center gap-2 mb-2">
             <Award className="w-4 h-4 text-green-500" />
             <p className="text-xs font-bold uppercase tracking-wider text-green-500">Why It Went Viral</p>
           </div>
-          <p className="text-sm text-[#191c1d] dark:text-white leading-relaxed">{item.reason || "Strong engagement signals triggered algorithm push"}</p>
+          <p className="text-sm text-foreground leading-relaxed">{item.reason || "Strong engagement signals triggered algorithm push"}</p>
         </motion.div>
 
         {/* Hook + Audio */}
         <div className="grid grid-cols-2 gap-3">
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.22 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#757684] mb-2">Hook</p>
+            className="bg-card rounded-2xl p-4 border border-border">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Hook</p>
             <div className="flex items-start gap-2">
-              <Target className="w-4 h-4 shrink-0 mt-0.5" style={{ color:ac }} />
-              <p className="text-xs text-[#191c1d] dark:text-white">{item.hook || "Strong visual hook"}</p>
+              <Target className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+              <p className="text-xs text-foreground">{item.hook || "Strong visual hook"}</p>
             </div>
           </motion.div>
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.24 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#757684] mb-2">Audio</p>
+            className="bg-card rounded-2xl p-4 border border-border">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Audio</p>
             <div className="flex items-center gap-2">
-              <Music2 className="w-4 h-4 shrink-0" style={{ color:ac }} />
-              <p className="text-xs text-[#191c1d] dark:text-white">{item.audio || "Trending sound"}</p>
+              <Music2 className="w-4 h-4 shrink-0 text-primary" />
+              <p className="text-xs text-foreground">{item.audio || "Trending sound"}</p>
             </div>
           </motion.div>
         </div>
@@ -261,15 +252,14 @@ export default function InsightPage() {
         {/* Hashtags */}
         {(item.hashtags || []).length > 0 && (
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.26 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700">
+            className="bg-card rounded-2xl p-4 border border-border">
             <div className="flex items-center gap-2 mb-3">
-              <Hash className="w-4 h-4" style={{ color:ac }} />
-              <p className="text-xs font-bold uppercase tracking-wider text-[#757684]">Hashtags Used</p>
+              <Hash className="w-4 h-4 text-primary" />
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hashtags Used</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {(item.hashtags || []).map((h: string, i: number) => (
-                <span key={i} className="px-3 py-1.5 rounded-full text-xs font-semibold"
-                  style={{ background: acBg, color: ac }}>{h}</span>
+                <span key={i} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/15 text-primary">{h}</span>
               ))}
             </div>
           </motion.div>
@@ -278,22 +268,22 @@ export default function InsightPage() {
         {/* YT specific */}
         {!isIG && (item.retention || item.thumbHook) && (
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.28 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-[#e1e3e4] dark:border-gray-700 space-y-3">
+            className="bg-card rounded-2xl p-4 border border-border space-y-3">
             {item.retention && (
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#757684] mb-1">Audience Retention</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Audience Retention</p>
                 <div className="flex items-start gap-2">
-                  <BarChart2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color:ac }} />
-                  <p className="text-sm text-[#191c1d] dark:text-white">{item.retention}</p>
+                  <BarChart2 className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+                  <p className="text-sm text-foreground">{item.retention}</p>
                 </div>
               </div>
             )}
             {item.thumbHook && (
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#757684] mb-1">Thumbnail Hook</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Thumbnail Hook</p>
                 <div className="flex items-start gap-2">
-                  <Target className="w-4 h-4 shrink-0 mt-0.5" style={{ color:ac }} />
-                  <p className="text-sm text-[#191c1d] dark:text-white">{item.thumbHook}</p>
+                  <Target className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+                  <p className="text-sm text-foreground">{item.thumbHook}</p>
                 </div>
               </div>
             )}
@@ -302,17 +292,18 @@ export default function InsightPage() {
 
         {/* What you can learn */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3 }}
-          className="rounded-2xl p-4" style={{ background: acBg, border:`1px solid ${ac}25` }}>
+          className="rounded-2xl p-4 bg-primary/10 border border-primary/25">
           <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-4 h-4" style={{ color:ac }} />
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color:ac }}>What You Can Learn</p>
+            <Zap className="w-4 h-4 text-primary" />
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">What You Can Learn</p>
           </div>
           <div className="space-y-2.5">
             {tips.map((tip, i) => (
               <div key={i} className="flex items-start gap-2.5">
-                <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-white text-[10px] font-bold"
-                  style={{ background: ag }}>{i+1}</div>
-                <p className="text-sm text-[#191c1d] leading-relaxed">{tip}</p>
+                <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-primary-foreground text-[10px] font-bold bg-gradient-to-br from-primary to-accent">
+                  {i+1}
+                </div>
+                <p className="text-sm text-foreground leading-relaxed">{tip}</p>
               </div>
             ))}
           </div>
@@ -323,8 +314,7 @@ export default function InsightPage() {
           initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.34 }}
           whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
           onClick={() => navigate(isIG ? "/scripts" : "/youtube/script", { state: { topic: item.niche } })}
-          className="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 text-white"
-          style={{ background: ag }}>
+          className="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 text-primary-foreground bg-gradient-to-br from-primary to-accent">
           <Sparkles className="w-4 h-4" />
           Generate {isIG ? "Reel" : "YouTube"} Script for {item.niche || 'this topic'}
           <ArrowRight className="w-4 h-4" />

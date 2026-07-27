@@ -10,13 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
 
-const PRIMARY = "#7C3AED";
-const PRIMARY_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
-const PRIMARY_CONTAINER = "#ede9fe";
-const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
-const YT_COLOR = "#ff0000";
-const YT_CONTAINER = "#ffebee";
-
 export default function AppSidebar() {
   const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
@@ -76,9 +69,6 @@ export default function AppSidebar() {
   const isYoutubePath = location.pathname.startsWith("/youtube");
   const effectivePlatform = isYoutubePath ? "youtube" : platform;
   const navItems = effectivePlatform === "youtube" ? youtubeNav : instagramNav;
-  const ac = effectivePlatform === "youtube" ? YT_COLOR : PRIMARY;
-  const ag = effectivePlatform === "youtube" ? YT_GRAD : PRIMARY_GRAD;
-  const acContainer = effectivePlatform === "youtube" ? YT_CONTAINER : PRIMARY_CONTAINER;
 
   const avatarInitials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -90,22 +80,24 @@ export default function AppSidebar() {
   const showChannelPic = !!channelThumbnail && !avatarError;
 
   return (
-    <aside className={`flex flex-col h-screen border-r border-border transition-all duration-300 relative ${collapsed ? "w-16" : "w-60"}`}
-      style={{ background: "hsl(var(--sidebar-background))" }}>
+    <aside
+      data-platform={effectivePlatform}
+      className={`theme-redesign ${theme} flex flex-col h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 relative ${collapsed ? "w-16" : "w-64"}`}
+    >
 
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 h-16 border-b border-border shrink-0">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: ag }}>
-          <img src="/socialrum-logo.png" alt="SocialRum" className="w-8 h-8 rounded-xl object-cover"
+      <div className="flex items-center gap-2.5 px-4 h-16 border-b border-sidebar-border shrink-0">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-accent text-accent-foreground overflow-hidden">
+          <img src="/socialrum-logo.png" alt="SocialRum" className="w-8 h-8 rounded-lg object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
         {!collapsed && (
-          <span className="font-extrabold text-lg tracking-tight" style={{ fontFamily: 'Montserrat, sans-serif', color: ac }}>
+          <span className="font-heading text-lg font-semibold tracking-tight text-sidebar-foreground">
             SocialRum
           </span>
         )}
         <button onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-accent">
+          className="ml-auto text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors p-1.5 rounded-lg hover:bg-sidebar-accent">
           {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
       </div>
@@ -113,19 +105,21 @@ export default function AppSidebar() {
       {/* Platform toggle */}
       {!collapsed && (
         <div className="px-3 pt-4 pb-2">
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-muted">
+          <div className="p-1 rounded-xl bg-sidebar-accent flex">
             <button onClick={() => switchPlatform("instagram")}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
-              style={effectivePlatform === "instagram"
-                ? { background: PRIMARY_GRAD, color: '#fff', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }
-                : { color: 'hsl(var(--muted-foreground))' }}>
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition ${
+                effectivePlatform === "instagram"
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
+              }`}>
               <Instagram className="w-3.5 h-3.5" /> Instagram
             </button>
             <button onClick={() => switchPlatform("youtube")}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
-              style={effectivePlatform === "youtube"
-                ? { background: YT_GRAD, color: '#fff', boxShadow: '0 2px 8px rgba(255,0,0,0.35)' }
-                : { color: 'hsl(var(--muted-foreground))' }}>
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition ${
+                effectivePlatform === "youtube"
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
+              }`}>
               <Youtube className="w-3.5 h-3.5" /> YouTube
             </button>
           </div>
@@ -136,35 +130,37 @@ export default function AppSidebar() {
       {collapsed && (
         <div className="flex justify-center pt-3 pb-1">
           <button onClick={() => switchPlatform(effectivePlatform === "instagram" ? "youtube" : "instagram")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-            style={{ background: ag }}>
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-accent text-accent-foreground transition-opacity hover:opacity-80">
             {effectivePlatform === "instagram"
-              ? <Instagram className="w-4 h-4 text-white" />
-              : <Youtube className="w-4 h-4 text-white" />}
+              ? <Instagram className="w-4 h-4" />
+              : <Youtube className="w-4 h-4" />}
           </button>
         </div>
       )}
 
       {/* Section label */}
       {!collapsed && (
-        <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+        <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/50">
           {effectivePlatform === "instagram" ? "Instagram" : "YouTube"}
         </p>
       )}
 
       {/* Nav items */}
-      <nav className="flex-1 py-2 px-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 py-2 px-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const active = location.pathname === item.path;
           return (
             <button key={item.path} onClick={() => navigate(item.path)}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${!active ? 'hover:bg-accent' : ''}`}
-              style={active ? { background: acContainer, color: ac } : { color: 'hsl(var(--muted-foreground))' }}>
-              <item.icon className="w-4 h-4 shrink-0 transition-colors" style={{ color: active ? ac : undefined }} />
-              {!collapsed && <span className="transition-colors">{item.label}</span>}
+              className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition ${
+                active
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+              }`}>
+              <item.icon className="w-4 h-4 shrink-0" />
+              {!collapsed && <span>{item.label}</span>}
               {active && !collapsed && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ac }} />
+                <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0 bg-accent" />
               )}
             </button>
           );
@@ -172,18 +168,18 @@ export default function AppSidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div className="p-2 border-t border-border space-y-0.5 shrink-0">
+      <div className="p-2 border-t border-sidebar-border space-y-0.5 shrink-0">
 
         {/* Theme toggle */}
         <button onClick={toggleTheme}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-150">
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition">
           {theme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
           {!collapsed && <span>{theme === "dark" ? t('nav.light_mode') : t('nav.dark_mode')}</span>}
         </button>
 
         {/* Settings */}
         <button onClick={() => navigate('/settings')}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-150">
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition">
           <Settings className="w-4 h-4 shrink-0" />
           {!collapsed && <span>{t('nav.settings')}</span>}
         </button>
@@ -191,53 +187,49 @@ export default function AppSidebar() {
         {/* Profile */}
         <div className="relative">
           <button onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-150 ${!showProfileMenu ? 'hover:bg-accent' : ''}`}
-            style={showProfileMenu ? { background: acContainer } : {}}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white overflow-hidden"
-              style={!showChannelPic ? { background: ag } : undefined}>
+            className={`flex items-center gap-3 w-full p-2 rounded-lg transition ${!showProfileMenu ? "hover:bg-sidebar-accent" : "bg-sidebar-accent"}`}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 bg-accent text-accent-foreground overflow-hidden">
               {showChannelPic ? (
-                <img src={channelThumbnail} alt="Profile" className="w-8 h-8 rounded-full object-cover"
+                <img src={channelThumbnail} alt="Profile" className="w-9 h-9 rounded-full object-cover"
                   onError={() => setAvatarError(true)} />
               ) : avatarInitials}
             </div>
             {!collapsed && (
               <>
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-xs font-bold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
+                  <p className="text-[11px] text-sidebar-foreground/60 truncate">{user?.email}</p>
                 </div>
-                <ChevronUp className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileMenu ? '' : 'rotate-180'}`} />
+                <ChevronUp className={`w-4 h-4 text-sidebar-foreground/50 transition-transform ${showProfileMenu ? '' : 'rotate-180'}`} />
               </>
             )}
           </button>
 
           {showProfileMenu && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
-              <div className="p-3 border-b border-border">
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover text-popover-foreground border border-border rounded-xl shadow-lg z-50 overflow-hidden text-sm">
+              <div className="px-4 py-3 bg-gradient-to-br from-accent/15 to-transparent border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden"
-                    style={!showChannelPic ? { background: ag } : undefined}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 bg-accent text-accent-foreground overflow-hidden">
                     {showChannelPic ? (
-                      <img src={channelThumbnail} alt="Profile" className="w-9 h-9 rounded-full object-cover"
+                      <img src={channelThumbnail} alt="Profile" className="w-10 h-10 rounded-full object-cover"
                         onError={() => setAvatarError(true)} />
                     ) : avatarInitials}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
+                    <p className="font-semibold text-foreground truncate">{user?.user_metadata?.full_name || 'Creator'}</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>
                 </div>
               </div>
-              <div className="p-1.5 space-y-0.5">
+              <div className="p-1">
                 <button onClick={() => { navigate('/pricing'); setShowProfileMenu(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-80"
-                  style={{ color: ac, background: `${acContainer}80` }}>
-                  <Crown className="w-4 h-4" /> {t('nav.upgrade')}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-accent hover:bg-accent/10 transition">
+                  <Crown className="w-3.5 h-3.5" /> {t('nav.upgrade')}
                 </button>
-                <div className="border-t border-border my-1" />
+                <div className="my-1 border-t border-border" />
                 <button onClick={() => { handleLogout(); setShowProfileMenu(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-semibold text-red-500 transition-all hover:bg-red-50 dark:hover:bg-red-950/30">
-                  <LogOut className="w-4 h-4" /> {t('nav.logout')}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-destructive hover:bg-muted transition">
+                  <LogOut className="w-3.5 h-3.5" /> {t('nav.logout')}
                 </button>
               </div>
             </div>

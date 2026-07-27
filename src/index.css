@@ -199,44 +199,55 @@
    Apply this class to a migrated page's own root wrapper only.
    ════════════════════════════════════════════════════════════════════════ */
 .theme-redesign {
-  /* Mirrors :root (dark, default) — deepened + more saturated for a
-     livelier, more atmospheric dark theme across the app pages. */
-  --radius: 0.75rem;
+  /* Mirrors the reference design's :root — exact oklch tokens converted to
+     HSL (same colors, just expressed in the triplet format the rest of this
+     file's hsl(var(--x)) pattern expects) so migrated pages match the
+     reference pixel-for-pixel instead of the earlier hand-approximated
+     recolor. */
+  --radius: 0.875rem;
 
-  --background: 0 0% 4%;
-  --foreground: 210 20% 96%;
-  --card: 240 8% 8%;
-  --card-foreground: 210 20% 96%;
-  --popover: 240 8% 8%;
-  --popover-foreground: 210 20% 96%;
-  --primary: 263 78% 62%;
+  --background: 253 90% 2%;
+  --foreground: 0 0% 100%;
+  --card: 257 78% 5%;
+  --card-foreground: 0 0% 100%;
+  --popover: 257 78% 5%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 267 99% 57%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 240 8% 11%;
-  --secondary-foreground: 210 10% 72%;
-  --muted: 240 8% 12%;
-  --muted-foreground: 0 0% 48%;
-  --accent: 240 8% 15%;
-  --accent-foreground: 210 20% 96%;
-  --destructive: 0 84% 60%;
+  --secondary: 262 70% 10%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 258 51% 10%;
+  --muted-foreground: 239 4% 66%;
+  --accent: 268 100% 68%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 351 92% 53%;
   --destructive-foreground: 0 0% 100%;
-  --border: 240 8% 18%;
-  --input: 240 8% 11%;
-  --ring: 263 78% 62%;
+  --border: 260 52% 17%;
+  --input: 260 52% 17%;
+  --ring: 268 100% 68%;
 
-  --sidebar-background: 240 10% 5%;
-  --sidebar-foreground: 0 0% 72%;
-  --sidebar-primary: 263 78% 62%;
+  --sidebar-background: 253 100% 2%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 267 99% 57%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 8% 12%;
-  --sidebar-accent-foreground: 210 20% 96%;
-  --sidebar-border: 240 8% 14%;
-  --sidebar-ring: 263 78% 62%;
+  --sidebar-accent: 262 70% 10%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 260 52% 17%;
+  --sidebar-ring: 268 100% 68%;
 
-  --redesign-shadow-glow: 0 6px 32px rgba(139, 92, 246, 0.4);
-  --redesign-shadow-elegant: 0 24px 70px -24px rgba(139, 92, 246, 0.22), 0 24px 70px -30px rgba(0, 0, 0, 0.5);
+  /* Brand extras (reference: --brand-glow, --brand-deep, --overlay, --gradient-primary, --gradient-glow) */
+  --redesign-brand-glow: 275 100% 79%;
+  --redesign-brand-deep: 268 88% 31%;
+  --redesign-overlay: hsl(254 84% 3% / 0.75);
+  --redesign-gradient-primary: linear-gradient(90deg, #5b21b6, #7c3aed);
+  --redesign-gradient-glow: radial-gradient(circle at 50% 0%, rgba(192, 132, 252, 0.25), transparent 70%);
+  --redesign-shadow-glow: 0 0 40px rgba(192, 132, 252, 0.25);
+  --redesign-shadow-elegant: 0 10px 30px -10px rgba(124, 58, 237, 0.45);
 }
 
-/* Mirrors .light */
+/* Mirrors .light — the reference theme is dark-only, so this branch has no
+   1:1 source; kept close to the prior approximation, just aligned to the
+   new radius/brand tokens so nothing is undefined when toggled to light. */
 .theme-redesign.light {
   --background: 0 0% 97%;
   --foreground: 224 39% 12%;
@@ -267,19 +278,72 @@
   --sidebar-border: 214 32% 88%;
   --sidebar-ring: 263 70% 50%;
 
+  --redesign-brand-glow: 275 100% 79%;
+  --redesign-brand-deep: 268 88% 31%;
+  --redesign-overlay: hsl(254 84% 3% / 0.5);
+  --redesign-gradient-primary: linear-gradient(90deg, #5b21b6, #7c3aed);
+  --redesign-gradient-glow: radial-gradient(circle at 50% 0%, rgba(192, 132, 252, 0.25), transparent 70%);
   --redesign-shadow-glow: 0 4px 20px rgba(124, 58, 237, 0.15);
+  --redesign-shadow-elegant: 0 10px 30px -10px rgba(124, 58, 237, 0.2);
+}
+
+/* Light + YouTube — same red swap as the dark variant, so pages that are
+   always YouTube (analyzer, script, trending) stay red even when a user
+   has switched to light mode instead of falling back to the purple light
+   palette above. */
+.theme-redesign.light[data-platform="youtube"] {
+  --primary: 0 100% 40%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 0 90% 45%;
+  --accent-foreground: 0 0% 100%;
+  --ring: 0 90% 45%;
+  --secondary: 8 60% 94%;
+  --muted: 8 40% 94%;
+  --border: 8 40% 87%;
+  --input: 8 40% 90%;
+
+  --sidebar-primary: 0 100% 40%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 8 60% 94%;
+  --sidebar-ring: 0 90% 45%;
+
+  --redesign-brand-glow: 3 90% 65%;
+  --redesign-brand-deep: 0 80% 30%;
+  --redesign-gradient-primary: linear-gradient(90deg, #7f1d1d, #ef4444);
+  --redesign-gradient-glow: radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.2), transparent 70%);
+  --redesign-shadow-glow: 0 4px 20px rgba(239, 68, 68, 0.15);
+  --redesign-shadow-elegant: 0 10px 30px -10px rgba(239, 68, 68, 0.2);
 }
 
 /* YouTube platform keeps the redesign's layouts but swaps in YouTube's signal red. */
 .theme-redesign[data-platform="youtube"] {
-  --primary: 0 100% 50%;
+  --background: 358 100% 2%;
+  --card: 356 97% 5%;
+  --popover: 356 97% 5%;
+  --primary: 356 88% 50%;
   --primary-foreground: 0 0% 100%;
-  --accent: 0 100% 45%;
+  --secondary: 355 100% 10%;
+  --muted: 355 82% 8%;
+  --accent: 356 100% 65%;
   --accent-foreground: 0 0% 100%;
-  --ring: 0 100% 50%;
-  --sidebar-primary: 0 100% 50%;
+  --border: 354 79% 17%;
+  --input: 354 79% 17%;
+  --ring: 356 100% 65%;
+
+  --sidebar-background: 358 100% 2%;
+  --sidebar-primary: 356 88% 50%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-ring: 0 100% 50%;
+  --sidebar-accent: 355 100% 10%;
+  --sidebar-border: 354 79% 17%;
+  --sidebar-ring: 356 100% 65%;
+
+  --redesign-brand-glow: 3 100% 73%;
+  --redesign-brand-deep: 0 100% 28%;
+  --redesign-overlay: hsl(357 100% 3% / 0.75);
+  --redesign-gradient-primary: linear-gradient(90deg, #7f1d1d, #ef4444);
+  --redesign-gradient-glow: radial-gradient(circle at 50% 0%, rgba(248, 113, 113, 0.28), transparent 70%);
+  --redesign-shadow-glow: 0 0 40px rgba(248, 113, 113, 0.28);
+  --redesign-shadow-elegant: 0 10px 30px -10px rgba(239, 68, 68, 0.45);
 }
 
 .theme-redesign {

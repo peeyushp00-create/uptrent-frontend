@@ -1,24 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, TrendingUp, FileText, Settings, Youtube, Instagram, Tag, Search, BarChart2 } from "lucide-react";
+import { LayoutDashboard, Newspaper, FileText, Settings, Youtube, Instagram, Tag, Search, BarChart2 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
-
-const IG_GRAD = "linear-gradient(135deg, #7C3AED, #6D28D9)";
-const IG_COLOR = "#7C3AED";
-const YT_GRAD = "linear-gradient(135deg, #ff0000, #cc0000)";
-const YT_COLOR = "#ff0000";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const [platform, setPlatform] = useState<"instagram" | "youtube">(
     () => (localStorage.getItem("platform") as "instagram" | "youtube") || "instagram"
   );
 
   const instagramNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
-    { icon: TrendingUp, label: t('nav.trending'), path: "/trending" },
+    { icon: Newspaper, label: t('nav.news'), path: "/news" },
     { icon: BarChart2, label: t('nav.analyzer'), path: "/instagram/analyzer" },
     { icon: FileText, label: t('nav.scripts'), path: "/scripts" },
     { icon: Settings, label: t('nav.settings'), path: "/settings" },
@@ -41,8 +38,6 @@ export default function BottomNav() {
   const isYoutubePath = location.pathname.startsWith("/youtube");
   const effectivePlatform = isYoutubePath ? "youtube" : platform;
   const navItems = effectivePlatform === "instagram" ? instagramNav : youtubeNav;
-  const activeColor = effectivePlatform === "instagram" ? IG_COLOR : YT_COLOR;
-  const activeBg = effectivePlatform === "instagram" ? "#ede9fe" : "#ffebee";
 
   const switchPlatform = (p: "instagram" | "youtube") => {
     setPlatform(p);
@@ -52,28 +47,37 @@ export default function BottomNav() {
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: 'hsl(var(--card))', borderTop: '1px solid hsl(var(--border))' }}>
+    <div
+      data-platform={effectivePlatform}
+      className={`theme-redesign ${theme} fixed bottom-0 left-0 right-0 z-[100] bg-card border-t border-border`}
+    >
       {/* Platform toggle */}
-      <div style={{ display: 'flex', gap: '6px', padding: '8px 12px 4px', borderBottom: '1px solid hsl(var(--border))' }}>
+      <div className="flex gap-1.5 px-3 pt-2 pb-1 border-b border-border">
         <button onClick={() => switchPlatform("instagram")}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '7px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, background: effectivePlatform === "instagram" ? IG_GRAD : 'transparent', color: effectivePlatform === "instagram" ? 'white' : 'hsl(var(--muted-foreground))', transition: 'all 0.2s' }}>
-          <Instagram style={{ width: '14px', height: '14px' }} /> Instagram
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-bold transition ${
+            effectivePlatform === "instagram" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+          }`}>
+          <Instagram className="w-3.5 h-3.5" /> Instagram
         </button>
         <button onClick={() => switchPlatform("youtube")}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '7px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, background: effectivePlatform === "youtube" ? YT_GRAD : 'transparent', color: effectivePlatform === "youtube" ? 'white' : 'hsl(var(--muted-foreground))', transition: 'all 0.2s' }}>
-          <Youtube style={{ width: '14px', height: '14px' }} /> YouTube
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-bold transition ${
+            effectivePlatform === "youtube" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+          }`}>
+          <Youtube className="w-3.5 h-3.5" /> YouTube
         </button>
       </div>
 
       {/* Nav items */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '6px 4px 12px' }}>
+      <div className="flex items-center justify-around px-1 pt-1.5 pb-3">
         {navItems.map((item) => {
           const active = location.pathname === item.path;
           return (
             <button key={item.path} onClick={() => navigate(item.path)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 12px', borderRadius: '14px', border: 'none', cursor: 'pointer', background: active ? activeBg : 'transparent', color: active ? activeColor : 'hsl(var(--muted-foreground))', transition: 'all 0.2s', minWidth: '56px' }}>
-              <item.icon style={{ width: '20px', height: '20px', color: active ? activeColor : undefined }} />
-              <span style={{ fontSize: '10px', fontWeight: active ? 700 : 500 }}>{item.label}</span>
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl min-w-[56px] transition ${
+                active ? "bg-accent/15 text-accent" : "text-muted-foreground"
+              }`}>
+              <item.icon className="w-5 h-5" />
+              <span className={`text-[10px] ${active ? "font-bold" : "font-medium"}`}>{item.label}</span>
             </button>
           );
         })}

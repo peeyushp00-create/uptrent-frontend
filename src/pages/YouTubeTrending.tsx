@@ -4,9 +4,7 @@ import { motion } from "framer-motion";
 import { TrendingUp, Sparkles } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import SEO from '@/components/SEO';
-
-const YT_GRAD = "linear-gradient(135deg, #ff0000, #FFB86C)";
-const YT_COLOR = "#ff0000";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const TRENDING_TOPICS = [
   "AI tools for beginners India 2026",
@@ -34,13 +32,14 @@ const TRENDING_TOPICS = [
 export default function YouTubeTrending() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { theme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div data-platform="youtube" className={`theme-redesign ${theme} min-h-screen bg-background`}>
       <SEO title="YouTube Trending — SocialRum" noindex />
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <TrendingUp className="w-5 h-5" style={{ color: YT_COLOR }} />
+          <TrendingUp className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-bold text-foreground">Trending on YouTube</h1>
         </div>
       </div>
@@ -55,18 +54,14 @@ export default function YouTubeTrending() {
             <motion.div key={topic}
               initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
-              className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 transition-colors"
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${YT_COLOR}40`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
-                style={{ background: `${YT_COLOR}18`, color: YT_COLOR }}>
+              className="flex items-center gap-3 bg-card border border-border hover:border-primary/40 rounded-2xl p-4 transition-colors">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 bg-primary/15 text-primary">
                 {i + 1}
               </div>
               <p className="flex-1 text-sm text-foreground">{topic}</p>
               <button
                 onClick={() => navigate('/youtube/script', { state: { topic } })}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-white text-xs font-medium shrink-0"
-                style={{ background: YT_GRAD }}>
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-primary-foreground text-xs font-medium shrink-0 bg-gradient-to-br from-primary to-accent">
                 <Sparkles className="w-3 h-3" />
                 {t('scripts.generate')}
               </button>

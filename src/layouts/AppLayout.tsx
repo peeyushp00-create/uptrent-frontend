@@ -34,13 +34,13 @@ export default function AppLayout() {
   }, [location.pathname]);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'hsl(var(--background))' }}>
+    <div className="flex h-screen overflow-hidden bg-background">
 
       {/* Sidebar — desktop only */}
       {!isMobile && <AppSidebar />}
 
       {/* Main content */}
-      <main ref={mainRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: isMobile ? '70px' : '0' }}>
+      <main ref={mainRef} className="flex-1 overflow-y-auto" style={{ paddingBottom: isMobile ? '70px' : '0' }}>
         <Outlet />
       </main>
 
