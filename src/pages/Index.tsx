@@ -172,13 +172,13 @@ export default function Index() {
         className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[480px] pointer-events-none rounded-full bg-primary"
         style={{ filter: "blur(90px)" }} />
 
-      <div className="w-full max-w-xl relative z-10 flex flex-col items-center gap-8">
+      <div className="w-full max-w-5xl relative z-10 flex flex-col items-center gap-8">
 
         {/* Greeting */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&display=swap" />
-        <div className="text-center space-y-3">
+        <div className="w-full text-center space-y-3">
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-            className="font-normal leading-[1.08] tracking-[-0.02em] text-3xl md:text-4xl text-foreground"
+            className="w-full text-center font-normal leading-[1.08] tracking-[-0.02em] text-3xl md:text-4xl text-foreground"
             style={{ fontFamily: '"Fraunces", Georgia, serif' }}>
             <div>{mounted ? greeting.line1 : `Hey ${firstName},`}</div>
             <div className="mt-1">{mounted ? renderHighlighted(greeting) : "welcome to your creator agency."}</div>
