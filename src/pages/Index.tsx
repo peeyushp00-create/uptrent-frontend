@@ -61,6 +61,21 @@ export default function Index() {
     localStorage.getItem("platform") === "youtube" ? "YouTube" : "Instagram";
   const isIG = platform === "Instagram";
 
+  // Center this page on the true full screen (not just the space right of the
+  // sidebar) by measuring the sidebar's actual current width and shifting by
+  // that much — the sidebar can be collapsed (64px) or expanded (256px), so a
+  // hardcoded offset over- or under-corrects depending on that state.
+  const [sidebarWidth, setSidebarWidth] = useState(0);
+  useEffect(() => {
+    const el = document.querySelector("aside");
+    if (!el) return; // mobile: no sidebar, no offset needed
+    const measure = () => setSidebarWidth(el.getBoundingClientRect().width);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const niche = (user?.user_metadata?.niches?.[0] || 'content').toLowerCase();
   const firstName = (user?.user_metadata?.full_name || user?.email || 'Creator').split(/[\s@]/)[0];
 
@@ -164,7 +179,8 @@ export default function Index() {
 
   return (
     <div
-      className={`theme-redesign ${theme} min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col items-center justify-center px-5 py-12 md:-ml-64`}
+      className={`theme-redesign ${theme} min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col items-center justify-center px-5 py-12`}
+      style={{ marginLeft: sidebarWidth ? -sidebarWidth : undefined }}
       data-platform={isIG ? undefined : "youtube"}
     >
       {/* BG blob */}
