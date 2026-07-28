@@ -1160,7 +1160,7 @@ export default function YouTubeScript() {
                 </div>
               </div>
               <div className="pl-9">
-                <button onClick={() => handleSend(userNiche ? `Find trending patterns in ${userNiche}` : 'Find trending patterns')}
+                <button onClick={() => navigate('/youtube/trending')}
                   className="chip">
                   🔥 Find trending patterns
                 </button>
