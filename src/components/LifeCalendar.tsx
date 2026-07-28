@@ -70,8 +70,8 @@ export function LifeCalendar({ age, onResume, resumeTitle, compact = false, cust
   const TOTAL = 80;
   const COLS = 20;
   const ROWS = Math.ceil(TOTAL / COLS);
-  const cell = compact ? 8 : 12;
-  const gap = compact ? 4 : 5;
+  const cell = compact ? 8 : 18;
+  const gap = compact ? 4 : 7;
   const gridWidth = COLS * cell + (COLS - 1) * gap;
   const showCustomize = customizable ?? !compact;
 
@@ -180,7 +180,7 @@ export function LifeCalendar({ age, onResume, resumeTitle, compact = false, cust
   );
 
   return (
-    <div className={`${compact ? "" : "mt-14"} w-full max-w-[460px] mx-auto`}>
+    <div className={`${compact ? "" : "mt-14"} w-full max-w-[600px] mx-auto`}>
       {/* Screen-reader-only announcement region for hover/focus readout */}
       <div
         ref={announcerRef}

@@ -172,7 +172,7 @@ export default function Index() {
         className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[480px] pointer-events-none rounded-full bg-primary"
         style={{ filter: "blur(90px)" }} />
 
-      <div className="w-full max-w-5xl relative z-10 flex flex-col items-center gap-8">
+      <div className="w-full max-w-4xl relative z-10 flex flex-col items-center gap-8">
 
         {/* Greeting */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&display=swap" />
