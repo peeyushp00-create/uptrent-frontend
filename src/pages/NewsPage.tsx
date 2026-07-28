@@ -283,7 +283,7 @@ export default function NewsPage() {
         </button>
       </header>
 
-      <main className="max-w-4xl mx-auto px-5 pt-4 pb-28 space-y-4">
+      <main className="max-w-5xl mx-auto px-5 pt-4 pb-28 space-y-4">
 
         {/* Category pills */}
         <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>

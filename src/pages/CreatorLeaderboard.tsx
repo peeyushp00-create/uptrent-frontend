@@ -237,7 +237,7 @@ export default function CreatorLeaderboard() {
         </button>
       </header>
 
-      <main className="max-w-2xl mx-auto px-5 pt-5 pb-28 space-y-4">
+      <main className="max-w-5xl mx-auto px-5 pt-5 pb-28 space-y-4">
 
         {/* Hero banner */}
         <div className="rounded-2xl p-4 text-white" style={{ background: PRIMARY_GRAD }}>

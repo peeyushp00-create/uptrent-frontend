@@ -73,7 +73,7 @@ export default function InsightPage() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 pt-4 pb-28 space-y-4">
 
         {/* Thumbnail hero */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}

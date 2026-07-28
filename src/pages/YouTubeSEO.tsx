@@ -77,7 +77,7 @@ export default function YouTubeSEO() {
     <div data-platform="youtube" className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
       <SEO title="YouTube SEO — SocialRum" noindex />
 
-      <main className="max-w-2xl mx-auto px-5 py-8">
+      <main className="max-w-5xl mx-auto px-5 py-8">
         <h1 className="font-heading text-2xl font-bold mb-1">SEO Generator</h1>
         <p className="text-sm text-muted-foreground mb-6">Get optimized titles, descriptions, and scored tags for any video topic.</p>
 

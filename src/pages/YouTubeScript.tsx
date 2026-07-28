@@ -1028,7 +1028,7 @@ export default function YouTubeScript() {
 
       {/* ── Message Thread ── */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-5 py-8 flex flex-col gap-6">
+        <div className="max-w-5xl mx-auto px-5 py-8 flex flex-col gap-6">
 
           {loadingConversation ? (
             <div className="flex items-center justify-center py-20">
@@ -1387,7 +1387,7 @@ export default function YouTubeScript() {
 
       {/* ── Input Bar ── */}
       <div className="sticky bottom-0 px-5 py-4 shrink-0" style={{ background: BG, borderTop: `1px solid ${BORDER}` }}>
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-5xl mx-auto">
 
           {/* Toolbar: content type + AI model pills */}
           <div className="flex items-center gap-2 mb-2.5">

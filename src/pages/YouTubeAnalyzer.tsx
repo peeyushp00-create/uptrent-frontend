@@ -112,7 +112,7 @@ function CompetitorDetail({ competitor, onBack, onCopy, copied }: {
         </button>
         <span className="text-sm font-bold text-foreground truncate">{competitor.channelName}</span>
       </header>
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 pt-4 pb-28 space-y-4">
         <div className="rounded-2xl p-5" style={{ background: YT_GRAD }}>
           <div className="flex items-center gap-3 mb-3">
             {stats?.thumbnail ? (
@@ -402,7 +402,7 @@ export default function YouTubeAnalyzer() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-5 pb-28 space-y-5">
+      <main className="max-w-5xl mx-auto px-4 py-5 pb-28 space-y-5">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
           <div className="relative">
               <div className="flex gap-2">

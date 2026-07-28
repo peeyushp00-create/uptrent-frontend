@@ -75,13 +75,13 @@ export default function YouTubeTrending() {
     <div data-platform="youtube" className={`theme-redesign ${theme} min-h-screen bg-background`}>
       <SEO title="YouTube Trending — SocialRum" noindex />
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-2">
+        <div className="max-w-5xl mx-auto flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-bold text-foreground">Trending on YouTube</h1>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-24">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4 pb-24">
         <div>
           <h2 className="font-semibold text-foreground mb-1">Trending in India 🇮🇳</h2>
           <p className="text-xs text-muted-foreground">Real trending videos right now, ranked by real views, likes, and comments</p>

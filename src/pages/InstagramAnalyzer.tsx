@@ -177,7 +177,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         {competitor.is_verified && <BadgeCheck className="w-4 h-4 text-blue-400 shrink-0" />}
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 pt-4 pb-28 space-y-4">
         {/* Profile Banner */}
         <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
           <div className="flex items-center gap-3 mb-3">
@@ -938,7 +938,7 @@ export default function InstagramAnalyzer() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-2xl mx-auto px-5 pt-8 pb-28 space-y-5">
+      <main className="max-w-5xl mx-auto px-5 pt-8 pb-28 space-y-5">
 
         {/* Header */}
         <div className="flex items-start justify-between gap-3 pb-5 border-b border-border">
