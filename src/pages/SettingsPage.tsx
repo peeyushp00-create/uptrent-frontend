@@ -3,15 +3,16 @@ import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import {
   User, Settings2 as SettingsIcon, Mic, MessageSquare, CreditCard, Instagram, Youtube, Globe, Check,
-  Star, Send, Square, Loader2, Sparkles as SparklesIcon,
+  Star, Send, Square, Loader2, Sparkles as SparklesIcon, Wand2, Save, X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
-import { analyzeVoiceStyle as analyzeVoiceStyleRequest } from "@/lib/api";
+import { analyzeVoiceStyle as analyzeVoiceStyleRequest, type VoiceProfile } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { getPageState, setPageState } from '@/lib/pageCache';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -86,6 +87,10 @@ export default function SettingsPage() {
   const [igUsername, setIgUsername] = useState(user?.user_metadata?.instagram_username || '');
   const [isRecording, setIsRecording] = useState(false);
   const [voiceStyle, setVoiceStyle] = useState(_saved?.voiceStyle ?? (user?.user_metadata?.voice_style || ''));
+  const [voiceProfile, setVoiceProfile] = useState<VoiceProfile | null>(
+    _saved?.voiceProfile ?? (user?.user_metadata?.voice_profile || null)
+  );
+  const [voiceEditOpen, setVoiceEditOpen] = useState(false);
   const [analyzingVoice, setAnalyzingVoice] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
 
@@ -95,7 +100,7 @@ export default function SettingsPage() {
   const autoSaveTimer = useRef<any>(null);
 
   const _stateRef = useRef<any>({});
-  useEffect(() => { _stateRef.current = { activeTab: active, voiceStyle }; });
+  useEffect(() => { _stateRef.current = { activeTab: active, voiceStyle, voiceProfile }; });
   useEffect(() => () => { setPageState('settings', _stateRef.current); }, []);
 
   const [feedbackCategory, setFeedbackCategory] = useState("general");
@@ -198,6 +203,7 @@ export default function SettingsPage() {
       mediaRecorder.start();
       setIsRecording(true);
       setVoiceStyle('');
+      setVoiceProfile(null);
       setRecordingTime(0);
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
@@ -229,6 +235,7 @@ export default function SettingsPage() {
     try {
       const data = await analyzeVoiceStyleRequest(audioBlob, language);
       setVoiceStyle(data.style);
+      setVoiceProfile(data);
     } catch (err: any) {
       console.error('Voice analysis failed:', err);
       alert(err.message || 'Voice analysis failed. Please try again.');
@@ -237,10 +244,11 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveVoice = async () => {
+  const handleSaveVoice = async (profileOverride?: VoiceProfile | null) => {
     setVoiceSaving(true);
+    const profile = profileOverride !== undefined ? profileOverride : voiceProfile;
     const { error } = await supabase.auth.updateUser({
-      data: { full_name: name, niche: niches[0] || '', niches, language, style, platform, voice_style: voiceStyle, instagram_username: igUsername }
+      data: { full_name: name, niche: niches[0] || '', niches, language, style, platform, voice_style: voiceStyle, voice_profile: profile, instagram_username: igUsername }
     });
     setVoiceSaving(false);
     if (!error) { setVoiceSaved(true); setTimeout(() => setVoiceSaved(false), 3000); }
@@ -279,7 +287,7 @@ export default function SettingsPage() {
     <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
       <SEO title="Settings — SocialRum" noindex />
 
-      <main className="max-w-3xl mx-auto px-5 py-8">
+      <main className="max-w-5xl mx-auto px-5 py-8">
         <h1 className="font-heading text-2xl font-bold mb-1">Settings</h1>
         <p className="text-sm text-muted-foreground mb-6">Auto-saved. Tune how SocialRum works for you.</p>
 
@@ -490,14 +498,34 @@ export default function SettingsPage() {
 
               {voiceStyle && (
                 <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">Detected voice style</div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-[10px] uppercase tracking-wider text-primary font-semibold">Detected voice style</div>
+                    {voiceProfile && (
+                      <button
+                        onClick={() => setVoiceEditOpen(true)}
+                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                      >
+                        <Wand2 className="size-3" /> Edit
+                      </button>
+                    )}
+                  </div>
                   <div className="text-sm">{voiceStyle}</div>
+                  {voiceProfile && (voiceProfile.slang?.length || voiceProfile.pronunciationNotes?.length) ? (
+                    <div className="mt-2 pt-2 border-t border-primary/20 space-y-1">
+                      {voiceProfile.slang && voiceProfile.slang.length > 0 && (
+                        <div className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Slang:</span> {voiceProfile.slang.join(', ')}</div>
+                      )}
+                      {voiceProfile.pronunciationNotes && voiceProfile.pronunciationNotes.length > 0 && (
+                        <div className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Pronunciation:</span> {voiceProfile.pronunciationNotes.join('; ')}</div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               )}
 
               <button
                 disabled={!voiceStyle || voiceSaving}
-                onClick={handleSaveVoice}
+                onClick={() => handleSaveVoice()}
                 className="mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary to-ring text-white text-sm font-semibold disabled:opacity-50"
               >
                 {voiceSaving ? <><Loader2 className="size-4 animate-spin" /> Saving…</> : voiceSaved ? <><Check className="size-4" /> Saved</> : <><Check className="size-4" /> Save voice style</>}
@@ -508,6 +536,17 @@ export default function SettingsPage() {
             </Panel>
           </div>
         )}
+
+        <VoiceStyleEditDialog
+          open={voiceEditOpen}
+          onOpenChange={setVoiceEditOpen}
+          profile={voiceProfile}
+          onSave={(updated) => {
+            setVoiceProfile(updated);
+            handleSaveVoice(updated);
+            setVoiceEditOpen(false);
+          }}
+        />
 
         {active === "billing" && (
           <div className="space-y-6">
@@ -622,6 +661,98 @@ function Panel({
       </div>
       {children}
     </section>
+  );
+}
+
+function toList(s: string): string[] {
+  return s.split(/[\n,]/).map((x) => x.trim()).filter(Boolean);
+}
+function fromList(a: string[] | undefined): string {
+  return (a ?? []).join(', ');
+}
+
+function VoiceStyleEditDialog({
+  open, onOpenChange, profile, onSave,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  profile: VoiceProfile | null;
+  onSave: (updated: VoiceProfile) => void;
+}) {
+  const [slang, setSlang] = useState('');
+  const [pron, setPron] = useState('');
+  const [writingStyle, setWritingStyle] = useState('');
+  const [tone, setTone] = useState('');
+  const [vocabulary, setVocabulary] = useState('');
+
+  useEffect(() => {
+    if (!profile) return;
+    setSlang(fromList(profile.slang));
+    setPron(fromList(profile.pronunciationNotes));
+    setWritingStyle(profile.writingStyle ?? '');
+    setTone(profile.tone ?? '');
+    setVocabulary(profile.vocabulary ?? '');
+  }, [profile, open]);
+
+  if (!profile) return null;
+
+  const save = () => {
+    onSave({
+      ...profile,
+      slang: toList(slang),
+      pronunciationNotes: toList(pron),
+      writingStyle: writingStyle.trim(),
+      tone: tone.trim() || profile.tone,
+      vocabulary: vocabulary.trim() || profile.vocabulary,
+      updatedAt: Date.now(),
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Wand2 className="size-4 text-primary" /> Edit voice style
+          </DialogTitle>
+          <DialogDescription>
+            These fields shape every script we generate for you. Update them before generating your next script.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <FormField label="Writing style">
+            <textarea value={writingStyle} onChange={(e) => setWritingStyle(e.target.value)} rows={2}
+              className="w-full bg-background border border-input rounded-md p-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
+          </FormField>
+          <FormField label="Slang & code-mix (comma or newline separated)">
+            <textarea value={slang} onChange={(e) => setSlang(e.target.value)} rows={2}
+              className="w-full bg-background border border-input rounded-md p-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
+          </FormField>
+          <FormField label="Pronunciation notes">
+            <textarea value={pron} onChange={(e) => setPron(e.target.value)} rows={2}
+              className="w-full bg-background border border-input rounded-md p-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Tone">
+              <input value={tone} onChange={(e) => setTone(e.target.value)}
+                className="w-full bg-background border border-input rounded-md p-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
+            </FormField>
+            <FormField label="Vocabulary">
+              <input value={vocabulary} onChange={(e) => setVocabulary(e.target.value)}
+                className="w-full bg-background border border-input rounded-md p-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
+            </FormField>
+          </div>
+        </div>
+        <DialogFooter>
+          <button onClick={() => onOpenChange(false)} className="px-3 py-2 rounded-lg border border-input text-xs inline-flex items-center gap-1.5 hover:bg-muted">
+            <X className="size-3.5" /> Cancel
+          </button>
+          <button onClick={save} className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs inline-flex items-center gap-1.5 hover:opacity-90">
+            <Save className="size-3.5" /> Save style
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

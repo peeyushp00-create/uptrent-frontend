@@ -7,7 +7,7 @@ import {
   generateScriptFromMessage, transcribeAudio,
   listConversations, getConversation, createConversation, appendMessage, renameConversation, deleteConversation,
   rewriteSection, toggleSaveScript, listSavedScripts,
-  type ConversationSummary, type StoredChatMessage, type ConversationTurn, type SavedScriptMessage,
+  type ConversationSummary, type StoredChatMessage, type ConversationTurn, type SavedScriptMessage, type VoiceProfile,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -257,6 +257,7 @@ export default function ScriptsPage() {
   const userPlatform = user?.user_metadata?.platform || '';
   const userTargetAudience = user?.user_metadata?.target_audience || '';
   const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
+  const userVoiceProfile = (user?.user_metadata?.voice_profile as VoiceProfile | undefined) || undefined;
 
   // Same fallback chain as the sidebar avatar: YouTube channel pic → Google account pic → initials
   const userAvatarUrl: string | null =
@@ -522,6 +523,7 @@ export default function ScriptsPage() {
         niche: userNiche,
         language: userLanguage,
         voiceStyle: userVoiceStyle,
+        voiceProfile: userVoiceProfile,
         contentType: selectedContentType.id !== 'auto' ? selectedContentType.label : undefined,
         contentTypePrompt: selectedContentType.id !== 'auto' ? selectedContentType.prompt : undefined,
         aiModel: selectedModelKey,
@@ -653,6 +655,7 @@ export default function ScriptsPage() {
         niche: userNiche,
         language: selectedLanguage,
         voiceStyle: userVoiceStyle,
+        voiceProfile: userVoiceProfile,
         aiModel: selectedModelKey,
         job: userJob,
         locationRegion: userLocationRegion,
@@ -1028,7 +1031,7 @@ export default function ScriptsPage() {
 
       {/* ── Message Thread ── */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-5 py-8 flex flex-col gap-6">
+        <div className="max-w-5xl mx-auto px-5 py-8 flex flex-col gap-6">
 
           {loadingConversation ? (
             <div className="flex items-center justify-center py-20">
@@ -1387,7 +1390,7 @@ export default function ScriptsPage() {
 
       {/* ── Input Bar ── */}
       <div className="sticky bottom-0 px-5 py-4 shrink-0" style={{ background: BG, borderTop: `1px solid ${BORDER}` }}>
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-5xl mx-auto">
 
           {/* Toolbar: content type + AI model pills */}
           <div className="flex items-center gap-2 mb-2.5">
