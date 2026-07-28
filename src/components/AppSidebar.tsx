@@ -105,12 +105,12 @@ export default function AppSidebar() {
       {/* Platform toggle */}
       {!collapsed && (
         <div className="px-3 pt-4 pb-2">
-          <div className="p-1 rounded-xl bg-black/20 border border-sidebar-border flex gap-0.5">
+          <div className="p-1 rounded-xl bg-white/[0.06] border border-sidebar-border/80 flex gap-0.5">
             <button onClick={() => switchPlatform("instagram")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                 effectivePlatform === "instagram"
                   ? "bg-accent text-accent-foreground shadow-md"
-                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5"
+                  : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-white/10"
               }`}>
               <Instagram className="w-3.5 h-3.5" /> Instagram
             </button>
@@ -118,7 +118,7 @@ export default function AppSidebar() {
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                 effectivePlatform === "youtube"
                   ? "bg-accent text-accent-foreground shadow-md"
-                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5"
+                  : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-white/10"
               }`}>
               <Youtube className="w-3.5 h-3.5" /> YouTube
             </button>
