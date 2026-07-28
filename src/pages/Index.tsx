@@ -178,7 +178,7 @@ export default function Index() {
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&display=swap" />
         <div className="w-full text-center space-y-3">
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-            className="w-full text-center font-normal leading-[1.08] tracking-[-0.02em] text-3xl md:text-4xl text-foreground"
+            className="w-full text-center font-normal leading-[1.08] tracking-[-0.02em] text-4xl md:text-5xl text-foreground"
             style={{ fontFamily: '"Fraunces", Georgia, serif' }}>
             <div>{mounted ? greeting.line1 : `Hey ${firstName},`}</div>
             <div className="mt-1">{mounted ? renderHighlighted(greeting) : "welcome to your creator agency."}</div>

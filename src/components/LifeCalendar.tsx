@@ -70,8 +70,8 @@ export function LifeCalendar({ age, onResume, resumeTitle, compact = false, cust
   const TOTAL = 80;
   const COLS = 20;
   const ROWS = Math.ceil(TOTAL / COLS);
-  const cell = compact ? 8 : 18;
-  const gap = compact ? 4 : 7;
+  const cell = compact ? 8 : 14;
+  const gap = compact ? 4 : 12;
   const gridWidth = COLS * cell + (COLS - 1) * gap;
   const showCustomize = customizable ?? !compact;
 
