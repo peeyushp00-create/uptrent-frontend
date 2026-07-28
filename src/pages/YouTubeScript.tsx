@@ -1,657 +1,1601 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Sparkles, Copy, Check, Loader2, Search, X, ChevronRight, Clock, Trash2, RefreshCw } from "lucide-react";
+import { Copy, Check, Send, Mic, FileText, RefreshCw, Trash2, User, ChevronDown, Square, Plus, MessageSquare, X, Pencil, Download, Star } from "lucide-react";
+import {
+  generateScriptFromMessage, transcribeAudio,
+  listConversations, getConversation, createConversation, appendMessage, renameConversation, deleteConversation,
+  rewriteSection, toggleSaveScript, listSavedScripts,
+  type ConversationSummary, type StoredChatMessage, type ConversationTurn, type SavedScriptMessage, type VoiceProfile,
+} from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTranslation } from 'react-i18next';
-import { getPageState, setPageState } from '@/lib/pageCache';
-import SEO from '@/components/SEO';
 import { useTheme } from "@/contexts/ThemeContext";
+import { supabase } from "@/lib/supabase";
 
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
-// Theme-driven — resolves to red because these components render inside a
-// `.theme-redesign[data-platform="youtube"]` wrapper (see index.css).
-const YT_GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))";
-const YT_COLOR = "hsl(var(--primary))";
-
-const SCRIPT_SUGGESTIONS = [
-  "5 Ways to Save Money India", "How to start investing India",
-  "AI tools for content creators", "Weight loss tips for beginners",
-  "How to learn coding in 2026", "Budget travel India tips",
-  "Mental health tips for students", "IPL 2026 analysis",
-  "How to grow Instagram in India", "Best business ideas India",
-  "Python tutorial for beginners", "Stock market basics",
-  "Skincare routine for men India", "How to speak English fluently",
-  "Home workout for beginners", "Crypto investing India guide",
-];
-
-const SUB_CATEGORIES: Record<string, { label: string; suggestions: string[]; emoji: string }> = {
-  gaming: { emoji: "🎮", label: "Which game are you making a video about?", suggestions: ["BGMI Tips & Tricks", "Free Fire Highlights", "GTA 5 Gameplay", "Minecraft Survival", "Valorant Guide", "Call of Duty Mobile", "FIFA 26 Review", "Chess Strategy", "Roblox Tutorial", "PUBG PC Tips"] },
-  fitness: { emoji: "💪", label: "What fitness topic do you want to cover?", suggestions: ["Home Workout Routine", "Weight Loss in 30 Days", "Muscle Building Guide", "Yoga for Beginners", "HIIT Workout", "Cardio Tips", "Indian Diet Plan", "6 Pack Abs Workout", "Stretching Routine", "Running for Beginners"] },
-  finance: { emoji: "📈", label: "What finance topic do you want to cover?", suggestions: ["Stock Market Basics", "Mutual Funds for Beginners", "Crypto Guide India", "Budget Tips for Salary", "Tax Saving Guide", "Credit Card Hacks", "Passive Income Ideas", "IPO Investing Guide", "Real Estate Investment", "Forex Trading Basics"] },
-  cricket: { emoji: "🏏", label: "What cricket topic do you want to cover?", suggestions: ["IPL 2026 Preview", "India vs Pakistan Analysis", "Virat Kohli Tribute", "Rohit Sharma Records", "Batting Technique Tips", "Bowling Variations", "Fantasy Cricket Strategy", "Test Cricket Explained", "T20 World Cup Analysis", "Women's Cricket Rise"] },
-  food: { emoji: "🍳", label: "What food topic do you want to cover?", suggestions: ["Biryani Recipe", "Quick Breakfast Ideas", "Street Food at Home", "Healthy Meal Prep", "Chocolate Dessert", "Vegan Indian Food", "Keto Diet India", "Indian Festival Sweets", "Budget Meal Ideas", "Weekly Meal Prep"] },
-  tech: { emoji: "💻", label: "What tech topic do you want to cover?", suggestions: ["ChatGPT Complete Guide", "Best AI Tools 2026", "Budget Smartphone Review", "Laptop Buying Guide", "Python for Beginners", "Cybersecurity Tips", "Electric Vehicle Guide", "Smart Home Setup", "Camera Comparison", "Gaming PC Build"] },
-  travel: { emoji: "✈️", label: "Where are you making travel content about?", suggestions: ["Goa Complete Guide", "Manali Trip Plan", "Kerala Backwaters", "Rajasthan Royal Tour", "Dubai on Budget", "Thailand Travel Guide", "Bali Hidden Gems", "Europe Budget Trip", "Northeast India Hidden Places", "Andaman Islands"] },
-  motivation: { emoji: "🔥", label: "What motivation topic do you want to cover?", suggestions: ["Morning Routine That Changed My Life", "Why You're Not Successful", "Discipline Over Motivation", "Study Tips for Students", "Overcoming Failure", "Self Improvement Habits", "Stoicism for Beginners", "Atomic Habits Summary", "Goal Setting System", "Building Confidence"] },
-  business: { emoji: "💼", label: "What business topic do you want to cover?", suggestions: ["Start Business with Zero Money", "Freelancing for Beginners", "Dropshipping India 2026", "Instagram Growth Strategy", "YouTube Monetization Guide", "Startup Ideas India", "Digital Marketing Basics", "LinkedIn Profile Tips", "Amazon Selling Guide", "10 Business Ideas India"] },
-  bollywood: { emoji: "🎬", label: "What Bollywood topic do you want to cover?", suggestions: ["Movie Review", "Box Office Analysis", "Upcoming Movies 2026", "Best Actor Rankings", "Top Movies of 2026", "Web Series Review", "OTT Platform Guide", "Award Show Analysis", "Music Album Review", "Director Deep Dive"] },
-  skincare: { emoji: "✨", label: "What skincare topic do you want to cover?", suggestions: ["Acne Treatment Guide", "Glass Skin Routine", "Anti Aging Tips", "Sunscreen Complete Guide", "Night Skincare Routine", "Morning Skincare Routine", "Budget Skincare India", "Korean Skincare Routine", "Dark Spots Treatment", "Oily Skin Tips"] },
-  yoga: { emoji: "🧘", label: "What yoga topic do you want to cover?", suggestions: ["Beginner Yoga Routine", "Weight Loss Yoga", "Morning Yoga Flow", "Pranayama Guide", "Flexibility Training", "Stress Relief Yoga", "Meditation for Beginners", "Surya Namaskar Guide", "Yoga for Back Pain", "Advanced Yoga Poses"] },
-  crypto: { emoji: "🪙", label: "What crypto topic do you want to cover?", suggestions: ["Bitcoin Explained Simply", "Ethereum Guide India", "Web3 for Beginners", "DeFi Explained", "NFT Guide India", "Crypto for Beginners", "Best Altcoins 2026", "Crypto Tax India", "Blockchain Technology", "Crypto Wallet Setup"] },
+// ── Design tokens ──────────────────────────────────────────────
+// Light tokens: clean white surfaces, dark text.
+// Dark tokens: near-black surfaces, off-white text.
+// Single restrained accent in both, minimal borders instead of tinted boxes.
+// Both palettes point at the `.theme-redesign` CSS variables (see index.css),
+// which already flip between light/dark via the `.dark` class — so there's
+// no need for two separate hardcoded hex palettes any more.
+const LIGHT = {
+  BG: "hsl(var(--background))",
+  SURFACE: "hsl(var(--card))",
+  SURFACE_RAISED: "hsl(var(--card))",
+  BORDER: "hsl(var(--border))",
+  TEXT: "hsl(var(--foreground))",
+  TEXT_MUTED: "hsl(var(--muted-foreground))",
+  ACCENT: "hsl(var(--primary))",
+  ACCENT_SOLID: "hsl(var(--primary))",
 };
 
-function detectNiche(input: string): string | null {
-  const q = input.toLowerCase().trim();
-  const keywords: Record<string, string[]> = {
-    gaming: ["gaming", "game", "bgmi", "free fire", "pubg", "gta", "minecraft", "valorant"],
-    fitness: ["fitness", "gym", "workout", "weight loss", "muscle", "yoga", "exercise"],
-    finance: ["finance", "money", "stock", "invest", "mutual fund", "sip", "trading", "budget"],
-    cricket: ["cricket", "ipl", "kohli", "rohit", "batting", "bowling", "t20"],
-    food: ["food", "recipe", "cooking", "biryani", "meal", "diet", "eat"],
-    tech: ["tech", "technology", "ai", "coding", "smartphone", "laptop", "chatgpt"],
-    travel: ["travel", "trip", "goa", "manali", "kerala", "dubai", "bali"],
-    motivation: ["motivation", "mindset", "discipline", "success", "habit", "routine"],
-    business: ["business", "startup", "entrepreneur", "freelance", "marketing"],
-    bollywood: ["bollywood", "movie", "film", "actor", "actress", "netflix", "ott"],
-    skincare: ["skincare", "skin", "acne", "glow", "beauty", "moisturizer", "serum"],
-    yoga: ["yoga", "meditation", "pranayama", "asana", "breathwork"],
-    crypto: ["crypto", "bitcoin", "ethereum", "blockchain", "nft", "web3"],
-  };
-  for (const [niche, words] of Object.entries(keywords)) {
-    if (words.some(w => q.includes(w))) return niche;
+const DARK = {
+  BG: "hsl(var(--background))",
+  SURFACE: "hsl(var(--card))",
+  SURFACE_RAISED: "hsl(var(--card))",
+  BORDER: "hsl(var(--border))",
+  TEXT: "hsl(var(--foreground))",
+  TEXT_MUTED: "hsl(var(--muted-foreground))",
+  ACCENT: "hsl(var(--primary))",
+  ACCENT_SOLID: "hsl(var(--primary))",
+};
+
+const CONTENT_TYPES = [
+  { id: "auto", label: "Auto", prompt: "" },
+  { id: "educational", label: "Educational", prompt: "Create an educational script that clearly explains the topic step by step, uses simple language, and ends with a key takeaway." },
+  { id: "storytelling", label: "Storytelling", prompt: "Create a storytelling script with a personal narrative arc — setup, conflict, resolution. Make it emotional and relatable." },
+  { id: "trending", label: "Trending React", prompt: "Create a reaction script to this trending topic. Start with the news, give a strong opinion, and ask audience what they think." },
+  { id: "tips", label: "Tips & Tricks", prompt: "Create a tips and tricks script with numbered points. Each tip should be specific, actionable and immediately useful." },
+  { id: "comedy", label: "Comedy/Skit", prompt: "Create a funny, relatable comedy script with Indian humor. Use sarcasm, relatable situations, and a punchline ending." },
+  { id: "motivational", label: "Motivational", prompt: "Create a powerful motivational script that connects emotionally, uses a real story or example, and ends with a strong call to action." },
+  { id: "opinion", label: "Opinion/Take", prompt: "Create an opinion script with a strong controversial or unique take on the topic. Be bold, back it up with reasoning, and invite debate." },
+  { id: "review", label: "Product Review", prompt: "Create an honest product or service review script covering pros, cons, who it's for, and a clear recommendation." },
+];
+
+// ── Language options (must match backend's languageInstructions keys) ──
+const LANGUAGES = [
+  { id: 'english', label: 'English' },
+  { id: 'hindi', label: 'Hindi' },
+  { id: 'hinglish', label: 'Hinglish' },
+  { id: 'tamil', label: 'Tamil' },
+  { id: 'telugu', label: 'Telugu' },
+  { id: 'malayalam', label: 'Malayalam' },
+  { id: 'manglish', label: 'Manglish' },
+];
+
+function getWordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function getScriptWordCount(script: { hook?: string; body?: string; cta?: string }): number {
+  return getWordCount([script.hook, script.body, script.cta].filter(Boolean).join(' '));
+}
+
+function formatReadTime(words: number): string {
+  const seconds = Math.round(words / 2.5);
+  return seconds < 60 ? `~${seconds}s read` : `~${(seconds / 60).toFixed(1)}min read`;
+}
+
+
+// `key` values must exactly match the backend's MODEL_REGISTRY keys.
+interface ModelTier {
+  key: string;
+  label: string;
+}
+
+interface Provider {
+  id: string;
+  label: string;
+  logo: string;
+  tiers: ModelTier[];
+}
+
+const PROVIDERS: Provider[] = [
+  {
+    id: "claude",
+    label: "Claude",
+    logo: "/ai-logos/claude-logo.png",
+    tiers: [
+      { key: "claude-haiku", label: "Haiku" },
+      { key: "claude-sonnet", label: "Sonnet" },
+      { key: "claude-opus", label: "Opus" },
+    ],
+  },
+  {
+    id: "gemini",
+    label: "Gemini",
+    logo: "/ai-logos/gemini-logo.png",
+    tiers: [
+      { key: "gemini-flash-lite", label: "Flash-Lite" },
+      { key: "gemini-flash", label: "Flash" },
+      { key: "gemini-pro", label: "Pro" },
+    ],
+  },
+  {
+    id: "groq",
+    label: "Groq",
+    logo: "/ai-logos/groq-logo.png",
+    tiers: [
+      { key: "groq-8b", label: "Llama 8B" },
+      { key: "groq-70b", label: "Llama 70B" },
+      { key: "groq-oss120", label: "GPT-OSS 120B" },
+    ],
+  },
+  {
+    id: "chatgpt",
+    label: "ChatGPT",
+    logo: "/ai-logos/chatgpt-logo.png",
+    tiers: [
+      { key: "chatgpt", label: "GPT-4o mini" },
+    ],
+  },
+];
+
+const DEFAULT_MODEL_KEY = "claude-sonnet";
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = seconds / 60;
+  return mins % 1 === 0 ? `${mins}min` : `${mins.toFixed(1)}min`;
+}
+
+// ── Refinement chips — quick one-click rewrites shown under every script,
+// matching Lovable's Improve/Stronger hook/Shorten/Match my voice pattern.
+// Mapped onto the existing per-section rewriteSection() API. ──
+const PRIMARY_REFINE_CHIPS: { mode: string; label: string; section: 'hook' | 'body' | 'cta' }[] = [
+  { mode: 'more_viral', label: 'Improve', section: 'body' },
+  { mode: 'stronger_hook', label: 'Stronger hook', section: 'hook' },
+  { mode: 'shorter', label: 'Shorten', section: 'body' },
+  { mode: 'match_voice', label: 'Match my voice', section: 'body' },
+];
+const MORE_REFINE_CHIPS: { mode: string; label: string; section: 'hook' | 'body' | 'cta' }[] = [
+  { mode: 'add_humor', label: 'Add humor', section: 'body' },
+  { mode: 'more_educational', label: 'More educational', section: 'body' },
+  { mode: 'longer', label: 'Make longer', section: 'body' },
+  { mode: 'more_conversational', label: 'More conversational', section: 'body' },
+  { mode: 'add_storytelling', label: 'Add storytelling', section: 'body' },
+  { mode: 'better_retention', label: 'Better retention', section: 'cta' },
+];
+const REFINE_INSTRUCTIONS: Record<string, string> = {
+  more_viral: 'Make the whole script more engaging, punchy, and viral-worthy',
+  stronger_hook: 'Make the hook more attention-grabbing and impossible to scroll past',
+  shorter: 'Make it noticeably shorter and punchier without losing the point',
+  match_voice: 'Rewrite to match my personal voice, tone, and speaking style exactly',
+  add_humor: 'Add more humor and wit',
+  more_educational: 'Make it more educational and informative',
+  longer: 'Expand it with more detail and depth',
+  more_conversational: 'Make it sound more conversational and natural, like talking to a friend',
+  add_storytelling: 'Add a storytelling angle with a clear narrative arc',
+  better_retention: 'Rewrite to maximize watch-through and retention',
+};
+
+function findProviderAndTier(modelKey: string): { provider: Provider; tier: ModelTier } {
+  for (const provider of PROVIDERS) {
+    const tier = provider.tiers.find(t => t.key === modelKey);
+    if (tier) return { provider, tier };
   }
-  return null;
+  const fallbackProvider = PROVIDERS[0];
+  return { provider: fallbackProvider, tier: fallbackProvider.tiers[1] }; // claude-sonnet
 }
 
-interface HistoryEntry {
-  id: string; topic: string; timestamp: number; result: any; duration: number; language: string;
+// ── One-time onboarding flow for first-time users ──────────────
+const ONBOARDING_NICHES = [
+  "Fitness", "Finance", "Cricket", "Bollywood", "Tech", "Food",
+  "Travel", "Gaming", "Motivation", "Skincare", "Yoga", "Crypto",
+  "Business", "Education", "Fashion", "Comedy",
+];
+
+interface OnboardingQuestion {
+  key: 'job' | 'location' | 'platform' | 'niche' | 'audience';
+  question: string;
+  options: string[];
 }
 
-function saveHistory(entry: Omit<HistoryEntry, "id" | "timestamp">) {
-  const existing: HistoryEntry[] = JSON.parse(localStorage.getItem("yt_script_history") || "[]");
-  const newEntry = { ...entry, id: `${Date.now()}`, timestamp: Date.now() };
-  localStorage.setItem("yt_script_history", JSON.stringify([newEntry, ...existing].slice(0, 20)));
+const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
+  {
+    key: 'job',
+    question: "What do you do?",
+    options: ["Student", "Working professional", "Freelancer / Creator", "Business owner", "Other"],
+  },
+  {
+    key: 'location',
+    question: "Where are you based?",
+    options: ["North India", "South India", "East India", "West India", "Outside India"],
+  },
+  {
+    key: 'platform',
+    question: "Which platform are you creating for?",
+    options: ["Instagram", "YouTube", "Both"],
+  },
+  {
+    key: 'niche',
+    question: "What's your content niche?",
+    options: ONBOARDING_NICHES,
+  },
+  {
+    key: 'audience',
+    question: "Who's your target audience?",
+    options: ["Gen Z", "Young professionals", "Parents / Family", "General / Everyone"],
+  },
+];
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  text?: string;
+  script?: { hook?: string; body?: string; cta?: string; duration_seconds?: number; content_type?: string; topic?: string; ai_model?: string; is_saved?: boolean; is_personalized?: boolean };
+  error?: boolean;
+  timestamp: number;
 }
 
-function formatTime(ts: number) {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-}
-
-function SeriesCalendar({ startDate, parts, frequency, accentColor, accentGrad }: {
-  startDate: string; parts: number; frequency: string; accentColor: string; accentGrad: string;
-}) {
-  const [viewMonth, setViewMonth] = useState(() => {
-    const d = new Date(startDate);
-    return { year: d.getFullYear(), month: d.getMonth() };
-  });
-
-  const scheduledDates = useMemo(() => {
-    const dates: Record<string, number> = {};
-    const d = new Date(startDate);
-    for (let i = 0; i < parts; i++) {
-      const key = d.toISOString().split('T')[0];
-      dates[key] = i + 1;
-      if (frequency === 'daily') d.setDate(d.getDate() + 1);
-      else if (frequency === 'alternate') d.setDate(d.getDate() + 2);
-      else d.setDate(d.getDate() + 7);
-    }
-    return dates;
-  }, [startDate, parts, frequency]);
-
-  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-  const getFirstDay = (year: number, month: number) => new Date(year, month, 1).getDay();
-  const prevMonth = () => setViewMonth(v => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 });
-  const nextMonth = () => setViewMonth(v => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 });
-
-  const { year, month } = viewMonth;
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDay(year, month);
-  const today = new Date().toISOString().split('T')[0];
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-
-  const cells: (number | null)[] = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  return (
-    <div className="space-y-2">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📅 Upload Calendar</p>
-      <div className="panel overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <button onClick={prevMonth} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-sm">‹</button>
-          <p className="text-sm font-semibold text-foreground">{monthNames[month]} {year}</p>
-          <button onClick={nextMonth} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-sm">›</button>
-        </div>
-        <div className="grid grid-cols-7 px-3 pt-2">
-          {dayNames.map(d => <div key={d} className="text-center text-xs text-muted-foreground py-1 font-medium">{d}</div>)}
-        </div>
-        <div className="grid grid-cols-7 px-3 pb-3 gap-y-1">
-          {cells.map((day, i) => {
-            if (!day) return <div key={`e-${i}`} />;
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const partNum = scheduledDates[dateStr];
-            const isToday = dateStr === today;
-            const isScheduled = !!partNum;
-            return (
-              <div key={dateStr} className="flex items-center justify-center">
-                <div className="w-8 h-8 rounded-lg flex flex-col items-center justify-center transition-all"
-                  style={{ background: isScheduled ? accentGrad : isToday ? 'rgba(255,255,255,0.06)' : 'transparent', border: isToday && !isScheduled ? '1px solid rgba(255,255,255,0.15)' : 'none' }}>
-                  <span className="text-xs font-medium leading-none" style={{ color: isScheduled ? '#fff' : isToday ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))' }}>{day}</span>
-                  {isScheduled && <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 8 }} className="leading-none mt-0.5">P{partNum}</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex items-center gap-4 px-4 py-2 border-t border-border">
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded-md" style={{ background: accentGrad }} />
-            <span className="text-xs text-muted-foreground">Upload day (P = Part #)</span>
-          </div>
-        </div>
-      </div>
-      <p className="text-xs text-muted-foreground text-center">{parts} videos scheduled</p>
-    </div>
-  );
+// Converts a backend-stored message row into the shape the UI renders
+function fromStoredMessage(m: StoredChatMessage): ChatMessage {
+  return {
+    id: m.id,
+    role: m.role,
+    text: m.text || undefined,
+    script: m.script_json ? { ...m.script_json, is_saved: (m as any).is_saved || false } : undefined,
+    error: m.is_error,
+    timestamp: new Date(m.created_at).getTime(),
+  };
 }
 
 export default function YouTubeScript() {
   const { user } = useAuth();
-  const { t } = useTranslation();
   const { theme } = useTheme();
-  const _saved = getPageState('ytScript');
-  const [activeView, setActiveView] = useState<"generate" | "history" | "calendar">(_saved?.activeView ?? "generate");
-  const [topic, setTopic] = useState(() => _saved?.topic ?? (localStorage.getItem('yt_script_topic') || ""));
-  const [duration, setDuration] = useState(_saved?.duration ?? 5);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(() => {
-    if (_saved?.result !== undefined) return _saved.result;
-    const saved = localStorage.getItem('yt_script_result');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const location = useLocation();
+  const navigate = useNavigate();
+  const T = theme === 'dark' ? DARK : LIGHT;
+  const { BG, SURFACE, SURFACE_RAISED, BORDER, TEXT, TEXT_MUTED, ACCENT, ACCENT_SOLID } = T;
+
+  const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
+  const userNiche = userNiches.join(', ') || '';
+  const userJob = user?.user_metadata?.job || '';
+  const userLocationRegion = user?.user_metadata?.location_region || '';
+  const userTargetAudience = user?.user_metadata?.target_audience || '';
+  const [userVoiceStyle, setUserVoiceStyle] = useState(user?.user_metadata?.voice_style || '');
+  const userVoiceProfile = (user?.user_metadata?.voice_profile as VoiceProfile | undefined) || undefined;
+
+  // Same fallback chain as the sidebar avatar: YouTube channel pic → Google account pic → initials
+  const userAvatarUrl: string | null =
+    user?.user_metadata?.youtube_channel?.channel_thumbnail ||
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    null;
+  const [avatarError, setAvatarError] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const fresh = data?.user?.user_metadata?.voice_style || '';
+      if (fresh) setUserVoiceStyle(fresh);
+    });
+  }, []);
+
+  // ── Onboarding: only for users who've never completed it ──────
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(!!user?.user_metadata?.onboarding_completed);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>({});
+  const [savingOnboarding, setSavingOnboarding] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setOnboardingDone(!!data?.user?.user_metadata?.onboarding_completed);
+    });
+  }, []);
+
+  const [onboardingPhase, setOnboardingPhase] = useState<'questions' | 'confirm'>('questions');
+
+  const handleOnboardingAnswer = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    const q = ONBOARDING_QUESTIONS[onboardingStep];
+    const updatedAnswers = { ...onboardingAnswers, [q.key]: trimmed };
+    setOnboardingAnswers(updatedAnswers);
+
+    if (onboardingStep < ONBOARDING_QUESTIONS.length - 1) {
+      setOnboardingStep(prev => prev + 1);
+    } else {
+      // All 5 answered — show confirmation summary before saving
+      setOnboardingPhase('confirm');
+    }
+  };
+
+  const handleOnboardingRestart = () => {
+    setOnboardingAnswers({});
+    setOnboardingStep(0);
+    setOnboardingPhase('questions');
+  };
+
+  const handleOnboardingConfirm = async () => {
+    setSavingOnboarding(true);
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          job: onboardingAnswers.job,
+          location_region: onboardingAnswers.location,
+          platform: onboardingAnswers.platform,
+          niche: onboardingAnswers.niche,
+          niches: [onboardingAnswers.niche],
+          target_audience: onboardingAnswers.audience,
+          onboarding_completed: true,
+        },
+      });
+      setOnboardingDone(true);
+    } catch {
+      // even if saving fails, let them proceed rather than getting stuck
+      setOnboardingDone(true);
+    } finally {
+      setSavingOnboarding(false);
+    }
+  };
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
-  const [detectedNiche, setDetectedNiche] = useState<string | null>(null);
-  const [showSubCategories, setShowSubCategories] = useState(false);
-  const [history, setHistory] = useState<HistoryEntry[]>(() => _saved?.history ?? JSON.parse(localStorage.getItem("yt_script_history") || "[]"));
-  const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
-  const [showSeriesPrompt, setShowSeriesPrompt] = useState(false);
-  const [seriesTopic, setSeriesTopic] = useState(_saved?.seriesTopic ?? '');
-  const [seriesParts, setSeriesParts] = useState(_saved?.seriesParts ?? 5);
-  const [seriesFrequency, setSeriesFrequency] = useState<'daily' | 'alternate' | 'weekly'>(_saved?.seriesFrequency ?? 'weekly');
-  const [seriesStartDate, setSeriesStartDate] = useState(() => _saved?.seriesStartDate ?? new Date().toISOString().split('T')[0]);
-  const [seriesStep, setSeriesStep] = useState<'prompt' | 'customize'>('prompt');
-  const [generatingSeries, setGeneratingSeries] = useState(false);
-  const [seriesScripts, setSeriesScripts] = useState<any[]>(_saved?.seriesScripts ?? []);
-  const [showSeriesResult, setShowSeriesResult] = useState(_saved?.showSeriesResult ?? false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const _stateRef = useRef<any>({});
-  useEffect(() => {
-    _stateRef.current = { activeView, topic, duration, result, history, seriesTopic, seriesParts, seriesFrequency, seriesStartDate, seriesScripts, showSeriesResult };
-  });
-  useEffect(() => () => { setPageState('ytScript', _stateRef.current); }, []);
 
-  useEffect(() => { localStorage.setItem('yt_script_topic', topic); }, [topic]);
-  useEffect(() => { if (result) localStorage.setItem('yt_script_result', JSON.stringify(result)); }, [result]);
+  const [contentType, setContentType] = useState('auto');
+  const [showContentTypeMenu, setShowContentTypeMenu] = useState(false);
+  const [selectedModelKey, setSelectedModelKey] = useState(DEFAULT_MODEL_KEY);
+  const [showAiModelMenu, setShowAiModelMenu] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState<number | 'auto'>('auto');
+  const [showDurationMenu, setShowDurationMenu] = useState(false);
+  const [customDuration, setCustomDuration] = useState('');
+  const [showCustomDurationInput, setShowCustomDurationInput] = useState(false);
+
+  // Language switcher — initialised from localStorage so it persists across sessions
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    () => localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english'
+  );
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+
+  // Title editing from inside the chat header
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleEditValue, setTitleEditValue] = useState('');
+  const [currentConvTitle, setCurrentConvTitle] = useState<string | null>(null);
+
+  // Batch 2 state
+  const [rewritingMsgId, setRewritingMsgId] = useState<string | null>(null); // which card has the "More" refine dropdown open
+  const [rewritingSection, setRewritingSection] = useState(false); // loading state for rewrite
+  const [editingField, setEditingField] = useState<{ msgId: string; field: 'hook' | 'body' | 'cta' } | null>(null);
+  const [editDraft, setEditDraft] = useState('');
+  const [showSavedPanel, setShowSavedPanel] = useState(false);
+  const [savedScripts, setSavedScripts] = useState<SavedScriptMessage[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const [hoveredProviderId, setHoveredProviderId] = useState<string | null>(null);
+
+  // ── Conversations (multi-chat) ─────────────────────────────────
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [showConversationPanel, setShowConversationPanel] = useState(false);
+  const [loadingConversation, setLoadingConversation] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  // When handleSend creates a brand-new conversation mid-send, it sets this ref so the
+  // conversationId-watching effect below skips its reload (handleSend already owns local
+  // state for that turn) — otherwise the fetch races the save and wipes the user's message.
+  const skipNextConversationLoadRef = useRef(false);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const contentTypeMenuRef = useRef<HTMLDivElement>(null);
+  const aiModelMenuRef = useRef<HTMLDivElement>(null);
+  const durationMenuRef = useRef<HTMLDivElement>(null);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (topic.trim().length > 0) {
-      const filtered = SCRIPT_SUGGESTIONS.filter(s => s.toLowerCase().includes(topic.toLowerCase()) && s.toLowerCase() !== topic.toLowerCase()).slice(0, 5);
-      setDropdownSuggestions(filtered); setShowDropdown(filtered.length > 0);
-      const niche = detectNiche(topic);
-      if (niche && SUB_CATEGORIES[niche]) { setDetectedNiche(niche); setShowSubCategories(true); }
-      else { setDetectedNiche(null); setShowSubCategories(false); }
-    } else { setShowDropdown(false); setDropdownSuggestions([]); setDetectedNiche(null); setShowSubCategories(false); }
-  }, [topic]);
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, generating]);
+
+  // Fetch the conversation list once the user is known (for the slide-over panel)
+  const refreshConversationList = () => {
+    if (!user?.id) return;
+    listConversations(user.id).then(res => setConversations(res.conversations)).catch(() => {});
+  };
+
+  // Cmd/Ctrl+K opens the History panel
+  useEffect(() => {
+    const handleKeyboard = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowConversationPanel(prev => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyboard);
+    return () => document.removeEventListener('keydown', handleKeyboard);
+  }, []);
+
+  // Sync the current conversation's title into local state (for header display + editing)
+  useEffect(() => {
+    if (!conversationId) { setCurrentConvTitle(null); return; }
+    const conv = conversations.find(c => c.id === conversationId);
+    if (conv) setCurrentConvTitle(conv.title);
+  }, [conversationId, conversations]);
+
+  useEffect(() => {
+    refreshConversationList();
+  }, [user?.id]);
+
+  // Load a conversation's messages whenever the active conversationId changes
+  useEffect(() => {
+    if (skipNextConversationLoadRef.current) {
+      skipNextConversationLoadRef.current = false;
+      return;
+    }
+    if (!user?.id || !conversationId) {
+      setMessages([]);
+      return;
+    }
+    setLoadingConversation(true);
+    getConversation(user.id, conversationId)
+      .then(res => setMessages(res.messages.map(fromStoredMessage)))
+      .catch(() => setMessages([]))
+      .finally(() => setLoadingConversation(false));
+  }, [conversationId, user?.id]);
+
+  // Pre-fill the input box from navigation state (e.g. arriving from the news feed
+  // via navigate('/scripts', { state: { prompt } })) — without auto-sending, so the
+  // user can review/edit before hitting send.
+  useEffect(() => {
+    const incomingPrompt = (location.state as { prompt?: string } | null)?.prompt;
+    if (incomingPrompt) {
+      setInput(incomingPrompt);
+      textareaRef.current?.focus();
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) && inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
+      if (contentTypeMenuRef.current && !contentTypeMenuRef.current.contains(e.target as Node)) setShowContentTypeMenu(false);
+      if (aiModelMenuRef.current && !aiModelMenuRef.current.contains(e.target as Node)) { setShowAiModelMenu(false); setHoveredProviderId(null); }
+      if (durationMenuRef.current && !durationMenuRef.current.contains(e.target as Node)) setShowDurationMenu(false);
+      if (languageMenuRef.current && !languageMenuRef.current.contains(e.target as Node)) setShowLanguageMenu(false);
+      setRewritingMsgId(null);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const copyText = (text: string, key: string) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000); };
+  const selectedContentType = CONTENT_TYPES.find(c => c.id === contentType) || CONTENT_TYPES[0];
+  const { provider: selectedProvider, tier: selectedTier } = findProviderAndTier(selectedModelKey);
 
-  const copyAll = (r: any, prefix = '') => {
-    const parts = [];
-    if (r.title) parts.push(`TITLE: ${r.title}`);
-    if (r.intro) parts.push(`INTRO:\n${r.intro}`);
-    r.sections?.forEach((s: any, i: number) => parts.push(`SECTION ${i + 1}: ${s.heading}\n${s.content}`));
-    if (r.outro) parts.push(`OUTRO:\n${r.outro}`);
-    navigator.clipboard.writeText(parts.join('\n\n'));
-    setCopied(`all${prefix}`); setTimeout(() => setCopied(null), 2000);
-  };
+  const handleSend = async (text?: string) => {
+    const messageText = (text ?? input).trim();
+    if (!messageText || generating) return;
 
-  const handleClear = () => {
-    setTopic(''); setResult(null); setDetectedNiche(null); setShowSubCategories(false);
-    localStorage.removeItem('yt_script_result'); localStorage.removeItem('yt_script_topic');
-  };
+    // During onboarding, typed text answers the current question instead of generating a script
+    if (!onboardingDone) {
+      if (onboardingPhase === 'questions' && onboardingStep < ONBOARDING_QUESTIONS.length) {
+        setInput('');
+        handleOnboardingAnswer(messageText);
+      }
+      return;
+    }
 
-  const handleGenerate = async (tp?: string) => {
-    const target = tp || topic;
-    if (!target.trim()) return;
-    setTopic(target); setShowDropdown(false); setShowSubCategories(false); setLoading(true); setResult(null);
-    const savedLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
+    if (!user?.id) {
+      const errorMsg: ChatMessage = { id: `${Date.now()}-e`, role: 'assistant', text: 'Please sign in to generate scripts.', error: true, timestamp: Date.now() };
+      setMessages(prev => [...prev, errorMsg]);
+      return;
+    }
+
+    setInput('');
+    setGenerating(true);
+
+    // Optimistically show the user's message right away (real id swapped in once saved)
+    const tempUserMsg: ChatMessage = { id: `temp-${Date.now()}`, role: 'user', text: messageText, timestamp: Date.now() };
+    setMessages(prev => [...prev, tempUserMsg]);
+
     try {
-      const res = await fetch(`${BASE}/api/youtube/script`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: target, duration, niche: user?.user_metadata?.niche, language: savedLanguage }),
+      // Ensure there's an active conversation to write into
+      let activeConversationId = conversationId;
+      if (!activeConversationId) {
+        const { conversation } = await createConversation(user.id);
+        activeConversationId = conversation.id;
+        skipNextConversationLoadRef.current = true;
+        setConversationId(conversation.id);
+      }
+
+      // Persist the user's message, then swap the optimistic temp id for the real saved one
+      const { message: savedUserMsg } = await appendMessage(user.id, activeConversationId, { role: 'user', text: messageText });
+      setMessages(prev => prev.map(m => m.id === tempUserMsg.id ? { ...m, id: savedUserMsg.id } : m));
+
+      // Build conversation history (prior turns only, not the message we're about to send)
+      // so the AI can see what it already asked/learned and avoid repeating questions.
+      const conversationHistory: ConversationTurn[] = messages
+        .filter(m => !m.error)
+        .map(m => m.role === 'user'
+          ? { role: 'user' as const, text: m.text }
+          : m.script
+            ? { role: 'assistant' as const, script: m.script }
+            : { role: 'assistant' as const, question: m.text }
+        );
+
+      const userLanguage = selectedLanguage;
+      const result = await generateScriptFromMessage(user.id, messageText, {
+        niche: userNiche,
+        language: userLanguage,
+        voiceStyle: userVoiceStyle,
+        voiceProfile: userVoiceProfile,
+        contentType: selectedContentType.id !== 'auto' ? selectedContentType.label : undefined,
+        contentTypePrompt: selectedContentType.id !== 'auto' ? selectedContentType.prompt : undefined,
+        aiModel: selectedModelKey,
+        duration: selectedDuration !== 'auto' ? selectedDuration : undefined,
+        conversationHistory,
+        job: userJob,
+        locationRegion: userLocationRegion,
+        platform: "youtube",
+        targetAudience: userTargetAudience,
       });
-      const data = await res.json();
-      setResult(data);
-      localStorage.setItem('yt_script_result', JSON.stringify(data));
-      localStorage.setItem('yt_script_topic', target);
-      saveHistory({ topic: target, result: data, duration, language: savedLanguage });
-      const updatedHistory = JSON.parse(localStorage.getItem("yt_script_history") || "[]");
-      setHistory(updatedHistory);
-      const topicCount = updatedHistory.filter((h: HistoryEntry) => h.topic.toLowerCase() === target.toLowerCase()).length;
-      if (topicCount >= 3 && !showSeriesResult) { setSeriesTopic(target); setShowSeriesPrompt(true); }
-    } catch { setResult({ error: 'Failed to generate script. Try again.' }); }
-    finally { setLoading(false); }
-  };
 
-  const getScheduleDates = (start: string, parts: number, freq: string) => {
-    const dates: string[] = [];
-    const d = new Date(start);
-    for (let i = 0; i < parts; i++) {
-      dates.push(d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }));
-      if (freq === 'daily') d.setDate(d.getDate() + 1);
-      else if (freq === 'alternate') d.setDate(d.getDate() + 2);
-      else d.setDate(d.getDate() + 7);
+      const assistantMsg: ChatMessage = result.needs_clarification
+        ? { id: `${Date.now()}-a`, role: 'assistant', text: result.question, timestamp: Date.now() }
+        : { id: `${Date.now()}-a`, role: 'assistant', script: { ...result, is_personalized: !!userVoiceStyle }, timestamp: Date.now() };
+      setMessages(prev => [...prev, assistantMsg]);
+
+      // Persist the assistant's reply, then refresh the sidebar (title/ordering may have changed)
+      await appendMessage(
+        user.id,
+        activeConversationId,
+        result.needs_clarification
+          ? { role: 'assistant', text: result.question }
+          : { role: 'assistant', script: result }
+      );
+      refreshConversationList();
+    } catch (err: any) {
+      const errorMsg: ChatMessage = {
+        id: `${Date.now()}-e`,
+        role: 'assistant',
+        text: 'Sorry, I could not generate that script. Please try again.',
+        error: true,
+        timestamp: Date.now(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
+      // Best-effort: still try to persist the error reply so the conversation history stays accurate
+      if (conversationId || conversations.length === 0) {
+        const cid = conversationId;
+        if (cid) appendMessage(user.id, cid, { role: 'assistant', text: errorMsg.text, isError: true }).catch(() => {});
+      }
+    } finally {
+      setGenerating(false);
     }
-    return dates;
   };
 
-  const generateSeries = async () => {
-    setGeneratingSeries(true); setShowSeriesPrompt(false); setSeriesStep('prompt'); setShowSeriesResult(true); setSeriesScripts([]);
-    const savedLanguage = localStorage.getItem('userLanguage') || user?.user_metadata?.language || 'english';
-    const scheduleDates = getScheduleDates(seriesStartDate, seriesParts, seriesFrequency);
-    const angleTemplates = [
-      `${seriesTopic} Complete Beginner Guide`, `${seriesTopic} Top Mistakes to Avoid`,
-      `Advanced ${seriesTopic} Tips & Tricks`, `${seriesTopic} Secrets Nobody Tells You`,
-      `${seriesTopic} Results After 30 Days`, `${seriesTopic} Tools and Resources`,
-    ];
-    const angles = Array.from({ length: seriesParts }, (_, i) => `${angleTemplates[i % angleTemplates.length]} – Part ${i + 1}`);
-    const results: any[] = [];
-    for (let i = 0; i < angles.length; i++) {
-      try {
-        const res = await fetch(`${BASE}/api/youtube/script`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic: angles[i], duration, niche: user?.user_metadata?.niche, language: savedLanguage }),
-        });
-        const data = await res.json();
-        results.push({ angle: angles[i], script: data, postDate: scheduleDates[i], part: i + 1 });
-        setSeriesScripts([...results]);
-      } catch { results.push({ angle: angles[i], script: null, postDate: scheduleDates[i], part: i + 1 }); }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
-    setGeneratingSeries(false);
   };
 
-  const deleteHistory = (id: string) => {
-    const updated = history.filter(h => h.id !== id);
-    localStorage.setItem("yt_script_history", JSON.stringify(updated));
-    setHistory(updated);
+  // Auto-resize the textarea to fit its content (grows on multi-line input,
+  // shrinks back down after send/clear), capped by max-h-32 in the className below.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
+  const copyScript = (script: ChatMessage['script'], id: string) => {
+    if (!script) return;
+    const parts = [];
+    if (script.hook) parts.push(`HOOK:\n${script.hook}`);
+    if (script.body) parts.push(`BODY:\n${script.body}`);
+    if (script.cta) parts.push(`CTA:\n${script.cta}`);
+    navigator.clipboard.writeText(parts.join('\n\n'));
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
   };
 
-  const subCat = detectedNiche ? SUB_CATEGORIES[detectedNiche] : null;
+  const handleConfirmTitleEdit = async () => {
+    setEditingTitle(false);
+    if (!user?.id || !conversationId || !titleEditValue.trim()) return;
+    try {
+      await renameConversation(user.id, conversationId, titleEditValue.trim());
+      setCurrentConvTitle(titleEditValue.trim());
+      setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, title: titleEditValue.trim() } : c));
+    } catch { /* leave title as-is if rename fails */ }
+  };
 
-  const ResultCard = ({ r, prefix = '' }: { r: any; prefix?: string }) => (
-    <div className="space-y-3">
-      {r.title && (
-        <div className="rounded-2xl p-4" style={{ background: `hsl(var(--primary) / 0.06)`, border: `1px solid hsl(var(--primary) / 0.19)` }}>
-          <p className="text-xs font-bold uppercase mb-1" style={{ color: YT_COLOR }}>🎯 Title</p>
-          <p className="text-sm text-foreground font-medium">{r.title}</p>
-        </div>
-      )}
-      {r.intro && (
-        <div className="panel p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase" style={{ color: YT_COLOR }}>🎬 Intro</p>
-            <button onClick={() => copyText(r.intro, `intro${prefix}`)}>{copied === `intro${prefix}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
-          </div>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{r.intro}</p>
-        </div>
-      )}
-      {r.sections?.map((section: any, i: number) => (
-        <div key={i} className="panel p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase text-muted-foreground">📌 {section.heading}</p>
-            <button onClick={() => copyText(section.content, `sec${prefix}-${i}`)}>{copied === `sec${prefix}-${i}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
-          </div>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{section.content}</p>
-        </div>
-      ))}
-      {r.outro && (
-        <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase text-green-400">🎯 Outro & CTA</p>
-            <button onClick={() => copyText(r.outro, `outro${prefix}`)}>{copied === `outro${prefix}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
-          </div>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{r.outro}</p>
-        </div>
-      )}
-    </div>
-  );
+  // ── Batch 2 handlers ───────────────────────────────────────────
+
+  const handleDownloadScript = (script: ChatMessage['script'], topic?: string) => {
+    if (!script) return;
+    const parts: string[] = [];
+    if (topic) parts.push(`TOPIC: ${topic}\n`);
+    if (script.content_type) parts.push(`FORMAT: ${script.content_type}\n`);
+    if (script.duration_seconds) parts.push(`DURATION: ${formatDuration(script.duration_seconds)}\n`);
+    parts.push('');
+    if (script.hook) parts.push(`HOOK:\n${script.hook}\n`);
+    if (script.body) parts.push(`BODY:\n${script.body}\n`);
+    if (script.cta) parts.push(`CTA:\n${script.cta}\n`);
+    const blob = new Blob([parts.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(topic || 'script').replace(/\s+/g, '-').toLowerCase()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopyAll = (script: ChatMessage['script'], id: string) => {
+    if (!script) return;
+    const parts = [];
+    if (script.hook) parts.push(`HOOK:\n${script.hook}`);
+    if (script.body) parts.push(`BODY:\n${script.body}`);
+    if (script.cta) parts.push(`CTA:\n${script.cta}`);
+    navigator.clipboard.writeText(parts.join('\n\n'));
+    setCopied(`all-${id}`);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const handleRewriteSection = async (
+    msgId: string,
+    section: 'hook' | 'body' | 'cta',
+    instruction: string,
+    existingScript: ChatMessage['script']
+  ) => {
+    if (!user?.id || !existingScript) return;
+    setRewritingMsgId(null);
+    setRewritingSection(true);
+    try {
+      const result = await rewriteSection({
+        userId: user.id,
+        section,
+        instruction,
+        existingScript,
+        niche: userNiche,
+        language: selectedLanguage,
+        voiceStyle: userVoiceStyle,
+        voiceProfile: userVoiceProfile,
+        aiModel: selectedModelKey,
+        job: userJob,
+        locationRegion: userLocationRegion,
+        platform: "youtube",
+        targetAudience: userTargetAudience,
+      });
+      // Update the message in local state with the rewritten section
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, script: { ...m.script, ...result } } : m
+      ));
+      // Persist the updated script to the database
+      if (conversationId) {
+        await appendMessage(user.id, conversationId, { role: 'assistant', text: `✏️ Rewrote ${section}: "${instruction}"` });
+      }
+    } catch {
+      // silently ignore — the original script stays intact
+    } finally {
+      setRewritingSection(false);
+    }
+  };
+
+  // Manual inline edit of a single field (double-click or the Edit button) —
+  // client-side only, same as rewriteSection: the edit isn't re-persisted to
+  // the stored message row, only reflected in the live chat state.
+  const startEditField = (msgId: string, field: 'hook' | 'body' | 'cta', current: string) => {
+    setEditingField({ msgId, field });
+    setEditDraft(current);
+  };
+  const saveEditField = () => {
+    if (!editingField) return;
+    const { msgId, field } = editingField;
+    setMessages(prev => prev.map(m => m.id === msgId && m.script ? { ...m, script: { ...m.script, [field]: editDraft } } : m));
+    setEditingField(null);
+  };
+  const cancelEditField = () => setEditingField(null);
+
+  const handleToggleSave = async (msgId: string, currentlySaved: boolean) => {
+    if (!user?.id) return;
+    // Optimistically flip the star
+    setMessages(prev => prev.map(m =>
+      m.id === msgId ? { ...m, script: m.script ? { ...m.script, is_saved: !currentlySaved } : m.script } : m
+    ));
+    try {
+      await toggleSaveScript(user.id, msgId, !currentlySaved);
+      // Refresh saved panel if it's open
+      if (showSavedPanel) loadSavedScripts();
+    } catch {
+      // Revert on failure
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, script: m.script ? { ...m.script, is_saved: currentlySaved } : m.script } : m
+      ));
+    }
+  };
+
+  const loadSavedScripts = () => {
+    if (!user?.id) return;
+    setLoadingSaved(true);
+    listSavedScripts(user.id)
+      .then(res => setSavedScripts(res.saved))
+      .catch(() => {})
+      .finally(() => setLoadingSaved(false));
+  };
+
+  const handleOpenSavedPanel = () => {
+    setShowSavedPanel(true);
+    loadSavedScripts();
+  };
+
+  const handleNewChat = () => {    setConversationId(null);
+    setMessages([]);
+    setShowConversationPanel(false);
+  };
+
+  const handleSwitchConversation = (id: string) => {
+    if (id === conversationId) { setShowConversationPanel(false); return; }
+    setConversationId(id);
+    setShowConversationPanel(false);
+  };
+
+  const handleDeleteConversation = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!user?.id) return;
+    try {
+      await deleteConversation(user.id, id);
+      setConversations(prev => prev.filter(c => c.id !== id));
+      if (id === conversationId) {
+        setConversationId(null);
+        setMessages([]);
+      }
+    } catch {
+      // leave the list as-is if deletion failed; user can retry
+    }
+  };
+
+  const handleStartRename = (conv: ConversationSummary, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setRenamingId(conv.id);
+    setRenameValue(conv.title);
+  };
+
+  const handleConfirmRename = async (id: string) => {
+    if (!user?.id || !renameValue.trim()) { setRenamingId(null); return; }
+    try {
+      await renameConversation(user.id, id, renameValue.trim());
+      setConversations(prev => prev.map(c => c.id === id ? { ...c, title: renameValue.trim() } : c));
+    } catch {
+      // ignore — title just won't update locally
+    } finally {
+      setRenamingId(null);
+    }
+  };
+
+  const findPrecedingUserText = (index: number) => {
+    for (let i = index - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') return messages[i].text || '';
+    }
+    return '';
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const userLanguage = selectedLanguage;
+        setTranscribing(true);
+        try {
+          const { text } = await transcribeAudio(audioBlob, userLanguage);
+          setInput(prev => (prev ? `${prev} ${text}` : text));
+        } catch {
+          // silently ignore — user can just type instead
+        } finally {
+          setTranscribing(false);
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      alert('Microphone access denied or unavailable.');
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
 
   return (
-    <div data-platform="youtube" className={`theme-redesign ${theme} min-h-screen bg-background`}>
+    <div data-platform="youtube" className={`theme-redesign ${theme} min-h-screen flex flex-col`} style={{ background: BG, color: TEXT }}>
       <SEO title="YouTube Script — SocialRum" noindex />
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <FileText className="w-5 h-5" style={{ color: YT_COLOR }} />
-          <h1 className="text-lg font-bold text-foreground">YouTube Script</h1>
-          <button onClick={() => setActiveView(activeView === "history" ? "generate" : "history")}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={activeView === "history" ? { background: YT_GRAD, color: "#fff" } : { background: `hsl(var(--primary) / 0.08)`, color: YT_COLOR, border: `1px solid hsl(var(--primary) / 0.19)` }}>
-            <Clock className="w-3.5 h-3.5" />
-            {t('scripts.history')} {history.length > 0 && <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-xs" style={{ background: "rgba(255,255,255,0.25)" }}>{history.length}</span>}
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 px-5 h-16 flex items-center justify-between shrink-0"
+        style={{ background: BG, borderBottom: `1px solid ${BORDER}` }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <FileText className="w-5 h-5 shrink-0" style={{ color: TEXT }} />
+          {conversationId && currentConvTitle ? (
+            editingTitle ? (
+              <input
+                autoFocus
+                value={titleEditValue}
+                onChange={e => setTitleEditValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleConfirmTitleEdit(); if (e.key === 'Escape') setEditingTitle(false); }}
+                onBlur={handleConfirmTitleEdit}
+                className="font-semibold text-base tracking-tight bg-transparent outline-none border-b min-w-0 w-48"
+                style={{ color: TEXT, borderColor: ACCENT, fontFamily: 'Inter, sans-serif' }}
+              />
+            ) : (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="font-semibold text-base tracking-tight truncate max-w-[160px]" style={{ color: TEXT, fontFamily: 'Inter, sans-serif' }}>
+                  {currentConvTitle}
+                </h1>
+                <button onClick={() => { setTitleEditValue(currentConvTitle); setEditingTitle(true); }}
+                  style={{ color: TEXT_MUTED }} className="shrink-0">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          ) : (
+            <h1 className="font-semibold text-lg tracking-tight" style={{ color: TEXT, fontFamily: 'Inter, sans-serif' }}>
+              Script Generator
+            </h1>
+          )}
+          <span className="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full shrink-0"
+            style={{ background: "hsl(var(--secondary))", color: ACCENT }}>
+            YOUTUBE
+          </span>
+          <button onClick={() => navigate('/settings')}
+            className="text-xs font-medium shrink-0" style={{ color: TEXT_MUTED }}>
+            Personalize
           </button>
-          <button onClick={() => setActiveView(activeView === "calendar" ? "generate" : "calendar")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={activeView === "calendar" ? { background: YT_GRAD, color: "#fff" } : { background: `hsl(var(--primary) / 0.08)`, color: YT_COLOR, border: `1px solid hsl(var(--primary) / 0.19)` }}>
-            📅
+          {userVoiceStyle && (
+            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+              style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+              <Mic className="w-3 h-3" /> Voice
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowConversationPanel(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{ color: TEXT_MUTED }}
+            onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
+            onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
+            <MessageSquare className="w-3.5 h-3.5" /> History <span className="opacity-50 text-[10px]">⌘K</span>
           </button>
+          <button onClick={handleOpenSavedPanel}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{ color: TEXT_MUTED }}
+            onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
+            onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
+            <Star className="w-3.5 h-3.5" /> Saved
+          </button>
+          <button onClick={handleNewChat}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{ border: `1px solid ${BORDER}`, color: TEXT }}>
+            <Plus className="w-3.5 h-3.5" /> New chat
+          </button>
+        </div>
+      </header>
+
+      {/* ── Saved Scripts slide-over panel ── */}
+      <AnimatePresence>
+        {showSavedPanel && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowSavedPanel(false)}
+              className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.4)' }} />
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.2 }}
+              className="fixed top-0 right-0 bottom-0 z-50 w-96 max-w-[90vw] flex flex-col"
+              style={{ background: SURFACE, borderLeft: `1px solid ${BORDER}` }}>
+              <div className="flex items-center justify-between px-4 h-16 shrink-0" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4" style={{ color: ACCENT }} />
+                  <p className="font-semibold text-sm" style={{ color: TEXT }}>Saved Scripts</p>
+                </div>
+                <button onClick={() => setShowSavedPanel(false)} style={{ color: TEXT_MUTED }}>
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {loadingSaved ? (
+                  <div className="flex justify-center pt-12">
+                    <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
+                      <img src="/socialrum-logo.png" alt="SocialRum" className="w-6 h-6 object-cover rounded-full" />
+                    </motion.div>
+                  </div>
+                ) : savedScripts.length === 0 ? (
+                  <div className="text-center pt-12">
+                    <Star className="w-8 h-8 mx-auto mb-3" style={{ color: BORDER }} />
+                    <p className="text-sm" style={{ color: TEXT_MUTED }}>No saved scripts yet.</p>
+                    <p className="text-xs mt-1" style={{ color: TEXT_MUTED }}>Star any script to save it here.</p>
+                  </div>
+                ) : (
+                  savedScripts.map(s => (
+                    <div key={s.id} className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                      <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: `1px solid ${BORDER}`, background: SURFACE_RAISED }}>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-medium truncate" style={{ color: TEXT }}>{s.script_json?.topic || s.conversation_title}</span>
+                          <span className="text-[10px]" style={{ color: TEXT_MUTED }}>{s.conversation_title}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => handleDownloadScript(s.script_json, s.script_json?.topic)} style={{ color: TEXT_MUTED }}>
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => {
+                            const parts = [];
+                            if (s.script_json?.hook) parts.push(`HOOK:\n${s.script_json.hook}`);
+                            if (s.script_json?.body) parts.push(`BODY:\n${s.script_json.body}`);
+                            if (s.script_json?.cta) parts.push(`CTA:\n${s.script_json.cta}`);
+                            navigator.clipboard.writeText(parts.join('\n\n'));
+                          }} style={{ color: TEXT_MUTED }}>
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-3 space-y-2">
+                        {s.script_json?.hook && <p className="text-xs leading-relaxed" style={{ color: TEXT_MUTED }}><span className="font-medium" style={{ color: TEXT }}>Hook: </span>{s.script_json.hook}</p>}
+                        {s.script_json?.cta && <p className="text-xs leading-relaxed" style={{ color: TEXT_MUTED }}><span className="font-medium" style={{ color: TEXT }}>CTA: </span>{s.script_json.cta}</p>}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Conversation slide-over panel ── */}
+      <AnimatePresence>
+        {showConversationPanel && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowConversationPanel(false)}
+              className="fixed inset-0 z-50"
+              style={{ background: 'rgba(0,0,0,0.4)' }}
+            />
+            <motion.div
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.2 }}
+              className="fixed top-0 left-0 bottom-0 z-50 w-80 max-w-[85vw] flex flex-col"
+              style={{ background: SURFACE, borderRight: `1px solid ${BORDER}` }}
+            >
+              <div className="flex items-center justify-between px-4 h-16 shrink-0" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <p className="font-semibold text-sm" style={{ color: TEXT }}>Your chats</p>
+                <button onClick={() => setShowConversationPanel(false)} style={{ color: TEXT_MUTED }}>
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              <div className="p-3">
+                <button onClick={handleNewChat}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                  style={{ border: `1px solid ${BORDER}`, color: TEXT }}>
+                  <Plus className="w-4 h-4" /> New chat
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1">
+                {conversations.length === 0 && (
+                  <p className="text-xs text-center mt-8" style={{ color: TEXT_MUTED }}>No past chats yet.</p>
+                )}
+                {conversations.map(conv => (
+                  <div key={conv.id}
+                    onClick={() => handleSwitchConversation(conv.id)}
+                    className="group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm cursor-pointer transition-colors"
+                    style={{ background: conv.id === conversationId ? 'hsl(var(--secondary))' : 'transparent' }}>
+                    <MessageSquare className="w-3.5 h-3.5 shrink-0" style={{ color: TEXT_MUTED }} />
+                    {renamingId === conv.id ? (
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onClick={e => e.stopPropagation()}
+                        onKeyDown={e => { if (e.key === 'Enter') handleConfirmRename(conv.id); if (e.key === 'Escape') setRenamingId(null); }}
+                        onBlur={() => handleConfirmRename(conv.id)}
+                        className="flex-1 bg-transparent outline-none text-sm"
+                        style={{ color: TEXT, borderBottom: `1px solid ${ACCENT}` }}
+                      />
+                    ) : (
+                      <span className="flex-1 truncate" style={{ color: conv.id === conversationId ? TEXT : TEXT_MUTED }}>{conv.title}</span>
+                    )}
+                    <button onClick={e => handleStartRename(conv, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: TEXT_MUTED }}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={e => handleDeleteConversation(conv.id, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: TEXT_MUTED }}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Message Thread ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto px-5 py-8 flex flex-col gap-6">
+
+          {loadingConversation ? (
+            <div className="flex items-center justify-center py-20">
+              <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
+                <img src="/socialrum-logo.png" alt="SocialRum" className="w-6 h-6 object-contain rounded-full" />
+              </motion.div>
+            </div>
+          ) : !onboardingDone ? (
+            <div className="flex flex-col gap-5">
+              {/* Intro bubble */}
+              <div className="flex justify-start">
+                <div className="max-w-[85%] flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                    <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
+                    Before we make your first video, a few quick questions to personalize your scripts.
+                  </div>
+                </div>
+              </div>
+
+              {/* Previously answered questions, shown as completed exchanges */}
+              {ONBOARDING_QUESTIONS.slice(0, onboardingStep).map(q => (
+                <div key={q.key} className="flex flex-col gap-3">
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] flex items-start gap-2.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                        <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
+                        {q.question}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm" style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
+                      {onboardingAnswers[q.key]}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Current question with tappable options */}
+              {onboardingPhase === 'questions' && onboardingStep < ONBOARDING_QUESTIONS.length && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] flex items-start gap-2.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                        <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm" style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
+                        <p>{ONBOARDING_QUESTIONS[onboardingStep].question}</p>
+                        <p className="text-xs mt-1" style={{ color: TEXT_MUTED }}>Select an option below, or type your own answer.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pl-9">
+                    {ONBOARDING_QUESTIONS[onboardingStep].options.map(opt => (
+                      <button key={opt} onClick={() => handleOnboardingAnswer(opt)}
+                        className="px-3.5 py-2 rounded-full text-xs font-medium transition-colors"
+                        style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = TEXT; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT_MUTED; }}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Confirmation summary before saving */}
+              {onboardingPhase === 'confirm' && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] flex items-start gap-2.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                        <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 rounded-2xl rounded-tl-sm overflow-hidden" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
+                        <div className="px-4 py-2.5 text-sm" style={{ color: TEXT, borderBottom: `1px solid ${BORDER}` }}>
+                          Here's what I've got — is this correct?
+                        </div>
+                        <div className="p-4 space-y-2.5">
+                          {ONBOARDING_QUESTIONS.map(q => (
+                            <div key={q.key} className="flex items-center justify-between text-sm">
+                              <span style={{ color: TEXT_MUTED }}>{q.question}</span>
+                              <span className="font-medium" style={{ color: TEXT }}>{onboardingAnswers[q.key]}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pl-9">
+                    <button onClick={handleOnboardingConfirm} disabled={savingOnboarding}
+                      className="px-4 py-2 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
+                      style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
+                      Looks good
+                    </button>
+                    <button onClick={handleOnboardingRestart} disabled={savingOnboarding}
+                      className="px-4 py-2 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
+                      style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                      Start over
+                    </button>
+                  </div>
+                  {savingOnboarding && (
+                    <p className="text-xs pl-9" style={{ color: TEXT_MUTED }}>Saving your preferences...</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : messages.length === 0 && (
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-start">
+                <div className="max-w-[85%] flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                    <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm" style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT }}>
+                    {userNiche
+                      ? `Hey Creator — I've got your niche (${userNiche}) and voice ready. What script do you want to create today?`
+                      : "Hey Creator — what script do you want to create today? Describe it in your own words — topic, vibe, length, anything."}
+                  </div>
+                </div>
+              </div>
+              <div className="pl-9">
+                <button onClick={() => handleSend(userNiche ? `Find trending patterns in ${userNiche}` : 'Find trending patterns')}
+                  className="chip">
+                  🔥 Find trending patterns
+                </button>
+              </div>
+            </div>
+          )}
+
+          {messages.map((msg, idx) => (
+            <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+
+              {msg.role === 'user' ? (
+                <div className="max-w-[80%] flex items-start gap-2.5 flex-row-reverse">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                    {userAvatarUrl && !avatarError ? (
+                      <img src={userAvatarUrl} alt="You" className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
+                    ) : (
+                      <User className="w-3.5 h-3.5" style={{ color: TEXT_MUTED }} />
+                    )}
+                  </div>
+                  <div className="rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm"
+                    style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
+                    {msg.text}
+                  </div>
+                </div>
+              ) : (
+                <div className="max-w-[85%] flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                    <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                  </div>
+
+                  {msg.error ? (
+                    <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm"
+                      style={theme === 'dark'
+                        ? { background: '#241616', color: '#F5A3A3', border: '1px solid #3A2222' }
+                        : { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                      {msg.text}
+                    </div>
+                  ) : msg.script ? (
+                    <div className="flex-1 rounded-2xl rounded-tl-sm overflow-hidden" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
+                      {/* Script meta header */}
+                      <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {msg.script.content_type && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wide"
+                              style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                              {msg.script.content_type}
+                            </span>
+                          )}
+                          {msg.script.duration_seconds && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wide"
+                              style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                              {formatDuration(msg.script.duration_seconds)}
+                            </span>
+                          )}
+                          {(msg.script.hook || msg.script.body || msg.script.cta) && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wide"
+                              style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                              {formatReadTime(getScriptWordCount(msg.script))}
+                            </span>
+                          )}
+                          {msg.script.ai_model && (() => {
+                            const { provider, tier } = findProviderAndTier(msg.script.ai_model);
+                            return (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wide"
+                                style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                                {provider.label} {tier.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* Star / Save */}
+                          <button onClick={() => handleToggleSave(msg.id, !!msg.script.is_saved)}
+                            title={msg.script.is_saved ? 'Remove from saved' : 'Save script'}
+                            style={{ color: msg.script.is_saved ? '#F59E0B' : TEXT_MUTED }}>
+                            <Star className="w-3.5 h-3.5" fill={msg.script.is_saved ? '#F59E0B' : 'none'} />
+                          </button>
+                          {/* Download */}
+                          <button onClick={() => handleDownloadScript(msg.script, msg.script.topic)}
+                            title="Download as .txt" style={{ color: TEXT_MUTED }}>
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          {/* Copy All */}
+                          <button onClick={() => handleCopyAll(msg.script, msg.id)}
+                            className="flex items-center gap-1 text-xs font-medium transition-colors"
+                            style={{ color: copied === `all-${msg.id}` ? (theme === 'dark' ? '#4ADE80' : '#16a34a') : TEXT_MUTED }}>
+                            {copied === `all-${msg.id}` ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+                          </button>
+                        </div>
+                      </div>
+
+                      {msg.script.is_personalized && (
+                        <div className="mx-4 mt-3 rounded-xl px-3 py-2 text-[11px]" style={{ border: `1px solid ${ACCENT}4D`, background: `${ACCENT}0D`, color: TEXT_MUTED }}>
+                          <span className="font-semibold" style={{ color: ACCENT }}>Voice style used</span> — personalized to your recorded tone and phrasing.
+                        </div>
+                      )}
+
+                      {/* Script body — each field is inline-editable (double-click or Edit) */}
+                      <div className="p-4 space-y-3">
+                        {(['hook', 'body', 'cta'] as const).map(field => {
+                          const label = field === 'hook' ? 'Hook' : field === 'body' ? 'Body' : 'Call to action';
+                          const value = msg.script?.[field] || '';
+                          if (!value) return null;
+                          const isEditing = editingField?.msgId === msg.id && editingField.field === field;
+                          return (
+                            <div key={field} className="group rounded-xl p-3.5" style={{ border: `1px solid ${BORDER}` }}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: TEXT_MUTED }}>{label}</span>
+                                {!isEditing && (
+                                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => startEditField(msg.id, field, value)}
+                                      className="inline-flex items-center gap-1 text-[10px]" style={{ color: TEXT_MUTED }}>
+                                      <Pencil className="w-3 h-3" /> Edit
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              {isEditing ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    autoFocus
+                                    value={editDraft}
+                                    onChange={e => setEditDraft(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Escape') cancelEditField(); if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveEditField(); }}
+                                    rows={Math.max(2, editDraft.split('\n').length + 1)}
+                                    className="w-full rounded-lg p-2.5 text-sm outline-none resize-y"
+                                    style={{ background: SURFACE_RAISED, border: `1px solid ${ACCENT}`, color: TEXT }}
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={saveEditField} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium" style={{ background: ACCENT_SOLID, color: '#fff' }}>
+                                      <Check className="w-3 h-3" /> Save
+                                    </button>
+                                    <button onClick={cancelEditField} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px]" style={{ color: TEXT_MUTED }}>
+                                      <X className="w-3 h-3" /> Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p onDoubleClick={() => startEditField(msg.id, field, value)}
+                                  className="text-sm whitespace-pre-wrap leading-relaxed cursor-text" style={{ color: TEXT }}>
+                                  {value}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Refinement chips */}
+                      <div className="px-4 pb-2 flex flex-wrap items-center gap-2">
+                        {PRIMARY_REFINE_CHIPS.map(c => (
+                          <button key={c.mode} disabled={rewritingSection}
+                            onClick={() => handleRewriteSection(msg.id, c.section, REFINE_INSTRUCTIONS[c.mode], msg.script)}
+                            className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors disabled:opacity-40"
+                            style={{ background: 'hsl(var(--secondary))', color: TEXT }}>
+                            {c.label}
+                          </button>
+                        ))}
+                        <div className="relative">
+                          <button onClick={() => setRewritingMsgId(prev => prev === msg.id ? null : msg.id)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors" style={{ color: TEXT_MUTED }}>
+                            More <ChevronDown className="w-3 h-3" />
+                          </button>
+                          <AnimatePresence>
+                            {rewritingMsgId === msg.id && (
+                              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                                className="absolute left-0 bottom-full mb-1 w-52 rounded-2xl overflow-hidden z-50"
+                                style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
+                                {MORE_REFINE_CHIPS.map(c => (
+                                  <button key={c.mode}
+                                    disabled={rewritingSection}
+                                    onClick={() => { handleRewriteSection(msg.id, c.section, REFINE_INSTRUCTIONS[c.mode], msg.script); setRewritingMsgId(null); }}
+                                    className="w-full text-left px-4 py-2 text-xs transition-colors disabled:opacity-40"
+                                    style={{ color: TEXT_MUTED }}
+                                    onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
+                                    onMouseLeave={e => (e.currentTarget.style.color = TEXT_MUTED)}>
+                                    {c.label}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+
+                      {/* Regenerate */}
+                      <div className="px-4 pb-4">
+                        <button onClick={() => handleSend(findPrecedingUserText(idx))} disabled={generating}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                          style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                          <RefreshCw className="w-3 h-3" /> Regenerate
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm"
+                      style={{ background: SURFACE, color: TEXT, border: `1px solid ${BORDER}` }}>
+                      {msg.text}
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          ))}
+
+          {/* Generating indicator */}
+          <AnimatePresence>
+            {generating && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-start">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                    <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}>
+                      <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                    </motion.div>
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm"
+                    style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                    Writing your script with {selectedProvider.label} {selectedTier.label}...
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div ref={bottomRef} />
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-24">
+      {/* ── Input Bar ── */}
+      <div className="sticky bottom-0 px-5 py-4 shrink-0" style={{ background: BG, borderTop: `1px solid ${BORDER}` }}>
+        <div className="max-w-2xl mx-auto">
 
-        {/* HISTORY VIEW */}
-        {activeView === "history" && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-foreground">{t('scripts.script_history')}</p>
-              {history.length > 0 && (
-                <button onClick={() => { localStorage.removeItem("yt_script_history"); setHistory([]); }}
-                  className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300">
-                  <Trash2 className="w-3.5 h-3.5" /> {t('scripts.clear_all')}
-                </button>
-              )}
-            </div>
-            {history.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3">
-                <Clock className="w-10 h-10 text-muted-foreground opacity-30" />
-                <p className="text-sm text-muted-foreground">{t('scripts.no_history')}</p>
-                <button onClick={() => setActiveView("generate")} className="text-xs px-4 py-2 rounded-xl text-white" style={{ background: YT_GRAD }}>
-                  {t('scripts.generate')}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {history.map(entry => (
-                  <div key={entry.id} className="panel overflow-hidden">
-                    <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === entry.id ? null : entry.id)}>
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm" style={{ background: `hsl(var(--primary) / 0.08)`, color: YT_COLOR }}>{entry.topic[0].toUpperCase()}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{entry.topic}</p>
-                        <p className="text-xs text-muted-foreground">{formatTime(entry.timestamp)} · {entry.duration} min</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={e => { e.stopPropagation(); copyAll(entry.result, entry.id); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
-                          {copied === `all${entry.id}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
-                        <button onClick={e => { e.stopPropagation(); deleteHistory(entry.id); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expandedHistory === entry.id ? 'rotate-90' : ''}`} />
-                      </div>
-                    </div>
-                    <AnimatePresence>
-                      {expandedHistory === entry.id && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-border overflow-hidden">
-                          <div className="p-4 space-y-3">
-                            <ResultCard r={entry.result} prefix={entry.id} />
-                            <button onClick={() => { setActiveView("generate"); handleGenerate(entry.topic); }}
-                              className="w-full py-2.5 rounded-xl text-white text-xs font-medium flex items-center justify-center gap-1.5" style={{ background: YT_GRAD }}>
-                              <RefreshCw className="w-3.5 h-3.5" /> {t('scripts.regenerate')}
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* CALENDAR VIEW */}
-        {activeView === "calendar" && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            {seriesScripts.length > 0 || showSeriesResult ? (
-              <SeriesCalendar startDate={seriesStartDate} parts={seriesParts} frequency={seriesFrequency} accentColor={YT_COLOR} accentGrad={YT_GRAD} />
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                <span className="text-5xl">📅</span>
-                <p className="text-sm font-semibold text-foreground">No Series Scheduled Yet</p>
-                <p className="text-xs text-muted-foreground max-w-xs">Generate a YouTube series to see your upload calendar here.</p>
-                <button onClick={() => setActiveView("generate")} className="text-xs px-4 py-2 rounded-xl text-white mt-2" style={{ background: YT_GRAD }}>Go Generate Scripts</button>
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* GENERATE VIEW */}
-        {activeView === "generate" && (
-          <>
-            <div className="relative">
-              <input ref={inputRef} value={topic} onChange={e => setTopic(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") handleGenerate(); if (e.key === "Escape") setShowDropdown(false); }}
-                onFocus={e => { if (dropdownSuggestions.length > 0) setShowDropdown(true); e.target.style.borderColor = `hsl(var(--primary) / 0.38)`; }}
-                onBlur={e => { e.target.style.borderColor = ''; }}
-                placeholder="Enter video topic..."
-                className="w-full px-4 pr-9 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground outline-none text-sm transition-all" />
-              {topic && <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"><X className="w-4 h-4" /></button>}
-              {showDropdown && dropdownSuggestions.length > 0 && (
-                <div ref={dropdownRef} className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-                  {dropdownSuggestions.map((s, i) => (
-                    <button key={i} onClick={() => handleGenerate(s)} className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left">
-                      <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{s}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <AnimatePresence>
-              {showSubCategories && subCat && !result && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  className="rounded-2xl border p-4 space-y-3"
-                  style={{ borderColor: `hsl(var(--primary) / 0.19)`, background: `hsl(var(--primary) / 0.03)` }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{subCat.emoji}</span>
-                    <p className="text-sm font-semibold text-foreground">{subCat.label}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {subCat.suggestions.map((s, i) => (
-                      <motion.button key={s} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.03 }}
-                        onClick={() => handleGenerate(s)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all"
-                        style={{ borderColor: `hsl(var(--primary) / 0.19)`, color: YT_COLOR, background: `hsl(var(--primary) / 0.03)` }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `hsl(var(--primary) / 0.13)`; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `hsl(var(--primary) / 0.03)`; }}>
-                        <ChevronRight className="w-3 h-3" />{s}
-                      </motion.button>
+          {/* Toolbar: content type + AI model pills */}
+          <div className="flex items-center gap-2 mb-2.5">
+            {/* Content type dropdown */}
+            <div className="relative" ref={contentTypeMenuRef}>
+              <button onClick={() => { setShowContentTypeMenu(prev => !prev); setShowAiModelMenu(false); setShowDurationMenu(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                {selectedContentType.label}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              <AnimatePresence>
+                {showContentTypeMenu && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                    className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl overflow-hidden z-50 max-h-72 overflow-y-auto"
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
+                    {CONTENT_TYPES.map(c => (
+                      <button key={c.id} onClick={() => { setContentType(c.id); setShowContentTypeMenu(false); }}
+                        className="w-full flex items-center px-4 py-2.5 text-sm text-left transition-colors"
+                        style={{ color: contentType === c.id ? TEXT : TEXT_MUTED, background: contentType === c.id ? SURFACE : 'transparent' }}>
+                        {c.label}
+                      </button>
                     ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {!topic && !result && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">{t('scripts.popular_topics')}</p>
-                <div className="flex flex-wrap gap-2">
-                  {SCRIPT_SUGGESTIONS.slice(0, 8).map(s => (
-                    <button key={s} onClick={() => setTopic(s)}
-                      className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `hsl(var(--primary) / 0.38)`; (e.currentTarget as HTMLElement).style.color = YT_COLOR; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.color = ''; }}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Video Duration</p>
-              <div className="flex gap-2">
-                {[3, 5, 8, 10].map(d => (
-                  <button key={d} onClick={() => setDuration(d)}
-                    className="flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all"
-                    style={duration === d ? { background: YT_GRAD, color: "#fff", borderColor: "transparent" } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    {d} min
-                  </button>
-                ))}
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <button onClick={() => handleGenerate()} disabled={loading}
-              className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: YT_GRAD }}>
-              <Sparkles className="w-4 h-4" />
-              {loading ? `${t('common.loading')}` : t('scripts.generate')}
+            {/* Duration dropdown */}
+            <div className="relative" ref={durationMenuRef}>
+              <button onClick={() => { setShowDurationMenu(prev => !prev); setShowContentTypeMenu(false); setShowAiModelMenu(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                {selectedDuration === 'auto' ? 'Duration: Auto' : formatDuration(selectedDuration)}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              <AnimatePresence>
+                {showDurationMenu && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                    className="absolute bottom-full left-0 mb-2 w-48 rounded-2xl overflow-hidden z-50"
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
+                    {(['auto', 15, 30, 60, 90, 120] as const).map(d => (
+                      <button key={d} onClick={() => { setSelectedDuration(d); setShowCustomDurationInput(false); setShowDurationMenu(false); }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                        style={{ color: selectedDuration === d && !showCustomDurationInput ? TEXT : TEXT_MUTED, background: selectedDuration === d && !showCustomDurationInput ? SURFACE : 'transparent' }}>
+                        {d === 'auto' ? 'Auto (AI decides)' : formatDuration(d)}
+                        {selectedDuration === d && !showCustomDurationInput && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
+                      </button>
+                    ))}
+                    <button onClick={() => { setShowCustomDurationInput(true); }}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                      style={{ borderTop: `1px solid ${BORDER}`, color: showCustomDurationInput ? TEXT : TEXT_MUTED, background: showCustomDurationInput ? SURFACE : 'transparent' }}>
+                      Custom
+                      {showCustomDurationInput && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
+                    </button>
+                    {showCustomDurationInput && (
+                      <div className="px-4 pb-3 pt-1 flex items-center gap-2">
+                        <input
+                          autoFocus
+                          type="number"
+                          min={5} max={600}
+                          value={customDuration}
+                          onChange={e => {
+                            setCustomDuration(e.target.value);
+                            const n = parseInt(e.target.value, 10);
+                            if (!isNaN(n) && n >= 5) setSelectedDuration(Math.min(n, 600));
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter') setShowDurationMenu(false); }}
+                          placeholder="e.g. 45"
+                          className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
+                          style={{ background: BORDER, color: TEXT, border: `1px solid ${BORDER}` }}
+                        />
+                        <span className="text-xs" style={{ color: TEXT_MUTED }}>sec</span>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* AI model dropdown — provider, then tier */}
+            <div className="relative" ref={aiModelMenuRef}>
+              <button onClick={() => { setShowAiModelMenu(prev => !prev); setShowContentTypeMenu(false); setShowDurationMenu(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                <img src={selectedProvider.logo} alt={selectedProvider.label} className="w-3.5 h-3.5 object-contain rounded-full" />
+                {selectedProvider.label} {selectedTier.label}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              <AnimatePresence>
+                {showAiModelMenu && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                    className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl overflow-hidden z-50 max-h-96 overflow-y-auto"
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
+                    {PROVIDERS.map(p => {
+                      const isExpanded = hoveredProviderId === p.id || selectedProvider.id === p.id;
+                      return (
+                        <div key={p.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                          <button
+                            onClick={() => setHoveredProviderId(prev => prev === p.id ? null : p.id)}
+                            onMouseEnter={() => setHoveredProviderId(p.id)}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                            style={{ background: selectedProvider.id === p.id ? SURFACE : 'transparent' }}>
+                            <div className="flex items-center gap-2.5">
+                              <img src={p.logo} alt={p.label} className="w-5 h-5 object-contain rounded-full shrink-0" />
+                              <p style={{ color: selectedProvider.id === p.id ? TEXT : TEXT_MUTED }}>{p.label}</p>
+                            </div>
+                            <ChevronDown className="w-3.5 h-3.5 transition-transform" style={{ color: TEXT_MUTED, transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
+                          </button>
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden">
+                                {p.tiers.map(tier => (
+                                  <button key={tier.key}
+                                    onClick={() => { setSelectedModelKey(tier.key); setShowAiModelMenu(false); setHoveredProviderId(null); }}
+                                    className="w-full flex items-center justify-between pl-12 pr-4 py-2 text-sm text-left transition-colors"
+                                    style={{ background: selectedModelKey === tier.key ? SURFACE : 'transparent' }}>
+                                    <p style={{ color: selectedModelKey === tier.key ? TEXT : TEXT_MUTED }}>{tier.label}</p>
+                                    {selectedModelKey === tier.key && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Language switcher */}
+            <div className="relative" ref={languageMenuRef}>
+              <button onClick={() => { setShowLanguageMenu(prev => !prev); setShowContentTypeMenu(false); setShowAiModelMenu(false); setShowDurationMenu(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                style={{ border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                {LANGUAGES.find(l => l.id === selectedLanguage)?.label || 'English'}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              <AnimatePresence>
+                {showLanguageMenu && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                    className="absolute bottom-full left-0 mb-2 w-44 rounded-2xl overflow-hidden z-50"
+                    style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, boxShadow: 'var(--redesign-shadow-elegant)' }}>
+                    {LANGUAGES.map(l => (
+                      <button key={l.id} onClick={() => {
+                        setSelectedLanguage(l.id);
+                        localStorage.setItem('userLanguage', l.id);
+                        setShowLanguageMenu(false);
+                      }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                        style={{ color: selectedLanguage === l.id ? TEXT : TEXT_MUTED, background: selectedLanguage === l.id ? SURFACE : 'transparent' }}>
+                        {l.label}
+                        {selectedLanguage === l.id && <Check className="w-3.5 h-3.5" style={{ color: ACCENT }} />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Input row */}
+          <div className="flex items-end gap-2">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                transcribing ? "Transcribing..." :
+                !onboardingDone ? "Type your answer..." :
+                "Describe the script you want..."
+              }
+              rows={1}
+              disabled={transcribing}
+              className="flex-1 resize-none px-4 py-3 rounded-2xl outline-none text-sm transition-all max-h-32 overflow-y-auto disabled:opacity-60"
+              style={{ background: SURFACE_RAISED, border: `1px solid ${BORDER}`, color: TEXT, minHeight: '48px' }}
+              onFocus={e => (e.currentTarget.style.borderColor = ACCENT)}
+              onBlur={e => (e.currentTarget.style.borderColor = BORDER)}
+            />
+
+            {/* Mic button */}
+            <button
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={transcribing}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all disabled:opacity-50"
+              style={isRecording
+                ? (theme === 'dark'
+                    ? { background: '#3A1F1F', color: '#F5A3A3', border: '1px solid #5A2A2A' }
+                    : { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' })
+                : { background: SURFACE_RAISED, color: TEXT_MUTED, border: `1px solid ${BORDER}` }}>
+              {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4.5 h-4.5" />}
             </button>
 
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-8 gap-2">
-                <Loader2 className="w-6 h-6 animate-spin" style={{ color: YT_COLOR }} />
-                <p className="text-xs text-muted-foreground">{t('scripts.generating')} <span style={{ color: YT_COLOR }}>"{topic}"</span>...</p>
-              </div>
-            )}
+            <button onClick={() => handleSend()} disabled={generating || !input.trim() || transcribing}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 disabled:opacity-40 transition-all hover:shadow-md"
+              style={{ background: ACCENT_SOLID, color: '#ffffff' }}>
+              <Send className="w-4.5 h-4.5" />
+            </button>
+          </div>
 
-            {result && !result.error && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-foreground">Your Script</p>
-                  <button onClick={() => copyAll(result)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground">
-                    {copied === 'all' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} {t('scripts.copy_all')}
-                  </button>
-                </div>
-                <ResultCard r={result} />
-                <button onClick={handleClear} className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex items-center justify-center gap-2">
-                  <X className="w-4 h-4" /> {t('scripts.new')}
-                </button>
-              </motion.div>
-            )}
-
-            {result?.error && <p className="text-sm text-center" style={{ color: YT_COLOR }}>{result.error}</p>}
-
-            {/* SERIES PROMPT */}
-            <AnimatePresence>
-              {showSeriesPrompt && (
-                <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                  className="rounded-2xl p-5 space-y-4"
-                  style={{ background: `hsl(var(--primary) / 0.03)`, border: `2px solid hsl(var(--primary) / 0.25)` }}>
-                  {seriesStep === 'prompt' && (
-                    <>
-                      <div className="flex items-start gap-3">
-                        <div className="text-3xl">🎬</div>
-                        <div>
-                          <p className="font-bold text-foreground text-sm">Want a YouTube Video Series?</p>
-                          <p className="text-xs text-muted-foreground mt-1">You've searched <span style={{ color: YT_COLOR }}>"{seriesTopic}"</span> multiple times.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setSeriesStep('customize')} className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2" style={{ background: YT_GRAD }}>
-                          <Sparkles className="w-4 h-4" /> Yes, Create Series!
-                        </button>
-                        <button onClick={() => setShowSeriesPrompt(false)} className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">{t('common.cancel')}</button>
-                      </div>
-                    </>
-                  )}
-                  {seriesStep === 'customize' && (
-                    <>
-                      <p className="font-bold text-foreground text-sm">📅 Customize Your Series</p>
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">How many parts?</p>
-                        <div className="flex gap-2">
-                          {[3, 5, 7, 10].map(n => (
-                            <button key={n} onClick={() => setSeriesParts(n)} className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all"
-                              style={seriesParts === n ? { background: YT_GRAD, color: '#fff', borderColor: 'transparent' } : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>{n}</button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Upload Frequency</p>
-                        <div className="flex gap-2">
-                          {([{ id: 'daily', label: 'Every Day' }, { id: 'alternate', label: 'Every 2 Days' }, { id: 'weekly', label: 'Every Week' }] as const).map(f => (
-                            <button key={f.id} onClick={() => setSeriesFrequency(f.id)} className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all"
-                              style={seriesFrequency === f.id ? { background: YT_GRAD, color: '#fff', borderColor: 'transparent' } : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}>{f.label}</button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Start Date</p>
-                        <input type="date" value={seriesStartDate} onChange={e => setSeriesStartDate(e.target.value)} min={new Date().toISOString().split('T')[0]}
-                          className="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-foreground text-sm outline-none" />
-                      </div>
-                      <SeriesCalendar startDate={seriesStartDate} parts={seriesParts} frequency={seriesFrequency} accentColor={YT_COLOR} accentGrad={YT_GRAD} />
-                      <div className="flex gap-2">
-                        <button onClick={generateSeries} className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2" style={{ background: YT_GRAD }}>
-                          <Sparkles className="w-4 h-4" /> Generate {seriesParts}-Part Series
-                        </button>
-                        <button onClick={() => setSeriesStep('prompt')} className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">{t('common.back')}</button>
-                      </div>
-                    </>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* SERIES RESULT */}
-            {showSeriesResult && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-bold text-foreground text-sm">🎬 {seriesParts}-Part Series: <span style={{ color: YT_COLOR }}>{seriesTopic}</span></p>
-                  <button onClick={() => { setShowSeriesResult(false); setSeriesScripts([]); }} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
-                </div>
-                {generatingSeries && seriesScripts.length < seriesParts && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-                    <Loader2 className="w-4 h-4 animate-spin" style={{ color: YT_COLOR }} />
-                    Generating Part {seriesScripts.length + 1} of {seriesParts}...
-                  </div>
-                )}
-                {seriesScripts.map((item, idx) => (
-                  <div key={idx} className="panel overflow-hidden">
-                    <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === `series-${idx}` ? null : `series-${idx}`)}>
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: YT_GRAD }}>{idx + 1}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{item.angle}</p>
-                        {item.postDate && <span className="text-xs" style={{ color: YT_COLOR }}>📅 {item.postDate}</span>}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {item.script && <button onClick={e => { e.stopPropagation(); copyAll(item.script, `series-${idx}`); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">{copied === `allseries-${idx}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}</button>}
-                        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expandedHistory === `series-${idx}` ? 'rotate-90' : ''}`} />
-                      </div>
-                    </div>
-                    <AnimatePresence>
-                      {expandedHistory === `series-${idx}` && item.script && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-border overflow-hidden">
-                          <div className="p-4"><ResultCard r={item.script} prefix={`series-${idx}`} /></div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </>
-        )}
+          <p className="text-[10px] text-center mt-2.5" style={{ color: TEXT_MUTED }}>
+            Enter to send · Shift+Enter for new line
+          </p>
+        </div>
       </div>
     </div>
   );
