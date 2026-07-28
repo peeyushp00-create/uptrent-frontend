@@ -37,6 +37,7 @@ export default function AppSidebar() {
 
   const youtubeNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
+    { icon: Newspaper, label: t('nav.news'), path: "/youtube/news" },
     { icon: Tag, label: t('nav.seo'), path: "/youtube/seo" },
     { icon: FileText, label: t('nav.scripts'), path: "/youtube/script" },
     { icon: Search, label: t('nav.analyzer'), path: "/youtube/analyzer" },

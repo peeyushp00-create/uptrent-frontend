@@ -157,6 +157,7 @@ export default function NewsPage() {
   const { theme } = useTheme();
   const initialQuery = (location.state as any)?.query || "";
   const userNiches: string[] = user?.user_metadata?.niches || (user?.user_metadata?.niche ? [user.user_metadata.niche] : []);
+  const isYoutubePath = location.pathname.startsWith("/youtube");
 
   const _saved = getPageState('news');
 
@@ -269,7 +270,7 @@ export default function NewsPage() {
     : FALLBACK_CATEGORIES.filter(c => c !== 'All').map(c => ({ label: c, emoji: TOPIC_EMOJIS[c] || '📰', value: c }));
 
   return (
-    <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
+    <div data-platform={isYoutubePath ? "youtube" : "instagram"} className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
       <SEO title="News — SocialRum" noindex />
 
       {/* Header */}
