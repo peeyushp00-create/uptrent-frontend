@@ -274,7 +274,7 @@ export default function NewsPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card border-b border-border px-5 h-16 flex items-center justify-between">
-        <h1 className="font-bold text-xl text-primary" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+        <h1 className="font-bold text-xl text-foreground">
           {t('news.title')}
         </h1>
         <button onClick={handleRefresh} disabled={refreshing}
@@ -348,7 +348,7 @@ export default function NewsPage() {
                     <span className="text-muted-foreground text-[11px]">· {timeAgo}</span>
                     <span className="text-[11px] font-semibold ml-auto truncate" style={{ color: PRIMARY }}>{item.source}</span>
                   </div>
-                  <h3 className="font-bold text-[15px] text-foreground leading-snug line-clamp-2 mb-1.5" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  <h3 className="font-bold text-[15px] text-foreground leading-snug line-clamp-2 mb-1.5">
                     {headline}
                   </h3>
                   {item.summary && (
@@ -417,8 +417,7 @@ export default function NewsPage() {
                   )}
                   {/* Title over image */}
                   <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <h2 className="font-bold text-[18px] text-white leading-snug"
-                      style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                    <h2 className="font-bold text-[18px] text-white leading-snug">
                       {selectedArticle.title || selectedArticle.headline}
                     </h2>
                   </div>
