@@ -74,7 +74,7 @@ export default function YouTubeSEO() {
   };
 
   return (
-    <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
+    <div data-platform="youtube" className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
       <SEO title="YouTube SEO — SocialRum" noindex />
 
       <main className="max-w-2xl mx-auto px-5 py-8">
