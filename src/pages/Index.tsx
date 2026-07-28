@@ -164,7 +164,7 @@ export default function Index() {
 
   return (
     <div
-      className={`theme-redesign ${theme} min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col items-center justify-center px-5 pt-24 pb-12`}
+      className={`theme-redesign ${theme} min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col items-center justify-center px-5 pt-32 pb-12`}
       data-platform={isIG ? undefined : "youtube"}
     >
       {/* BG blob */}
