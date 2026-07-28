@@ -105,20 +105,20 @@ export default function AppSidebar() {
       {/* Platform toggle */}
       {!collapsed && (
         <div className="px-3 pt-4 pb-2">
-          <div className="p-1 rounded-xl bg-sidebar-accent flex">
+          <div className="p-1 rounded-xl bg-black/20 border border-sidebar-border flex gap-0.5">
             <button onClick={() => switchPlatform("instagram")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                 effectivePlatform === "instagram"
-                  ? "bg-accent text-accent-foreground shadow-sm"
-                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                  ? "bg-accent text-accent-foreground shadow-md"
+                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5"
               }`}>
               <Instagram className="w-3.5 h-3.5" /> Instagram
             </button>
             <button onClick={() => switchPlatform("youtube")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                 effectivePlatform === "youtube"
-                  ? "bg-accent text-accent-foreground shadow-sm"
-                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                  ? "bg-accent text-accent-foreground shadow-md"
+                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5"
               }`}>
               <Youtube className="w-3.5 h-3.5" /> YouTube
             </button>
@@ -130,7 +130,7 @@ export default function AppSidebar() {
       {collapsed && (
         <div className="flex justify-center pt-3 pb-1">
           <button onClick={() => switchPlatform(effectivePlatform === "instagram" ? "youtube" : "instagram")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-accent text-accent-foreground transition-opacity hover:opacity-80">
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-accent text-accent-foreground shadow-md transition-all hover:opacity-85 hover:scale-105">
             {effectivePlatform === "instagram"
               ? <Instagram className="w-4 h-4" />
               : <Youtube className="w-4 h-4" />}
