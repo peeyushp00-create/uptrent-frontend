@@ -6,8 +6,6 @@ import {
   Target, Lightbulb, ArrowRight, Plus, Trash2, UserPlus,
   ChevronLeft,
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { useTranslation } from 'react-i18next';
 import { getPageState, setPageState } from '@/lib/pageCache';
@@ -25,13 +23,6 @@ const POPULAR_CHANNELS = [
   "Amit Bhadana", "Triggered Insaan", "Dhruv Rathee",
   "Ranveer Allahbadia", "Slayy Point", "Ashish Chanchlani",
 ];
-
-function formatNum(n: number) {
-  if (!n) return '0';
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
-  return String(n);
-}
 
 interface CompetitorCard {
   channelName: string;
@@ -275,18 +266,13 @@ function CompetitorDetail({ competitor, onBack, onCopy, copied }: {
 }
 
 export default function YouTubeAnalyzer() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const ytChannel = user?.user_metadata?.youtube_channel || null;
   const _saved = getPageState('ytAnalyzer');
 
-const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localStorage.getItem('yt_search_channel') || ""));
+  const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localStorage.getItem('yt_search_channel') || ""));
   const [loading, setLoading] = useState(false);
 
-  // Separate results per tab — My Channel never shows search results
-  const [myResult, setMyResult] = useState<any>(_saved?.myResult ?? null);
   const [searchResult, setSearchResult] = useState<any>(() => {
     if (_saved?.searchResult !== undefined) return _saved.searchResult;
     try {
@@ -298,7 +284,6 @@ const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localS
   const [copied, setCopied] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownSuggestions, setDropdownSuggestions] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'mine' | 'search'>(_saved?.activeTab ?? (ytChannel ? 'mine' : 'search'));
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -310,7 +295,7 @@ const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localS
   // ── Page-state persistence ──
   const _stateRef = useRef<any>({});
   useEffect(() => {
-    _stateRef.current = { channelUrl, myResult, searchResult, activeTab, competitors };
+    _stateRef.current = { channelUrl, searchResult, competitors };
   });
   useEffect(() => () => { setPageState('ytAnalyzer', _stateRef.current); }, []);
   const [addingCompetitor, setAddingCompetitor] = useState(false);
@@ -341,13 +326,6 @@ const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localS
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Auto-analyze only My Channel — never touches searchResult
-  useEffect(() => {
-    if (ytChannel && activeTab === 'mine' && !myResult) {
-      handleAnalyzeMine(ytChannel.channel_name);
-    }
-  }, [activeTab]);
-
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000);
   };
@@ -356,19 +334,6 @@ const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localS
     setChannelUrl(''); setSearchResult(null);
     localStorage.removeItem('yt_search_result');
     localStorage.removeItem('yt_search_channel');
-  };
-
-  const handleAnalyzeMine = async (channel: string) => {
-    if (!channel.trim()) return;
-    setLoading(true); setMyResult(null);
-    try {
-      const res = await fetch(`${BASE}/api/youtube/analyze`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelUrl: channel }),
-      });
-      setMyResult(await res.json());
-    } catch { setMyResult({ error: 'Failed to analyze channel. Try again.' }); }
-    finally { setLoading(false); }
   };
 
   const handleAnalyzeSearch = async (channel?: string) => {
@@ -438,123 +403,8 @@ const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localS
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-5 pb-28 space-y-5">
-        <div className="flex gap-1 p-1 rounded-2xl bg-card border border-border">
-          <button onClick={() => setActiveTab('mine')}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all"
-            style={activeTab === 'mine' ? { background: YT_GRAD, color: '#fff' } : { color: 'hsl(var(--muted-foreground))' }}>
-            <Youtube className="w-4 h-4" /> My Channel
-          </button>
-          <button onClick={() => setActiveTab('search')}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all"
-            style={activeTab === 'search' ? { background: YT_GRAD, color: '#fff' } : { color: 'hsl(var(--muted-foreground))' }}>
-            <Search className="w-4 h-4" /> Any Channel
-          </button>
-        </div>
-
-        {activeTab === 'mine' && (
-          <AnimatePresence mode="wait">
-            {!ytChannel ? (
-              <motion.div key="not-connected" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: YT_CONTAINER }}>
-                  <Youtube className="w-8 h-8 text-red-500" />
-                </div>
-                <div>
-                  <p className="font-bold text-lg text-foreground mb-2">{t('settings.connect_youtube')}</p>
-                  <p className="text-sm text-muted-foreground max-w-xs">Connect your YouTube channel to get personalized analysis</p>
-                </div>
-                <button onClick={() => navigate('/settings')}
-                  className="flex items-center gap-2 px-6 py-3 rounded-2xl text-white font-bold text-sm" style={{ background: YT_GRAD }}>
-                  <Youtube className="w-4 h-4" /> {t('settings.connect_youtube')}
-                </button>
-              </motion.div>
-            ) : (
-              <motion.div key="connected" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-
-                {/* Channel profile banner */}
-                <div className="rounded-2xl p-5" style={{ background: YT_GRAD }}>
-                  <div className="flex items-center gap-4 mb-4">
-                    {ytChannel.channel_thumbnail ? (
-                      <img src={ytChannel.channel_thumbnail} alt={ytChannel.channel_name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-white/30 shrink-0" />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-2xl border-2 border-white/30 shrink-0">
-                        {ytChannel.channel_name?.[0]?.toUpperCase() || 'Y'}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-white text-lg truncate">{ytChannel.channel_name}</p>
-                      <p className="text-xs text-white/70 mt-0.5">✓ Connected channel</p>
-                    </div>
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    {[
-                      { label: t('home.subscribers'), val: formatNum(Number(ytChannel.subscribers || 0)) },
-                      { label: t('home.videos'), val: formatNum(Number(ytChannel.video_count || 0)) },
-                      { label: t('home.total_views'), val: formatNum(Number(ytChannel.total_views || 0)) },
-                    ].map((stat, i) => (
-                      <div key={i} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                        <p className="font-bold text-white text-base">{stat.val}</p>
-                        <p className="text-[10px] text-white/70 mt-0.5">{stat.label}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Avg stats from API — shown after analysis */}
-                  {myResult?.channelStats && !loading && (
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      {[
-                        { label: 'Avg Views', val: myResult.channelStats.avg_views, icon: '👁️' },
-                        { label: 'Avg Likes', val: myResult.channelStats.avg_likes, icon: '❤️' },
-                        { label: 'Avg Comments', val: myResult.channelStats.avg_comments, icon: '💬' },
-                      ].map((s, i) => (
-                        <div key={i} className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                          <p className="text-sm">{s.icon}</p>
-                          <p className="font-bold text-white text-sm">{s.val}</p>
-                          <p className="text-[9px] text-white/70">{s.label}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {myResult?.channelStats?.engagement_rate && !loading && (
-                    <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                      <span className="text-xs font-bold text-white">📊 Engagement Rate: {myResult.channelStats.engagement_rate}</span>
-                    </div>
-                  )}
-
-                  {/* Analyze button */}
-                  <button
-                    onClick={() => handleAnalyzeMine(ytChannel.channel_name)}
-                    disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
-                    style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}>
-                    {loading
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing…</>
-                      : <><Sparkles className="w-4 h-4" /> {myResult ? 'Re-analyze Channel' : 'Analyze My Channel'}</>}
-                  </button>
-                </div>
-
-                {/* Loading */}
-                {loading && (
-                  <div className="flex flex-col items-center justify-center py-10 gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-red-500" />
-                    <p className="text-sm text-muted-foreground">Analyzing your channel…</p>
-                  </div>
-                )}
-
-                {/* Results */}
-                {myResult && !myResult.error && !loading && <AnalysisResults result={myResult} onCopy={copyText} copied={copied} hideStats />}
-                {myResult?.error && <p className="text-sm text-center text-red-500">{myResult.error}</p>}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
-
-        {activeTab === 'search' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <div className="relative">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+          <div className="relative">
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -603,11 +453,10 @@ const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localS
             )}
             {searchResult && !searchResult.error && !loading && <AnalysisResults result={searchResult} onCopy={copyText} copied={copied} />}
             {searchResult?.error && <p className="text-sm text-center text-red-500">{searchResult.error}</p>}
-          </motion.div>
-        )}
+        </motion.div>
 
-        {/* Competitor Tracker — only on Any Channel tab */}
-        {activeTab === 'search' && <div className="bg-card rounded-2xl border border-border p-4">
+        {/* Competitor Tracker */}
+        <div className="bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-red-500" />
@@ -703,7 +552,7 @@ const [channelUrl, setChannelUrl] = useState(() => _saved?.channelUrl ?? (localS
               ))}
             </div>
           )}
-        </div>}
+        </div>
       </main>
     </div>
   );
