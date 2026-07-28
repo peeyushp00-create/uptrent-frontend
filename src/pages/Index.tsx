@@ -180,7 +180,7 @@ export default function Index() {
   return (
     <div
       className={`theme-redesign ${theme} min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col items-center justify-center px-5 py-12`}
-      style={{ marginLeft: sidebarWidth ? -sidebarWidth : undefined }}
+      style={{ marginLeft: sidebarWidth ? -(sidebarWidth - 60) : undefined }}
       data-platform={isIG ? undefined : "youtube"}
     >
       {/* BG blob */}
