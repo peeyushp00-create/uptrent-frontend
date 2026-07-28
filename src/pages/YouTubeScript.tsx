@@ -1148,9 +1148,14 @@ export default function YouTubeScript() {
                     <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
                   </div>
                   <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm" style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT }}>
-                    {userNiche
-                      ? `Hey Creator — I've got your niche (${userNiche}) and voice ready. What script do you want to create today?`
-                      : "Hey Creator — what script do you want to create today? Describe it in your own words — topic, vibe, length, anything."}
+                    <p>
+                      {userNiche
+                        ? `Hey hi — I've got your niche (${userNiche}). Just tell me what your next Reel is about and I'll write it in your style.`
+                        : "Hey hi — tell me what your next Reel is about and I'll write it in your style."}
+                    </p>
+                    <p className="mt-2" style={{ color: TEXT_MUTED }}>
+                      <span className="font-medium" style={{ color: TEXT }}>Not sure what to make?</span> Find trending patterns in your niche — I'll open the analyzer and scrape reels for you.
+                    </p>
                   </div>
                 </div>
               </div>
