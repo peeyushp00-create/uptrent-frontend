@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Newspaper, FileText, Settings, Youtube, Instagram, Search, BarChart2 } from "lucide-react";
+import { LayoutDashboard, Newspaper, FileText, Settings, Youtube, Instagram, Tag, Search, BarChart2 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -23,7 +23,7 @@ export default function BottomNav() {
 
   const youtubeNav = [
     { icon: LayoutDashboard, label: t('nav.home'), path: "/home" },
-    { icon: Newspaper, label: t('nav.news'), path: "/youtube/news" },
+    { icon: Tag, label: t('nav.seo'), path: "/youtube/seo" },
     { icon: FileText, label: t('nav.scripts'), path: "/youtube/script" },
     { icon: Search, label: t('nav.analyzer'), path: "/youtube/analyzer" },
     { icon: Settings, label: t('nav.settings'), path: "/settings" },

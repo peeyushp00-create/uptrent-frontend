@@ -84,7 +84,6 @@ const App = () => (
               <Route path="/youtube/script" element={<YouTubeScript />} />
               <Route path="/youtube/analyzer" element={<YouTubeAnalyzer />} />
               <Route path="/youtube/trending" element={<YouTubeTrending />} />
-              <Route path="/youtube/news" element={<NewsPage />} />
               <Route path="/studio" element={<ContentStudio />} />
               {/* <Route path="/captions" element={<VideoCaptioner />} /> */}
             </Route>
