@@ -61,21 +61,6 @@ export default function Index() {
     localStorage.getItem("platform") === "youtube" ? "YouTube" : "Instagram";
   const isIG = platform === "Instagram";
 
-  // Center this page on the true full screen (not just the space right of the
-  // sidebar) by measuring the sidebar's actual current width and shifting by
-  // that much — the sidebar can be collapsed (64px) or expanded (256px), so a
-  // hardcoded offset over- or under-corrects depending on that state.
-  const [sidebarWidth, setSidebarWidth] = useState(0);
-  useEffect(() => {
-    const el = document.querySelector("aside");
-    if (!el) return; // mobile: no sidebar, no offset needed
-    const measure = () => setSidebarWidth(el.getBoundingClientRect().width);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
   const niche = (user?.user_metadata?.niches?.[0] || 'content').toLowerCase();
   const firstName = (user?.user_metadata?.full_name || user?.email || 'Creator').split(/[\s@]/)[0];
 
@@ -180,7 +165,6 @@ export default function Index() {
   return (
     <div
       className={`theme-redesign ${theme} min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col items-center justify-center px-5 py-12`}
-      style={{ marginLeft: sidebarWidth ? -(sidebarWidth - 60) : undefined }}
       data-platform={isIG ? undefined : "youtube"}
     >
       {/* BG blob */}
@@ -188,7 +172,7 @@ export default function Index() {
         className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[480px] pointer-events-none rounded-full bg-primary"
         style={{ filter: "blur(90px)" }} />
 
-      <div className="w-full max-w-4xl relative z-10 flex flex-col items-center gap-8">
+      <div className="w-full max-w-5xl relative z-10 flex flex-col items-center gap-8">
 
         {/* Greeting */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&display=swap" />
