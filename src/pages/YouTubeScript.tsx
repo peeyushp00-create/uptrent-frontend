@@ -124,7 +124,7 @@ function SeriesCalendar({ startDate, parts, frequency, accentColor, accentGrad }
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📅 Upload Calendar</p>
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="panel overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <button onClick={prevMonth} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-sm">‹</button>
           <p className="text-sm font-semibold text-foreground">{monthNames[month]} {year}</p>
@@ -316,7 +316,7 @@ export default function YouTubeScript() {
         </div>
       )}
       {r.intro && (
-        <div className="bg-card border border-border rounded-2xl p-4">
+        <div className="panel p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-bold uppercase" style={{ color: YT_COLOR }}>🎬 Intro</p>
             <button onClick={() => copyText(r.intro, `intro${prefix}`)}>{copied === `intro${prefix}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
@@ -325,7 +325,7 @@ export default function YouTubeScript() {
         </div>
       )}
       {r.sections?.map((section: any, i: number) => (
-        <div key={i} className="bg-card border border-border rounded-2xl p-4">
+        <div key={i} className="panel p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-bold uppercase text-muted-foreground">📌 {section.heading}</p>
             <button onClick={() => copyText(section.content, `sec${prefix}-${i}`)}>{copied === `sec${prefix}-${i}` ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}</button>
@@ -391,7 +391,7 @@ export default function YouTubeScript() {
             ) : (
               <div className="space-y-3">
                 {history.map(entry => (
-                  <div key={entry.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+                  <div key={entry.id} className="panel overflow-hidden">
                     <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === entry.id ? null : entry.id)}>
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm" style={{ background: `hsl(var(--primary) / 0.08)`, color: YT_COLOR }}>{entry.topic[0].toUpperCase()}</div>
                       <div className="flex-1 min-w-0">
@@ -627,7 +627,7 @@ export default function YouTubeScript() {
                   </div>
                 )}
                 {seriesScripts.map((item, idx) => (
-                  <div key={idx} className="rounded-2xl border border-border bg-card overflow-hidden">
+                  <div key={idx} className="panel overflow-hidden">
                     <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === `series-${idx}` ? null : `series-${idx}`)}>
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: YT_GRAD }}>{idx + 1}</div>
                       <div className="flex-1 min-w-0">
