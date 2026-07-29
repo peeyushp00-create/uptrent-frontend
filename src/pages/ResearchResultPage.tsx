@@ -61,6 +61,7 @@ export default function ResearchResultPage() {
   const [count, setCount] = useState(0);
   const [reelsLoading, setReelsLoading] = useState(true);
   const [reelsError, setReelsError] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(5);
 
   const [summary, setSummary] = useState<ResearchSummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -78,10 +79,11 @@ export default function ResearchResultPage() {
     if (!query || platform !== "Instagram") return;
     setReelsLoading(true);
     setReelsError(false);
+    setVisibleCount(5);
     fetch(`${BASE}/api/instagram/research?keyword=${encodeURIComponent(query)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
-        setReels(data.top_reels || []);
+        setReels(data.reels || []);
         setCount(data.count || 0);
       })
       .catch(() => setReelsError(true))
@@ -225,17 +227,17 @@ export default function ResearchResultPage() {
             <h2 className="text-xl font-bold text-foreground">The reels behind this report</h2>
             <p className="text-sm text-muted-foreground">Tap any reel to open the full AI breakdown.</p>
 
-            <div className="flex gap-3 overflow-x-auto horizontal-scroll pb-2 pt-2" style={{ scrollSnapType: "x mandatory" }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
               {reelsLoading
                 ? [1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="rounded-xl animate-pulse bg-secondary shrink-0" style={{ aspectRatio: "9/16", width: "150px" }} />
+                    <div key={i} className="rounded-xl animate-pulse bg-secondary" style={{ aspectRatio: "9/16" }} />
                   ))
-                : reels.map((reel) => (
+                : reels.slice(0, visibleCount).map((reel) => (
                     <div
                       key={reel.id}
                       onClick={() => reel.permalink && window.open(reel.permalink, "_blank")}
-                      className="relative rounded-xl overflow-hidden cursor-pointer group shrink-0"
-                      style={{ aspectRatio: "9/16", width: "150px", background: "#1a1a2e", scrollSnapAlign: "start" }}
+                      className="relative rounded-xl overflow-hidden cursor-pointer group"
+                      style={{ aspectRatio: "9/16", background: "#1a1a2e" }}
                     >
                       <img
                         src={getReelThumbnailSrc(reel.thumbnail)}
@@ -262,6 +264,17 @@ export default function ResearchResultPage() {
                     </div>
                   ))}
             </div>
+
+            {!reelsLoading && visibleCount < reels.length && (
+              <div className="flex justify-center pt-2">
+                <button
+                  onClick={() => setVisibleCount((v) => v + 5)}
+                  className="chip"
+                >
+                  Load more ({reels.length - visibleCount} more)
+                </button>
+              </div>
+            )}
 
             {reelsError && !reelsLoading && (
               <p className="text-xs text-muted-foreground text-center py-3">Couldn&apos;t load reels for this topic right now.</p>
