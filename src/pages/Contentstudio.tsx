@@ -8,7 +8,7 @@ import SEO from "@/components/SEO";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
   Pencil, Trash2, Copy, FileText, Lightbulb, Calendar as CalendarIcon, Repeat, Link2,
-  Download, Loader2,
+  Download, Loader2, Layers, Type, Palette, Circle, Sparkles, Save, Search, Undo2, Redo2, Plus,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL;
@@ -614,6 +614,44 @@ function MonthPlanner() {
 // no longer renders its own page header (the shared tab bar above replaces it).
 // ============================================================================
 
+// Resolves a CSS custom property (e.g. "--primary", a raw "H S% L%" triplet
+// per shadcn/Tailwind convention) to a real hsl() string — canvas fillStyle
+// can't parse var() itself since it isn't resolved against any element.
+function resolveCssHsl(varName: string, fallback = "#7c3aed") {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    return v ? `hsl(${v})` : fallback;
+  } catch { return fallback; }
+}
+
+function Waveform({ peaks, width, height = 40, color }: { peaks: number[]; width: number; height?: number; color?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || width <= 0) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+    if (!peaks.length) return;
+    ctx.fillStyle = color || resolveCssHsl("--primary");
+    const barWidth = width / peaks.length;
+    peaks.forEach((p, i) => {
+      const barHeight = Math.max(2, p * height);
+      const x = i * barWidth;
+      const y = (height - barHeight) / 2;
+      ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
+    });
+  }, [peaks, width, height, color]);
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none opacity-60" />;
+}
+
 function SearchReplace({ onReplace }: { onReplace: (find: string, repl: string) => void }) {
   const [find, setFind] = useState("");
   const [repl, setRepl] = useState("");
@@ -644,7 +682,6 @@ function VideoEditor() {
   const [template, setTemplateState] = useState<TemplateId>(() => savedStudioState?.template ?? "minimal");
   const [style, setStyle] = useState<CaptionStyle>(() => savedStudioState?.style ?? TEMPLATES.minimal.style);
   const [wordHighlight, setWordHighlight] = useState<boolean>(() => savedStudioState?.wordHighlight ?? true);
-  const [showMoreStyle, setShowMoreStyle] = useState(false);
   const [offset, setOffset] = useState<number>(() => savedStudioState?.offset ?? 0);
   const [language, setLanguageState] = useState<LangId>(() => savedStudioState?.language ?? "auto");
   const [useRoman, setUseRomanState] = useState<boolean>(() => savedStudioState?.useRoman ?? false);
@@ -653,6 +690,19 @@ function VideoEditor() {
   const [romanSegs, setRomanSegs] = useState<Segment[]>(() => savedStudioState?.romanSegs ?? []);
   const [romanizing, setRomanizing] = useState(false);
   const [history, setHistory] = useState<Segment[][]>(() => savedStudioState?.history ?? []);
+  const [redoStack, setRedoStack] = useState<Segment[][]>([]);
+
+  // ── Caption Designer panel — tabbed reorganization of the style controls,
+  // matching the redesigned Video tab layout. ──
+  const [designerTab, setDesignerTab] = useState<"templates" | "font" | "colors" | "position" | "animation">("templates");
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [templateCategory, setTemplateCategory] = useState<TemplateId | "all">("all");
+
+  // ── Waveform — decoded once per video via Web Audio API. Best-effort: some
+  // containers/codecs can't be demuxed by decodeAudioData, in which case this
+  // just quietly leaves the waveform empty instead of blocking the editor. ──
+  const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
+  const [waveformLoading, setWaveformLoading] = useState(false);
 
   // Keep the active cache (native or roman) in sync with user edits, same
   // pattern as Lovable's editor — every existing setSegments(...) call site
@@ -795,6 +845,43 @@ function VideoEditor() {
   const hasCaptions = segments.length > 0;
   const hasMusic = music.key !== "none";
   const trackWidth = Math.max(duration * PX_PER_SEC, 400);
+
+  useEffect(() => {
+    const url = hostedUrl || videoUrl;
+    if (!url || !duration) { setWaveformPeaks([]); return; }
+    let cancelled = false;
+    setWaveformLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(url);
+        const arrayBuf = await res.arrayBuffer();
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioCtx();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuf);
+        const channel = audioBuffer.getChannelData(0);
+        const numBars = Math.max(1, Math.floor(trackWidth / 3));
+        const samplesPerBar = Math.max(1, Math.floor(channel.length / numBars));
+        const bars: number[] = [];
+        for (let i = 0; i < channel.length; i += samplesPerBar) {
+          let max = 0;
+          for (let j = i; j < Math.min(i + samplesPerBar, channel.length); j++) {
+            const v = Math.abs(channel[j]);
+            if (v > max) max = v;
+          }
+          bars.push(max);
+        }
+        const peak = Math.max(...bars, 0.01);
+        if (!cancelled) setWaveformPeaks(bars.map(b => b / peak));
+        void ctx.close();
+      } catch {
+        if (!cancelled) setWaveformPeaks([]);
+      } finally {
+        if (!cancelled) setWaveformLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostedUrl, videoUrl, duration]);
 
   const capTime = time + offset;
   const activeId = useMemo(() => { const seg = segments.find(s => capTime >= s.start && capTime < s.end); return seg ? seg.id : null; }, [segments, capTime]);
@@ -964,8 +1051,15 @@ function VideoEditor() {
   function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; }
   function editSeg(id: number, text: string) { setSegments(prev => prev.map(s => (s.id === id ? { ...s, text } : s))); }
 
-  function pushHistory() { setHistory(h => { const snap = JSON.stringify(segments); if (h.length && JSON.stringify(h[h.length - 1]) === snap) return h; return [...h.slice(-49), JSON.parse(snap)]; }); }
-  function undo() { setHistory(h => { if (!h.length) return h; setSegments(h[h.length - 1]); return h.slice(0, -1); }); }
+  function pushHistory() { setHistory(h => { const snap = JSON.stringify(segments); if (h.length && JSON.stringify(h[h.length - 1]) === snap) return h; setRedoStack([]); return [...h.slice(-49), JSON.parse(snap)]; }); }
+  function undo() { setHistory(h => { if (!h.length) return h; setRedoStack(r => [...r, segments]); setSegments(h[h.length - 1]); return h.slice(0, -1); }); }
+  function redo() { setRedoStack(r => { if (!r.length) return r; setHistory(h => [...h, segments]); setSegments(r[r.length - 1]); return r.slice(0, -1); }); }
+  function addCaption() {
+    pushHistory();
+    const start = time;
+    const end = Math.min(duration || start + 2, start + 2);
+    setSegments(prev => reindex([...prev, { id: -1, start, end, text: "New caption" }].sort((a, b) => a.start - b.start)));
+  }
   useEffect(() => { const onKey = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); } }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); });
   function splitSeg(id: number) {
     const seg = segments.find(s => s.id === id); if (!seg) return;
@@ -1382,9 +1476,116 @@ function VideoEditor() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-[320px_1fr] gap-6 items-start">
+          <div className="grid md:grid-cols-[320px_1fr_340px] gap-4 items-start">
+
+            {/* left column: transcript */}
             <div className="space-y-4">
-              <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16]">
+              {hasCaptions ? (
+                <div className="panel p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Type className="size-4" style={{ color: PURPLE }} />
+                      <h2 className="font-bold text-foreground text-sm">Transcript</h2>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{segments.length} lines</span>
+                  </div>
+
+                  {/* Language + undo/redo/re-transcribe */}
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <select
+                      value={useRoman ? `${language}-roman` : language}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v.endsWith("-roman")) { setLanguage(v.slice(0, -"-roman".length) as LangId); void setUseRoman(true); }
+                        else { setLanguage(v as LangId); void setUseRoman(false); }
+                      }}
+                      disabled={romanizing}
+                      className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs">
+                      {LANGUAGES.flatMap(l => {
+                        const label = l.native ? `${l.label} — ${l.native}` : l.label;
+                        const rows = [<option key={l.id} value={l.id}>{label}</option>];
+                        if (l.roman) rows.push(<option key={`${l.id}-roman`} value={`${l.id}-roman`}>{l.roman} (Romanized)</option>);
+                        return rows;
+                      })}
+                    </select>
+                    <button onClick={undo} disabled={!history.length} title="Undo"
+                      className="shrink-0 h-8 w-8 rounded-md border border-border flex items-center justify-center transition disabled:opacity-40 hover:bg-accent"
+                      style={{ color: history.length ? PURPLE : undefined }}>
+                      <Undo2 className="size-3.5" />
+                    </button>
+                    <button onClick={redo} disabled={!redoStack.length} title="Redo"
+                      className="shrink-0 h-8 w-8 rounded-md border border-border flex items-center justify-center transition disabled:opacity-40 hover:bg-accent"
+                      style={{ color: redoStack.length ? PURPLE : undefined }}>
+                      <Redo2 className="size-3.5" />
+                    </button>
+                    <button onClick={transcribe} disabled={status === "uploading" || status === "transcribing"} title="Re-transcribe"
+                      className="shrink-0 h-8 w-8 rounded-md text-white flex items-center justify-center transition disabled:opacity-40 hover:opacity-90"
+                      style={{ background: GRAD }}>
+                      {status === "transcribing" || status === "uploading" ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                    </button>
+                  </div>
+                  {romanizing && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
+                      <Loader2 className="size-3 animate-spin" /> Converting…
+                    </div>
+                  )}
+
+                  {/* Search & replace */}
+                  <SearchReplace onReplace={(find, repl) => {
+                    if (!find) return;
+                    const re = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+                    pushHistory();
+                    setSegments(prev => prev.map(s => ({ ...s, text: s.text.replace(re, repl) })));
+                  }} />
+
+                  {/* Caption offset */}
+                  <div className="mt-2 mb-3">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                      <span>Caption offset</span>
+                      <span className="tabular-nums">{offset >= 0 ? "+" : ""}{offset.toFixed(2)}s</span>
+                    </div>
+                    <input type="range" min={-2} max={2} step={0.05} value={offset} onChange={e => setOffset(parseFloat(e.target.value))} className="w-full accent-purple-600" />
+                  </div>
+
+                  <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
+                    {segments.map(s => { const active = s.id === activeId; return (
+                      <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
+                        className="group flex gap-3 p-3 rounded-xl border border-border transition"
+                        style={active ? { borderColor: PURPLE, background: `${PURPLE}10`, boxShadow: `0 0 0 1px ${PURPLE}` } : {}}>
+                        <button onClick={() => seek(s.start)} className="shrink-0 text-xs font-mono mt-1 px-1.5 py-0.5 rounded transition text-muted-foreground"
+                          style={active ? { color: PURPLE } : {}}>{fmt(s.start)}</button>
+                        <textarea value={s.text} onFocus={pushHistory} onChange={e => editSeg(s.id, e.target.value)}
+                          onSelect={e => { caretRef.current = { id: s.id, pos: e.currentTarget.selectionStart }; }}
+                          rows={1} className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed text-foreground"
+                          style={{ minHeight: 24 }}
+                          onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
+                        <div className="shrink-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
+                          <button onClick={() => splitSeg(s.id)} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 transition">Split</button>
+                          <button onClick={() => mergeUp(s.id)} disabled={s.id === 0} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 disabled:opacity-30 transition">Merge↑</button>
+                        </div>
+                      </div>); })}
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3">
+                    <button onClick={addCaption}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md border border-dashed border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-purple-400 transition">
+                      <Plus className="size-3" /> Add caption
+                    </button>
+                    <button onClick={exportSrt} disabled={!segments.length}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-white text-xs font-semibold disabled:opacity-50"
+                      style={{ background: GRAD }}>
+                      <Download className="size-3" /> Export .srt
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-card flex items-center justify-center text-sm text-muted-foreground p-10 text-center">Transcribe to edit captions here.</div>
+              )}
+            </div>
+
+            {/* center column: video */}
+            <div className="space-y-4">
+              <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] mx-auto w-full" style={{ maxWidth: 340 }}>
                 {/* Video — shrinks to its half when a half overlay is active */}
                 <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
                   style={{
@@ -1468,7 +1669,7 @@ function VideoEditor() {
                 </div>
               )}
 
-              {!hasCaptions ? (
+              {!hasCaptions && (
                 <div className="panel p-5 text-center space-y-3">
                   <div className="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg font-bold" style={{ background: `${PURPLE}15`, color: PURPLE }}>T</div>
                   <div>
@@ -1482,310 +1683,282 @@ function VideoEditor() {
                   </button>
                   {error && <p className="text-red-500 text-xs">{error}</p>}
                 </div>
-              ) : (
-                <div className="panel p-4 space-y-4">
+              )}
+            </div>
+
+            {/* right column: caption designer */}
+            <div className="space-y-4">
+              {hasCaptions ? (
+                <div className="panel p-4 space-y-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Style</p>
+                    <Sparkles className="size-4" style={{ color: PURPLE }} />
+                    <h2 className="font-bold text-foreground text-sm">Caption Designer</h2>
                   </div>
 
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">Template</p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {(Object.keys(TEMPLATES) as TemplateId[]).map(id => {
-                        const tpl = TEMPLATES[id];
-                        const active = template === id;
-                        return (
-                          <button key={id} onClick={() => setTemplate(id)}
-                            className="rounded-lg border overflow-hidden text-left transition-all"
-                            style={active ? { borderColor: PURPLE, boxShadow: `0 0 0 1px ${PURPLE}66` } : { borderColor: "hsl(var(--border))" }}>
-                            <div className="h-9 grid place-items-center px-2" style={{ backgroundImage: "linear-gradient(135deg, rgba(30,30,40,0.9), rgba(10,10,20,0.9))" }}>
-                              <span style={{ fontFamily: tpl.style.fontFamily, fontWeight: tpl.style.fontWeight, color: tpl.style.textColor, textTransform: tpl.style.uppercase ? "uppercase" : "none", fontSize: "0.8rem", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>Aa</span>
-                            </div>
-                            <div className="px-2 py-1 bg-card"><div className="text-[10px] font-medium leading-tight">{tpl.label}</div></div>
+                  {/* Tab icon row */}
+                  <div className="flex items-center gap-1 p-1 rounded-lg bg-accent/40">
+                    {([
+                      ["templates", Layers, "Templates"],
+                      ["font", Type, "Font"],
+                      ["colors", Palette, "Colors"],
+                      ["position", Circle, "Position"],
+                      ["animation", Sparkles, "Animation"],
+                    ] as const).map(([id, Icon, label]) => (
+                      <button key={id} onClick={() => setDesignerTab(id)} title={label}
+                        className="flex-1 h-8 rounded-md flex items-center justify-center transition"
+                        style={designerTab === id ? { background: "hsl(var(--card))", color: PURPLE, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" } : { color: "hsl(var(--muted-foreground))" }}>
+                        <Icon className="size-3.5" />
+                      </button>
+                    ))}
+                    <button onClick={saveProject} disabled={saving} title="Save project"
+                      className="flex-1 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground transition">
+                      {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+                    </button>
+                  </div>
+
+                  {designerTab === "templates" && (() => {
+                    const filtered = (Object.keys(TEMPLATES) as TemplateId[]).filter(id => {
+                      if (templateCategory !== "all" && id !== templateCategory) return false;
+                      if (templateSearch.trim() && !TEMPLATES[id].label.toLowerCase().includes(templateSearch.trim().toLowerCase())) return false;
+                      return true;
+                    });
+                    return (
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                          <input value={templateSearch} onChange={e => setTemplateSearch(e.target.value)} placeholder="Search templates…"
+                            className="w-full h-8 pl-8 pr-2 rounded-md bg-background border border-border text-xs" />
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <button onClick={() => setTemplateCategory("all")}
+                            className="px-2.5 py-1 rounded-full text-[11px] font-semibold border transition"
+                            style={templateCategory === "all" ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                            All
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                          {(Object.keys(TEMPLATES) as TemplateId[]).map(id => (
+                            <button key={id} onClick={() => setTemplateCategory(id)}
+                              className="px-2.5 py-1 rounded-full text-[11px] font-semibold border transition"
+                              style={templateCategory === id ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                              {TEMPLATES[id].label}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">{filtered.length} template{filtered.length === 1 ? "" : "s"}</p>
+                        <div className="grid grid-cols-2 gap-2 max-h-[38vh] overflow-y-auto pr-1">
+                          {filtered.map(id => {
+                            const tpl = TEMPLATES[id];
+                            const active = template === id;
+                            return (
+                              <button key={id} onClick={() => setTemplate(id)}
+                                className="rounded-xl border overflow-hidden text-left transition-all"
+                                style={active ? { borderColor: PURPLE, boxShadow: `0 0 0 2px ${PURPLE}66` } : { borderColor: "hsl(var(--border))" }}>
+                                <div className="h-14 grid place-items-center" style={{ backgroundImage: "linear-gradient(135deg, rgba(30,30,40,0.9), rgba(10,10,20,0.9))" }}>
+                                  <span style={{ fontFamily: tpl.style.fontFamily, fontWeight: tpl.style.fontWeight, color: tpl.style.textColor, textTransform: tpl.style.uppercase ? "uppercase" : "none", fontSize: "1rem", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>Ab c</span>
+                                </div>
+                                <div className="px-2.5 py-2 bg-card">
+                                  <div className="text-xs font-semibold text-foreground leading-tight">{tpl.label}</div>
+                                  {active && <div className="text-[10px] mt-0.5" style={{ color: PURPLE }}>Selected</div>}
+                                </div>
+                              </button>
+                            );
+                          })}
+                          {filtered.length === 0 && <p className="col-span-2 text-center text-xs text-muted-foreground py-6">No templates match.</p>}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Font</p>
-                    <select value={style.fontFamily} onChange={e => patchStyle({ fontFamily: e.target.value })}
-                      className="w-full h-8 rounded-md bg-background border border-border px-2 text-xs">
-                      {FONTS.map(f => (<option key={f.id} value={f.id}>{f.label}</option>))}
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Size {style.fontSize.toFixed(2)}</p>
-                      <input type="range" min={0.8} max={3.5} step={0.05} value={style.fontSize} onChange={e => patchStyle({ fontSize: parseFloat(e.target.value) })} className="w-full accent-purple-600" />
+                  {designerTab === "font" && (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Font</p>
+                        <select value={style.fontFamily} onChange={e => patchStyle({ fontFamily: e.target.value })}
+                          className="w-full h-8 rounded-md bg-background border border-border px-2 text-xs">
+                          {FONTS.map(f => (<option key={f.id} value={f.id}>{f.label}</option>))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Size {style.fontSize.toFixed(2)}</p>
+                          <input type="range" min={0.8} max={3.5} step={0.05} value={style.fontSize} onChange={e => patchStyle({ fontSize: parseFloat(e.target.value) })} className="w-full accent-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Weight</p>
+                          <div className="grid grid-cols-4 gap-1">
+                            {[400, 600, 700, 900].map(w => (
+                              <button key={w} onClick={() => patchStyle({ fontWeight: w })}
+                                className="h-7 rounded text-[10px] border font-medium"
+                                style={style.fontWeight === w ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{w}</button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <label className="flex items-center justify-between text-xs pt-1 border-t border-border">
+                        <span>Uppercase</span>
+                        <button onClick={() => patchStyle({ uppercase: !style.uppercase })}
+                          className="relative w-9 h-5 rounded-full transition" style={{ background: style.uppercase ? PURPLE : "hsl(var(--muted))" }}>
+                          <span className="absolute top-0.5 size-4 bg-white rounded-full transition" style={{ left: style.uppercase ? 16 : 2 }} />
+                        </button>
+                      </label>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Weight</p>
-                      <div className="grid grid-cols-4 gap-1">
-                        {[400, 600, 700, 900].map(w => (
-                          <button key={w} onClick={() => patchStyle({ fontWeight: w })}
-                            className="h-7 rounded text-[10px] border font-medium"
-                            style={style.fontWeight === w ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{w}</button>
-                        ))}
+                  )}
+
+                  {designerTab === "colors" && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="block">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Text</span>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <input type="color" value={style.textColor} onChange={e => patchStyle({ textColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                            <input type="text" value={style.textColor} onChange={e => patchStyle({ textColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
+                          </div>
+                        </label>
+                        <label className="block">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Highlight</span>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <input type="color" value={style.highlightColor} onChange={e => patchStyle({ highlightColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                            <input type="text" value={style.highlightColor} onChange={e => patchStyle({ highlightColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
+                          </div>
+                        </label>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Background</p>
+                        <div className="grid grid-cols-3 gap-1">
+                          {([{ id: "" as const, label: "None" }, { id: "solid" as const, label: "Box" }, { id: "pill" as const, label: "Pill" }]).map(b => (
+                            <button key={b.id} onClick={() => patchStyle({ background: b.id })}
+                              className="h-7 rounded text-[10px] border font-medium"
+                              style={style.background === b.id ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{b.label}</button>
+                          ))}
+                        </div>
+                        {style.background && (
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <input type="color" value={style.bgColor} onChange={e => patchStyle({ bgColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                            <input type="text" value={style.bgColor} onChange={e => patchStyle({ bgColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="block">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Text</span>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <input type="color" value={style.textColor} onChange={e => patchStyle({ textColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
-                        <input type="text" value={style.textColor} onChange={e => patchStyle({ textColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
-                      </div>
-                    </label>
-                    <label className="block">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Highlight</span>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <input type="color" value={style.highlightColor} onChange={e => patchStyle({ highlightColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
-                        <input type="text" value={style.highlightColor} onChange={e => patchStyle({ highlightColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
-                      </div>
-                    </label>
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Background</p>
-                    <div className="grid grid-cols-3 gap-1">
-                      {([{ id: "" as const, label: "None" }, { id: "solid" as const, label: "Box" }, { id: "pill" as const, label: "Pill" }]).map(b => (
-                        <button key={b.id} onClick={() => patchStyle({ background: b.id })}
-                          className="h-7 rounded text-[10px] border font-medium"
-                          style={style.background === b.id ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{b.label}</button>
-                      ))}
-                    </div>
-                    {style.background && (
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <input type="color" value={style.bgColor} onChange={e => patchStyle({ bgColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
-                        <input type="text" value={style.bgColor} onChange={e => patchStyle({ bgColor: e.target.value })} className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs font-mono" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
+                  {designerTab === "position" && (
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Position</p>
-                      <div className="grid grid-cols-3 gap-1">
+                      <div className="grid grid-cols-3 gap-1.5">
                         {(["top", "middle", "bottom"] as CapPosition[]).map(p => (
                           <button key={p} onClick={() => patchStyle({ position: p })}
-                            className="h-7 rounded text-[10px] border capitalize font-medium"
-                            style={style.position === p ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{p.charAt(0)}</button>
+                            className="h-8 rounded text-xs border capitalize font-medium"
+                            style={style.position === p ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{p}</button>
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Animation</p>
-                      <select value={style.animation} onChange={e => patchStyle({ animation: e.target.value as CapAnimation })}
-                        className="w-full h-7 rounded-md bg-background border border-border px-2 text-xs capitalize">
-                        {(["none", "fade", "pop", "slide"] as CapAnimation[]).map(a => (<option key={a} value={a}>{a}</option>))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <label className="flex items-center justify-between text-xs">
-                    <span>Word highlight</span>
-                    <button onClick={() => setWordHighlight(v => !v)}
-                      className="relative w-9 h-5 rounded-full transition" style={{ background: wordHighlight ? PURPLE : "hsl(var(--muted))" }}>
-                      <span className="absolute top-0.5 size-4 bg-white rounded-full transition" style={{ left: wordHighlight ? 16 : 2 }} />
-                    </button>
-                  </label>
-
-                  <button onClick={() => setShowMoreStyle(v => !v)} className="w-full flex items-center justify-between text-[11px] text-muted-foreground hover:text-foreground pt-1">
-                    <span>More</span><span>{showMoreStyle ? "▲" : "▼"}</span>
-                  </button>
-                  {showMoreStyle && (
-                    <label className="flex items-center justify-between text-xs pt-1 border-t border-border">
-                      <span>Uppercase</span>
-                      <button onClick={() => patchStyle({ uppercase: !style.uppercase })}
-                        className="relative w-9 h-5 rounded-full transition" style={{ background: style.uppercase ? PURPLE : "hsl(var(--muted))" }}>
-                        <span className="absolute top-0.5 size-4 bg-white rounded-full transition" style={{ left: style.uppercase ? 16 : 2 }} />
-                      </button>
-                    </label>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* right column: transcript + music */}
-            <div className="space-y-5">
-              {hasCaptions ? (
-                <div className="panel p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
-                      <h2 className="font-bold text-foreground text-sm">Transcript</h2>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button onClick={undo} disabled={!history.length}
-                        className="text-xs font-semibold px-2 py-1 rounded-lg border border-border transition disabled:opacity-40"
-                        style={{ color: history.length ? PURPLE : undefined }}>↺ Undo</button>
-                      <span className="text-xs text-muted-foreground">{segments.length} lines</span>
-                    </div>
-                  </div>
-
-                  {/* Language + romanization */}
-                  <div className="flex gap-2 mb-2">
-                    <select
-                      value={useRoman ? `${language}-roman` : language}
-                      onChange={e => {
-                        const v = e.target.value;
-                        if (v.endsWith("-roman")) { setLanguage(v.slice(0, -"-roman".length) as LangId); void setUseRoman(true); }
-                        else { setLanguage(v as LangId); void setUseRoman(false); }
-                      }}
-                      disabled={romanizing}
-                      className="flex-1 min-w-0 h-8 rounded-md bg-background border border-border px-2 text-xs">
-                      {LANGUAGES.flatMap(l => {
-                        const label = l.native ? `${l.label} — ${l.native}` : l.label;
-                        const rows = [<option key={l.id} value={l.id}>{label}</option>];
-                        if (l.roman) rows.push(<option key={`${l.id}-roman`} value={`${l.id}-roman`}>{l.roman} (Romanized)</option>);
-                        return rows;
-                      })}
-                    </select>
-                    <button onClick={transcribe} disabled={status === "uploading" || status === "transcribing"}
-                      title="Re-transcribe" className="h-8 px-2 rounded-md border border-border text-xs hover:bg-accent inline-flex items-center gap-1" style={{ color: PURPLE }}>
-                      Re-transcribe
-                    </button>
-                  </div>
-                  {romanizing && (
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
-                      <Loader2 className="size-3 animate-spin" /> Converting…
-                    </div>
                   )}
 
-                  {/* Search & replace */}
-                  <SearchReplace onReplace={(find, repl) => {
-                    if (!find) return;
-                    const re = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-                    pushHistory();
-                    setSegments(prev => prev.map(s => ({ ...s, text: s.text.replace(re, repl) })));
-                  }} />
-
-                  {/* Caption offset */}
-                  <div className="mt-2 mb-3">
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
-                      <span>Caption offset</span>
-                      <span className="tabular-nums">{offset >= 0 ? "+" : ""}{offset.toFixed(2)}s</span>
+                  {designerTab === "animation" && (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Animation</p>
+                        <select value={style.animation} onChange={e => patchStyle({ animation: e.target.value as CapAnimation })}
+                          className="w-full h-8 rounded-md bg-background border border-border px-2 text-xs capitalize">
+                          {(["none", "fade", "pop", "slide"] as CapAnimation[]).map(a => (<option key={a} value={a}>{a}</option>))}
+                        </select>
+                      </div>
+                      <label className="flex items-center justify-between text-xs pt-1 border-t border-border">
+                        <span>Word highlight</span>
+                        <button onClick={() => setWordHighlight(v => !v)}
+                          className="relative w-9 h-5 rounded-full transition" style={{ background: wordHighlight ? PURPLE : "hsl(var(--muted))" }}>
+                          <span className="absolute top-0.5 size-4 bg-white rounded-full transition" style={{ left: wordHighlight ? 16 : 2 }} />
+                        </button>
+                      </label>
                     </div>
-                    <input type="range" min={-2} max={2} step={0.05} value={offset} onChange={e => setOffset(parseFloat(e.target.value))} className="w-full accent-purple-600" />
-                  </div>
-
-                  <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
-                    {segments.map(s => { const active = s.id === activeId; return (
-                      <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
-                        className="group flex gap-3 p-3 rounded-xl border border-border transition"
-                        style={active ? { borderColor: PURPLE, background: `${PURPLE}10`, boxShadow: `0 0 0 1px ${PURPLE}` } : {}}>
-                        <button onClick={() => seek(s.start)} className="shrink-0 text-xs font-mono mt-1 px-1.5 py-0.5 rounded transition text-muted-foreground"
-                          style={active ? { color: PURPLE } : {}}>{fmt(s.start)}</button>
-                        <textarea value={s.text} onFocus={pushHistory} onChange={e => editSeg(s.id, e.target.value)}
-                          onSelect={e => { caretRef.current = { id: s.id, pos: e.currentTarget.selectionStart }; }}
-                          rows={1} className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed text-foreground"
-                          style={{ minHeight: 24 }}
-                          onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
-                        <div className="shrink-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
-                          <button onClick={() => splitSeg(s.id)} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 transition">Split</button>
-                          <button onClick={() => mergeUp(s.id)} disabled={s.id === 0} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 disabled:opacity-30 transition">Merge↑</button>
-                        </div>
-                      </div>); })}
-                  </div>
-                  <button onClick={exportSrt} disabled={!segments.length}
-                    className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-white text-xs font-semibold disabled:opacity-50"
-                    style={{ background: GRAD }}>
-                    <Download className="size-3" /> Export .srt
-                  </button>
+                  )}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-card flex items-center justify-center text-sm text-muted-foreground p-10 text-center">Transcribe to edit captions here.</div>
+                <div className="rounded-2xl border border-dashed border-border bg-card flex items-center justify-center text-sm text-muted-foreground p-10 text-center">Transcribe your video to customize captions here.</div>
               )}
+            </div>
+          </div>
 
-              {/* Music */}
-              <div className="panel p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
-                    <h2 className="font-bold text-foreground text-sm">Music</h2>
+          {/* Music — full width, below the 3-column layout */}
+          <div className="panel p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-4 rounded-full" style={{ background: PURPLE }} />
+                <h2 className="font-bold text-foreground text-sm">Music</h2>
+              </div>
+              {hasMusic && <span className="text-xs text-muted-foreground">drag the bar on the timeline</span>}
+            </div>
+
+            {/* Original audio */}
+            <div className="rounded-xl bg-accent/40 p-3 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Original Audio</p>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setMuteOriginal(v => !v)}
+                  className="shrink-0 w-8 h-8 rounded-lg border border-border flex items-center justify-center text-sm transition hover:bg-accent"
+                  style={muteOriginal ? { borderColor: PURPLE, background: `${PURPLE}15` } : {}}>
+                  {muteOriginal ? "🔇" : "🔊"}
+                </button>
+                <div className="flex-1">
+                  <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
+                    <span>{muteOriginal ? "Muted" : "Volume"}</span><span>{Math.round(originalVolume * 100)}%</span>
                   </div>
-                  {hasMusic && <span className="text-xs text-muted-foreground">drag the bar on the timeline</span>}
+                  <input type="range" min={0} max={1} step={0.05} value={originalVolume}
+                    disabled={muteOriginal}
+                    onChange={e => { const v = parseFloat(e.target.value); setOriginalVolume(v); if (videoRef.current) videoRef.current.volume = v; }}
+                    className="w-full accent-purple-600 disabled:opacity-40" />
                 </div>
-
-                {/* Original audio */}
-                <div className="rounded-xl bg-accent/40 p-3 space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Original Audio</p>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setMuteOriginal(v => !v)}
-                      className="shrink-0 w-8 h-8 rounded-lg border border-border flex items-center justify-center text-sm transition hover:bg-accent"
-                      style={muteOriginal ? { borderColor: PURPLE, background: `${PURPLE}15` } : {}}>
-                      {muteOriginal ? "🔇" : "🔊"}
-                    </button>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
-                        <span>{muteOriginal ? "Muted" : "Volume"}</span><span>{Math.round(originalVolume * 100)}%</span>
-                      </div>
-                      <input type="range" min={0} max={1} step={0.05} value={originalVolume}
-                        disabled={muteOriginal}
-                        onChange={e => { const v = parseFloat(e.target.value); setOriginalVolume(v); if (videoRef.current) videoRef.current.volume = v; }}
-                        className="w-full accent-purple-600 disabled:opacity-40" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Music kit */}
-                <div className="space-y-3">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Music Kit</p>
-                  <div className="flex flex-wrap gap-2">
-                    {MUSIC.map(m => (
-                      <button key={m.key} onClick={() => setMusic(m)}
-                        className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
-                        style={music.key === m.key ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
-                        {m.label}
-                      </button>
-                    ))}
-                    {uploadedMusic.map(m => (
-                      <span key={m.key} className="inline-flex items-center rounded-lg border border-border text-sm overflow-hidden"
-                        style={music.key === m.key ? { borderColor: PURPLE, background: `${PURPLE}15` } : {}}>
-                        <button onClick={() => setMusic(m)} className="px-3 py-1.5 font-medium" style={{ color: music.key === m.key ? PURPLE : undefined }}>♪ {m.label}</button>
-                        <button onClick={() => { setUploadedMusic(prev => prev.filter(t => t.key !== m.key)); if (music.key === m.key) setMusic(MUSIC[0]); }}
-                          className="px-2 py-1.5 text-muted-foreground hover:text-red-500 border-l border-border transition">✕</button>
-                      </span>
-                    ))}
-                    <label className="px-3 py-1.5 rounded-lg border border-dashed border-border text-sm cursor-pointer text-muted-foreground hover:text-foreground transition">
-                      {uploadingMusic ? "Uploading…" : "+ Upload"}
-                      <input type="file" accept="audio/*" onChange={uploadMusic} className="hidden" disabled={uploadingMusic} />
-                    </label>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground/50">Only upload music you have the rights to use.</p>
-                </div>
-
-                {hasMusic && (
-                  <div className="space-y-4 pt-1 border-t border-border">
-                    <div className="grid sm:grid-cols-2 gap-4 pt-2">
-                      <label className="block">
-                        <span className="text-[11px] text-muted-foreground">Music volume {Math.round(volume * 100)}%</span>
-                        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => { const v = parseFloat(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v; }} className="w-full accent-purple-600 mt-1" />
-                      </label>
-                      <label className="block">
-                        <span className="text-[11px] text-muted-foreground">Start from {fmt(songTrim)}</span>
-                        <input type="range" min={0} max={60} step={1} value={songTrim} onChange={e => setSongTrim(parseInt(e.target.value))} className="w-full accent-purple-600 mt-1" />
-                      </label>
-                    </div>
-                    <div className="flex gap-2 max-w-xs">
-                      {[{ k: "in", v: fadeIn, set: setFadeIn }, { k: "out", v: fadeOut, set: setFadeOut }].map(f => (
-                        <button key={f.k} onClick={() => f.set(!f.v)}
-                          className="flex-1 px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
-                          style={f.v ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
-                          Fade {f.k}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
+
+            {/* Music kit */}
+            <div className="space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Music Kit</p>
+              <div className="flex flex-wrap gap-2">
+                {MUSIC.map(m => (
+                  <button key={m.key} onClick={() => setMusic(m)}
+                    className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
+                    style={music.key === m.key ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                    {m.label}
+                  </button>
+                ))}
+                {uploadedMusic.map(m => (
+                  <span key={m.key} className="inline-flex items-center rounded-lg border border-border text-sm overflow-hidden"
+                    style={music.key === m.key ? { borderColor: PURPLE, background: `${PURPLE}15` } : {}}>
+                    <button onClick={() => setMusic(m)} className="px-3 py-1.5 font-medium" style={{ color: music.key === m.key ? PURPLE : undefined }}>♪ {m.label}</button>
+                    <button onClick={() => { setUploadedMusic(prev => prev.filter(t => t.key !== m.key)); if (music.key === m.key) setMusic(MUSIC[0]); }}
+                      className="px-2 py-1.5 text-muted-foreground hover:text-red-500 border-l border-border transition">✕</button>
+                  </span>
+                ))}
+                <label className="px-3 py-1.5 rounded-lg border border-dashed border-border text-sm cursor-pointer text-muted-foreground hover:text-foreground transition">
+                  {uploadingMusic ? "Uploading…" : "+ Upload"}
+                  <input type="file" accept="audio/*" onChange={uploadMusic} className="hidden" disabled={uploadingMusic} />
+                </label>
+              </div>
+              <p className="text-[10px] text-muted-foreground/50">Only upload music you have the rights to use.</p>
+            </div>
+
+            {hasMusic && (
+              <div className="space-y-4 pt-1 border-t border-border">
+                <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                  <label className="block">
+                    <span className="text-[11px] text-muted-foreground">Music volume {Math.round(volume * 100)}%</span>
+                    <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => { const v = parseFloat(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v; }} className="w-full accent-purple-600 mt-1" />
+                  </label>
+                  <label className="block">
+                    <span className="text-[11px] text-muted-foreground">Start from {fmt(songTrim)}</span>
+                    <input type="range" min={0} max={60} step={1} value={songTrim} onChange={e => setSongTrim(parseInt(e.target.value))} className="w-full accent-purple-600 mt-1" />
+                  </label>
+                </div>
+                <div className="flex gap-2 max-w-xs">
+                  {[{ k: "in", v: fadeIn, set: setFadeIn }, { k: "out", v: fadeOut, set: setFadeOut }].map(f => (
+                    <button key={f.k} onClick={() => f.set(!f.v)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-border text-sm font-medium transition"
+                      style={f.v ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>
+                      Fade {f.k}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Timeline (dark) */}
@@ -1813,9 +1986,13 @@ function VideoEditor() {
                   <div className="h-10 p-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
                     <div className="h-full rounded-lg flex items-center px-3 text-xs text-white font-medium overflow-hidden" style={{ width: Math.max(trackWidth - 8, 60), background: GRAD }}>{file?.name || "video.mp4"}</div>
                   </div>
-                  {/* Captions */}
+                  {/* Captions — waveform behind the caption chips */}
                   <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
-                    {segments.map(s => (<div key={s.id} className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center" style={{ left: s.start * PX_PER_SEC, width: Math.max((s.end - s.start) * PX_PER_SEC, 10), background: "hsl(var(--primary) / 0.35)", color: "hsl(var(--primary-foreground))" }}>{s.text.slice(0, 12)}</div>))}
+                    {waveformPeaks.length > 0 && <Waveform peaks={waveformPeaks} width={trackWidth} height={40} />}
+                    {waveformLoading && waveformPeaks.length === 0 && (
+                      <span className="absolute inset-0 flex items-center px-2 text-[9px] text-muted-foreground/60">Decoding audio…</span>
+                    )}
+                    {segments.map(s => (<div key={s.id} className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center" style={{ left: s.start * PX_PER_SEC, width: Math.max((s.end - s.start) * PX_PER_SEC, 10), background: "hsl(var(--primary) / 0.55)", color: "hsl(var(--primary-foreground))" }}>{s.text.slice(0, 12)}</div>))}
                   </div>
                   {/* Overlays */}
                   <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
