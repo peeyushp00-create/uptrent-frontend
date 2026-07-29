@@ -1015,42 +1015,6 @@ export default function InstagramAnalyzer() {
           </div>
         )}
 
-        {/* Trending reels — real reels for the creator's niche, kept visible even after analyzing a competitor */}
-        {(trendingLoading || trendingReels.length > 0) && (
-          <div className="panel p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
-              <h2 className="font-bold text-sm text-foreground">{t('analyzer.trending_reels')}</h2>
-            </div>
-            {trendingLoading ? (
-              <div className="flex gap-2 overflow-x-auto">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="rounded-xl animate-pulse bg-secondary shrink-0" style={{ aspectRatio: '9/16', width: '110px' }} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
-                {trendingReels.map((reel: any, i: number) => (
-                  <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
-                    className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
-                    <img src={getReelThumbnailSrc(reel.thumbnail)} alt={getReelAltText(reel.caption, reel.username)}
-                      referrerPolicy="no-referrer" loading="lazy" decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      onError={handleReelThumbnailError} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Eye className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.views) || 0)}</span>
-                        <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.likes) || 0)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Competitor Tracker — hidden while viewing search results */}
         {!((result || hiker) && !loading) && (
         <div className="panel p-4">
@@ -1793,6 +1757,42 @@ export default function InstagramAnalyzer() {
               </div>
             ) : null}
           </motion.div>
+        )}
+
+        {/* Trending reels — real reels for the creator's niche, kept below the competitor analyzer */}
+        {(trendingLoading || trendingReels.length > 0) && (
+          <div className="panel p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
+              <h2 className="font-bold text-sm text-foreground">{t('analyzer.trending_reels')}</h2>
+            </div>
+            {trendingLoading ? (
+              <div className="flex gap-2 overflow-x-auto">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="rounded-xl animate-pulse bg-secondary shrink-0" style={{ aspectRatio: '9/16', width: '110px' }} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
+                {trendingReels.map((reel: any, i: number) => (
+                  <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
+                    className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
+                    <img src={getReelThumbnailSrc(reel.thumbnail)} alt={getReelAltText(reel.caption, reel.username)}
+                      referrerPolicy="no-referrer" loading="lazy" decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={handleReelThumbnailError} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Eye className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.views) || 0)}</span>
+                        <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.likes) || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
       </main>
