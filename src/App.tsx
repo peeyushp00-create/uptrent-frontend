@@ -20,6 +20,7 @@ import YouTubeScript from "./pages/YouTubeScript";
 import YouTubeAnalyzer from "./pages/YouTubeAnalyzer";
 import YouTubeTrending from "./pages/YouTubeTrending";
 import InstagramAnalyzer from "./pages/InstagramAnalyzer";
+import ResearchResultPage from "./pages/ResearchResultPage";
 import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
 import ContentStudio from "./pages/Contentstudio";
@@ -69,6 +70,12 @@ const App = () => (
             {/* Temporarily public while the scraper integration is tested. */}
             <Route path="/instagram/analyzer" element={<AppLayout />}>
               <Route index element={<InstagramAnalyzer />} />
+            </Route>
+
+            {/* Reached straight from the Home page's research composer — kept
+                public to match /home, which it's always navigated from. */}
+            <Route path="/research" element={<AppLayout />}>
+              <Route index element={<ResearchResultPage />} />
             </Route>
 
             {/* ── Protected app routes ── */}

@@ -171,7 +171,7 @@ export default function Index() {
         setResearchStep(RESEARCH_STEPS.length - 1);
         await new Promise((r) => setTimeout(r, 550));
         setResearching(false);
-        navigate('/news', { state: { query: data.topic || q } });
+        navigate('/research', { state: { query: data.topic || q } });
         return;
       }
       setResearching(false);
