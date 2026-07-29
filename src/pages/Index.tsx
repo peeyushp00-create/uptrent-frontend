@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, ArrowRight, X } from "lucide-react";
+import { Sparkles, Send, ArrowRight, X, CheckCircle2, Loader2, Circle, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
@@ -50,6 +50,22 @@ type AssistantCta = { label: string; feature: "trending" | "scripts" | "studio" 
 type AssistantMsg =
   | { role: "user"; text: string }
   | { role: "assistant"; text: string; cta?: AssistantCta; pending?: boolean };
+
+function researchSteps(platform: "Instagram" | "YouTube"): string[] {
+  const content = platform === "Instagram" ? "reels" : "videos";
+  return [
+    "Understanding your topic",
+    `Searching ${platform}`,
+    `Finding high-performing ${content}`,
+    "Detecting outliers",
+    "Measuring engagement",
+    "Studying audience behaviour",
+    "Finding repeatable patterns",
+    "Identifying content gaps",
+    "Generating personalized insights",
+    "Preparing recommendations",
+  ];
+}
 
 export default function Index() {
   const { user } = useAuth();
@@ -111,6 +127,11 @@ export default function Index() {
   const [assistantSending, setAssistantSending] = useState(false);
   const assistantStarted = assistantMessages.length > 0;
 
+  const [researching, setResearching] = useState(false);
+  const [researchQuery, setResearchQuery] = useState("");
+  const [researchStep, setResearchStep] = useState(0);
+  const RESEARCH_STEPS = researchSteps(platform);
+
   function runAssistantCta(cta: AssistantCta) {
     const q = cta.query?.trim() || niche;
     if (cta.feature === "trending") navigate(isIG ? `/instagram/analyzer` : `/youtube/analyzer`, { state: { query: q } });
@@ -124,8 +145,20 @@ export default function Index() {
     const q = (presetQuery ?? assistantQuery).trim();
     if (!q || assistantSending) return;
     setAssistantQuery("");
-    setAssistantMessages((prev) => [...prev, { role: "user", text: q }, { role: "assistant", text: "", pending: true }]);
     setAssistantSending(true);
+
+    // Optimistically show the research-agent progress screen — most Home
+    // searches resolve to "research" mode, and this reads as a live scrape
+    // rather than a spinner. The checklist is capped just short of the end
+    // so it never finishes before the real response lands.
+    setResearchQuery(q);
+    setResearchStep(0);
+    setResearching(true);
+    const cap = RESEARCH_STEPS.length - 2;
+    const stepTimer = setInterval(() => {
+      setResearchStep((i) => (i < cap ? i + 1 : i));
+    }, 650);
+
     try {
       const res = await fetch(`${BASE}/api/home/intent`, {
         method: "POST",
@@ -133,11 +166,16 @@ export default function Index() {
         body: JSON.stringify({ message: q, niche, name: firstName }),
       });
       const data = await res.json().catch(() => ({}));
+      clearInterval(stepTimer);
       if (data.mode === "research") {
-        setAssistantMessages((prev) => prev.filter((m) => !(m.role === "assistant" && m.pending)));
+        setResearchStep(RESEARCH_STEPS.length - 1);
+        await new Promise((r) => setTimeout(r, 550));
+        setResearching(false);
         navigate('/news', { state: { query: data.topic || q } });
         return;
       }
+      setResearching(false);
+      setAssistantMessages((prev) => [...prev, { role: "user", text: q }, { role: "assistant", text: "", pending: true }]);
       const answer = data.answer || (data.error ? `Sorry — I couldn't answer that (${data.error}).` : "Sorry — I couldn't answer that just now.");
       setAssistantMessages((prev) => {
         const next = prev.filter((m) => !(m.role === "assistant" && m.pending));
@@ -145,11 +183,13 @@ export default function Index() {
         return next;
       });
     } catch (err) {
-      setAssistantMessages((prev) => {
-        const next = prev.filter((m) => !(m.role === "assistant" && m.pending));
-        next.push({ role: "assistant", text: `Sorry — something went wrong: ${(err as Error).message}` });
-        return next;
-      });
+      clearInterval(stepTimer);
+      setResearching(false);
+      setAssistantMessages((prev) => [
+        ...prev.filter((m) => !(m.role === "assistant" && m.pending)),
+        { role: "user", text: q },
+        { role: "assistant", text: `Sorry — something went wrong: ${(err as Error).message}` },
+      ]);
     } finally {
       setAssistantSending(false);
     }
@@ -174,8 +214,18 @@ export default function Index() {
 
       <div className="w-full max-w-5xl relative z-10 flex flex-col items-center gap-8">
 
-        {/* Greeting */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&display=swap" />
+
+        {researching ? (
+          <ResearchAgentLoader
+            query={researchQuery}
+            platform={platform}
+            steps={RESEARCH_STEPS}
+            activeStep={researchStep}
+          />
+        ) : (
+        <>
+        {/* Greeting */}
         <div className="w-full text-center space-y-3">
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
             className="w-full text-center font-normal leading-[1.08] tracking-[-0.02em] text-4xl md:text-5xl text-foreground"
@@ -290,6 +340,8 @@ export default function Index() {
             <LifeCalendar age={age} />
           </motion.div>
         )}
+        </>
+        )}
       </div>
 
       {showOnboard && (
@@ -307,6 +359,62 @@ export default function Index() {
         />
       )}
     </div>
+  );
+}
+
+function ResearchAgentLoader({
+  query, platform, steps, activeStep,
+}: {
+  query: string;
+  platform: "Instagram" | "YouTube";
+  steps: string[];
+  activeStep: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="w-full flex flex-col items-center gap-6 text-center"
+    >
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold uppercase tracking-wider">
+        <Sparkles className="size-3.5" />
+        Research agent working
+      </span>
+
+      <h1
+        className="text-4xl md:text-5xl leading-[1.1] tracking-[-0.02em] text-foreground"
+        style={{ fontFamily: '"Fraunces", Georgia, serif' }}
+      >
+        Researching <em className="italic text-primary">{query}</em>
+        <br />
+        across {platform}
+      </h1>
+
+      <p className="text-sm text-muted-foreground">&ldquo;{query}&rdquo;</p>
+
+      <div className="panel w-full max-w-xl p-5 text-left">
+        {steps.map((step, i) => {
+          const state = i < activeStep ? "done" : i === activeStep ? "active" : "pending";
+          return (
+            <div
+              key={step}
+              className={`flex items-center gap-3 py-2 transition-opacity ${state === "pending" ? "opacity-40" : "opacity-100"}`}
+            >
+              {state === "done" && <CheckCircle2 className="size-4 text-primary shrink-0" />}
+              {state === "active" && <Loader2 className="size-4 text-primary animate-spin shrink-0" />}
+              {state === "pending" && <Circle className="size-4 text-muted-foreground shrink-0" />}
+              <span className={`text-sm ${state === "active" ? "font-semibold text-foreground" : "text-foreground/80"}`}>
+                {step}
+              </span>
+              {state === "active" && <MoreHorizontal className="size-4 ml-auto text-muted-foreground shrink-0" />}
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Live scrape · reusing SocialRum&apos;s smart cache when available
+      </p>
+    </motion.div>
   );
 }
 
