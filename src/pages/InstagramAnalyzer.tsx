@@ -713,16 +713,17 @@ export default function InstagramAnalyzer() {
   const [openCompetitor, setOpenCompetitor] = useState<CompetitorCard | null>(null);
   const [trendingReels, setTrendingReels] = useState<any[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(false);
-  const [trendingKeyword, setTrendingKeyword] = useState(user?.user_metadata?.niches?.[0] || 'trending');
-  const [trendingInput, setTrendingInput] = useState(trendingKeyword);
+  const [trendingSearched, setTrendingSearched] = useState(false);
+  const [trendingKeyword, setTrendingKeyword] = useState('');
+  const [trendingInput, setTrendingInput] = useState(user?.user_metadata?.niches?.[0] || '');
 
-  // ── Trending reels — a searchable strip, keyed off the creator's own niche
-  // by default. User-driven (typed keyword) rather than a one-shot auto-load,
-  // so it stays put instead of just flashing the niche's reels once on mount. ──
+  // ── Trending reels — a searchable strip. User-driven only: no default
+  // keyword auto-search on mount, waits for the user to actually search. ──
   const searchTrendingReels = (keyword: string) => {
     const clean = keyword.trim();
     if (!clean) return;
     setTrendingKeyword(clean);
+    setTrendingSearched(true);
     setTrendingLoading(true);
     fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(clean)}&mode=keyword&page=1&limit=8`)
       .then(r => r.ok ? r.json() : null)
@@ -733,8 +734,6 @@ export default function InstagramAnalyzer() {
       .catch(() => setTrendingReels([]))
       .finally(() => setTrendingLoading(false));
   };
-
-  useEffect(() => { searchTrendingReels(trendingKeyword); }, []);
 
   // ── Page-state persistence ──
   const _stateRef = useRef<any>({});
@@ -1821,8 +1820,10 @@ export default function InstagramAnalyzer() {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : trendingSearched ? (
             <p className="text-xs text-muted-foreground text-center py-4">No reels found for "{trendingKeyword}" — try another keyword.</p>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-4">Search a keyword or hashtag to see reels.</p>
           )}
         </div>
 
