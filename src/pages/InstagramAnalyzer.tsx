@@ -713,22 +713,28 @@ export default function InstagramAnalyzer() {
   const [openCompetitor, setOpenCompetitor] = useState<CompetitorCard | null>(null);
   const [trendingReels, setTrendingReels] = useState<any[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(false);
+  const [trendingKeyword, setTrendingKeyword] = useState(user?.user_metadata?.niches?.[0] || 'trending');
+  const [trendingInput, setTrendingInput] = useState(trendingKeyword);
 
-  // ── Trending reels — real data for the pre-search empty state, keyed off
-  // the creator's own niche (falls back to a generic keyword). ──
-  useEffect(() => {
-    if (result || hiker) return;
-    const keyword = user?.user_metadata?.niches?.[0] || 'trending';
+  // ── Trending reels — a searchable strip, keyed off the creator's own niche
+  // by default. User-driven (typed keyword) rather than a one-shot auto-load,
+  // so it stays put instead of just flashing the niche's reels once on mount. ──
+  const searchTrendingReels = (keyword: string) => {
+    const clean = keyword.trim();
+    if (!clean) return;
+    setTrendingKeyword(clean);
     setTrendingLoading(true);
-    fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(keyword)}&mode=keyword&page=1&limit=8`)
+    fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(clean)}&mode=keyword&page=1&limit=8`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        const list = Array.isArray(data) ? data : Array.isArray(data?.videos) ? data.videos : [];
+        const list = Array.isArray(data) ? data : Array.isArray(data?.videos) ? data.videos : Array.isArray(data?.reels) ? data.reels : [];
         setTrendingReels(list.slice(0, 8));
       })
       .catch(() => setTrendingReels([]))
       .finally(() => setTrendingLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { searchTrendingReels(trendingKeyword); }, []);
 
   // ── Page-state persistence ──
   const _stateRef = useRef<any>({});
@@ -1759,41 +1765,66 @@ export default function InstagramAnalyzer() {
           </motion.div>
         )}
 
-        {/* Trending reels — real reels for the creator's niche, kept below the competitor analyzer */}
-        {(trendingLoading || trendingReels.length > 0) && (
-          <div className="panel p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
-              <h2 className="font-bold text-sm text-foreground">{t('analyzer.trending_reels')}</h2>
+        {/* Trending reels — searchable strip, kept below the competitor analyzer */}
+        <div className="panel p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
+            <h2 className="font-bold text-sm text-foreground">{t('analyzer.trending_reels')}</h2>
+          </div>
+
+          <form
+            onSubmit={(e) => { e.preventDefault(); searchTrendingReels(trendingInput); }}
+            className="flex gap-2 mb-3"
+          >
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                value={trendingInput}
+                onChange={(e) => setTrendingInput(e.target.value)}
+                placeholder="Search reels by keyword or hashtag"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-input bg-secondary text-foreground placeholder:text-muted-foreground outline-none text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              />
             </div>
-            {trendingLoading ? (
-              <div className="flex gap-2 overflow-x-auto">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="rounded-xl animate-pulse bg-secondary shrink-0" style={{ aspectRatio: '9/16', width: '110px' }} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
-                {trendingReels.map((reel: any, i: number) => (
-                  <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
-                    className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
-                    <img src={getReelThumbnailSrc(reel.thumbnail)} alt={getReelAltText(reel.caption, reel.username)}
-                      referrerPolicy="no-referrer" loading="lazy" decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      onError={handleReelThumbnailError} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Eye className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.views) || 0)}</span>
-                        <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.likes) || 0)}</span>
-                      </div>
+            <button
+              type="submit"
+              disabled={trendingLoading || !trendingInput.trim()}
+              className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-60 hover:shadow-lg transition-all shrink-0"
+              style={{ background: PRIMARY_GRAD }}
+            >
+              {trendingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
+            </button>
+          </form>
+
+          {trendingLoading ? (
+            <div className="flex gap-2 overflow-x-auto">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="rounded-xl animate-pulse bg-secondary shrink-0" style={{ aspectRatio: '9/16', width: '110px' }} />
+              ))}
+            </div>
+          ) : trendingReels.length > 0 ? (
+            <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>
+              {trendingReels.map((reel: any, i: number) => (
+                <div key={reel.id || i} onClick={() => reel.permalink && window.open(reel.permalink, '_blank')}
+                  className="relative rounded-xl overflow-hidden cursor-pointer group" style={{ aspectRatio: '9/16', background: '#1a1a2e', width: '110px', flexShrink: 0, scrollSnapAlign: 'start' }}>
+                  <img src={getReelThumbnailSrc(reel.thumbnail)} alt={getReelAltText(reel.caption, reel.username)}
+                    referrerPolicy="no-referrer" loading="lazy" decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    onError={handleReelThumbnailError} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Eye className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.views) || 0)}</span>
+                      <Heart className="w-2.5 h-2.5 text-white/80" /><span className="text-[8px] text-white/80">{formatNum(Number(reel.likes) || 0)}</span>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-4">No reels found for "{trendingKeyword}" — try another keyword.</p>
+          )}
+        </div>
 
       </main>
     </div>
