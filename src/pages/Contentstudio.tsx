@@ -913,6 +913,24 @@ function VideoEditor() {
     canvas.height = 80;
     const ctx = canvas.getContext("2d");
 
+    // Waits for a seek to actually land. Two real-world gotchas this guards
+    // against: (1) some browsers never fire `seeked` for a no-op seek (e.g.
+    // seeking to 0 when currentTime is already 0 — exactly what tile #0
+    // does), which used to hang the entire extraction forever; (2) some
+    // codecs occasionally just never fire it at all, so there's a timeout
+    // fallback rather than trusting the event alone.
+    function waitSeek(target: number): Promise<void> {
+      if (Math.abs(tv!.currentTime - target) < 0.02) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => { if (done) return; done = true; tv!.removeEventListener("seeked", onSeeked); resolve(); };
+        const onSeeked = () => finish();
+        tv!.addEventListener("seeked", onSeeked, { once: true });
+        tv!.currentTime = target;
+        setTimeout(finish, 1500);
+      });
+    }
+
     (async () => {
       try {
         tv.crossOrigin = "anonymous";
@@ -922,17 +940,14 @@ function VideoEditor() {
           const onError = () => { reject(new Error("thumb video failed to load")); };
           tv.addEventListener("loadedmetadata", onLoaded, { once: true });
           tv.addEventListener("error", onError, { once: true });
+          setTimeout(onLoaded, 4000); // don't hang forever if metadata never arrives
         });
 
         const frames: string[] = [];
         for (let i = 0; i < numTiles; i++) {
           if (cancelled) return;
           const t = Math.max(0, Math.min(duration - 0.05, (i / numTiles) * duration));
-          await new Promise<void>((resolve) => {
-            const onSeeked = () => { tv.removeEventListener("seeked", onSeeked); resolve(); };
-            tv.addEventListener("seeked", onSeeked, { once: true });
-            tv.currentTime = t;
-          });
+          await waitSeek(t);
           if (cancelled) return;
           if (ctx) {
             const vw = tv.videoWidth || canvas.width, vh = tv.videoHeight || canvas.height;
@@ -944,7 +959,8 @@ function VideoEditor() {
           }
         }
         if (!cancelled) setFilmstrip(frames);
-      } catch {
+      } catch (err) {
+        console.error("[filmstrip] extraction failed:", err);
         if (!cancelled) setFilmstrip([]);
       } finally {
         if (!cancelled) setFilmstripLoading(false);
@@ -2117,7 +2133,7 @@ function VideoEditor() {
                           {filmstrip.map((src, i) => (
                             <img key={i} src={src} alt="" draggable={false}
                               className="h-full object-cover shrink-0 select-none"
-                              style={{ width: FILMSTRIP_TILE_W }} />
+                              style={{ width: Math.max(trackWidth - 8, 60) / filmstrip.length }} />
                           ))}
                         </div>
                       )}
