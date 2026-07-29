@@ -16,6 +16,7 @@ const API = import.meta.env.VITE_API_URL;
 const PURPLE = "hsl(var(--primary))";
 const GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
 const PX_PER_SEC = 80;
+const FILMSTRIP_TILE_W = 46;
 
 type Word = { id: number; start: number; end: number; text: string };
 type Segment = { id: number; start: number; end: number; text: string };
@@ -708,6 +709,11 @@ function VideoEditor() {
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [waveformLoading, setWaveformLoading] = useState(false);
 
+  // ── Filmstrip — real frame thumbnails for the timeline's Video track. ──
+  const [filmstrip, setFilmstrip] = useState<string[]>([]);
+  const [filmstripLoading, setFilmstripLoading] = useState(false);
+  const thumbVideoRef = useRef<HTMLVideoElement>(null);
+
   // Keep the active cache (native or roman) in sync with user edits, same
   // pattern as Lovable's editor — every existing setSegments(...) call site
   // below keeps working unchanged.
@@ -887,6 +893,67 @@ function VideoEditor() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hostedUrl, videoUrl, duration]);
+
+  // ── Filmstrip — the timeline's Video track shows real frame thumbnails
+  // instead of a solid block, extracted by seeking a hidden <video> and
+  // drawing each frame to a canvas. Best-effort like the waveform: a hosted
+  // URL without permissive CORS headers taints the canvas and this just
+  // silently falls back to no filmstrip rather than breaking the editor. ──
+  useEffect(() => {
+    const url = videoUrl || hostedUrl;
+    const tv = thumbVideoRef.current;
+    if (!url || !duration || !tv) { setFilmstrip([]); return; }
+    let cancelled = false;
+    setFilmstripLoading(true);
+    setFilmstrip([]);
+
+    const numTiles = Math.max(4, Math.min(60, Math.ceil(trackWidth / FILMSTRIP_TILE_W)));
+    const canvas = document.createElement("canvas");
+    canvas.width = FILMSTRIP_TILE_W * 2;
+    canvas.height = 80;
+    const ctx = canvas.getContext("2d");
+
+    (async () => {
+      try {
+        tv.crossOrigin = "anonymous";
+        tv.src = url;
+        await new Promise<void>((resolve, reject) => {
+          const onLoaded = () => { tv.removeEventListener("loadedmetadata", onLoaded); resolve(); };
+          const onError = () => { reject(new Error("thumb video failed to load")); };
+          tv.addEventListener("loadedmetadata", onLoaded, { once: true });
+          tv.addEventListener("error", onError, { once: true });
+        });
+
+        const frames: string[] = [];
+        for (let i = 0; i < numTiles; i++) {
+          if (cancelled) return;
+          const t = Math.max(0, Math.min(duration - 0.05, (i / numTiles) * duration));
+          await new Promise<void>((resolve) => {
+            const onSeeked = () => { tv.removeEventListener("seeked", onSeeked); resolve(); };
+            tv.addEventListener("seeked", onSeeked, { once: true });
+            tv.currentTime = t;
+          });
+          if (cancelled) return;
+          if (ctx) {
+            const vw = tv.videoWidth || canvas.width, vh = tv.videoHeight || canvas.height;
+            const scale = Math.max(canvas.width / vw, canvas.height / vh);
+            const dw = vw * scale, dh = vh * scale;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(tv, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
+            frames.push(canvas.toDataURL("image/jpeg", 0.55));
+          }
+        }
+        if (!cancelled) setFilmstrip(frames);
+      } catch {
+        if (!cancelled) setFilmstrip([]);
+      } finally {
+        if (!cancelled) setFilmstripLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoUrl, hostedUrl, duration]);
 
   const capTime = time + offset;
   const activeId = useMemo(() => { const seg = segments.find(s => capTime >= s.start && capTime < s.end); return seg ? seg.id : null; }, [segments, capTime]);
@@ -1660,6 +1727,8 @@ function VideoEditor() {
                 )}
               </div>
               {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
+              {/* Hidden — used only to seek+draw frames for the timeline filmstrip */}
+              <video ref={thumbVideoRef} muted playsInline preload="auto" style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
 
               {sel && (
                 <div className="panel p-4 space-y-3">
@@ -2040,9 +2109,25 @@ function VideoEditor() {
                   <div className="h-5 relative text-[10px]" style={{ borderBottom: `1px solid ${TL_LINE}`, color: TL_TEXT }}>
                     {Array.from({ length: Math.ceil(duration) + 1 }).map((_, s) => (<span key={s} className="absolute top-0.5" style={{ left: s * PX_PER_SEC }}>{s}s</span>))}
                   </div>
-                  {/* Video */}
+                  {/* Video — frame-by-frame filmstrip instead of a solid block */}
                   <div className="h-10 p-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
-                    <div className="h-full rounded-lg flex items-center px-3 text-xs text-white font-medium overflow-hidden" style={{ width: Math.max(trackWidth - 8, 60), background: GRAD }}>{file?.name || "video.mp4"}</div>
+                    <div className="relative h-full rounded-lg overflow-hidden" style={{ width: Math.max(trackWidth - 8, 60), background: "#111" }}>
+                      {filmstrip.length > 0 && (
+                        <div className="absolute inset-0 flex">
+                          {filmstrip.map((src, i) => (
+                            <img key={i} src={src} alt="" draggable={false}
+                              className="h-full object-cover shrink-0 select-none"
+                              style={{ width: FILMSTRIP_TILE_W }} />
+                          ))}
+                        </div>
+                      )}
+                      {filmstripLoading && filmstrip.length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center gap-1.5 text-[10px] text-white/80" style={{ background: GRAD }}>
+                          <Loader2 className="size-3 animate-spin" /> Generating filmstrip…
+                        </div>
+                      )}
+                      <span className="absolute bottom-0.5 left-1.5 text-[9px] text-white font-medium px-1 rounded bg-black/60 pointer-events-none max-w-[70%] truncate">{file?.name || "video.mp4"}</span>
+                    </div>
                   </div>
                   {/* Captions — waveform behind the caption chips */}
                   <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
