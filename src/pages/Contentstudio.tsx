@@ -839,6 +839,7 @@ function VideoEditor() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playheadRafRef = useRef<number | null>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const tracksRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -1040,8 +1041,29 @@ function VideoEditor() {
       } else if (!a.paused) a.pause();
     }
   }
-  function onPlay() { const v = videoRef.current, a = audioRef.current; if (a && hasMusic && music.url && v && v.currentTime >= musicStart) { a.volume = volume; a.play().catch(() => {}); } }
-  function onPause() { if (audioRef.current) audioRef.current.pause(); }
+  // Native `timeupdate` only fires a handful of times a second, which reads
+  // as a jerky playhead on the timeline — drive it from rAF instead while
+  // playing, for a smooth per-frame sweep. onTimeUpdate above still runs too
+  // (needed for the music-sync corrections), it's just no longer the only
+  // thing moving the playhead.
+  function tickPlayhead() {
+    const v = videoRef.current;
+    if (!v || v.paused || v.ended) { playheadRafRef.current = null; return; }
+    setTime(v.currentTime);
+    playheadRafRef.current = requestAnimationFrame(tickPlayhead);
+  }
+  function stopPlayheadTick() {
+    if (playheadRafRef.current != null) { cancelAnimationFrame(playheadRafRef.current); playheadRafRef.current = null; }
+  }
+  useEffect(() => () => stopPlayheadTick(), []);
+
+  function onPlay() {
+    const v = videoRef.current, a = audioRef.current;
+    if (a && hasMusic && music.url && v && v.currentTime >= musicStart) { a.volume = volume; a.play().catch(() => {}); }
+    stopPlayheadTick();
+    playheadRafRef.current = requestAnimationFrame(tickPlayhead);
+  }
+  function onPause() { if (audioRef.current) audioRef.current.pause(); stopPlayheadTick(); }
 
   function onTimelineClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragOverlay || dragMusic) return;
@@ -1049,9 +1071,11 @@ function VideoEditor() {
     if (!el || !v || !duration) return;
     const rect = el.getBoundingClientRect();
     const x = e.clientX - rect.left + el.scrollLeft;
-    v.currentTime = Math.max(0, Math.min(duration, x / PX_PER_SEC));
+    const t = Math.max(0, Math.min(duration, x / PX_PER_SEC));
+    v.currentTime = t;
+    setTime(t); // instant playhead move — don't wait on the next timeupdate/rAF tick
   }
-  function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; }
+  function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; setTime(t); }
   function editSeg(id: number, text: string) { setSegments(prev => prev.map(s => (s.id === id ? { ...s, text } : s))); }
 
   function pushHistory() { setHistory(h => { const snap = JSON.stringify(segments); if (h.length && JSON.stringify(h[h.length - 1]) === snap) return h; setRedoStack([]); return [...h.slice(-49), JSON.parse(snap)]; }); }
@@ -1595,7 +1619,7 @@ function VideoEditor() {
                     height: activeHalfOverlay ? "50%" : "100%",
                     top: activeHalfOverlay?.half === "top" ? "50%" : 0,
                   }}>
-                  <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+                  <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onEnded={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
                     className="w-full h-full object-cover" />
                 </div>
                 {activeOverlays.map(o => (
