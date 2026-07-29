@@ -1015,8 +1015,8 @@ export default function InstagramAnalyzer() {
           </div>
         )}
 
-        {/* Trending reels — real reels for the creator's niche, browsable before analyzing anyone */}
-        {!((result || hiker) && !loading) && (trendingLoading || trendingReels.length > 0) && (
+        {/* Trending reels — real reels for the creator's niche, kept visible even after analyzing a competitor */}
+        {(trendingLoading || trendingReels.length > 0) && (
           <div className="panel p-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
