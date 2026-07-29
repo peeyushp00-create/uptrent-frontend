@@ -122,7 +122,7 @@ function reindex(segs: Segment[]): Segment[] { return segs.map((s, i) => ({ ...s
 const TABS = ["Ideas", "Scripts", "Video", "Drafts", "Calendar"] as const;
 type Tab = (typeof TABS)[number];
 
-const studioCache: { tab: Tab; planner: "week" | "month" } = { tab: "Ideas", planner: "week" };
+const studioCache: { tab: Tab; planner: "week" | "month" } = { tab: "Video", planner: "week" };
 
 const IDEAS = [
   "AI side hustle that pays $50/day",
@@ -144,7 +144,10 @@ const DRAFTS = [
 
 export default function StudioPage() {
   const { theme } = useTheme();
-  const [tab, setTabState] = useState<Tab>(studioCache.tab);
+  // Always land on the Video tab when Studio opens (per product spec) —
+  // studioCache.tab is still updated on every switch, but not read for the
+  // initial mount, so navigating away and back always resets to Video.
+  const [tab, setTabState] = useState<Tab>("Video");
   const setTab = (t: Tab) => { studioCache.tab = t; setTabState(t); };
   const isVideo = tab === "Video";
 
