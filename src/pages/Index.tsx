@@ -167,11 +167,16 @@ export default function Index() {
       });
       const data = await res.json().catch(() => ({}));
       clearInterval(stepTimer);
-      if (data.mode === "research") {
+      if (data.mode === "research" || data.mode === "trending") {
         setResearchStep(RESEARCH_STEPS.length - 1);
         await new Promise((r) => setTimeout(r, 550));
         setResearching(false);
-        navigate('/research', { state: { query: data.topic || q } });
+        if (data.mode === "trending") {
+          if (isIG) navigate('/instagram/analyzer', { state: { trendingQuery: data.topic || q } });
+          else navigate('/youtube/trending');
+        } else {
+          navigate('/research', { state: { query: data.topic || q } });
+        }
         return;
       }
       setResearching(false);

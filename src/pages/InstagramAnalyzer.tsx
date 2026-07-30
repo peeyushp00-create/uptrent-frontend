@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb,
@@ -652,6 +653,7 @@ export default function InstagramAnalyzer() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const { user } = useAuth();
+  const location = useLocation();
   const _saved = getPageState('igAnalyzer');
 
   const [handle, setHandle] = useState(_saved?.handle ?? '');
@@ -682,6 +684,7 @@ export default function InstagramAnalyzer() {
   const [trendingSearched, setTrendingSearched] = useState(false);
   const [trendingKeyword, setTrendingKeyword] = useState('');
   const [trendingInput, setTrendingInput] = useState(user?.user_metadata?.niches?.[0] || '');
+  const trendingPanelRef = useRef<HTMLDivElement>(null);
 
   // ── Trending reels — a searchable strip. User-driven only: no default
   // keyword auto-search on mount, waits for the user to actually search. ──
@@ -700,6 +703,18 @@ export default function InstagramAnalyzer() {
       .catch(() => setTrendingReels([]))
       .finally(() => setTrendingLoading(false));
   };
+
+  // ── Arriving from Home's "trending" intent — jump straight to this box
+  // and run the search, instead of waiting for the user to type it again. ──
+  const autoTrendingRan = useRef(false);
+  useEffect(() => {
+    const q = (location.state as any)?.trendingQuery;
+    if (!q || autoTrendingRan.current) return;
+    autoTrendingRan.current = true;
+    setTrendingInput(q);
+    searchTrendingReels(q);
+    setTimeout(() => trendingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }, [location.state]);
 
   // ── Page-state persistence ──
   const _stateRef = useRef<any>({});
@@ -1696,7 +1711,7 @@ export default function InstagramAnalyzer() {
         )}
 
         {/* Trending reels — searchable strip, kept below the competitor analyzer */}
-        <div className="panel p-4">
+        <div ref={trendingPanelRef} className="panel p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
             <h2 className="font-bold text-sm text-foreground">{t('analyzer.trending_reels')}</h2>
