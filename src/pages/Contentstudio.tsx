@@ -157,17 +157,17 @@ export default function StudioPage() {
   const isVideo = tab === "Video";
 
   return (
-    <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
+    <div className={`theme-redesign ${theme} bg-background text-foreground flex flex-col ${isVideo ? "md:h-full md:overflow-hidden" : "min-h-screen"}`}>
       <SEO title="Studio — SocialRum" noindex />
-      <div className="max-w-6xl mx-auto p-6">
+      <div className={`max-w-6xl mx-auto p-6 w-full flex flex-col ${isVideo ? "md:flex-1 md:min-h-0" : ""}`}>
         {!isVideo && (
-          <div className="mb-6">
+          <div className="mb-6 shrink-0">
             <h1 className="font-heading text-2xl font-bold">Studio</h1>
             <p className="text-sm text-muted-foreground mt-1">Your ideas, scripts, drafts and content calendar — one workspace.</p>
           </div>
         )}
 
-        <div className={`flex flex-wrap gap-2 border-b border-border ${isVideo ? "mb-3" : "mb-6"}`}>
+        <div className={`flex flex-wrap gap-2 border-b border-border shrink-0 ${isVideo ? "mb-3" : "mb-6"}`}>
           {TABS.map((t) => (
             <button
               key={t}
@@ -1549,12 +1549,11 @@ function VideoEditor() {
   const TL_BG = "#1e1e24", TL_LINE = "#3a3a44", TL_TEXT = "#cbd5e1";
 
   return (
-    <div>
+    <div className="flex flex-col gap-5 md:flex-1 md:min-h-0">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" />
 
-      <div className="space-y-5">
           {/* Editor toolbar */}
-          <div className="flex items-center justify-between bg-card rounded-2xl border border-border px-4 py-3">
+          <div className="flex items-center justify-between bg-card rounded-2xl border border-border px-4 py-3 shrink-0">
             <div className="flex items-center gap-2">
               <button onClick={() => {
                 setFile(null); setVideoUrl(""); setHostedUrl(""); setSegments([]);
@@ -1589,10 +1588,10 @@ function VideoEditor() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-[320px_1fr_340px] gap-4 items-start">
+          <div className="grid md:grid-cols-[320px_1fr_340px] gap-4 md:flex-1 md:min-h-0">
 
             {/* left column: transcript — stays visible even before a video is added */}
-            <div className="space-y-4">
+            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 pr-1">
                 <div className="panel p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -1698,7 +1697,7 @@ function VideoEditor() {
             </div>
 
             {/* center column: video */}
-            <div className="space-y-4">
+            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 px-1">
               <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] mx-auto w-full" style={{ maxWidth: 340 }}>
                 {/* Video — shrinks to its half when a half overlay is active */}
                 <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
@@ -1819,7 +1818,7 @@ function VideoEditor() {
 
             {/* right column: caption designer — Music/Overlay tabs live here too,
                 so this stays available even before a transcript exists. */}
-            <div className="space-y-4">
+            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 pr-1">
                 <div className="panel p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <Sparkles className="size-4" style={{ color: PURPLE }} />
@@ -2122,8 +2121,8 @@ function VideoEditor() {
             </div>
           </div>
 
-          {/* Timeline (dark) — always visible */}
-          <div className="rounded-2xl overflow-hidden border" style={{ background: TL_BG, borderColor: TL_LINE }}>
+          {/* Timeline (dark) — always visible, fixed height, docked at the bottom */}
+          <div className="rounded-2xl overflow-hidden border shrink-0" style={{ background: TL_BG, borderColor: TL_LINE }}>
             <div className="px-4 py-2 flex items-center justify-between" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
               <span className="text-sm font-semibold" style={{ color: "#fff" }}>Timeline</span>
               <span className="text-xs" style={{ color: TL_TEXT }}>{fmt(time)} / {fmt(duration)}</span>
@@ -2197,7 +2196,6 @@ function VideoEditor() {
               </div>
             </div>
           </div>
-        </div>
 
       {/* Media browser (Pexels + Upload) */}
       {showPex && (
