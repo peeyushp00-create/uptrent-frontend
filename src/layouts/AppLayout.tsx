@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "@/components/AppSidebar";
 import BottomNav from "@/components/BottomNav";
+import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 
 // Persists across route changes for the lifetime of the JS session
 const scrollPositions = new Map<string, number>();
@@ -46,6 +47,8 @@ export default function AppLayout() {
 
       {/* Bottom nav — mobile only */}
       {isMobile && <BottomNav />}
+
+      <KeyboardShortcuts />
 
     </div>
   );

@@ -249,6 +249,7 @@ export default function Index() {
                   <Sparkles className="size-4" />
                 </div>
                 <input
+                  id="home-search-input"
                   value={assistantQuery}
                   onChange={(e) => setAssistantQuery(e.target.value)}
                   placeholder={t('home.composer_placeholder')}
