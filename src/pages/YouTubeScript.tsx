@@ -1148,14 +1148,19 @@ export default function YouTubeScript() {
                     <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
                   </div>
                   <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm" style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT }}>
-                    <p>
-                      {userNiche
-                        ? `Hey hi — I've got your niche (${userNiche}). Just tell me what your next Reel is about and I'll write it in your style.`
-                        : "Hey hi — tell me what your next Reel is about and I'll write it in your style."}
-                    </p>
-                    <p className="mt-2" style={{ color: TEXT_MUTED }}>
-                      <span className="font-medium" style={{ color: TEXT }}>Not sure what to make?</span> Find trending patterns in your niche — I'll open the analyzer and scrape reels for you.
-                    </p>
+                    {userNiche
+                      ? `Hey hi — I've got your niche (${userNiche}). Just tell me what your next Reel is about and I'll write it in your style.`
+                      : "Hey hi — tell me what your next Reel is about and I'll write it in your style."}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-start">
+                <div className="max-w-[85%] flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                    <img src="/socialrum-logo.png" alt="SocialRum" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm" style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT_MUTED }}>
+                    <span className="font-medium" style={{ color: TEXT }}>Not sure what to make?</span> Find trending patterns in your niche — I'll open the analyzer and scrape reels for you.
                   </div>
                 </div>
               </div>
