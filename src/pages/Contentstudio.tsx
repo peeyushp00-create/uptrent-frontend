@@ -1097,17 +1097,19 @@ function VideoEditor() {
     const picked = e.target.files?.[0]; if (!picked) return;
     setFile(picked); setVideoUrl(URL.createObjectURL(picked));
     setDuration(0); setTime(0); setSegments([]); setOverlays([]); setStatus("idle"); setError("");
+    transcribe(picked); // auto-transcribe as soon as a video is picked
   }
 
-  async function transcribe() {
-    if (!file) return;
+  async function transcribe(f?: File) {
+    const target = f || file;
+    if (!target) return;
     setError(""); setStatus("uploading");
     setNativeSegs([]); setRomanSegs([]); setUseRomanState(false);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Please sign in again.");
       const path = `studio/${session.user.id}/${Date.now()}.mp4`;
-      const { error: upErr } = await supabase.storage.from("insta-media").upload(path, file, { upsert: true, contentType: file.type });
+      const { error: upErr } = await supabase.storage.from("insta-media").upload(path, target, { upsert: true, contentType: target.type });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("insta-media").getPublicUrl(path);
       setHostedUrl(pub.publicUrl);
@@ -1629,7 +1631,7 @@ function VideoEditor() {
                       style={{ color: redoStack.length ? PURPLE : undefined }}>
                       <Redo2 className="size-3.5" />
                     </button>
-                    <button onClick={transcribe} disabled={status === "uploading" || status === "transcribing"} title="Re-transcribe"
+                    <button onClick={() => transcribe()} disabled={status === "uploading" || status === "transcribing"} title="Re-transcribe"
                       className="shrink-0 h-8 w-8 rounded-md text-white flex items-center justify-center transition disabled:opacity-40 hover:opacity-90"
                       style={{ background: GRAD }}>
                       {status === "transcribing" || status === "uploading" ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
@@ -1806,7 +1808,7 @@ function VideoEditor() {
                     <p className="text-sm font-semibold text-foreground">Auto-captions</p>
                     <p className="text-xs text-muted-foreground mt-0.5">Transcribe your video and edit captions inline</p>
                   </div>
-                  <button onClick={transcribe} disabled={status === "uploading" || status === "transcribing"}
+                  <button onClick={() => transcribe()} disabled={status === "uploading" || status === "transcribing"}
                     className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-40 transition hover:opacity-90 shadow-sm"
                     style={{ background: GRAD }}>
                     {status === "uploading" ? "Uploading…" : status === "transcribing" ? "Transcribing…" : "Transcribe captions"}
@@ -2130,17 +2132,28 @@ function VideoEditor() {
             <div className="flex">
               <div className="shrink-0 w-20 text-[11px]" style={{ borderRight: `1px solid ${TL_LINE}`, color: TL_TEXT }}>
                 <div className="h-5" style={{ borderBottom: `1px solid ${TL_LINE}` }} />
-                <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Video</div>
-                <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Captions</div>
                 <div className="h-10 flex items-center px-3 gap-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
                   <button onClick={() => { setShowPex(true); setPexTab("pexels"); if (!pexItems.length) searchPexels(); }} className="text-[10px] font-semibold" style={{ color: "hsl(var(--primary))" }}>+ Add</button>
                 </div>
+                <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Video</div>
+                <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Transcribe</div>
                 <div className="h-10 flex items-center px-3">Music</div>
               </div>
               <div ref={timelineRef} onClick={onTimelineClick} className="relative overflow-x-auto cursor-pointer select-none flex-1">
                 <div ref={tracksRef} style={{ width: trackWidth, position: "relative" }}>
                   <div className="h-5 relative text-[10px]" style={{ borderBottom: `1px solid ${TL_LINE}`, color: TL_TEXT }}>
                     {Array.from({ length: Math.ceil(duration) + 1 }).map((_, s) => (<span key={s} className="absolute top-0.5" style={{ left: s * PX_PER_SEC }}>{s}s</span>))}
+                  </div>
+                  {/* Overlays */}
+                  <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
+                    {overlays.map(o => (
+                      <div key={o.id} onPointerDown={e => { e.stopPropagation(); const el = tracksRef.current!; const rect = el.getBoundingClientRect(); const blockX = o.start * PX_PER_SEC; setDragOverlay({ id: o.id, dx: (e.clientX - rect.left + el.scrollLeft) - blockX }); setSelOverlay(o.id); }}
+                        className="absolute top-1 bottom-1 rounded overflow-hidden cursor-grab active:cursor-grabbing border-2" style={{ left: o.start * PX_PER_SEC, width: Math.max(o.length * PX_PER_SEC, 16), borderColor: selOverlay === o.id ? PURPLE : "transparent" }}>
+                        <img src={o.thumb} alt="" className="w-full h-full object-cover pointer-events-none" />
+                        {o.kind === "video" && <span className="absolute top-0.5 left-0.5 text-[8px] bg-black/60 text-white px-1 rounded">▶</span>}
+                        <button onClick={e => { e.stopPropagation(); deleteOverlay(o.id); }} onPointerDown={e => e.stopPropagation()} className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black/70 text-white text-[9px] leading-none hover:bg-red-500">✕</button>
+                      </div>
+                    ))}
                   </div>
                   {/* Video — frame-by-frame filmstrip instead of a solid block */}
                   <div className="h-10 p-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
@@ -2162,24 +2175,13 @@ function VideoEditor() {
                       <span className="absolute bottom-0.5 left-1.5 text-[9px] text-white font-medium px-1 rounded bg-black/60 pointer-events-none max-w-[70%] truncate">{file?.name || "video.mp4"}</span>
                     </div>
                   </div>
-                  {/* Captions — waveform behind the caption chips */}
+                  {/* Transcribe — waveform behind the caption chips */}
                   <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
                     {waveformPeaks.length > 0 && <Waveform peaks={waveformPeaks} width={trackWidth} height={40} />}
                     {waveformLoading && waveformPeaks.length === 0 && (
                       <span className="absolute inset-0 flex items-center px-2 text-[9px] text-muted-foreground/60">Decoding audio…</span>
                     )}
                     {segments.map(s => (<div key={s.id} className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center" style={{ left: s.start * PX_PER_SEC, width: Math.max((s.end - s.start) * PX_PER_SEC, 10), background: "hsl(var(--primary) / 0.55)", color: "hsl(var(--primary-foreground))" }}>{s.text.slice(0, 12)}</div>))}
-                  </div>
-                  {/* Overlays */}
-                  <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
-                    {overlays.map(o => (
-                      <div key={o.id} onPointerDown={e => { e.stopPropagation(); const el = tracksRef.current!; const rect = el.getBoundingClientRect(); const blockX = o.start * PX_PER_SEC; setDragOverlay({ id: o.id, dx: (e.clientX - rect.left + el.scrollLeft) - blockX }); setSelOverlay(o.id); }}
-                        className="absolute top-1 bottom-1 rounded overflow-hidden cursor-grab active:cursor-grabbing border-2" style={{ left: o.start * PX_PER_SEC, width: Math.max(o.length * PX_PER_SEC, 16), borderColor: selOverlay === o.id ? PURPLE : "transparent" }}>
-                        <img src={o.thumb} alt="" className="w-full h-full object-cover pointer-events-none" />
-                        {o.kind === "video" && <span className="absolute top-0.5 left-0.5 text-[8px] bg-black/60 text-white px-1 rounded">▶</span>}
-                        <button onClick={e => { e.stopPropagation(); deleteOverlay(o.id); }} onPointerDown={e => e.stopPropagation()} className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black/70 text-white text-[9px] leading-none hover:bg-red-500">✕</button>
-                      </div>
-                    ))}
                   </div>
                   {/* Music */}
                   <div className="h-10 relative">
