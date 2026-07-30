@@ -1591,7 +1591,7 @@ function VideoEditor() {
           <div className="grid md:grid-cols-[320px_1fr_340px] gap-4 md:flex-1 md:min-h-0">
 
             {/* left column: transcript — stays visible even before a video is added */}
-            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 pr-1 thick-scrollbar">
+            <div className="space-y-4 md:max-h-[427px] md:overflow-y-auto pr-1 thick-scrollbar">
                 <div className="panel p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -1818,7 +1818,7 @@ function VideoEditor() {
 
             {/* right column: caption designer — Music/Overlay tabs live here too,
                 so this stays available even before a transcript exists. */}
-            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 pr-1 thick-scrollbar">
+            <div className="space-y-4 md:max-h-[427px] md:overflow-y-auto pr-1 thick-scrollbar">
                 <div className="panel p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <Sparkles className="size-4" style={{ color: PURPLE }} />
