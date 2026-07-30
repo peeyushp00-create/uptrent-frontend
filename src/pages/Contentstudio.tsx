@@ -108,6 +108,9 @@ const fmt = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString(
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 let savedStudioState: any = null;
+// Set by the Drafts tab's "Continue editing" action, picked up by VideoEditor
+// on its next mount to jump straight into that saved project.
+let pendingProjectToOpen: { id: string; name: string; video_url: string; data: any } | null = null;
 
 function buildSegments(words: Word[]): Segment[] {
   const out: Segment[] = []; let cur: Word[] = [];
@@ -137,11 +140,6 @@ const SCRIPTS_CARDS = [
   { title: "ChatGPT weekly content system", platform: "Reels", updated: "2d ago" },
   { title: "5 underrated AI tools in 2026", platform: "YT Shorts", updated: "4d ago" },
   { title: "How I edit a Reel in 9 minutes", platform: "Reels", updated: "1w ago" },
-];
-
-const DRAFTS = [
-  { title: "Faceless YouTube case study", status: "Outline", progress: 35 },
-  { title: "Morning routine remix", status: "Recording", progress: 70 },
 ];
 
 export default function StudioPage() {
@@ -196,22 +194,37 @@ export default function StudioPage() {
 
         {tab === "Video" && <VideoEditor />}
 
-        {tab === "Drafts" && (
-          <div className="space-y-3">
-            {DRAFTS.map((d) => (
-              <div key={d.title} className="panel p-5 flex flex-wrap items-center gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium">{d.title}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{d.status} — {d.progress}% complete</div>
-                  <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: `${d.progress}%` }} />
+        {tab === "Drafts" && (() => {
+          const savedProjects: { id: string; name: string; video_url: string; data: any; updated_at: string }[] =
+            savedStudioState?.projects ?? [];
+          return (
+            <div className="space-y-3">
+              {savedProjects.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No saved projects yet — start editing a video in the Video tab and it'll show up here.</p>
+              ) : (
+                savedProjects.map((p) => (
+                  <div key={p.id} className="panel p-5 flex flex-wrap items-center gap-4">
+                    <div className="w-16 shrink-0 rounded-lg overflow-hidden bg-muted" style={{ aspectRatio: "9/16" }}>
+                      <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{p.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Saved {new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { pendingProjectToOpen = p; setTab("Video"); }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-input hover:bg-muted"
+                    >
+                      <Pencil className="size-3" /> Continue editing
+                    </button>
                   </div>
-                </div>
-                <StudioActions />
-              </div>
-            ))}
-          </div>
-        )}
+                ))
+              )}
+            </div>
+          );
+        })()}
 
         {tab === "Calendar" && <CalendarTab />}
       </div>
@@ -831,6 +844,14 @@ function VideoEditor() {
     return () => {
       savedStudioState = _stateRef.current;
     };
+  }, []);
+
+  // Picked from the Drafts tab's "Continue editing" action.
+  useEffect(() => {
+    if (pendingProjectToOpen) {
+      loadProject(pendingProjectToOpen);
+      pendingProjectToOpen = null;
+    }
   }, []);
 
   // export
@@ -1737,28 +1758,6 @@ function VideoEditor() {
               {/* Hidden — used only to seek+draw frames for the timeline filmstrip */}
               <video ref={thumbVideoRef} muted playsInline preload="auto" style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
 
-              {!hasVideo && projects.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Recent Projects</p>
-                    <button onClick={() => { fetchProjects(); setShowProjects(true); }} className="text-xs font-semibold hover:opacity-80 transition" style={{ color: PURPLE }}>See all →</button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {projects.slice(0, 4).map(p => (
-                      <button key={p.id} onClick={() => loadProject(p)}
-                        className="panel p-3 text-left transition group">
-                        <div className="w-full rounded-xl overflow-hidden mb-2 bg-muted" style={{ aspectRatio: "9/16", maxHeight: 140 }}>
-                          <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
-                        </div>
-                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-purple-500 transition">{p.name}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {!hasVideo && loadingProjects && <p className="text-center text-sm text-muted-foreground">Loading projects…</p>}
-
               {sel && (
                 <div className="panel p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -2117,8 +2116,7 @@ function VideoEditor() {
             </div>
           </div>
 
-          {/* Timeline (dark) — only meaningful once a video is loaded */}
-          {hasVideo && (
+          {/* Timeline (dark) — always visible */}
           <div className="rounded-2xl overflow-hidden border" style={{ background: TL_BG, borderColor: TL_LINE }}>
             <div className="px-4 py-2 flex items-center justify-between" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
               <span className="text-sm font-semibold" style={{ color: "#fff" }}>Timeline</span>
@@ -2193,7 +2191,6 @@ function VideoEditor() {
               </div>
             </div>
           </div>
-          )}
         </div>
 
       {/* Media browser (Pexels + Upload) */}
