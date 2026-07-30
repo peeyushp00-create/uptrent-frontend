@@ -1524,53 +1524,7 @@ function VideoEditor() {
     <div>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&display=swap" />
 
-      {!hasVideo && (
-        <div className="space-y-6">
-          {/* Upload zone */}
-          <div className="relative rounded-3xl p-12 flex flex-col items-center gap-5 overflow-hidden border-2 border-dashed transition-all"
-            style={{ borderColor: `${PURPLE}40`, background: `linear-gradient(135deg, ${PURPLE}06, #6D28D906)` }}>
-            <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 0%, ${PURPLE}12 0%, transparent 70%)` }} />
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-white shadow-lg relative" style={{ background: GRAD }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-            <div className="text-center relative">
-              <p className="text-base font-bold text-foreground">Upload a video</p>
-              <p className="text-sm text-muted-foreground mt-1">Drop a Reel or Short here. We'll auto-detect the language, transcribe, and sync perfectly-timed captions.</p>
-            </div>
-            <label className="relative cursor-pointer px-6 py-3 rounded-xl text-white font-semibold text-sm hover:opacity-90 transition shadow-md" style={{ background: GRAD }}>
-              Choose video
-              <input type="file" accept="video/*" onChange={onPick} className="hidden" />
-            </label>
-            <p className="text-xs text-muted-foreground/60 relative">Supports MP4, MOV, WebM and more</p>
-          </div>
-
-          {/* Recent projects */}
-          {projects.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Recent Projects</p>
-                <button onClick={() => setShowProjects(true)} className="text-xs font-semibold hover:opacity-80 transition" style={{ color: PURPLE }}>See all →</button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {projects.slice(0, 8).map(p => (
-                  <button key={p.id} onClick={() => loadProject(p)}
-                    className="panel p-3 text-left transition group">
-                    <div className="w-full rounded-xl overflow-hidden mb-2 bg-muted" style={{ aspectRatio: "9/16", maxHeight: 140 }}>
-                      <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
-                    </div>
-                    <p className="text-sm font-semibold text-foreground truncate group-hover:text-purple-500 transition">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {loadingProjects && <p className="text-center text-sm text-muted-foreground">Loading projects…</p>}
-        </div>
-      )}
-
-      {hasVideo && (
-        <div className="space-y-5">
+      <div className="space-y-5">
           {/* Editor toolbar */}
           <div className="flex items-center justify-between bg-card rounded-2xl border border-border px-4 py-3">
             <div className="flex items-center gap-2">
@@ -1578,7 +1532,7 @@ function VideoEditor() {
                 setFile(null); setVideoUrl(""); setHostedUrl(""); setSegments([]);
                 setNativeSegs([]); setRomanSegs([]); setUseRomanState(false); setDetectedLang(null);
                 setOverlays([]); setMusic(MUSIC[0]); setStatus("idle"); setHistory([]);
-              }} className="text-sm font-semibold text-muted-foreground hover:text-foreground transition">← New</button>
+              }} disabled={!hasVideo} className="text-sm font-semibold text-muted-foreground hover:text-foreground transition disabled:opacity-40">← New</button>
               <div className="w-px h-4 bg-border mx-1" />
               <button onClick={() => { fetchProjects(); setShowProjects(true); }}
                 className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition">
@@ -1588,7 +1542,7 @@ function VideoEditor() {
             <div className="flex items-center gap-2">
               {saveError && <span className="text-xs text-red-500">{saveError}</span>}
               {savedAt && !saveError && <span className="text-xs text-muted-foreground">Auto-saved {savedAt}</span>}
-              <button onClick={saveProject} disabled={saving}
+              <button onClick={saveProject} disabled={saving || !hasVideo}
                 className="text-sm font-semibold px-3 py-1.5 rounded-lg border transition disabled:opacity-50"
                 style={{ borderColor: PURPLE, color: PURPLE }}>
                 {saving ? "Saving…" : "Save"}
@@ -1602,7 +1556,7 @@ function VideoEditor() {
                   <button onClick={() => { exportCancelRef.current = true; }} className="text-xs text-red-500 font-semibold">Cancel</button>
                 </div>
               ) : (
-                <button onClick={exportVideo} className="text-sm font-semibold px-4 py-1.5 rounded-lg text-white transition hover:opacity-90" style={{ background: GRAD }}>Export</button>
+                <button onClick={exportVideo} disabled={!hasVideo} className="text-sm font-semibold px-4 py-1.5 rounded-lg text-white transition hover:opacity-90 disabled:opacity-50" style={{ background: GRAD }}>Export</button>
               )}
             </div>
           </div>
@@ -1710,7 +1664,9 @@ function VideoEditor() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-card flex items-center justify-center text-sm text-muted-foreground p-10 text-center">Transcribe to edit captions here.</div>
+                <div className="rounded-2xl border border-dashed border-border bg-card flex items-center justify-center text-sm text-muted-foreground p-10 text-center">
+                  {hasVideo ? "Transcribe to edit captions here." : "Upload a video to see its transcript here."}
+                </div>
               )}
             </div>
 
@@ -1723,8 +1679,23 @@ function VideoEditor() {
                     height: activeHalfOverlay ? "50%" : "100%",
                     top: activeHalfOverlay?.half === "top" ? "50%" : 0,
                   }}>
-                  <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onEnded={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
-                    className="w-full h-full object-cover" />
+                  {hasVideo ? (
+                    <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onEnded={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+                      className="w-full h-full object-cover" />
+                  ) : (
+                    <label className="w-full h-full flex flex-col items-center justify-center gap-4 cursor-pointer text-center px-6"
+                      style={{ background: `linear-gradient(135deg, ${PURPLE}12, #6D28D912)` }}>
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ background: GRAD }}>
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">Upload a video</p>
+                        <p className="text-xs text-muted-foreground mt-1">Drop a Reel or Short here. We&apos;ll transcribe and caption it for you.</p>
+                      </div>
+                      <span className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm shadow-md" style={{ background: GRAD }}>Upload file</span>
+                      <input type="file" accept="video/*" onChange={onPick} className="hidden" />
+                    </label>
+                  )}
                 </div>
                 {activeOverlays.map(o => (
                   o.mode === "pip" ? (
@@ -1766,6 +1737,28 @@ function VideoEditor() {
               {/* Hidden — used only to seek+draw frames for the timeline filmstrip */}
               <video ref={thumbVideoRef} muted playsInline preload="auto" style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
 
+              {!hasVideo && projects.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Recent Projects</p>
+                    <button onClick={() => { fetchProjects(); setShowProjects(true); }} className="text-xs font-semibold hover:opacity-80 transition" style={{ color: PURPLE }}>See all →</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {projects.slice(0, 4).map(p => (
+                      <button key={p.id} onClick={() => loadProject(p)}
+                        className="panel p-3 text-left transition group">
+                        <div className="w-full rounded-xl overflow-hidden mb-2 bg-muted" style={{ aspectRatio: "9/16", maxHeight: 140 }}>
+                          <video src={p.video_url} muted preload="metadata" className="w-full h-full object-cover" />
+                        </div>
+                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-purple-500 transition">{p.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{new Date(p.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {!hasVideo && loadingProjects && <p className="text-center text-sm text-muted-foreground">Loading projects…</p>}
+
               {sel && (
                 <div className="panel p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -1802,7 +1795,7 @@ function VideoEditor() {
                 </div>
               )}
 
-              {!hasCaptions && (
+              {hasVideo && !hasCaptions && (
                 <div className="panel p-5 text-center space-y-3">
                   <div className="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg font-bold" style={{ background: `${PURPLE}15`, color: PURPLE }}>T</div>
                   <div>
@@ -2124,7 +2117,8 @@ function VideoEditor() {
             </div>
           </div>
 
-          {/* Timeline (dark) */}
+          {/* Timeline (dark) — only meaningful once a video is loaded */}
+          {hasVideo && (
           <div className="rounded-2xl overflow-hidden border" style={{ background: TL_BG, borderColor: TL_LINE }}>
             <div className="px-4 py-2 flex items-center justify-between" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
               <span className="text-sm font-semibold" style={{ color: "#fff" }}>Timeline</span>
@@ -2199,8 +2193,8 @@ function VideoEditor() {
               </div>
             </div>
           </div>
+          )}
         </div>
-      )}
 
       {/* Media browser (Pexels + Upload) */}
       {showPex && (
