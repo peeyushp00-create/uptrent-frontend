@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getPageState, setPageState } from '@/lib/pageCache';
 import { getReelThumbnailSrc, getReelAltText, handleReelThumbnailError } from '@/lib/reelThumbnail';
 import SEO from '@/components/SEO';
+import ResearchChecklist from '@/components/ResearchChecklist';
 
 const PRIMARY = "hsl(var(--primary))";
 const PRIMARY_GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
@@ -20,6 +21,40 @@ const PRIMARY_CONTAINER = "hsl(var(--secondary))";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+type TrendingTimeframe = '24h' | '7d' | '30d' | '90d' | 'all';
+type TrendingSort = 'virality' | 'plays' | 'likes' | 'recent';
+
+const TIMEFRAME_OPTIONS: { value: TrendingTimeframe; label: string }[] = [
+  { value: '24h', label: '24h' },
+  { value: '7d', label: '7 days' },
+  { value: '30d', label: '30 days' },
+  { value: '90d', label: '90 days' },
+  { value: 'all', label: 'All' },
+];
+
+const SORT_OPTIONS: { value: TrendingSort; label: string }[] = [
+  { value: 'virality', label: 'Virality (outlier score)' },
+  { value: 'plays', label: 'Views' },
+  { value: 'likes', label: 'Likes' },
+  { value: 'recent', label: 'Most recent' },
+];
+
+const TRENDING_HASHTAGS = ['fitness', 'cooking', 'tech', 'fashion', 'finance', 'travel', 'beauty', 'comedy', 'gaming', 'photography'];
+
+const TRENDING_STEPS = [
+  'Understanding your topic',
+  'Searching Instagram',
+  'Finding top-performing reels',
+  'Detecting outliers',
+  'Measuring engagement',
+  'Studying audience behaviour',
+  'Finding repeating patterns',
+  'Identifying content gaps',
+  'Generating AI insights',
+  'Personalizing recommendations',
+  'Preparing final report',
+];
 
 const formatNum = (n: number) => {
   if (!n) return '—';
@@ -684,24 +719,47 @@ export default function InstagramAnalyzer() {
   const [trendingSearched, setTrendingSearched] = useState(false);
   const [trendingKeyword, setTrendingKeyword] = useState('');
   const [trendingInput, setTrendingInput] = useState(user?.user_metadata?.niches?.[0] || '');
+  const [trendingTimeframe, setTrendingTimeframe] = useState<TrendingTimeframe>('30d');
+  const [trendingSort, setTrendingSort] = useState<TrendingSort>('virality');
+  const [trendingStep, setTrendingStep] = useState(0);
   const trendingPanelRef = useRef<HTMLDivElement>(null);
 
   // ── Trending reels — a searchable strip. User-driven only: no default
   // keyword auto-search on mount, waits for the user to actually search. ──
-  const searchTrendingReels = (keyword: string) => {
+  const searchTrendingReels = (keyword: string, overrides?: { timeframe?: TrendingTimeframe; sort?: TrendingSort }) => {
     const clean = keyword.trim();
     if (!clean) return;
+    const timeframe = overrides?.timeframe ?? trendingTimeframe;
+    const sort = overrides?.sort ?? trendingSort;
     setTrendingKeyword(clean);
     setTrendingSearched(true);
     setTrendingLoading(true);
-    fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(clean)}&mode=keyword&page=1&limit=8`)
+    setTrendingStep(0);
+    const cap = TRENDING_STEPS.length - 2;
+    const stepTimer = setInterval(() => setTrendingStep((s) => (s < cap ? s + 1 : s)), 550);
+    fetch(`${BASE}/api/instagram/search?keyword=${encodeURIComponent(clean)}&mode=keyword&page=1&limit=20&timeframe=${timeframe}&sort=${sort}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         const list = Array.isArray(data) ? data : Array.isArray(data?.videos) ? data.videos : Array.isArray(data?.reels) ? data.reels : [];
-        setTrendingReels(list.slice(0, 8));
+        setTrendingReels(list.slice(0, 20));
       })
       .catch(() => setTrendingReels([]))
-      .finally(() => setTrendingLoading(false));
+      .finally(() => {
+        clearInterval(stepTimer);
+        setTrendingStep(TRENDING_STEPS.length - 1);
+        setTrendingLoading(false);
+      });
+  };
+
+  // Re-run with the current keyword whenever a filter changes, so the pills
+  // actually refine the results instead of just sitting there decoratively.
+  const setTrendingTimeframeAndRerun = (tf: TrendingTimeframe) => {
+    setTrendingTimeframe(tf);
+    if (trendingKeyword) searchTrendingReels(trendingKeyword, { timeframe: tf });
+  };
+  const setTrendingSortAndRerun = (sort: TrendingSort) => {
+    setTrendingSort(sort);
+    if (trendingKeyword) searchTrendingReels(trendingKeyword, { sort });
   };
 
   // ── Arriving from Home's "trending" intent — jump straight to this box
@@ -1712,14 +1770,17 @@ export default function InstagramAnalyzer() {
 
         {/* Trending reels — searchable strip, kept below the competitor analyzer */}
         <div ref={trendingPanelRef} className="panel p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4" style={{ color: PRIMARY }} />
-            <h2 className="font-bold text-sm text-foreground">{t('analyzer.trending_reels')}</h2>
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="w-5 h-5" style={{ color: PRIMARY }} />
+            <h2 className="font-bold text-lg text-foreground">{t('analyzer.trending_reels')}</h2>
           </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Live top 20 Instagram reels for your niche — filter by timeframe and sort to zero in on what&apos;s landing right now.
+          </p>
 
           <form
             onSubmit={(e) => { e.preventDefault(); searchTrendingReels(trendingInput); }}
-            className="flex gap-2 mb-3"
+            className="flex gap-2 mb-4"
           >
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -1734,18 +1795,65 @@ export default function InstagramAnalyzer() {
             <button
               type="submit"
               disabled={trendingLoading || !trendingInput.trim()}
-              className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-60 hover:shadow-lg transition-all shrink-0"
+              className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-60 hover:shadow-lg transition-all shrink-0 flex items-center gap-1.5"
               style={{ background: PRIMARY_GRAD }}
             >
-              {trendingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
+              {trendingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-3.5 h-3.5" /> Discover trends</>}
             </button>
           </form>
 
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Calendar className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Timeframe</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {TIMEFRAME_OPTIONS.map(opt => (
+                  <button key={opt.value} onClick={() => setTrendingTimeframeAndRerun(opt.value)} type="button"
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${trendingTimeframe === opt.value ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                    style={trendingTimeframe === opt.value ? { background: PRIMARY_GRAD } : { background: PRIMARY_CONTAINER }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <BarChart2 className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sort by</span>
+              </div>
+              <select
+                value={trendingSort}
+                onChange={(e) => setTrendingSortAndRerun(e.target.value as TrendingSort)}
+                className="px-3 py-1.5 rounded-xl border border-input bg-secondary text-foreground text-xs font-semibold outline-none focus:border-primary"
+              >
+                {SORT_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Hashtag quick picks */}
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {TRENDING_HASHTAGS.map(tag => (
+              <button key={tag} type="button" onClick={() => { setTrendingInput(tag); searchTrendingReels(tag); }}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                style={trendingKeyword.toLowerCase() === tag ? { background: PRIMARY_GRAD, color: 'white' } : { background: PRIMARY_CONTAINER, color: PRIMARY }}>
+                #{tag}
+              </button>
+            ))}
+          </div>
+
           {trendingLoading ? (
-            <div className="flex gap-2 overflow-x-auto">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="rounded-xl animate-pulse bg-secondary shrink-0" style={{ aspectRatio: '9/16', width: '110px' }} />
-              ))}
+            <div className="space-y-3">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="size-3.5 text-primary" />
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">Researching</span>
+                <em className="text-sm italic font-semibold text-foreground">&ldquo;{trendingKeyword}&rdquo;</em>
+              </div>
+              <ResearchChecklist steps={TRENDING_STEPS} activeStep={trendingStep} />
+              <p className="text-xs text-muted-foreground">Live scrape · reusing SocialRum&apos;s smart cache when available.</p>
             </div>
           ) : trendingReels.length > 0 ? (
             <div className="flex gap-2 overflow-x-auto horizontal-scroll pb-2" style={{ scrollSnapType: "x mandatory" }}>

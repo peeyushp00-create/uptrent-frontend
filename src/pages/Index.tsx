@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, ArrowRight, X, CheckCircle2, Loader2, Circle, MoreHorizontal } from "lucide-react";
+import { Sparkles, Send, ArrowRight, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
 import { supabase } from "@/lib/supabase";
 import { listSavedScripts } from "@/lib/api";
 import { LifeCalendar } from "@/components/LifeCalendar";
+import ResearchChecklist from "@/components/ResearchChecklist";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const ONBOARD_KEY = "socialrum:calendar-onboarded";
@@ -397,24 +398,8 @@ function ResearchAgentLoader({
 
       <p className="text-sm text-muted-foreground">&ldquo;{query}&rdquo;</p>
 
-      <div className="panel w-full max-w-xl p-5 text-left">
-        {steps.map((step, i) => {
-          const state = i < activeStep ? "done" : i === activeStep ? "active" : "pending";
-          return (
-            <div
-              key={step}
-              className={`flex items-center gap-3 py-2 transition-opacity ${state === "pending" ? "opacity-40" : "opacity-100"}`}
-            >
-              {state === "done" && <CheckCircle2 className="size-4 text-primary shrink-0" />}
-              {state === "active" && <Loader2 className="size-4 text-primary animate-spin shrink-0" />}
-              {state === "pending" && <Circle className="size-4 text-muted-foreground shrink-0" />}
-              <span className={`text-sm ${state === "active" ? "font-semibold text-foreground" : "text-foreground/80"}`}>
-                {step}
-              </span>
-              {state === "active" && <MoreHorizontal className="size-4 ml-auto text-muted-foreground shrink-0" />}
-            </div>
-          );
-        })}
+      <div className="w-full max-w-xl">
+        <ResearchChecklist steps={steps} activeStep={activeStep} />
       </div>
 
       <p className="text-xs text-muted-foreground">
