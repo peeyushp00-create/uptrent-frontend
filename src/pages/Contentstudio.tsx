@@ -1591,7 +1591,7 @@ function VideoEditor() {
           <div className="grid md:grid-cols-[320px_1fr_340px] gap-4 md:flex-1 md:min-h-0">
 
             {/* left column: transcript — stays visible even before a video is added */}
-            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 pr-1">
+            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 pr-1 thick-scrollbar">
                 <div className="panel p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -1696,8 +1696,8 @@ function VideoEditor() {
                 </div>
             </div>
 
-            {/* center column: video */}
-            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 px-1">
+            {/* center column: video — never scrolls, its natural height anchors the row */}
+            <div className="space-y-4 px-1">
               <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] mx-auto w-full" style={{ maxWidth: 340 }}>
                 {/* Video — shrinks to its half when a half overlay is active */}
                 <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
@@ -1818,7 +1818,7 @@ function VideoEditor() {
 
             {/* right column: caption designer — Music/Overlay tabs live here too,
                 so this stays available even before a transcript exists. */}
-            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 pr-1">
+            <div className="space-y-4 md:h-full md:overflow-y-auto md:min-h-0 pr-1 thick-scrollbar">
                 <div className="panel p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <Sparkles className="size-4" style={{ color: PURPLE }} />

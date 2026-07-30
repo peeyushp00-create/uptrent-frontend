@@ -130,6 +130,22 @@
 }
 ::-webkit-scrollbar-thumb:hover { background: #7C3AED60; }
 
+/* Thicker, more visible scrollbar (Google-product style) for panels where the
+   default thin one is easy to miss — e.g. Studio's side columns. */
+.thick-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: hsl(var(--primary) / 0.45) transparent;
+}
+.thick-scrollbar::-webkit-scrollbar { width: 12px; height: 12px; }
+.thick-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.thick-scrollbar::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--primary) / 0.45);
+  border-radius: 8px;
+  border: 3px solid hsl(var(--background));
+  background-clip: padding-box;
+}
+.thick-scrollbar::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--primary) / 0.65); }
+
 /* ── Focus ring ─────────────────────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid hsl(var(--ring));
