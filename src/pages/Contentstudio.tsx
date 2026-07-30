@@ -1171,7 +1171,27 @@ function VideoEditor() {
     const end = Math.min(duration || start + 2, start + 2);
     setSegments(prev => reindex([...prev, { id: -1, start, end, text: "New caption" }].sort((a, b) => a.start - b.start)));
   }
-  useEffect(() => { const onKey = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); } }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+      if (mod && e.key.toLowerCase() === "y") { e.preventDefault(); redo(); return; }
+      if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); if (!saving) saveProject(); return; }
+      if (mod) return;
+
+      const target = e.target as HTMLElement | null;
+      const typing = !!target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      if (typing) return;
+
+      const v = videoRef.current;
+      if (!v) return;
+      if (e.key === " ") { e.preventDefault(); if (v.paused) v.play().catch(() => {}); else v.pause(); return; }
+      if (e.key === "ArrowLeft") { e.preventDefault(); seek(Math.max(0, time - (e.shiftKey ? 5 : 1))); return; }
+      if (e.key === "ArrowRight") { e.preventDefault(); seek(Math.min(duration, time + (e.shiftKey ? 5 : 1))); return; }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
   function splitSeg(id: number) {
     const seg = segments.find(s => s.id === id); if (!seg) return;
     const pos = caretRef.current && caretRef.current.id === id ? caretRef.current.pos : Math.floor(seg.text.length / 2);

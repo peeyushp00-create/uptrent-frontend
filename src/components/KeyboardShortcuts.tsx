@@ -22,6 +22,17 @@ const NAV_SHORTCUTS: NavShortcut[] = [
   { key: ",", label: "Settings", path: "/settings" },
 ];
 
+// Display-only — the actual key handling for these lives in Contentstudio.tsx,
+// scoped to the editor so it can reach video/undo state directly. Listed here
+// only so "?" has one shared place to show every shortcut in the app.
+const STUDIO_SHORTCUTS: { key: string; label: string }[] = [
+  { key: "Space", label: "Play / pause" },
+  { key: "←  →", label: "Seek 1s (Shift = 5s)" },
+  { key: "Ctrl/⌘ Z", label: "Undo" },
+  { key: "Ctrl/⌘ ⇧ Z", label: "Redo" },
+  { key: "Ctrl/⌘ S", label: "Save project" },
+];
+
 const SEARCH_INPUT_ID = "home-search-input";
 
 function isTypingTarget(el: EventTarget | null) {
@@ -57,6 +68,10 @@ export default function KeyboardShortcuts() {
 
   const isYoutubePath = location.pathname.startsWith("/youtube");
   const effectivePlatform = isYoutubePath ? "youtube" : platform;
+  // Studio has its own key handling (space/arrows/save) and losing an edit to
+  // an accidental "s" → Scripts nav jump would be a bad time, so the global
+  // single-letter nav shortcuts sit out while the editor is open.
+  const isStudio = location.pathname.startsWith("/studio");
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -72,7 +87,7 @@ export default function KeyboardShortcuts() {
         setHelpOpen((v) => !v);
         return;
       }
-      if (helpOpen) return;
+      if (helpOpen || isStudio) return;
 
       if (e.key === "/") {
         e.preventDefault();
@@ -97,7 +112,7 @@ export default function KeyboardShortcuts() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [helpOpen, effectivePlatform, location.pathname, navigate]);
+  }, [helpOpen, effectivePlatform, isStudio, location.pathname, navigate]);
 
   if (!helpOpen) return null;
 
@@ -117,27 +132,43 @@ export default function KeyboardShortcuts() {
           <h2 className="text-base font-semibold text-foreground">Keyboard shortcuts</h2>
         </div>
 
-        <div className="space-y-1.5">
-          {activeShortcuts.map((s) => (
-            <div key={`${s.path}-${s.key}`} className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{s.label}</span>
-              <kbd className="px-2 py-0.5 rounded-md border border-border bg-secondary text-[11px] font-semibold text-foreground">
-                {s.key}
-              </kbd>
+        {isStudio ? (
+          <div className="space-y-1.5">
+            {STUDIO_SHORTCUTS.map((s) => (
+              <div key={s.key} className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{s.label}</span>
+                <kbd className="px-2 py-0.5 rounded-md border border-border bg-secondary text-[11px] font-semibold text-foreground">
+                  {s.key}
+                </kbd>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {activeShortcuts.map((s) => (
+              <div key={`${s.path}-${s.key}`} className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{s.label}</span>
+                <kbd className="px-2 py-0.5 rounded-md border border-border bg-secondary text-[11px] font-semibold text-foreground">
+                  {s.key}
+                </kbd>
+              </div>
+            ))}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Focus search</span>
+              <kbd className="px-2 py-0.5 rounded-md border border-border bg-secondary text-[11px] font-semibold text-foreground">/</kbd>
             </div>
-          ))}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Focus search</span>
-            <kbd className="px-2 py-0.5 rounded-md border border-border bg-secondary text-[11px] font-semibold text-foreground">/</kbd>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Show this menu</span>
-            <kbd className="px-2 py-0.5 rounded-md border border-border bg-secondary text-[11px] font-semibold text-foreground">?</kbd>
-          </div>
+        )}
+
+        <div className="flex items-center justify-between text-sm mt-1.5 pt-1.5 border-t border-border">
+          <span className="text-muted-foreground">Show this menu</span>
+          <kbd className="px-2 py-0.5 rounded-md border border-border bg-secondary text-[11px] font-semibold text-foreground">?</kbd>
         </div>
 
         <p className="mt-4 text-[11px] text-muted-foreground">
-          Shortcuts are disabled while typing in a text field.
+          {isStudio
+            ? "Navigation shortcuts are paused while the editor is open — text fields still work normally."
+            : "Shortcuts are disabled while typing in a text field."}
         </p>
       </div>
     </div>
