@@ -1698,7 +1698,7 @@ function VideoEditor() {
 
             {/* center column: video — never scrolls, its natural height anchors the row */}
             <div className="space-y-4 px-1">
-              <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] mx-auto w-full" style={{ maxWidth: 340 }}>
+              <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] mx-auto w-full" style={{ maxWidth: 240 }}>
                 {/* Video — shrinks to its half when a half overlay is active */}
                 <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
                   style={{
