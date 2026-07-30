@@ -35,13 +35,15 @@ const FONTS = [
   { id: "'Caveat',cursive", label: "Caveat" },
   { id: "'Permanent Marker',cursive", label: "Marker" },
   { id: "'Space Mono',monospace", label: "Mono" },
+  { id: "'Bangers',cursive", label: "Bangers" },
+  { id: "'Press Start 2P',monospace", label: "Pixel" },
 ];
 
 // ── Caption style system — templates + per-property overrides, matching
 // Lovable's "Social Spark Studio" caption editor exactly. ──
 type CapPosition = "bottom" | "middle" | "top";
 type CapAnimation = "none" | "fade" | "pop" | "slide";
-type TemplateId = "minimal" | "bold" | "modern" | "podcast" | "creator" | "business" | "news" | "glow" | "sticker" | "typewriter" | "vibrant";
+type TemplateId = "minimal" | "bold" | "modern" | "podcast" | "creator" | "business" | "news" | "glow" | "sticker" | "typewriter" | "vibrant" | "romantic" | "comic" | "pixel" | "luxe";
 
 type CaptionStyle = {
   fontFamily: string;
@@ -68,6 +70,10 @@ const TEMPLATES: Record<TemplateId, { label: string; style: CaptionStyle }> = {
   sticker: { label: "Sticker", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.6, fontWeight: 400, textColor: "#111827", highlightColor: "#f97316", background: "pill", bgColor: "#fde047", position: "middle", animation: "pop", uppercase: false } },
   typewriter: { label: "Typewriter", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.15, fontWeight: 700, textColor: "#e5e7eb", highlightColor: "#5eead4", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
   vibrant: { label: "Vibrant", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.9, fontWeight: 800, textColor: "#ffffff", highlightColor: "#f472b6", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
+  romantic: { label: "Romantic", style: { fontFamily: "'Caveat',cursive", fontSize: 2, fontWeight: 700, textColor: "#fff5f0", highlightColor: "#fb923c", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  comic: { label: "Comic", style: { fontFamily: "'Bangers',cursive", fontSize: 2, fontWeight: 400, textColor: "#fef08a", highlightColor: "#ef4444", background: "pill", bgColor: "#1d4ed8", position: "middle", animation: "pop", uppercase: true } },
+  pixel: { label: "Pixel", style: { fontFamily: "'Press Start 2P',monospace", fontSize: 0.85, fontWeight: 400, textColor: "#39ff14", highlightColor: "#22d3ee", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  luxe: { label: "Luxe", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.3, fontWeight: 500, textColor: "#f5f5f0", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
 };
 
 type LangId = "auto" | "en" | "hi" | "ml" | "ta" | "te" | "kn" | "mr" | "gu" | "bn" | "pa";
@@ -1550,7 +1556,7 @@ function VideoEditor() {
 
   return (
     <div className="space-y-5">
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@600&family=Montserrat:wght@700&family=Poppins:wght@600&family=Playfair+Display:wght@500;700&family=Caveat:wght@700&family=Permanent+Marker&family=Space+Mono:wght@700&family=Bangers&family=Press+Start+2P&display=swap" />
 
           {/* Editor toolbar */}
           <div className="flex items-center justify-between bg-card rounded-2xl border border-border px-4 py-3">
