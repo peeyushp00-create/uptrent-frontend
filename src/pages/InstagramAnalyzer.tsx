@@ -19,7 +19,6 @@ const PRIMARY_CONTAINER = "hsl(var(--secondary))";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const HOURS_LABELS = ['12am', '3am', '6am', '9am', '12pm', '3pm', '6pm', '9pm'];
 
 const formatNum = (n: number) => {
   if (!n) return '—';
@@ -432,24 +431,15 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         {hiker?.reels?.length > 0 && (() => {
           const reels = hiker.reels || [];
           const dayCount: Record<string, number> = {};
-          const hourCount: Record<number, number> = {};
           DAYS_SHORT.forEach(d => dayCount[d] = 0);
           reels.forEach((r: any) => {
             if (!r.posted_at) return;
             const d = new Date(r.posted_at);
             const day = DAYS_SHORT[d.getDay()];
-            const hourIST = (d.getUTCHours() + 5) % 24;
             dayCount[day] = (dayCount[day] || 0) + 1;
-            hourCount[hourIST] = (hourCount[hourIST] || 0) + 1;
           });
           const maxDay = Math.max(...Object.values(dayCount), 1);
-          const maxHour = Math.max(...Object.values(hourCount), 1);
           const bestDay = Object.entries(dayCount).sort((a,b) => b[1]-a[1])[0]?.[0];
-          const bestHourRaw = Object.entries(hourCount).sort((a,b) => b[1]-a[1])[0]?.[0];
-          const bestHour = bestHourRaw !== undefined ? (() => {
-            const h = parseInt(bestHourRaw);
-            return `${h % 12 || 12}:00 ${h >= 12 ? 'PM' : 'AM'} IST`;
-          })() : null;
           return (
             <div className="panel p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -465,16 +455,9 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                     <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestDay}</span>
                   </div>
                 )}
-                {bestHour && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
-                    <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                    <span className="text-xs text-muted-foreground">Best time:</span>
-                    <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestHour}</span>
-                  </div>
-                )}
               </div>
               {Object.values(dayCount).some(v => v > 0) && (
-                <div className="mb-4">
+                <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Posts by Day</p>
                   <div className="flex items-end gap-1.5 h-14">
                     {DAYS_SHORT.map(day => (
@@ -487,23 +470,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
                         <span className="text-[9px] font-bold" style={{ color: day === bestDay ? PRIMARY : 'hsl(var(--muted-foreground))' }}>{day}</span>
                       </div>
                     ))}
-                  </div>
-                </div>
-              )}
-              {Object.values(hourCount).some(v => v > 0) && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Posts by Time (IST)</p>
-                  <div className="flex items-end gap-0.5 h-10">
-                    {Array.from({ length: 24 }, (_, h) => (
-                      <div key={h} className="flex-1 rounded-t-sm" style={{
-                        height: `${Math.round(((hourCount[h] || 0) / maxHour) * 36)}px`,
-                        minHeight: (hourCount[h] || 0) > 0 ? '3px' : '0',
-                        background: (hourCount[h] || 0) === maxHour ? PRIMARY : PRIMARY_CONTAINER,
-                      }} />
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    {HOURS_LABELS.map(h => <span key={h} className="text-[8px] text-muted-foreground">{h}</span>)}
                   </div>
                 </div>
               )}
@@ -1461,24 +1427,15 @@ export default function InstagramAnalyzer() {
               const reels = hiker.reels || [];
               // Build day count from real posted_at timestamps
               const dayCount: Record<string, number> = {};
-              const hourCount: Record<number, number> = {};
               DAYS_SHORT.forEach(d => dayCount[d] = 0);
               reels.forEach((r: any) => {
                 if (!r.posted_at) return;
                 const d = new Date(r.posted_at);
                 const day = DAYS_SHORT[d.getDay()];
-                const hourIST = (d.getUTCHours() + 5) % 24;
                 dayCount[day] = (dayCount[day] || 0) + 1;
-                hourCount[hourIST] = (hourCount[hourIST] || 0) + 1;
               });
               const maxDay = Math.max(...Object.values(dayCount), 1);
-              const maxHour = Math.max(...Object.values(hourCount), 1);
               const bestDay = Object.entries(dayCount).sort((a,b) => b[1]-a[1])[0]?.[0];
-              const bestHourRaw = Object.entries(hourCount).sort((a,b) => b[1]-a[1])[0]?.[0];
-              const bestHour = bestHourRaw !== undefined ? (() => {
-                const h = parseInt(bestHourRaw);
-                return `${h % 12 || 12}:00 ${h >= 12 ? 'PM' : 'AM'} IST`;
-              })() : null;
               const postsPerWeek = reels.length > 0
                 ? (() => {
                     const sorted = reels.filter((r: any) => r.posted_at).sort((a: any, b: any) => new Date(a.posted_at).getTime() - new Date(b.posted_at).getTime());
@@ -1505,13 +1462,6 @@ export default function InstagramAnalyzer() {
                         <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestDay}</span>
                       </div>
                     )}
-                    {bestHour && (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: PRIMARY_CONTAINER }}>
-                        <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
-                        <span className="text-xs text-muted-foreground">Best time:</span>
-                        <span className="text-xs font-bold" style={{ color: PRIMARY }}>{bestHour}</span>
-                      </div>
-                    )}
                     {postsPerWeek && (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: '#e8f5e9' }}>
                         <TrendingUp className="w-3.5 h-3.5 text-green-600" />
@@ -1535,25 +1485,6 @@ export default function InstagramAnalyzer() {
                             <span className="text-[9px] font-bold" style={{ color: day === bestDay ? PRIMARY : 'hsl(var(--muted-foreground))' }}>{day}</span>
                           </div>
                         ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Hours bar chart */}
-                  {Object.values(hourCount).some(v => v > 0) && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Posts by Time (IST)</p>
-                      <div className="flex items-end gap-0.5 h-12">
-                        {Array.from({ length: 24 }, (_, h) => (
-                          <div key={h} className="flex-1 rounded-t-sm transition-all" style={{
-                            height: `${Math.round(((hourCount[h] || 0) / maxHour) * 40)}px`,
-                            minHeight: (hourCount[h] || 0) > 0 ? '3px' : '0',
-                            background: (hourCount[h] || 0) === maxHour ? PRIMARY : PRIMARY_CONTAINER,
-                          }} />
-                        ))}
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        {HOURS_LABELS.map(h => <span key={h} className="text-[8px] text-muted-foreground">{h}</span>)}
                       </div>
                     </div>
                   )}
