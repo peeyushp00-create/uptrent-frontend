@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { forwardRef, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, Newspaper, FileText, Settings, Youtube, Instagram, Tag, Search, BarChart2 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { useTheme } from "@/contexts/ThemeContext";
 
-export default function BottomNav() {
+const BottomNav = forwardRef<HTMLDivElement>(function BottomNav(_props, ref) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -48,6 +48,7 @@ export default function BottomNav() {
 
   return (
     <div
+      ref={ref}
       data-platform={effectivePlatform}
       className={`theme-redesign ${theme} fixed bottom-0 left-0 right-0 z-[100] bg-card border-t border-border`}
     >
@@ -84,4 +85,6 @@ export default function BottomNav() {
       </div>
     </div>
   );
-}
+});
+
+export default BottomNav;

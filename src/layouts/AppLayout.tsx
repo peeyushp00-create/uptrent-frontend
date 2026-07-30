@@ -11,12 +11,29 @@ export default function AppLayout() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
+  const bottomNavRef = useRef<HTMLDivElement>(null);
+  const [bottomNavHeight, setBottomNavHeight] = useState(0);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Measure the real BottomNav height instead of guessing a fixed padding —
+  // it renders two stacked rows (platform toggle + nav items) that add up to
+  // more than a hardcoded value would assume, which was clipping page
+  // content (e.g. Studio's timeline) behind the fixed nav bar.
+  useEffect(() => {
+    if (!isMobile) { setBottomNavHeight(0); return; }
+    const el = bottomNavRef.current;
+    if (!el) return;
+    const update = () => setBottomNavHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isMobile]);
 
   // Save scroll position on every scroll event
   useEffect(() => {
@@ -41,12 +58,12 @@ export default function AppLayout() {
       {!isMobile && <AppSidebar />}
 
       {/* Main content */}
-      <main ref={mainRef} className="flex-1 overflow-y-auto" style={{ paddingBottom: isMobile ? '70px' : '0' }}>
+      <main ref={mainRef} className="flex-1 overflow-y-auto" style={{ paddingBottom: isMobile ? bottomNavHeight : 0 }}>
         <Outlet />
       </main>
 
       {/* Bottom nav — mobile only */}
-      {isMobile && <BottomNav />}
+      {isMobile && <BottomNav ref={bottomNavRef} />}
 
       <KeyboardShortcuts />
 
