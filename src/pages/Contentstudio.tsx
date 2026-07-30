@@ -1591,9 +1591,8 @@ function VideoEditor() {
 
           <div className="grid md:grid-cols-[320px_1fr_340px] gap-4 items-start">
 
-            {/* left column: transcript */}
+            {/* left column: transcript — stays visible even before a video is added */}
             <div className="space-y-4">
-              {hasCaptions ? (
                 <div className="panel p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -1631,7 +1630,7 @@ function VideoEditor() {
                       style={{ color: redoStack.length ? PURPLE : undefined }}>
                       <Redo2 className="size-3.5" />
                     </button>
-                    <button onClick={() => transcribe()} disabled={status === "uploading" || status === "transcribing"} title="Re-transcribe"
+                    <button onClick={() => transcribe()} disabled={!hasVideo || status === "uploading" || status === "transcribing"} title="Re-transcribe"
                       className="shrink-0 h-8 w-8 rounded-md text-white flex items-center justify-center transition disabled:opacity-40 hover:opacity-90"
                       style={{ background: GRAD }}>
                       {status === "transcribing" || status === "uploading" ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
@@ -1661,6 +1660,11 @@ function VideoEditor() {
                   </div>
 
                   <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
+                    {segments.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">
+                        {hasVideo ? "Transcribing… captions will appear here." : "Upload a video to auto-transcribe, or add a caption manually."}
+                      </p>
+                    )}
                     {segments.map(s => { const active = s.id === activeId; return (
                       <div key={s.id} ref={el => (rowRefs.current[s.id] = el)}
                         className="group flex gap-3 p-3 rounded-xl border border-border transition"
@@ -1691,11 +1695,6 @@ function VideoEditor() {
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-card flex items-center justify-center text-sm text-muted-foreground p-10 text-center">
-                  {hasVideo ? "Transcribe to edit captions here." : "Upload a video to see its transcript here."}
-                </div>
-              )}
             </div>
 
             {/* center column: video */}
