@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Sparkles, FileText, UserPlus, Bell, BellRing, Bookmark, BookmarkCheck,
-  Flame, Eye, Target, Users, TrendingUp, BarChart2, Loader2,
+  Flame, Eye, Target, Users, TrendingUp, BarChart2, Loader2, Globe, Rocket, ChevronDown,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import SEO from "@/components/SEO";
@@ -48,6 +48,14 @@ const STAT_TILES: { key: keyof Omit<ResearchSummary, "summary">; label: string; 
   { key: "audience", label: "Audience", icon: BarChart2 },
 ];
 
+type BreakdownKey = "breakdown" | "winning" | "replicate";
+
+const BREAKDOWN_CHIPS: { key: BreakdownKey; icon: typeof BarChart2; label: string; subtitle: string; color: string }[] = [
+  { key: "breakdown", icon: BarChart2, label: "View Breakdown", subtitle: "The numbers behind this niche", color: "#22c55e" },
+  { key: "winning", icon: Globe, label: "Why It's Winning", subtitle: "What's driving the trend", color: "#ec4899" },
+  { key: "replicate", icon: Rocket, label: "Replicate This", subtitle: "Your practical playbook", color: "#a855f7" },
+];
+
 export default function ResearchResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -74,6 +82,21 @@ export default function ResearchResultPage() {
   });
   const isTracked = tracked.includes(query.toLowerCase());
   const isSaved = saved.includes(query.toLowerCase());
+
+  const [openBreakdown, setOpenBreakdown] = useState<BreakdownKey | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const breakdownContent: Record<BreakdownKey, string | undefined> = {
+    breakdown: summary ? [summary.opportunity, summary.competition].filter(Boolean).join(" ") : undefined,
+    winning: summary?.growth,
+    replicate: summary?.audience,
+  };
+
+  const avgViews = reels.length ? Math.round(reels.reduce((s, r) => s + (r.views || 0), 0) / reels.length) : 0;
+  const avgLikes = reels.length ? Math.round(reels.reduce((s, r) => s + (r.likes || 0), 0) / reels.length) : 0;
+  const avgMultiplier = reels.length
+    ? (reels.reduce((s, r) => s + (r.outlier_multiplier || 0), 0) / reels.length).toFixed(1)
+    : "0";
 
   useEffect(() => {
     if (!query || platform !== "Instagram") return;
@@ -218,14 +241,88 @@ export default function ResearchResultPage() {
           </p>
         )}
 
+        {/* Breakdown chips */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {BREAKDOWN_CHIPS.map(({ key, icon: Icon, label, subtitle, color }) => (
+            <button
+              key={key}
+              onClick={() => setOpenBreakdown((cur) => (cur === key ? null : key))}
+              className="panel flex items-center gap-3 p-3 text-left hover:bg-accent/40 transition-colors"
+            >
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl" style={{ background: `${color}22`, color }}>
+                <Icon className="size-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{label}</p>
+                <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+              </div>
+              <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${openBreakdown === key ? "rotate-180" : ""}`} />
+            </button>
+          ))}
+        </div>
+
+        {openBreakdown && (
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="panel p-4 text-sm leading-relaxed text-foreground">
+            {breakdownContent[openBreakdown] || (
+              <span className="text-muted-foreground">Still building this part of the report…</span>
+            )}
+          </motion.div>
+        )}
+
         {/* Top performing reels */}
         {(reelsLoading || reels.length > 0) && (
-          <div className="space-y-2">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-              <Flame className="size-3.5" /> Top Performing Reels Right Now
-            </span>
-            <h2 className="text-xl font-bold text-foreground">The reels behind this report</h2>
-            <p className="text-sm text-muted-foreground">Tap any reel to open the full AI breakdown.</p>
+          <div className="space-y-5">
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: '"Fraunces", Georgia, serif' }}>
+                Top Performing Reels
+              </h2>
+              <p className="text-sm text-muted-foreground">The proof behind the analysis · tap any reel for the full breakdown</p>
+            </div>
+
+            <button
+              onClick={() => setAdvancedOpen((v) => !v)}
+              className="panel w-full flex items-center gap-3 p-3 text-left hover:bg-accent/40 transition-colors"
+            >
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-400">
+                <Sparkles className="size-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Optional</p>
+                <p className="text-sm font-semibold text-foreground">Advanced insights</p>
+              </div>
+              <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${advancedOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {advancedOpen && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="panel p-4 grid grid-cols-3 gap-3 text-center -mt-2">
+                {reelsLoading ? (
+                  <p className="col-span-3 text-xs text-muted-foreground">Crunching the numbers…</p>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{formatNum(avgViews)}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg views</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{formatNum(avgLikes)}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg likes</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{avgMultiplier}×</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg outlier</p>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            )}
+
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+                <Flame className="size-3.5" /> Top Performing Reels Right Now
+              </span>
+              <h3 className="text-xl font-bold text-foreground">The reels behind this report</h3>
+              <p className="text-sm text-muted-foreground">Tap any reel to open the full AI breakdown.</p>
+            </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
               {reelsLoading
