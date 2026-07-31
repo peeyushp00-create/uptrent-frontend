@@ -14,7 +14,6 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['Space Grotesk', 'sans-serif'],
         heading: ['Space Grotesk', 'sans-serif'],
         body: ['Inter', 'sans-serif'],
       },
@@ -91,4 +90,3 @@ export default {
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
-

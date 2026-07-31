@@ -25,7 +25,7 @@ import InsightPage from "./pages/InsightPage";
 import PricingPage from "./pages/PricingPage";
 import ContentStudio from "./pages/Contentstudio";
 // import VideoCaptioner from "./pages/VideoCaptioner"; // temporarily hidden
-import LandingPage from "./socialspark/pages/Landing";
+import LandingPage from "./pages/LandingPage";
 import InstagramAnalyzerLanding from "./pages/marketing/InstagramAnalyzerLanding";
 import ScriptGeneratorLanding from "./pages/marketing/ScriptGeneratorLanding";
 import CaptionsLanding from "./pages/marketing/CaptionsLanding";
@@ -107,4 +107,3 @@ const App = () => (
 );
 
 export default App;
-
