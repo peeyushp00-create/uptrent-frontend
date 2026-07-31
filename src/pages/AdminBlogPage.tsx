@@ -206,7 +206,9 @@ export default function AdminBlogPage() {
       fetchRedirects();
     } else {
       const body = await res.json().catch(() => null);
-      setRedirectError(body?.message || 'Failed to save redirect.');
+      setRedirectError(body?.code === 'PGRST205'
+        ? 'Redirects need the pending database migration to be run first.'
+        : body?.message || 'Failed to save redirect.');
     }
   };
 
@@ -436,24 +438,41 @@ export default function AdminBlogPage() {
       }).catch(() => { /* best-effort — doesn't block publishing */ });
     }
 
-    let res;
-    if (editingBlog) {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/blogs?id=eq.${editingBlog.id}`, {
-        method: 'PATCH',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-    } else {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/blogs`, {
-        method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify(payload),
-      });
+    const save = (body: Record<string, unknown>) => editingBlog
+      ? fetch(`${SUPABASE_URL}/rest/v1/blogs?id=eq.${editingBlog.id}`, {
+          method: 'PATCH',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+      : fetch(`${SUPABASE_URL}/rest/v1/blogs`, {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify(body),
+        });
+
+    let res = await save(payload);
+
+    // The 2026-07-31_blog_cms_fields.sql migration adds meta_title, category,
+    // etc. — if it hasn't been run yet, PostgREST rejects the whole request
+    // (PGRST204 "column does not exist") rather than ignoring the unknown
+    // fields. Fall back to the columns that have always existed so posting
+    // still works, and tell the admin why the new fields didn't save.
+    let migrationPending = false;
+    if (!res.ok) {
+      const errBody = await res.clone().json().catch(() => null);
+      if (errBody?.code === 'PGRST204') {
+        migrationPending = true;
+        const { title, description, image_url, author, published, slug: slugField, scheduled_at } = payload;
+        res = await save({ title, description, image_url, author, published, slug: slugField, scheduled_at });
+      }
     }
 
     setSaving(false);
     if (res.ok) {
       setSaved(true); setTimeout(() => setSaved(false), 3000);
+      if (migrationPending) {
+        setFormError('Saved — but the slug/meta/category/author/noindex fields need the pending database migration to be run before they\'ll save. The post itself is live.');
+      }
       setShowForm(false); setEditingBlog(null); fetchBlogs();
     } else {
       const body = await res.json().catch(() => null);
