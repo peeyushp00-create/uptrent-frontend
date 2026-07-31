@@ -19,6 +19,17 @@ const CAPTION_PRESET_OFFSET: Record<"top" | "middle" | "bottom", CaptionOffset> 
   bottom: { x: 50, y: 86 },
 };
 
+const RESOLUTIONS = [
+  { key: "sd", label: "SD", hint: "576p" },
+  { key: "hd", label: "HD", hint: "720p" },
+  { key: "1080", label: "Full HD", hint: "1080p" },
+] as const;
+const QUALITIES = [
+  { key: "low", label: "Low" },
+  { key: "medium", label: "Medium" },
+  { key: "high", label: "High" },
+] as const;
+
 const FONTS = [
   { key: "Poppins", label: "Poppins", css: "'Poppins', sans-serif" },
   { key: "Montserrat", label: "Montserrat", css: "'Montserrat', sans-serif" },
@@ -110,6 +121,8 @@ export default function VideoCaptioner() {
   const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">("bottom");
   const [captionOffset, setCaptionOffset] = useState<CaptionOffset | null>(null);
   const [captionDragging, setCaptionDragging] = useState(false);
+  const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]["key"]>("sd");
+  const [quality, setQuality] = useState<typeof QUALITIES[number]["key"]>("medium");
   const [showBox, setShowBox] = useState(true);
   const [textColor, setTextColor] = useState("#ffffff");
   const [boxColor, setBoxColor] = useState("#000000");
@@ -227,7 +240,7 @@ export default function VideoCaptioner() {
             name: (segs[0]?.text || "Untitled").slice(0, 40),
             video_url: pub.publicUrl,
             data: { segments: segs, font: font.key, captionPos, captionOffset, showBox, textColor, boxColor,
-              music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd },
+              music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd, resolution, quality },
           }).select("id").single();
           if (ins) { setCurrentProjectId(ins.id); loadProjects(); }
           return;
@@ -383,6 +396,7 @@ export default function VideoCaptioner() {
           trimStart, trimEnd: tEnd,
           muteOriginal,
           captionPos, captionOffset: effectiveCaptionOffset, showBox, textColor, boxColor,
+          resolution, quality,
           watermark: true, // free tier — flip to false for paid users later
           music: hasMusic && /^https?:\/\//.test(music.url || "")
             ? { url: music.url, startInVideo: musicStart, songTrim, volume, fadeIn, fadeOut }
@@ -421,6 +435,7 @@ export default function VideoCaptioner() {
     return {
       segments, font: font.key, captionPos, captionOffset, showBox, textColor, boxColor,
       music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd,
+      resolution, quality,
     };
   }
 
@@ -450,7 +465,7 @@ export default function VideoCaptioner() {
     if (!currentProjectId || !hasProject) return;
     const t = setTimeout(() => saveProject(true), 1500);
     return () => clearTimeout(t);
-  }, [segments, font, captionPos, captionOffset, showBox, textColor, boxColor, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd]);
+  }, [segments, font, captionPos, captionOffset, showBox, textColor, boxColor, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd, resolution, quality]);
 
   async function openProject(id: string) {
     const { data: p } = await supabase.from("caption_projects").select("*").eq("id", id).single();
@@ -462,6 +477,8 @@ export default function VideoCaptioner() {
     setFont(FONTS.find(f => f.key === d.font) || FONTS[0]);
     setCaptionPos(d.captionPos || "bottom");
     setCaptionOffset(d.captionOffset || null);
+    setResolution(RESOLUTIONS.some(r => r.key === d.resolution) ? d.resolution : "sd");
+    setQuality(QUALITIES.some(q => q.key === d.quality) ? d.quality : "medium");
     setShowBox(d.showBox ?? true);
     setTextColor(d.textColor || "#ffffff"); setBoxColor(d.boxColor || "#000000");
     setMusic(d.music || MUSIC[0]); setMusicStart(d.musicStart || 0); setSongTrim(d.songTrim || 0);
@@ -664,6 +681,40 @@ export default function VideoCaptioner() {
                 </div>
               </div>
             </div>
+
+            {!exportUrl && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Resolution</p>
+                  <div className="flex gap-1.5">
+                    {RESOLUTIONS.map(r => (
+                      <button key={r.key} onClick={() => setResolution(r.key)}
+                        title={r.hint}
+                        className="flex-1 px-2 py-1.5 rounded-lg border text-xs font-semibold transition"
+                        style={resolution === r.key
+                          ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
+                          : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Quality</p>
+                  <div className="flex gap-1.5">
+                    {QUALITIES.map(q => (
+                      <button key={q.key} onClick={() => setQuality(q.key)}
+                        className="flex-1 px-2 py-1.5 rounded-lg border text-xs font-semibold capitalize transition"
+                        style={quality === q.key
+                          ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
+                          : { borderColor: "#e5e7eb", color: "#6b7280" }}>
+                        {q.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {exportUrl ? (
               <div className="space-y-2">
