@@ -150,6 +150,10 @@ export default function VideoCaptioner() {
     return seg ? seg.id : null;
   }, [segments, time]);
   const activeText = activeId != null ? segments.find(s => s.id === activeId)?.text : "";
+  // Falls back to a sample line when the video isn't currently playing over
+  // any caption (e.g. paused, or between segments) so the drag handle is
+  // always present — otherwise there was nothing to grab most of the time.
+  const previewCaptionText = activeText || segments[0]?.text || "Sample caption text";
 
   useEffect(() => {
     if (activeId != null) rowRefs.current[activeId]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -578,12 +582,13 @@ export default function VideoCaptioner() {
                 onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause}
                 onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
                 className="w-full aspect-[9/16] object-contain" />
-              {activeText && (
+              {segments.length > 0 && (
                 <div className="absolute px-3 text-center cursor-move touch-none select-none"
                   style={{
                     left: `${effectiveCaptionOffset.x}%`,
                     top: `${effectiveCaptionOffset.y}%`,
                     transform: "translate(-50%, -50%)",
+                    opacity: activeText ? 1 : 0.55,
                   }}
                   onPointerDown={e => { e.preventDefault(); setCaptionDragging(true); }}>
                   <span className="inline-block px-2.5 py-1 rounded-md text-sm"
@@ -593,7 +598,7 @@ export default function VideoCaptioner() {
                       background: showBox ? boxColor : "transparent",
                       lineHeight: 1.25,
                     }}>
-                    {activeText}
+                    {previewCaptionText}
                   </span>
                 </div>
               )}
