@@ -29,6 +29,13 @@ const CATEGORIES = [
   { value: 'youtube', label: 'YouTube' },
 ];
 
+const FONTS: { value: string; label: string; stack: string }[] = [
+  { value: 'sans', label: 'Sans Serif (default)', stack: "'DM Sans', sans-serif" },
+  { value: 'serif', label: 'Serif', stack: "'Lora', Georgia, serif" },
+  { value: 'mono', label: 'Monospace', stack: "'JetBrains Mono', monospace" },
+];
+const fontStack = (value: string) => FONTS.find(f => f.value === value)?.stack || FONTS[0].stack;
+
 interface Blog {
   id: string;
   title: string;
@@ -43,6 +50,7 @@ interface Blog {
   meta_description?: string;
   cover_alt?: string;
   category?: string;
+  font_family?: string;
   author_bio?: string;
   author_photo_url?: string;
   noindex?: boolean;
@@ -58,7 +66,7 @@ interface Redirect {
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
   * { box-sizing: border-box; }
   .admin-input { width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(139,92,246,0.2); border-radius:10px; padding:11px 14px; color:#fff; font-size:14px; outline:none; font-family:'DM Sans',sans-serif; transition:border-color .2s; }
   .admin-input:focus { border-color:#7c3aed; }
@@ -111,6 +119,7 @@ export default function AdminBlogPage() {
   const [metaDescription, setMetaDescription] = useState('');
   const [coverAlt, setCoverAlt] = useState('');
   const [category, setCategory] = useState('');
+  const [font, setFont] = useState('sans');
   const [authorBio, setAuthorBio] = useState('');
   const [authorPhotoFile, setAuthorPhotoFile] = useState<File | null>(null);
   const [authorPhotoPreview, setAuthorPhotoPreview] = useState<string | null>(null);
@@ -347,7 +356,7 @@ export default function AdminBlogPage() {
     setPreview(false); setMobilePreview(false);
     setSlug(''); setSlugTouched(false);
     setMetaTitle(''); setMetaDescription(''); setCoverAlt('');
-    setCategory(''); setAuthorBio('');
+    setCategory(''); setAuthorBio(''); setFont('sans');
     setAuthorPhotoFile(null); setAuthorPhotoPreview(null); setAuthorPhotoEncoded(null);
     setNoindex(false);
     setShowForm(true);
@@ -367,6 +376,7 @@ export default function AdminBlogPage() {
     setMetaTitle(blog.meta_title || ''); setMetaDescription(blog.meta_description || '');
     setCoverAlt(blog.cover_alt || '');
     setCategory(blog.category || ''); setAuthorBio(blog.author_bio || '');
+    setFont(blog.font_family || 'sans');
     setAuthorPhotoFile(null); setAuthorPhotoPreview(blog.author_photo_url || null); setAuthorPhotoEncoded(null);
     setNoindex(!!blog.noindex);
     setShowForm(true);
@@ -441,6 +451,7 @@ export default function AdminBlogPage() {
       meta_description: metaDescription.trim() || null,
       cover_alt: coverAlt.trim() || null,
       category: category || null,
+      font_family: font,
       author_bio: authorBio.trim() || null,
       author_photo_url,
       noindex,
@@ -681,7 +692,7 @@ export default function AdminBlogPage() {
                       {category && <span style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#a78bfa', fontWeight: 700 }}>{CATEGORIES.find(c => c.value === category)?.label}</span>}
                       <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: mobilePreview ? 20 : 24, fontWeight: 800, color: '#fff', margin: '8px 0 12px' }}>{title || 'Untitled Post'}</h1>
                       <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>By {author} · Just now</p>
-                      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', fontFamily: "'DM Sans', sans-serif" }}>
+                      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', fontFamily: fontStack(font) }}>
                         {description
                           ? <ReactMarkdown components={previewMarkdownComponents}>{description}</ReactMarkdown>
                           : <p style={{ lineHeight: 1.8 }}>No content yet...</p>}
@@ -747,12 +758,20 @@ export default function AdminBlogPage() {
                       className="admin-input" style={{ marginTop: 8 }} />
                   </div>
 
-                  {/* Category */}
-                  <div>
-                    <label style={labelStyle}>Category</label>
-                    <select value={category} onChange={e => setCategory(e.target.value)} className="admin-input" style={{ colorScheme: 'dark' }}>
-                      {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
+                  {/* Category + Font */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label style={labelStyle}>Category</label>
+                      <select value={category} onChange={e => setCategory(e.target.value)} className="admin-input" style={{ colorScheme: 'dark' }}>
+                        {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Body font</label>
+                      <select value={font} onChange={e => setFont(e.target.value)} className="admin-input" style={{ colorScheme: 'dark', fontFamily: fontStack(font) }}>
+                        {FONTS.map(f => <option key={f.value} value={f.value} style={{ fontFamily: f.stack }}>{f.label}</option>)}
+                      </select>
+                    </div>
                   </div>
 
                   {/* Rich text editor */}

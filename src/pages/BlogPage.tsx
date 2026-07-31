@@ -22,6 +22,13 @@ const CATEGORIES: { value: string; label: string }[] = [
   { value: 'youtube', label: 'YouTube' },
 ];
 
+const FONT_STACKS: Record<string, string> = {
+  sans: "'DM Sans', sans-serif",
+  serif: "'Lora', Georgia, serif",
+  mono: "'JetBrains Mono', monospace",
+};
+const fontStack = (value?: string) => FONT_STACKS[value || 'sans'] || FONT_STACKS.sans;
+
 interface Blog {
   id: string;
   title: string;
@@ -39,6 +46,7 @@ interface Blog {
   author_bio?: string;
   author_photo_url?: string;
   noindex?: boolean;
+  font_family?: string;
 }
 
 interface Comment {
@@ -392,7 +400,7 @@ export default function BlogPage() {
       )}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
         .blog-card { position: relative; }
         .blog-card::before {
           content: '';
@@ -513,7 +521,7 @@ export default function BlogPage() {
                 </div>
               )}
 
-              <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.65)' }}>
+              <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.65)', fontFamily: fontStack(selected.font_family) }}>
                 <ReactMarkdown components={markdownComponents}>{selected.description}</ReactMarkdown>
               </div>
 
