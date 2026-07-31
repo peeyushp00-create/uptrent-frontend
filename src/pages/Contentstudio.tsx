@@ -946,6 +946,11 @@ function VideoEditor() {
   const [dragPip, setDragPip] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [dragCaption, setDragCaption] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  // Trim: 0/0 means "use the full clip" — trimEnd only takes effect once set,
+  // same convention as duration elsewhere in this file.
+  const [trimStart, setTrimStart] = useState(() => savedStudioState?.trimStart ?? 0);
+  const [trimEnd, setTrimEnd] = useState(() => savedStudioState?.trimEnd ?? 0);
+  const [dragTrim, setDragTrim] = useState<"start" | "end" | null>(null);
 
   // save
   const [savedAt, setSavedAt] = useState(() => savedStudioState?.savedAt ?? "");
@@ -967,6 +972,7 @@ function VideoEditor() {
     overlays, selOverlay,
     showPex, pexTab, pexQ, pexType, pexItems, pexLoading, uploadingOverlay,
     music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, uploadingMusic, uploadedMusic,
+    trimStart, trimEnd,
     savedAt, projectId, saveError,
     showProjects, projects
   };
@@ -1182,7 +1188,7 @@ function VideoEditor() {
     autoSaveTimerRef.current = setTimeout(() => saveProjectRef.current(), 5000);
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
   }, [hostedUrl, segments, template, style,
-      overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume]);
+      overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, trimStart, trimEnd]);
 
   // overlay drag
   useEffect(() => {
@@ -1269,6 +1275,21 @@ function VideoEditor() {
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [dragCaption]);
+
+  // Trim handles on the video track — cuts off the start and/or end of the clip.
+  useEffect(() => {
+    if (!dragTrim) return;
+    const move = (e: PointerEvent) => {
+      const el = tracksRef.current; if (!el || !duration) return;
+      const rect = el.getBoundingClientRect();
+      const t = Math.max(0, Math.min(duration, (e.clientX - rect.left + el.scrollLeft) / pxPerSec));
+      if (dragTrim === "start") setTrimStart(Math.min(t, (trimEnd || duration) - 0.2));
+      else setTrimEnd(Math.max(t, trimStart + 0.2));
+    };
+    const up = () => setDragTrim(null);
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [dragTrim, duration, pxPerSec, trimStart, trimEnd]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0]; if (!picked) return;
@@ -1509,7 +1530,7 @@ function VideoEditor() {
         user_id: session.user.id,
         name: (segments[0]?.text || file?.name || "Studio project").slice(0, 40),
         video_url: url,
-        data: { segments, template, style, wordHighlight, language, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume },
+        data: { segments, template, style, wordHighlight, language, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, trimStart, trimEnd },
         updated_at: new Date().toISOString(),
       };
       if (projectId) await supabase.from("studio_projects").update(payload).eq("id", projectId);
@@ -1547,6 +1568,7 @@ function VideoEditor() {
     setSongTrim(d.songTrim || 0); setVolume(d.volume ?? 0.25);
     setFadeIn(d.fadeIn ?? true); setFadeOut(d.fadeOut ?? true);
     setMuteOriginal(d.muteOriginal ?? false); setOriginalVolume(d.originalVolume ?? 1);
+    setTrimStart(d.trimStart || 0); setTrimEnd(d.trimEnd || 0);
     setProjectId(p.id); setStatus("ready"); setError(""); setSavedAt("");
     setShowProjects(false);
   }
@@ -1597,6 +1619,10 @@ function VideoEditor() {
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d")!;
 
+    // Trim window: 0/0 in trimEnd means "use the full clip".
+    const tStart = Math.max(0, Math.min(trimStart, duration));
+    const tEnd = trimEnd > 0 && trimEnd <= duration ? trimEnd : duration;
+
     // Preload overlay images
     const imgCache: Record<string, HTMLImageElement> = {};
     await Promise.all(overlays.filter(o => o.kind === "image").map(o => new Promise<void>(res => {
@@ -1636,8 +1662,8 @@ function VideoEditor() {
       const chunks: Blob[] = [];
       rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
 
-      // Seek to start
-      v.pause(); v.currentTime = 0;
+      // Seek to trim start
+      v.pause(); v.currentTime = tStart;
       await new Promise(r => setTimeout(r, 200));
       rec.start(200);
       await v.play();
@@ -1648,7 +1674,7 @@ function VideoEditor() {
         const draw = () => {
           if (exportCancelRef.current) { v.pause(); musicAudioEl?.pause(); rec.stop(); return; }
           const t = v.currentTime;
-          setExportProgress(duration > 0 ? Math.min(99, Math.round((t / duration) * 100)) : 0);
+          setExportProgress(tEnd > tStart ? Math.min(99, Math.round(((t - tStart) / (tEnd - tStart)) * 100)) : 0);
 
           ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
 
@@ -1690,7 +1716,7 @@ function VideoEditor() {
             ctx.fillStyle = style.textColor; ctx.fillText(text, x, y);
           }
 
-          if (v.ended || v.currentTime >= duration - 0.05) {
+          if (v.ended || v.currentTime >= tEnd - 0.05) {
             v.pause(); musicAudioEl?.pause(); rec.stop();
           } else { requestAnimationFrame(draw); }
         };
@@ -2366,7 +2392,12 @@ function VideoEditor() {
                     <ImagePlus className="size-3" /> Add
                   </button>
                 </div>
-                <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderBottom: `1px solid ${TL_LINE}`, borderLeft: `2px solid ${TRACK_COLORS.video}` }}><Film className="size-3" style={{ color: TRACK_COLORS.video }} /> Video</div>
+                <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderBottom: `1px solid ${TL_LINE}`, borderLeft: `2px solid ${TRACK_COLORS.video}` }}>
+                  <Film className="size-3" style={{ color: TRACK_COLORS.video }} /> Video
+                  {duration > 0 && (trimStart > 0 || (trimEnd > 0 && trimEnd < duration)) && (
+                    <span className="text-[9px] text-muted-foreground ml-auto pr-1">{fmt(trimStart)}–{fmt(trimEnd || duration)}</span>
+                  )}
+                </div>
                 <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderBottom: `1px solid ${TL_LINE}`, borderLeft: `2px solid ${TRACK_COLORS.captions}` }}><Type className="size-3" style={{ color: TRACK_COLORS.captions }} /> Captions</div>
                 <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderLeft: `2px solid ${TRACK_COLORS.music}` }}><MusicIcon className="size-3" style={{ color: TRACK_COLORS.music }} /> Music</div>
               </div>
@@ -2411,6 +2442,26 @@ function VideoEditor() {
                         </div>
                       )}
                       <span className="absolute bottom-0.5 left-1.5 text-[9px] text-white font-medium px-1 rounded bg-black/60 pointer-events-none max-w-[70%] truncate">{file?.name || "video.mp4"}</span>
+                      {duration > 0 && (
+                        <>
+                          {trimStart > 0 && (
+                            <div className="absolute inset-y-0 left-0 bg-black/70 pointer-events-none" style={{ width: `${(trimStart / duration) * 100}%` }} />
+                          )}
+                          {trimEnd > 0 && trimEnd < duration && (
+                            <div className="absolute inset-y-0 right-0 bg-black/70 pointer-events-none" style={{ width: `${((duration - trimEnd) / duration) * 100}%` }} />
+                          )}
+                          <div onPointerDown={e => { e.stopPropagation(); setDragTrim("start"); }}
+                            className="absolute inset-y-0 w-3 -ml-1.5 cursor-ew-resize z-10 flex items-center justify-center"
+                            style={{ left: `${(trimStart / duration) * 100}%` }}>
+                            <div className="w-1 h-6 rounded-full" style={{ background: PURPLE }} />
+                          </div>
+                          <div onPointerDown={e => { e.stopPropagation(); setDragTrim("end"); }}
+                            className="absolute inset-y-0 w-3 -ml-1.5 cursor-ew-resize z-10 flex items-center justify-center"
+                            style={{ left: `${((trimEnd || duration) / duration) * 100}%` }}>
+                            <div className="w-1 h-6 rounded-full" style={{ background: PURPLE }} />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                   {/* Transcribe — waveform behind the caption chips */}
