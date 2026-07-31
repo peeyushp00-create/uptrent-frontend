@@ -1,37 +1,42 @@
-// Guards the public/sitemap.xml and public/robots.txt content directly,
-// since a regression here (an auth-gated route leaking into the sitemap, or
-// losing the Sitemap: directive/AI-bot allowlist) wouldn't be caught by any
-// component test.
+// Guards public/robots.txt and vercel.json content directly, since a
+// regression here (an auth-gated route leaking into the sitemap, losing the
+// Sitemap: directive/AI-bot allowlist, or breaking the sitemap/RSS proxy)
+// wouldn't be caught by any component test.
+//
+// Note: sitemap.xml itself is no longer a static file here — it's generated
+// live by uptrent-backend (GET /api/blog/sitemap.xml) from the published
+// posts table, and vercel.json proxies /sitemap.xml and /rss.xml to it. A
+// static public/sitemap.xml was removed deliberately: Vercel serves an
+// exact-path static file instead of ever consulting rewrites for that path,
+// which silently defeated the proxy.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const SITEMAP_PATH = resolve(__dirname, "../../public/sitemap.xml");
 const ROBOTS_PATH = resolve(__dirname, "../../public/robots.txt");
+const VERCEL_CONFIG_PATH = resolve(__dirname, "../../vercel.json");
 
 const AUTH_GATED_PATHS = [
   "/home", "/insight", "/news", "/scripts", "/settings", "/pricing",
   "/instagram/", "/youtube/", "/studio", "/admin/",
 ];
 
-describe("public/sitemap.xml", () => {
-  const sitemap = readFileSync(SITEMAP_PATH, "utf8");
+describe("vercel.json", () => {
+  const config = JSON.parse(readFileSync(VERCEL_CONFIG_PATH, "utf8"));
 
-  it("includes the homepage", () => {
-    expect(sitemap).toContain("<loc>https://www.socialrum.com/</loc>");
+  it("has no static sitemap.xml to shadow the rewrite", () => {
+    expect(() => readFileSync(resolve(__dirname, "../../public/sitemap.xml"))).toThrow();
   });
 
-  it("never lists an auth-gated or admin route", () => {
-    for (const path of AUTH_GATED_PATHS) {
-      expect(sitemap).not.toContain(`https://www.socialrum.com${path}`);
-    }
+  it("proxies /sitemap.xml and /rss.xml to the backend blog routes", () => {
+    const bySource = Object.fromEntries(config.rewrites.map((r: { source: string; destination: string }) => [r.source, r.destination]));
+    expect(bySource["/sitemap.xml"]).toMatch(/\/api\/blog\/sitemap\.xml$/);
+    expect(bySource["/rss.xml"]).toMatch(/\/api\/blog\/rss\.xml$/);
   });
 
-  it("is well-formed enough to contain matching <url> open/close tags", () => {
-    const opens = (sitemap.match(/<url>/g) || []).length;
-    const closes = (sitemap.match(/<\/url>/g) || []).length;
-    expect(opens).toBeGreaterThan(0);
-    expect(opens).toBe(closes);
+  it("keeps the SPA catch-all rewrite last", () => {
+    const sources = config.rewrites.map((r: { source: string }) => r.source);
+    expect(sources[sources.length - 1]).toBe("/(.*)");
   });
 });
 
