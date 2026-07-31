@@ -127,6 +127,7 @@ export default function AdminBlogPage() {
   // Editor link/image modals (replace window.prompt — see handleInsertLink)
   const [linkModal, setLinkModal] = useState<{ selStart: number; selEnd: number; selectedText: string; url: string } | null>(null);
   const [imageAltModal, setImageAltModal] = useState<{ url: string; cursor: number; alt: string } | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const authorPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -497,8 +498,15 @@ export default function AdminBlogPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this post?')) return;
+  // Same fragility as window.prompt (see handleInsertLink) — confirm() can
+  // silently no-op in some browser contexts, which for a delete action
+  // means nothing happens with no feedback. A modal works everywhere.
+  const handleDelete = (id: string) => setDeleteConfirmId(id);
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    const id = deleteConfirmId;
+    setDeleteConfirmId(null);
     await fetch(`${SUPABASE_URL}/rest/v1/blogs?id=eq.${id}`, {
       method: 'DELETE',
       headers: authHeaders(),
@@ -1010,6 +1018,32 @@ export default function AdminBlogPage() {
                 <button onClick={confirmInsertImage}
                   style={{ flex: 1, background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', border: 'none', borderRadius: 10, padding: '10px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                   Insert image
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete-post confirm modal */}
+      <AnimatePresence>
+        {deleteConfirmId && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setDeleteConfirmId(null)}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <motion.div onClick={e => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              style={{ width: '100%', maxWidth: 380, background: '#0a0212', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 16, padding: 24 }}>
+              <h3 style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Delete this post?</h3>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>This can't be undone.</p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setDeleteConfirmId(null)}
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px', color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={confirmDelete}
+                  style={{ flex: 1, background: '#ef4444', border: 'none', borderRadius: 10, padding: '10px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                  Delete
                 </button>
               </div>
             </motion.div>
