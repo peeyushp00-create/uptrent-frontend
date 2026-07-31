@@ -2292,13 +2292,13 @@ function VideoEditor() {
                   </div>
                   {/* Video — frame-by-frame filmstrip instead of a solid block */}
                   <div className="h-10 p-1" style={{ borderBottom: `1px solid ${TL_LINE}`, background: `${TRACK_COLORS.video}0d` }}>
-                    <div className="relative h-full rounded-lg overflow-hidden" style={{ width: Math.max(trackWidth - 8, 60), background: "#111" }}>
+                    <div className="relative h-full rounded-lg overflow-hidden" style={{ background: "#111" }}>
                       {filmstrip.length > 0 && (
                         <div className="absolute inset-0 flex">
                           {filmstrip.map((src, i) => (
                             <img key={i} src={src} alt="" draggable={false}
                               className="h-full object-cover shrink-0 select-none"
-                              style={{ width: Math.max(trackWidth - 8, 60) / filmstrip.length }} />
+                              style={{ width: `${100 / filmstrip.length}%` }} />
                           ))}
                         </div>
                       )}
