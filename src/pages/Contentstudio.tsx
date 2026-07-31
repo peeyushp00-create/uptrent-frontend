@@ -64,58 +64,61 @@ type CaptionStyle = {
   uppercase: boolean;
 };
 
-const TEMPLATES: Record<TemplateId, { label: string; style: CaptionStyle }> = {
-  minimal: { label: "Minimal", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.5, fontWeight: 600, textColor: "#ffffff", highlightColor: "#c4b5fd", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
-  bold: { label: "Bold", style: { fontFamily: "'Anton',sans-serif", fontSize: 2.25, fontWeight: 800, textColor: "#ffffff", highlightColor: "#facc15", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
-  modern: { label: "Modern", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#a78bfa", background: "pill", bgColor: "#0f172a", position: "bottom", animation: "slide", uppercase: false } },
-  podcast: { label: "Podcast", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.25, fontWeight: 500, textColor: "#f5f5f4", highlightColor: "#fbbf24", background: "solid", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
-  creator: { label: "Creator", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
-  business: { label: "Business", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.5, fontWeight: 700, textColor: "#ffffff", highlightColor: "#fde68a", background: "solid", bgColor: "#1e293b", position: "bottom", animation: "fade", uppercase: false } },
-  news: { label: "News", style: { fontFamily: "'Bebas Neue',sans-serif", fontSize: 1.8, fontWeight: 700, textColor: "#ffffff", highlightColor: "#ef4444", background: "solid", bgColor: "#dc2626", position: "bottom", animation: "slide", uppercase: true } },
-  glow: { label: "Glow", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#f0abfc", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: true } },
-  sticker: { label: "Sticker", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.6, fontWeight: 400, textColor: "#111827", highlightColor: "#f97316", background: "pill", bgColor: "#fde047", position: "middle", animation: "pop", uppercase: false } },
-  typewriter: { label: "Typewriter", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.15, fontWeight: 700, textColor: "#e5e7eb", highlightColor: "#5eead4", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
-  vibrant: { label: "Vibrant", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.9, fontWeight: 800, textColor: "#ffffff", highlightColor: "#f472b6", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
-  romantic: { label: "Romantic", style: { fontFamily: "'Caveat',cursive", fontSize: 2, fontWeight: 700, textColor: "#fff5f0", highlightColor: "#fb923c", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
-  comic: { label: "Comic", style: { fontFamily: "'Bangers',cursive", fontSize: 2, fontWeight: 400, textColor: "#fef08a", highlightColor: "#ef4444", background: "pill", bgColor: "#1d4ed8", position: "middle", animation: "pop", uppercase: true } },
-  pixel: { label: "Pixel", style: { fontFamily: "'Press Start 2P',monospace", fontSize: 0.85, fontWeight: 400, textColor: "#39ff14", highlightColor: "#22d3ee", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
-  luxe: { label: "Luxe", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.3, fontWeight: 500, textColor: "#f5f5f0", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
+type TemplateCategory = "Minimal" | "Bold" | "Elegant" | "Playful" | "Neon & Tech" | "Creative" | "News & Podcast";
+const TEMPLATE_CATEGORIES: TemplateCategory[] = ["Minimal", "Bold", "Elegant", "Playful", "Neon & Tech", "Creative", "News & Podcast"];
 
-  neon: { label: "Neon", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.6, fontWeight: 800, textColor: "#22d3ee", highlightColor: "#f472b6", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
-  cinema: { label: "Cinema", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.4, fontWeight: 600, textColor: "#f5e6c8", highlightColor: "#eab308", background: "solid", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
-  retro: { label: "Retro", style: { fontFamily: "'Bangers',cursive", fontSize: 1.9, fontWeight: 400, textColor: "#1e293b", highlightColor: "#f97316", background: "pill", bgColor: "#fbbf24", position: "middle", animation: "pop", uppercase: true } },
-  elegant: { label: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.35, fontWeight: 500, textColor: "#ffffff", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
-  street: { label: "Street", style: { fontFamily: "'Anton',sans-serif", fontSize: 2.1, fontWeight: 800, textColor: "#ffffff", highlightColor: "#dc2626", background: "solid", bgColor: "#000000", position: "bottom", animation: "slide", uppercase: true } },
-  gamer: { label: "Gamer", style: { fontFamily: "'Press Start 2P',monospace", fontSize: 0.9, fontWeight: 400, textColor: "#a3e635", highlightColor: "#c084fc", background: "solid", bgColor: "#0f0f1a", position: "bottom", animation: "none", uppercase: false } },
-  fitness: { label: "Fitness", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fb923c", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: true } },
-  travel: { label: "Travel", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.4, fontWeight: 600, textColor: "#ffffff", highlightColor: "#2dd4bf", background: "pill", bgColor: "#0f172a", position: "bottom", animation: "fade", uppercase: false } },
-  foodie: { label: "Foodie", style: { fontFamily: "'Caveat',cursive", fontSize: 2.1, fontWeight: 700, textColor: "#7c2d12", highlightColor: "#dc2626", background: "pill", bgColor: "#fef3c7", position: "bottom", animation: "fade", uppercase: false } },
-  tech: { label: "Tech", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.2, fontWeight: 700, textColor: "#22d3ee", highlightColor: "#a78bfa", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
-  fashion: { label: "Fashion", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.5, fontWeight: 600, textColor: "#111827", highlightColor: "#f472b6", background: "solid", bgColor: "#ffffff", position: "bottom", animation: "fade", uppercase: false } },
-  meme: { label: "Meme", style: { fontFamily: "'Anton',sans-serif", fontSize: 2, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fde047", background: "", bgColor: "#000000", position: "top", animation: "none", uppercase: true } },
-  documentary: { label: "Documentary", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.1, fontWeight: 500, textColor: "#f8fafc", highlightColor: "#94a3b8", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
-  karaoke: { label: "Karaoke", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fde047", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
-  highlight: { label: "Highlight", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.5, fontWeight: 700, textColor: "#1e1b4b", highlightColor: "#f472b6", background: "pill", bgColor: "#fde047", position: "bottom", animation: "pop", uppercase: false } },
-  shadow: { label: "Shadow", style: { fontFamily: "'Bebas Neue',sans-serif", fontSize: 2, fontWeight: 700, textColor: "#ffffff", highlightColor: "#e5e7eb", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: true } },
-  outline: { label: "Outline", style: { fontFamily: "'Anton',sans-serif", fontSize: 1.9, fontWeight: 800, textColor: "#fefefe", highlightColor: "#000000", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: true } },
-  aurora: { label: "Aurora", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.7, fontWeight: 700, textColor: "#c084fc", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
-  cute: { label: "Cute", style: { fontFamily: "'Caveat',cursive", fontSize: 2, fontWeight: 700, textColor: "#831843", highlightColor: "#f9a8d4", background: "pill", bgColor: "#fce7f3", position: "middle", animation: "fade", uppercase: false } },
-  horror: { label: "Horror", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.7, fontWeight: 400, textColor: "#dc2626", highlightColor: "#ffffff", background: "", bgColor: "#000000", position: "top", animation: "none", uppercase: true } },
-  corporate: { label: "Corporate", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.2, fontWeight: 600, textColor: "#ffffff", highlightColor: "#93c5fd", background: "solid", bgColor: "#1e3a8a", position: "bottom", animation: "fade", uppercase: false } },
-  y2k: { label: "Y2K", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#ec4899", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
-  handwritten: { label: "Handwritten", style: { fontFamily: "'Caveat',cursive", fontSize: 1.9, fontWeight: 700, textColor: "#1f2937", highlightColor: "#f59e0b", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
-  cleanWhite: { label: "Clean White", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.35, fontWeight: 600, textColor: "#ffffff", highlightColor: "#d1d5db", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
-  boldRed: { label: "Bold Red", style: { fontFamily: "'Anton',sans-serif", fontSize: 2, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fecaca", background: "solid", bgColor: "#dc2626", position: "bottom", animation: "pop", uppercase: true } },
-  skyBlue: { label: "Sky Blue", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#bae6fd", background: "pill", bgColor: "#0284c7", position: "bottom", animation: "slide", uppercase: false } },
-  goldLuxury: { label: "Gold Luxury", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.4, fontWeight: 600, textColor: "#d4af37", highlightColor: "#ffffff", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
-  popArt: { label: "Pop Art", style: { fontFamily: "'Bangers',cursive", fontSize: 1.9, fontWeight: 400, textColor: "#0f172a", highlightColor: "#dc2626", background: "pill", bgColor: "#22d3ee", position: "middle", animation: "pop", uppercase: true } },
-  midnight: { label: "Midnight", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#818cf8", background: "solid", bgColor: "#1e1b4b", position: "bottom", animation: "fade", uppercase: false } },
-  sunshine: { label: "Sunshine", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.5, fontWeight: 700, textColor: "#78350f", highlightColor: "#dc2626", background: "pill", bgColor: "#fde047", position: "bottom", animation: "pop", uppercase: false } },
-  graffiti: { label: "Graffiti", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.8, fontWeight: 400, textColor: "#f97316", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
-  cleanSerif: { label: "Clean Serif", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.25, fontWeight: 500, textColor: "#e5e7eb", highlightColor: "#9ca3af", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
-  boldPink: { label: "Bold Pink", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fbcfe8", background: "solid", bgColor: "#db2777", position: "bottom", animation: "pop", uppercase: true } },
-  matrix: { label: "Matrix", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.3, fontWeight: 700, textColor: "#22c55e", highlightColor: "#4ade80", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: true } },
-  royalty: { label: "Royalty", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.45, fontWeight: 600, textColor: "#e9d5ff", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
+const TEMPLATES: Record<TemplateId, { label: string; category: TemplateCategory; style: CaptionStyle }> = {
+  minimal: { label: "Minimal", category: "Minimal", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.5, fontWeight: 600, textColor: "#ffffff", highlightColor: "#c4b5fd", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  bold: { label: "Bold", category: "Bold", style: { fontFamily: "'Anton',sans-serif", fontSize: 2.25, fontWeight: 800, textColor: "#ffffff", highlightColor: "#facc15", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
+  modern: { label: "Modern", category: "News & Podcast", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#a78bfa", background: "pill", bgColor: "#0f172a", position: "bottom", animation: "slide", uppercase: false } },
+  podcast: { label: "Podcast", category: "News & Podcast", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.25, fontWeight: 500, textColor: "#f5f5f4", highlightColor: "#fbbf24", background: "solid", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  creator: { label: "Creator", category: "Creative", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
+  business: { label: "Business", category: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.5, fontWeight: 700, textColor: "#ffffff", highlightColor: "#fde68a", background: "solid", bgColor: "#1e293b", position: "bottom", animation: "fade", uppercase: false } },
+  news: { label: "News", category: "News & Podcast", style: { fontFamily: "'Bebas Neue',sans-serif", fontSize: 1.8, fontWeight: 700, textColor: "#ffffff", highlightColor: "#ef4444", background: "solid", bgColor: "#dc2626", position: "bottom", animation: "slide", uppercase: true } },
+  glow: { label: "Glow", category: "Neon & Tech", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#f0abfc", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: true } },
+  sticker: { label: "Sticker", category: "Playful", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.6, fontWeight: 400, textColor: "#111827", highlightColor: "#f97316", background: "pill", bgColor: "#fde047", position: "middle", animation: "pop", uppercase: false } },
+  typewriter: { label: "Typewriter", category: "Minimal", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.15, fontWeight: 700, textColor: "#e5e7eb", highlightColor: "#5eead4", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  vibrant: { label: "Vibrant", category: "Bold", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.9, fontWeight: 800, textColor: "#ffffff", highlightColor: "#f472b6", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
+  romantic: { label: "Romantic", category: "Creative", style: { fontFamily: "'Caveat',cursive", fontSize: 2, fontWeight: 700, textColor: "#fff5f0", highlightColor: "#fb923c", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  comic: { label: "Comic", category: "Playful", style: { fontFamily: "'Bangers',cursive", fontSize: 2, fontWeight: 400, textColor: "#fef08a", highlightColor: "#ef4444", background: "pill", bgColor: "#1d4ed8", position: "middle", animation: "pop", uppercase: true } },
+  pixel: { label: "Pixel", category: "Neon & Tech", style: { fontFamily: "'Press Start 2P',monospace", fontSize: 0.85, fontWeight: 400, textColor: "#39ff14", highlightColor: "#22d3ee", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  luxe: { label: "Luxe", category: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.3, fontWeight: 500, textColor: "#f5f5f0", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
+
+  neon: { label: "Neon", category: "Neon & Tech", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.6, fontWeight: 800, textColor: "#22d3ee", highlightColor: "#f472b6", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
+  cinema: { label: "Cinema", category: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.4, fontWeight: 600, textColor: "#f5e6c8", highlightColor: "#eab308", background: "solid", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  retro: { label: "Retro", category: "Playful", style: { fontFamily: "'Bangers',cursive", fontSize: 1.9, fontWeight: 400, textColor: "#1e293b", highlightColor: "#f97316", background: "pill", bgColor: "#fbbf24", position: "middle", animation: "pop", uppercase: true } },
+  elegant: { label: "Elegant", category: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.35, fontWeight: 500, textColor: "#ffffff", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
+  street: { label: "Street", category: "Bold", style: { fontFamily: "'Anton',sans-serif", fontSize: 2.1, fontWeight: 800, textColor: "#ffffff", highlightColor: "#dc2626", background: "solid", bgColor: "#000000", position: "bottom", animation: "slide", uppercase: true } },
+  gamer: { label: "Gamer", category: "Neon & Tech", style: { fontFamily: "'Press Start 2P',monospace", fontSize: 0.9, fontWeight: 400, textColor: "#a3e635", highlightColor: "#c084fc", background: "solid", bgColor: "#0f0f1a", position: "bottom", animation: "none", uppercase: false } },
+  fitness: { label: "Fitness", category: "Bold", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fb923c", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: true } },
+  travel: { label: "Travel", category: "Creative", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.4, fontWeight: 600, textColor: "#ffffff", highlightColor: "#2dd4bf", background: "pill", bgColor: "#0f172a", position: "bottom", animation: "fade", uppercase: false } },
+  foodie: { label: "Foodie", category: "Playful", style: { fontFamily: "'Caveat',cursive", fontSize: 2.1, fontWeight: 700, textColor: "#7c2d12", highlightColor: "#dc2626", background: "pill", bgColor: "#fef3c7", position: "bottom", animation: "fade", uppercase: false } },
+  tech: { label: "Tech", category: "Neon & Tech", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.2, fontWeight: 700, textColor: "#22d3ee", highlightColor: "#a78bfa", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  fashion: { label: "Fashion", category: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.5, fontWeight: 600, textColor: "#111827", highlightColor: "#f472b6", background: "solid", bgColor: "#ffffff", position: "bottom", animation: "fade", uppercase: false } },
+  meme: { label: "Meme", category: "Bold", style: { fontFamily: "'Anton',sans-serif", fontSize: 2, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fde047", background: "", bgColor: "#000000", position: "top", animation: "none", uppercase: true } },
+  documentary: { label: "Documentary", category: "Minimal", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.1, fontWeight: 500, textColor: "#f8fafc", highlightColor: "#94a3b8", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  karaoke: { label: "Karaoke", category: "Playful", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fde047", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
+  highlight: { label: "Highlight", category: "Bold", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.5, fontWeight: 700, textColor: "#1e1b4b", highlightColor: "#f472b6", background: "pill", bgColor: "#fde047", position: "bottom", animation: "pop", uppercase: false } },
+  shadow: { label: "Shadow", category: "Minimal", style: { fontFamily: "'Bebas Neue',sans-serif", fontSize: 2, fontWeight: 700, textColor: "#ffffff", highlightColor: "#e5e7eb", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: true } },
+  outline: { label: "Outline", category: "Minimal", style: { fontFamily: "'Anton',sans-serif", fontSize: 1.9, fontWeight: 800, textColor: "#fefefe", highlightColor: "#000000", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: true } },
+  aurora: { label: "Aurora", category: "Neon & Tech", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.7, fontWeight: 700, textColor: "#c084fc", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
+  cute: { label: "Cute", category: "Playful", style: { fontFamily: "'Caveat',cursive", fontSize: 2, fontWeight: 700, textColor: "#831843", highlightColor: "#f9a8d4", background: "pill", bgColor: "#fce7f3", position: "middle", animation: "fade", uppercase: false } },
+  horror: { label: "Horror", category: "Creative", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.7, fontWeight: 400, textColor: "#dc2626", highlightColor: "#ffffff", background: "", bgColor: "#000000", position: "top", animation: "none", uppercase: true } },
+  corporate: { label: "Corporate", category: "Minimal", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.2, fontWeight: 600, textColor: "#ffffff", highlightColor: "#93c5fd", background: "solid", bgColor: "#1e3a8a", position: "bottom", animation: "fade", uppercase: false } },
+  y2k: { label: "Y2K", category: "Playful", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#ec4899", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
+  handwritten: { label: "Handwritten", category: "Creative", style: { fontFamily: "'Caveat',cursive", fontSize: 1.9, fontWeight: 700, textColor: "#1f2937", highlightColor: "#f59e0b", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  cleanWhite: { label: "Clean White", category: "Minimal", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.35, fontWeight: 600, textColor: "#ffffff", highlightColor: "#d1d5db", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  boldRed: { label: "Bold Red", category: "Bold", style: { fontFamily: "'Anton',sans-serif", fontSize: 2, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fecaca", background: "solid", bgColor: "#dc2626", position: "bottom", animation: "pop", uppercase: true } },
+  skyBlue: { label: "Sky Blue", category: "Neon & Tech", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#bae6fd", background: "pill", bgColor: "#0284c7", position: "bottom", animation: "slide", uppercase: false } },
+  goldLuxury: { label: "Gold Luxury", category: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.4, fontWeight: 600, textColor: "#d4af37", highlightColor: "#ffffff", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
+  popArt: { label: "Pop Art", category: "Playful", style: { fontFamily: "'Bangers',cursive", fontSize: 1.9, fontWeight: 400, textColor: "#0f172a", highlightColor: "#dc2626", background: "pill", bgColor: "#22d3ee", position: "middle", animation: "pop", uppercase: true } },
+  midnight: { label: "Midnight", category: "Neon & Tech", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#818cf8", background: "solid", bgColor: "#1e1b4b", position: "bottom", animation: "fade", uppercase: false } },
+  sunshine: { label: "Sunshine", category: "Playful", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.5, fontWeight: 700, textColor: "#78350f", highlightColor: "#dc2626", background: "pill", bgColor: "#fde047", position: "bottom", animation: "pop", uppercase: false } },
+  graffiti: { label: "Graffiti", category: "Creative", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.8, fontWeight: 400, textColor: "#f97316", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  cleanSerif: { label: "Clean Serif", category: "Minimal", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.25, fontWeight: 500, textColor: "#e5e7eb", highlightColor: "#9ca3af", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  boldPink: { label: "Bold Pink", category: "Bold", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fbcfe8", background: "solid", bgColor: "#db2777", position: "bottom", animation: "pop", uppercase: true } },
+  matrix: { label: "Matrix", category: "Neon & Tech", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.3, fontWeight: 700, textColor: "#22c55e", highlightColor: "#4ade80", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: true } },
+  royalty: { label: "Royalty", category: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.45, fontWeight: 600, textColor: "#e9d5ff", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
 };
 
 type LangId = "auto" | "en" | "hi" | "ml" | "ta" | "te" | "kn" | "mr" | "gu" | "bn" | "pa";
@@ -182,10 +185,6 @@ type Tab = (typeof TABS)[number];
 
 const studioCache: { tab: Tab; planner: "week" | "month" } = { tab: "Video", planner: "week" };
 
-const TAB_ICONS: Record<Tab, React.ComponentType<{ className?: string }>> = {
-  Ideas: Lightbulb, Scripts: FileText, Video: Film, Drafts: Save, Calendar: CalendarIcon,
-};
-
 const IDEAS = [
   "AI side hustle that pays $50/day",
   "3 hooks that always go viral",
@@ -213,35 +212,24 @@ export default function StudioPage() {
       <SEO title="Studio — SocialRum" noindex />
       <div className="max-w-6xl mx-auto p-6">
         {!isVideo && (
-          <div className="mb-6 flex items-center gap-3">
-            <div className="size-10 rounded-xl grid place-items-center text-white shadow-md shrink-0" style={{ background: GRAD }}>
-              <Sparkles className="size-4.5" />
-            </div>
-            <div>
-              <h1 className="font-heading text-2xl font-bold">Studio</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Your ideas, scripts, drafts and content calendar — one workspace.</p>
-            </div>
+          <div className="mb-6">
+            <h1 className="font-heading text-2xl font-bold">Studio</h1>
+            <p className="text-sm text-muted-foreground mt-1">Your ideas, scripts, drafts and content calendar — one workspace.</p>
           </div>
         )}
 
-        <div className={`inline-flex flex-wrap gap-1 p-1 rounded-2xl bg-muted/60 border border-border ${isVideo ? "mb-3" : "mb-6"}`}>
-          {TABS.map((t) => {
-            const Icon = TAB_ICONS[t];
-            const active = tab === t;
-            return (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all ${
-                  active ? "text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-background/70"
-                }`}
-                style={active ? { background: GRAD } : {}}
-              >
-                <Icon className="size-3.5" />
-                {t}
-              </button>
-            );
-          })}
+        <div className={`flex flex-wrap gap-2 border-b border-border ${isVideo ? "mb-3" : "mb-6"}`}>
+          {TABS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
+                tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
         </div>
 
         {tab === "Ideas" && (
@@ -782,7 +770,7 @@ function VideoEditor() {
   // matching the redesigned Video tab layout. ──
   const [designerTab, setDesignerTab] = useState<"templates" | "font" | "colors" | "position" | "animation" | "music" | "overlay">("templates");
   const [templateSearch, setTemplateSearch] = useState("");
-  const [templateCategory, setTemplateCategory] = useState<TemplateId | "all">("all");
+  const [templateCategory, setTemplateCategory] = useState<TemplateCategory | "all">("all");
 
   // ── Waveform — decoded once per video via Web Audio API. Best-effort: some
   // containers/codecs can't be demuxed by decodeAudioData, in which case this
@@ -1973,7 +1961,7 @@ function VideoEditor() {
 
                   {designerTab === "templates" && (() => {
                     const filtered = (Object.keys(TEMPLATES) as TemplateId[]).filter(id => {
-                      if (templateCategory !== "all" && id !== templateCategory) return false;
+                      if (templateCategory !== "all" && TEMPLATES[id].category !== templateCategory) return false;
                       if (templateSearch.trim() && !TEMPLATES[id].label.toLowerCase().includes(templateSearch.trim().toLowerCase())) return false;
                       return true;
                     });
@@ -1990,11 +1978,11 @@ function VideoEditor() {
                             style={templateCategory === "all" ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
                             All
                           </button>
-                          {(Object.keys(TEMPLATES) as TemplateId[]).map(id => (
-                            <button key={id} onClick={() => setTemplateCategory(id)}
+                          {TEMPLATE_CATEGORIES.map(cat => (
+                            <button key={cat} onClick={() => setTemplateCategory(cat)}
                               className="px-2.5 py-1 rounded-full text-[11px] font-semibold border transition"
-                              style={templateCategory === id ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                              {TEMPLATES[id].label}
+                              style={templateCategory === cat ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                              {cat}
                             </button>
                           ))}
                         </div>
