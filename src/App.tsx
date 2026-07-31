@@ -57,6 +57,7 @@ const App = () => (
             <Route path="/about" element={<AboutPage />} />
             <Route path="/r/:code" element={<ReferralRedirect />} />
             <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:id" element={<BlogPage />} />
             <Route path="/admin/blog" element={<AdminBlogPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
