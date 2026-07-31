@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import {
   User, Settings2 as SettingsIcon, Mic, MessageSquare, CreditCard, Instagram, Youtube, Globe, Check,
-  Star, Send, Square, Loader2, Sparkles as SparklesIcon, Wand2, Save, X,
+  Star, Send, Square, Loader2, Sparkles as SparklesIcon, Wand2, Save, X, Keyboard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -461,6 +461,16 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
+            </Panel>
+
+            <Panel icon={Keyboard} title="Keyboard Shortcuts" subtitle="Navigate and edit faster without touching the mouse">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("open-shortcuts-modal"))}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border hover:border-primary/50 transition"
+              >
+                <span className="text-sm font-medium">View all shortcuts</span>
+                <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground">?</kbd>
+              </button>
             </Panel>
           </div>
         )}

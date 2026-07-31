@@ -4,7 +4,7 @@ import {
   LayoutDashboard, TrendingUp, Newspaper, FileText,
   PanelLeftClose, PanelLeft, LogOut, Settings,
   Sun, Moon, ChevronUp, Crown, Youtube, Instagram,
-  Search, Tag, Clapperboard, Captions, Keyboard,
+  Search, Tag, Clapperboard, Captions,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -182,19 +182,6 @@ export default function AppSidebar() {
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition">
           <Settings className="w-4 h-4 shrink-0" />
           {!collapsed && <span>{t('nav.settings')}</span>}
-        </button>
-
-        {/* Keyboard shortcuts */}
-        <button onClick={() => window.dispatchEvent(new CustomEvent("open-shortcuts-modal"))}
-          title={collapsed ? "Keyboard shortcuts" : undefined}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition">
-          <Keyboard className="w-4 h-4 shrink-0" />
-          {!collapsed && (
-            <span className="flex-1 text-left">Shortcuts</span>
-          )}
-          {!collapsed && (
-            <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-sidebar-border text-sidebar-foreground/50">?</kbd>
-          )}
         </button>
 
         {/* Profile */}
