@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import "./landing.css";
 import { 
   Zap, 
   Upload, 
@@ -61,7 +62,7 @@ const pricingPlans = [
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="social-spark-landing min-h-screen bg-background text-foreground">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-6">
@@ -69,13 +70,13 @@ export default function Landing() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
               <Zap className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold gradient-text">ContentAI</span>
+            <span className="font-display text-xl font-bold gradient-text">SocialRum</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/auth">
+            <Link to="/login">
               <Button variant="ghost">Sign In</Button>
             </Link>
-            <Link to="/auth?mode=signup">
+            <Link to="/signup">
               <Button variant="gradient">Get Started</Button>
             </Link>
           </div>
@@ -98,7 +99,7 @@ export default function Landing() {
             Automate your social media workflow with AI. Upload videos, generate optimized content, and distribute across all platforms in seconds.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-  <Link to="/auth?mode=signup" className="w-full sm:w-auto">
+  <Link to="/signup" className="w-full sm:w-auto">
     <Button variant="gradient" size="lg" className="gap-2 w-full sm:w-auto">
       Start Free Trial
       <ArrowRight className="h-4 w-4" />
@@ -192,12 +193,12 @@ export default function Landing() {
         Ready to Transform Your Content Strategy?
       </h2>
       <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-        Join thousands of creators who are saving hours every week with ContentAI.
+        Join thousands of creators who are saving hours every week with SocialRum.
       </p>
 
       {/* Centered button container */}
       <div className="flex justify-center">
-        <Link to="/auth?mode=signup" className="w-full sm:w-auto">
+        <Link to="/signup" className="w-full sm:w-auto">
           <Button variant="gradient" size="lg" className="w-full sm:w-auto">
             Start Your Free Trial
           </Button>
@@ -213,14 +214,13 @@ export default function Landing() {
         <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
-            <span className="font-display font-semibold">ContentAI</span>
+            <span className="font-display font-semibold">SocialRum</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2024 ContentAI. All rights reserved.
+            © 2026 SocialRum. All rights reserved.
           </p>
         </div>
       </footer>
     </div>
   );
 }
-
