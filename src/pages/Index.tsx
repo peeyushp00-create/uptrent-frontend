@@ -250,22 +250,19 @@ export default function Index() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="w-full">
           {!assistantStarted ? (
             <form onSubmit={(e) => submitAssistant(e)} className="w-full">
-              <div className="chat-input-glow flex items-center gap-3 rounded-2xl border border-input bg-card py-2 pl-4 pr-2">
-                <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
-                  <Sparkles className="size-4" />
-                </div>
+              <div className="chat-input-glow flex items-center gap-3 rounded-full border border-input bg-card py-2 pl-4 pr-2">
                 <input
                   id="home-search-input"
                   value={assistantQuery}
                   onChange={(e) => setAssistantQuery(e.target.value)}
                   placeholder={t('home.composer_placeholder')}
-                  className="flex-1 bg-transparent outline-none text-[15px] py-3 placeholder:text-muted-foreground min-w-0"
+                  className="flex-1 bg-transparent outline-none focus-visible:outline-none text-[15px] py-3 placeholder:text-muted-foreground min-w-0"
                 />
                 <button
                   type="submit"
                   aria-label="Send"
                   disabled={assistantSending || !assistantQuery.trim()}
-                  className="shrink-0 grid place-items-center size-10 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 transition"
+                  className="shrink-0 grid place-items-center size-10 rounded-full bg-primary text-primary-foreground disabled:opacity-40 transition"
                 >
                   <Send className="size-4" />
                 </button>
