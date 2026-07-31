@@ -61,6 +61,7 @@ const css = `
   .admin-input { width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(139,92,246,0.2); border-radius:10px; padding:11px 14px; color:#fff; font-size:14px; outline:none; font-family:'DM Sans',sans-serif; transition:border-color .2s; }
   .admin-input:focus { border-color:#7c3aed; }
   .admin-input::placeholder { color:rgba(255,255,255,0.25); }
+  .admin-input option { color:#000; }
   .admin-textarea { width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(139,92,246,0.2); border-radius:10px; padding:11px 14px; color:#fff; font-size:14px; outline:none; font-family:'DM Sans',sans-serif; resize:vertical; }
   .admin-textarea:focus { border-color:#7c3aed; }
   .editor-btn { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 10px; color:rgba(255,255,255,0.7); cursor:pointer; font-size:12px; font-family:'DM Sans',sans-serif; transition:all .2s; display:flex; align-items:center; gap:4px; }
