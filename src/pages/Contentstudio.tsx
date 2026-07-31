@@ -9,7 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import {
   Pencil, Trash2, Copy, FileText, Lightbulb, Calendar as CalendarIcon, Repeat, Link2,
   Download, Loader2, Layers, Type, Palette, Circle, Mic, Wand2, Zap, Save, Search, Undo2, Redo2, Plus,
-  Music as MusicIcon, ImagePlus, X, ZoomIn, ZoomOut, Film,
+  Music as MusicIcon, ImagePlus, X, ZoomIn, ZoomOut, Film, Play, Pause,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL;
@@ -69,7 +69,14 @@ type CaptionStyle = {
   position: CapPosition;
   animation: CapAnimation;
   uppercase: boolean;
+  capX?: number; // percent within the preview frame (0-100); overrides `position` when set
+  capY?: number;
 };
+
+// Default x/y (percent) for each named preset — used until the caption is dragged.
+function presetCapPos(position: CapPosition): { x: number; y: number } {
+  return position === "top" ? { x: 50, y: 14 } : position === "middle" ? { x: 50, y: 47 } : { x: 50, y: 86 };
+}
 
 type TemplateCategory = "Minimal" | "Bold" | "Elegant" | "Playful" | "Neon & Tech" | "Creative" | "News & Podcast";
 const TEMPLATE_CATEGORIES: TemplateCategory[] = ["Minimal", "Bold", "Elegant", "Playful", "Neon & Tech", "Creative", "News & Podcast"];
@@ -937,6 +944,8 @@ function VideoEditor() {
   const [uploadedMusic, setUploadedMusic] = useState<Music[]>(() => savedStudioState?.uploadedMusic ?? []);
   const [dragMusic, setDragMusic] = useState(false);
   const [dragPip, setDragPip] = useState<{ id: string; dx: number; dy: number } | null>(null);
+  const [dragCaption, setDragCaption] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // save
   const [savedAt, setSavedAt] = useState(() => savedStudioState?.savedAt ?? "");
@@ -1122,6 +1131,11 @@ function VideoEditor() {
   const activeId = useMemo(() => { const seg = segments.find(s => capTime >= s.start && capTime < s.end); return seg ? seg.id : null; }, [segments, capTime]);
   const activeSeg = activeId != null ? segments.find(s => s.id === activeId) : null;
   const activeText = activeSeg?.text || "";
+  // Falls back to a sample line when nothing is currently playing (paused,
+  // or between segments) so the position handle is always there to grab —
+  // otherwise it only existed while a caption happened to be on screen.
+  const previewCaptionText = activeText || segments[0]?.text || "Sample caption text";
+  const effectiveCapPos = { x: style.capX ?? presetCapPos(style.position).x, y: style.capY ?? presetCapPos(style.position).y };
 
   function renderActiveCaption() {
     if (!activeSeg) return null;
@@ -1240,6 +1254,22 @@ function VideoEditor() {
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [dragPip]);
 
+  // Caption drag in preview — lets the caption be positioned anywhere in the
+  // frame, not just the top/middle/bottom presets.
+  useEffect(() => {
+    if (!dragCaption) return;
+    const move = (e: PointerEvent) => {
+      const el = previewRef.current; if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = Math.min(96, Math.max(4, ((e.clientX - rect.left) / rect.width) * 100));
+      const y = Math.min(96, Math.max(4, ((e.clientY - rect.top) / rect.height) * 100));
+      patchStyle({ capX: x, capY: y });
+    };
+    const up = () => setDragCaption(false);
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [dragCaption]);
+
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0]; if (!picked) return;
     setFile(picked); setVideoUrl(URL.createObjectURL(picked));
@@ -1317,12 +1347,14 @@ function VideoEditor() {
   useEffect(() => () => stopPlayheadTick(), []);
 
   function onPlay() {
+    setIsPlaying(true);
     const v = videoRef.current, a = audioRef.current;
     if (a && hasMusic && music.url && v && v.currentTime >= musicStart) { a.volume = volume; a.play().catch(() => {}); }
     stopPlayheadTick();
     playheadRafRef.current = requestAnimationFrame(tickPlayhead);
   }
-  function onPause() { if (audioRef.current) audioRef.current.pause(); stopPlayheadTick(); }
+  function onPause() { setIsPlaying(false); if (audioRef.current) audioRef.current.pause(); stopPlayheadTick(); }
+  function togglePlay() { const v = videoRef.current; if (!v) return; if (v.paused) v.play(); else v.pause(); }
 
   function onTimelineClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragOverlay || dragMusic || scrubbingPlayhead) return;
@@ -1644,8 +1676,8 @@ function VideoEditor() {
             const fs = Math.round(W * 0.0293 * style.fontSize);
             ctx.font = `${style.fontWeight} ${fs}px ${style.fontFamily}`;
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            const x = W / 2;
-            const y = style.position === "top" ? H * 0.1 : style.position === "middle" ? H * 0.5 : H * 0.88;
+            const x = (style.capX ?? presetCapPos(style.position).x) / 100 * W;
+            const y = (style.capY ?? presetCapPos(style.position).y) / 100 * H;
             const pad = fs * 0.5;
             const text = style.uppercase ? seg.text.toUpperCase() : seg.text;
             const tw = ctx.measureText(text).width;
@@ -1703,7 +1735,6 @@ function VideoEditor() {
     }
   }
 
-  const capTop = style.position === "top" ? { top: "10%" } : style.position === "middle" ? { top: "45%" } : { bottom: "10%" };
   const capAnimClass = style.animation === "fade" ? "animate-in fade-in duration-300"
     : style.animation === "pop" ? "animate-in zoom-in-95 fade-in duration-200"
     : style.animation === "slide" ? "animate-in slide-in-from-bottom-2 fade-in duration-200"
@@ -1873,7 +1904,7 @@ function VideoEditor() {
             <div className="space-y-4 px-1">
               <div className="relative mx-auto w-full" style={{ maxWidth: 240 }}>
                 <div className="absolute -inset-4 rounded-[2rem] opacity-40 blur-2xl pointer-events-none" style={{ background: GRAD }} />
-                <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] w-full ring-1 ring-white/10">
+                <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] w-full ring-1 ring-white/10 group">
 
                 {/* Video — shrinks to its half when a half overlay is active */}
                 <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
@@ -1882,8 +1913,8 @@ function VideoEditor() {
                     top: activeHalfOverlay?.half === "top" ? "50%" : 0,
                   }}>
                   {hasVideo ? (
-                    <video ref={videoRef} src={videoUrl} controls onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onEnded={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
-                      className="w-full h-full object-cover" />
+                    <video ref={videoRef} src={videoUrl} onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause} onEnded={onPause} onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+                      onClick={togglePlay} className="w-full h-full object-cover cursor-pointer" />
                   ) : (
                     <label className="w-full h-full flex flex-col items-center justify-center gap-4 cursor-pointer text-center px-6"
                       style={{ background: `linear-gradient(135deg, ${PURPLE}12, #6D28D912)` }}>
@@ -1899,6 +1930,20 @@ function VideoEditor() {
                     </label>
                   )}
                 </div>
+                {hasVideo && !isPlaying && (
+                  <button onClick={togglePlay} aria-label="Play"
+                    className="absolute inset-0 flex items-center justify-center">
+                    <span className="w-14 h-14 rounded-full bg-black/50 flex items-center justify-center">
+                      <Play size={22} className="text-white ml-0.5" fill="white" />
+                    </span>
+                  </button>
+                )}
+                {hasVideo && isPlaying && (
+                  <button onClick={togglePlay} aria-label="Pause"
+                    className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <Pause size={16} className="text-white" fill="white" />
+                  </button>
+                )}
                 {activeOverlays.map(o => (
                   o.mode === "pip" ? (
                     <img key={o.id} src={o.thumb} alt="" draggable={false}
@@ -1915,8 +1960,10 @@ function VideoEditor() {
                     </div>
                   )
                 ))}
-                {activeText && (
-                  <div className="absolute left-0 right-0 px-3 text-center pointer-events-none" style={capTop}>
+                {segments.length > 0 && (
+                  <div className="absolute px-3 text-center cursor-move touch-none select-none"
+                    style={{ left: `${effectiveCapPos.x}%`, top: `${effectiveCapPos.y}%`, transform: "translate(-50%, -50%)", opacity: activeSeg ? 1 : 0.55 }}
+                    onPointerDown={e => { e.preventDefault(); setDragCaption(true); }}>
                     <span
                       key={activeId}
                       className={`inline-block ${capAnimClass}`}
@@ -1930,7 +1977,7 @@ function VideoEditor() {
                         lineHeight: 1.25,
                       }}
                     >
-                      {renderActiveCaption()}
+                      {activeSeg ? renderActiveCaption() : previewCaptionText}
                     </span>
                   </div>
                 )}
@@ -2143,11 +2190,12 @@ function VideoEditor() {
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5">Position</p>
                       <div className="grid grid-cols-3 gap-1.5">
                         {(["top", "middle", "bottom"] as CapPosition[]).map(p => (
-                          <button key={p} onClick={() => patchStyle({ position: p })}
+                          <button key={p} onClick={() => patchStyle({ position: p, capX: undefined, capY: undefined })}
                             className="h-8 rounded text-xs border capitalize font-medium"
                             style={style.position === p ? { borderColor: PURPLE, color: PURPLE, background: `${PURPLE}15` } : {}}>{p}</button>
                         ))}
                       </div>
+                      <p className="text-[10px] text-muted-foreground mt-2">Or drag the caption text directly in the preview.</p>
                     </div>
                   )}
 
