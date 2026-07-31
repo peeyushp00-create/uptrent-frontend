@@ -122,6 +122,10 @@ export default function AdminBlogPage() {
   const [newPath, setNewPath] = useState('');
   const [redirectError, setRedirectError] = useState<string | null>(null);
 
+  // Editor link/image modals (replace window.prompt — see handleInsertLink)
+  const [linkModal, setLinkModal] = useState<{ selStart: number; selEnd: number; selectedText: string; url: string } | null>(null);
+  const [imageAltModal, setImageAltModal] = useState<{ url: string; cursor: number; alt: string } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const authorPhotoInputRef = useRef<HTMLInputElement>(null);
   const bodyImageInputRef = useRef<HTMLInputElement>(null);
@@ -285,18 +289,24 @@ export default function AdminBlogPage() {
     setTimeout(() => { ta.focus(); ta.setSelectionRange(start + prefix.length, end + prefix.length); }, 0);
   };
 
+  // window.prompt() is unreliable outside a plain top-level browser tab —
+  // it's silently unsupported in many embedded/webview contexts and some
+  // locked-down browser policies, where it just does nothing instead of
+  // showing anything. These small in-page modals work everywhere.
   const handleInsertLink = () => {
     const ta = textareaRef.current;
     if (!ta) return;
     const start = ta.selectionStart;
     const end = ta.selectionEnd;
-    const selected = description.substring(start, end) || 'link text';
-    const url = window.prompt('Link URL (https://...)');
-    if (!url) return;
-    const markdown = `[${selected}](${url})`;
-    const newText = description.substring(0, start) + markdown + description.substring(end);
-    setDescription(newText);
-    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + markdown.length, start + markdown.length); }, 0);
+    const selectedText = description.substring(start, end) || 'link text';
+    setLinkModal({ selStart: start, selEnd: end, selectedText, url: '' });
+  };
+
+  const confirmInsertLink = () => {
+    if (!linkModal || !linkModal.url.trim()) { setLinkModal(null); return; }
+    const markdown = `[${linkModal.selectedText}](${linkModal.url.trim()})`;
+    setDescription(description.substring(0, linkModal.selStart) + markdown + description.substring(linkModal.selEnd));
+    setLinkModal(null);
   };
 
   const handleInsertImageClick = () => {
@@ -312,13 +322,17 @@ export default function AdminBlogPage() {
       const encoded = await optimizeImage(file, 1600);
       const result = await uploadEncoded(encoded);
       if (!result.url) { setUploadError(result.error || 'Image upload failed.'); return; }
-      const altText = window.prompt('Alt text for this image (required for accessibility & Google Images):', '') || '';
-      const at = pendingCursorRef.current ?? description.length;
-      const markdown = `\n![${altText}](${result.url})\n`;
-      setDescription(description.substring(0, at) + markdown + description.substring(at));
+      setImageAltModal({ url: result.url, cursor: pendingCursorRef.current ?? description.length, alt: '' });
     } catch {
       setUploadError('Could not process that image. Try a different file.');
     }
+  };
+
+  const confirmInsertImage = () => {
+    if (!imageAltModal) return;
+    const markdown = `\n![${imageAltModal.alt}](${imageAltModal.url})\n`;
+    setDescription(description.substring(0, imageAltModal.cursor) + markdown + description.substring(imageAltModal.cursor));
+    setImageAltModal(null);
   };
 
   const openNewForm = () => {
@@ -921,6 +935,67 @@ export default function AdminBlogPage() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Insert-link modal */}
+      <AnimatePresence>
+        {linkModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setLinkModal(null)}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <motion.div onClick={e => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              style={{ width: '100%', maxWidth: 420, background: '#0a0212', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 16, padding: 24 }}>
+              <h3 style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Insert link</h3>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 14 }}>
+                Linking &ldquo;{linkModal.selectedText}&rdquo;. For another post on this blog, use its full URL, e.g. https://www.socialrum.com/blog/its-slug
+              </p>
+              <input autoFocus value={linkModal.url} onChange={e => setLinkModal({ ...linkModal, url: e.target.value })}
+                onKeyDown={e => { if (e.key === 'Enter') confirmInsertLink(); if (e.key === 'Escape') setLinkModal(null); }}
+                placeholder="https://..." className="admin-input" style={{ marginBottom: 16 }} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setLinkModal(null)}
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px', color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={confirmInsertLink} disabled={!linkModal.url.trim()}
+                  style={{ flex: 1, background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', border: 'none', borderRadius: 10, padding: '10px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: linkModal.url.trim() ? 1 : 0.5 }}>
+                  Insert
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Image alt-text modal */}
+      <AnimatePresence>
+        {imageAltModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setImageAltModal(null)}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <motion.div onClick={e => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              style={{ width: '100%', maxWidth: 420, background: '#0a0212', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 16, padding: 24 }}>
+              <h3 style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Image alt text</h3>
+              <img src={imageAltModal.url} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 10, marginBottom: 12 }} />
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>Required for accessibility and how images rank in Google Images.</p>
+              <input autoFocus value={imageAltModal.alt} onChange={e => setImageAltModal({ ...imageAltModal, alt: e.target.value })}
+                onKeyDown={e => { if (e.key === 'Enter') confirmInsertImage(); if (e.key === 'Escape') setImageAltModal(null); }}
+                placeholder="Describe the image..." className="admin-input" style={{ marginBottom: 16 }} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setImageAltModal(null)}
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px', color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer' }}>
+                  Skip
+                </button>
+                <button onClick={confirmInsertImage}
+                  style={{ flex: 1, background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', border: 'none', borderRadius: 10, padding: '10px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                  Insert image
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
