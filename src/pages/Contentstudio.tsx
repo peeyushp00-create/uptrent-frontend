@@ -2241,7 +2241,7 @@ function VideoEditor() {
                 onMouseMove={onTimelineHover} onMouseLeave={() => setHoverTime(null)}
                 className="relative overflow-x-auto cursor-pointer select-none flex-1 thick-scrollbar">
                 <div ref={tracksRef} style={{
-                  width: trackWidth, position: "relative",
+                  width: trackWidth, minWidth: "100%", position: "relative",
                   backgroundImage: `linear-gradient(to right, ${TL_LINE}80 1px, transparent 1px)`,
                   backgroundSize: `${pxPerSec}px 100%`,
                 }}>
