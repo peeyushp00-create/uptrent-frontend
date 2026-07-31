@@ -14,14 +14,19 @@ export interface SEOProps {
   ogImage?: string;
   /** Absolute canonical URL for this page. Defaults to SITE_URL + current pathname when omitted and not noindex. */
   canonical?: string;
+  /** og:type — 'website' for regular pages, 'article' for blog posts. */
+  ogType?: "website" | "article";
 }
 
 // Applied per-route (see each page for usage). Note: this only ever renders
 // after the client-side JS bundle runs — react-helmet-async cannot inject
 // tags into the raw server response, since this app has no SSR/prerendering.
 // Crawlers that don't execute JS will not see any of these tags; only
-// index.html's static <head> tags are visible to them.
-export default function SEO({ title, description, noindex = false, ogImage, canonical }: SEOProps) {
+// index.html's static <head> tags are visible to them. Link-preview bots
+// (Facebook/Twitter/WhatsApp/Slack) generally fall into that category, so
+// shared blog links may still show the generic homepage OG tags until this
+// app gets real SSR or a prerender proxy for bot user-agents.
+export default function SEO({ title, description, noindex = false, ogImage, canonical, ogType = "website" }: SEOProps) {
   const resolvedImage = ogImage || DEFAULT_OG_IMAGE;
   const resolvedCanonical = canonical || (typeof window !== "undefined" ? `${SITE_URL}${window.location.pathname}` : SITE_URL);
 
@@ -38,7 +43,7 @@ export default function SEO({ title, description, noindex = false, ogImage, cano
           {description && <meta property="og:description" content={description} />}
           <meta property="og:image" content={resolvedImage} />
           <meta property="og:url" content={resolvedCanonical} />
-          <meta property="og:type" content="website" />
+          <meta property="og:type" content={ogType} />
           <meta property="og:site_name" content={SITE_NAME} />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={title} />

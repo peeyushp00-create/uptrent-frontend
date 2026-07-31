@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "https://uptrent-backend.onrender.com/api/blog/sitemap.xml" },
+    { "source": "/rss.xml", "destination": "https://uptrent-backend.onrender.com/api/blog/rss.xml" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

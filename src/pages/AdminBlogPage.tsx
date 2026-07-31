@@ -3,15 +3,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, Eye, EyeOff, LogOut, Loader2, CheckCircle,
   Upload, X, Edit3, Bold, Italic, List, Heading, Save,
-  Calendar, Clock, ExternalLink
+  Calendar, ExternalLink, Link2, Image as ImageIcon, Smartphone, Monitor, Route, ChevronDown
 } from 'lucide-react';
 import SEO from '@/components/SEO';
-import { RATIO_PRESETS, cropToRatio, type RatioPreset } from '@/lib/imageCrop';
+import { RATIO_PRESETS, cropToRatio, optimizeImage, type RatioPreset, type EncodedImage } from '@/lib/imageCrop';
+import { supabase } from '@/lib/supabase';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const ADMIN_EMAIL = 'socialrum.official@gmail.com';
-const ADMIN_PASSWORD = 'socialrum04';
+
+// Client-side allowlist is defense-in-depth only, not the real security boundary.
+// The actual boundary MUST be a Supabase RLS policy on `blogs` (and the
+// `blog-images` storage bucket) that restricts INSERT/UPDATE/DELETE to this
+// account's auth.uid() / email — without that RLS policy, any authenticated
+// user's anon-key session could still write via direct REST calls.
+const ADMIN_EMAILS = ['socialrum.official@gmail.com'];
+
+const CATEGORIES = [
+  { value: '', label: 'No category' },
+  { value: 'social-media-management', label: 'Social Media Management' },
+  { value: 'content-creation', label: 'Content Creation' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'youtube', label: 'YouTube' },
+];
 
 interface Blog {
   id: string;
@@ -22,7 +36,24 @@ interface Blog {
   created_at: string;
   published: boolean;
   scheduled_at?: string;
+  slug: string;
+  meta_title?: string;
+  meta_description?: string;
+  cover_alt?: string;
+  category?: string;
+  author_bio?: string;
+  author_photo_url?: string;
+  noindex?: boolean;
 }
+
+interface Redirect {
+  id: string;
+  old_slug: string;
+  new_path: string;
+  created_at: string;
+}
+
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
@@ -30,6 +61,8 @@ const css = `
   .admin-input { width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(139,92,246,0.2); border-radius:10px; padding:11px 14px; color:#fff; font-size:14px; outline:none; font-family:'DM Sans',sans-serif; transition:border-color .2s; }
   .admin-input:focus { border-color:#7c3aed; }
   .admin-input::placeholder { color:rgba(255,255,255,0.25); }
+  .admin-textarea { width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(139,92,246,0.2); border-radius:10px; padding:11px 14px; color:#fff; font-size:14px; outline:none; font-family:'DM Sans',sans-serif; resize:vertical; }
+  .admin-textarea:focus { border-color:#7c3aed; }
   .editor-btn { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 10px; color:rgba(255,255,255,0.7); cursor:pointer; font-size:12px; font-family:'DM Sans',sans-serif; transition:all .2s; display:flex; align-items:center; gap:4px; }
   .editor-btn:hover { background:rgba(139,92,246,0.2); border-color:rgba(139,92,246,0.4); color:#fff; }
   .editor-textarea { width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(139,92,246,0.2); border-radius:0 0 10px 10px; padding:14px; color:#fff; font-size:14px; outline:none; resize:vertical; line-height:1.8; font-family:'DM Sans',sans-serif; min-height:280px; }
@@ -38,15 +71,19 @@ const css = `
 
 export default function AdminBlogPage() {
   const [authed, setAuthed] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Form fields
   const [title, setTitle] = useState('');
@@ -54,7 +91,7 @@ export default function AdminBlogPage() {
   const [author, setAuthor] = useState('SocialRum Team');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+  const [croppedImage, setCroppedImage] = useState<EncodedImage | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<RatioPreset>(RATIO_PRESETS[0]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -62,33 +99,127 @@ export default function AdminBlogPage() {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [preview, setPreview] = useState(false);
+  const [mobilePreview, setMobilePreview] = useState(false);
+
+  // New CMS fields
+  const [slug, setSlug] = useState('');
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [coverAlt, setCoverAlt] = useState('');
+  const [category, setCategory] = useState('');
+  const [authorBio, setAuthorBio] = useState('');
+  const [authorPhotoFile, setAuthorPhotoFile] = useState<File | null>(null);
+  const [authorPhotoPreview, setAuthorPhotoPreview] = useState<string | null>(null);
+  const [authorPhotoEncoded, setAuthorPhotoEncoded] = useState<EncodedImage | null>(null);
+  const [noindex, setNoindex] = useState(false);
+
+  // Redirects panel
+  const [redirects, setRedirects] = useState<Redirect[]>([]);
+  const [showRedirects, setShowRedirects] = useState(false);
+  const [newOldSlug, setNewOldSlug] = useState('');
+  const [newPath, setNewPath] = useState('');
+  const [redirectError, setRedirectError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const authorPhotoInputRef = useRef<HTMLInputElement>(null);
+  const bodyImageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pendingCursorRef = useRef<number | null>(null);
 
-  const handleLogin = () => {
-    if (email !== ADMIN_EMAIL) { setLoginError('Access denied. Admin only.'); return; }
-    if (password !== ADMIN_PASSWORD) { setLoginError('Wrong password.'); return; }
+  // Restore an existing admin session on mount (real Supabase session, not a
+  // client-side flag) and stay in sync with sign-out from another tab.
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const session = data.session;
+      if (session && ADMIN_EMAILS.includes(session.user.email || '')) {
+        setAccessToken(session.access_token);
+        setAuthed(true);
+      }
+      setCheckingSession(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session && ADMIN_EMAILS.includes(session.user.email || '')) {
+        setAccessToken(session.access_token);
+        setAuthed(true);
+      } else {
+        setAccessToken(null);
+        setAuthed(false);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = async () => {
+    setLoginError('');
+    if (!ADMIN_EMAILS.includes(email)) { setLoginError('Access denied. Admin only.'); return; }
+    setLoggingIn(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoggingIn(false);
+    if (error || !data.session) { setLoginError('Wrong email or password.'); return; }
+    setAccessToken(data.session.access_token);
     setAuthed(true);
   };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setAccessToken(null);
+    setAuthed(false);
+  };
+
+  const authHeaders = () => ({
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${accessToken || SUPABASE_ANON_KEY}`,
+  });
 
   const fetchBlogs = async () => {
     setLoading(true);
     const res = await fetch(`${SUPABASE_URL}/rest/v1/blogs?order=created_at.desc`, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      headers: authHeaders(),
     });
     const data = await res.json();
     setBlogs(Array.isArray(data) ? data : []);
     setLoading(false);
   };
 
-  useEffect(() => { if (authed) fetchBlogs(); }, [authed]);
+  const fetchRedirects = async () => {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/blog_redirects?order=created_at.desc`, { headers: authHeaders() });
+    const data = await res.json();
+    setRedirects(Array.isArray(data) ? data : []);
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (authed) { fetchBlogs(); fetchRedirects(); } }, [authed]);
+
+  const addRedirect = async () => {
+    setRedirectError(null);
+    const oldSlug = slugify(newOldSlug);
+    const target = newPath.trim();
+    if (!oldSlug || !target) { setRedirectError('Both fields are required.'); return; }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/blog_redirects`, {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ old_slug: oldSlug, new_path: target }),
+    });
+    if (res.ok) {
+      setNewOldSlug(''); setNewPath('');
+      fetchRedirects();
+    } else {
+      const body = await res.json().catch(() => null);
+      setRedirectError(body?.message || 'Failed to save redirect.');
+    }
+  };
+
+  const deleteRedirect = async (id: string) => {
+    await fetch(`${SUPABASE_URL}/rest/v1/blog_redirects?id=eq.${id}`, { method: 'DELETE', headers: authHeaders() });
+    fetchRedirects();
+  };
 
   const applyCrop = async (file: File, ratio: RatioPreset) => {
     try {
-      const blob = await cropToRatio(file, ratio.width, ratio.height);
-      setCroppedBlob(blob);
-      setImagePreview(URL.createObjectURL(blob));
+      const encoded = await cropToRatio(file, ratio.width, ratio.height);
+      setCroppedImage(encoded);
+      setImagePreview(URL.createObjectURL(encoded.blob));
       setUploadError(null);
     } catch {
       setUploadError('Could not process that image. Try a different file.');
@@ -107,14 +238,27 @@ export default function AdminBlogPage() {
     if (imageFile) applyCrop(imageFile, ratio);
   };
 
-  const uploadImage = async (blob: Blob): Promise<{ url: string | null; error?: string }> => {
+  const handleAuthorPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAuthorPhotoFile(file);
+    try {
+      const encoded = await optimizeImage(file, 400);
+      setAuthorPhotoEncoded(encoded);
+      setAuthorPhotoPreview(URL.createObjectURL(encoded.blob));
+    } catch {
+      setUploadError('Could not process that photo. Try a different file.');
+    }
+  };
+
+  const uploadEncoded = async (encoded: EncodedImage): Promise<{ url: string | null; error?: string }> => {
     setUploading(true);
     try {
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${encoded.ext}`;
       const res = await fetch(`${SUPABASE_URL}/storage/v1/object/blog-images/${fileName}`, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
-        body: blob,
+        headers: { ...authHeaders(), 'Content-Type': encoded.mime, 'x-upsert': 'true' },
+        body: encoded.blob,
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -138,13 +282,54 @@ export default function AdminBlogPage() {
     setTimeout(() => { ta.focus(); ta.setSelectionRange(start + prefix.length, end + prefix.length); }, 0);
   };
 
+  const handleInsertLink = () => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = description.substring(start, end) || 'link text';
+    const url = window.prompt('Link URL (https://...)');
+    if (!url) return;
+    const markdown = `[${selected}](${url})`;
+    const newText = description.substring(0, start) + markdown + description.substring(end);
+    setDescription(newText);
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + markdown.length, start + markdown.length); }, 0);
+  };
+
+  const handleInsertImageClick = () => {
+    pendingCursorRef.current = textareaRef.current?.selectionStart ?? description.length;
+    bodyImageInputRef.current?.click();
+  };
+
+  const handleBodyImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    try {
+      const encoded = await optimizeImage(file, 1600);
+      const result = await uploadEncoded(encoded);
+      if (!result.url) { setUploadError(result.error || 'Image upload failed.'); return; }
+      const altText = window.prompt('Alt text for this image (required for accessibility & Google Images):', '') || '';
+      const at = pendingCursorRef.current ?? description.length;
+      const markdown = `\n![${altText}](${result.url})\n`;
+      setDescription(description.substring(0, at) + markdown + description.substring(at));
+    } catch {
+      setUploadError('Could not process that image. Try a different file.');
+    }
+  };
+
   const openNewForm = () => {
     setEditingBlog(null);
     setTitle(''); setDescription(''); setAuthor('SocialRum Team');
-    setImageFile(null); setImagePreview(null); setCroppedBlob(null);
-    setSelectedRatio(RATIO_PRESETS[0]); setUploadError(null);
+    setImageFile(null); setImagePreview(null); setCroppedImage(null);
+    setSelectedRatio(RATIO_PRESETS[0]); setUploadError(null); setFormError(null);
     setPublishMode('now'); setScheduledDate(''); setScheduledTime('');
-    setPreview(false);
+    setPreview(false); setMobilePreview(false);
+    setSlug(''); setSlugTouched(false);
+    setMetaTitle(''); setMetaDescription(''); setCoverAlt('');
+    setCategory(''); setAuthorBio('');
+    setAuthorPhotoFile(null); setAuthorPhotoPreview(null); setAuthorPhotoEncoded(null);
+    setNoindex(false);
     setShowForm(true);
   };
 
@@ -152,26 +337,61 @@ export default function AdminBlogPage() {
     setEditingBlog(blog);
     setTitle(blog.title); setDescription(blog.description);
     setAuthor(blog.author); setImagePreview(blog.image_url || null);
-    setImageFile(null); setCroppedBlob(null);
-    setSelectedRatio(RATIO_PRESETS[0]); setUploadError(null);
+    setImageFile(null); setCroppedImage(null);
+    setSelectedRatio(RATIO_PRESETS[0]); setUploadError(null); setFormError(null);
     setPublishMode(blog.published ? 'now' : 'draft');
-    setPreview(false);
+    setPreview(false); setMobilePreview(false);
+    // Editing an existing post: the slug is locked to its current value
+    // unless the admin deliberately changes it (slugTouched=true from the start).
+    setSlug(blog.slug || slugify(blog.title)); setSlugTouched(true);
+    setMetaTitle(blog.meta_title || ''); setMetaDescription(blog.meta_description || '');
+    setCoverAlt(blog.cover_alt || '');
+    setCategory(blog.category || ''); setAuthorBio(blog.author_bio || '');
+    setAuthorPhotoFile(null); setAuthorPhotoPreview(blog.author_photo_url || null); setAuthorPhotoEncoded(null);
+    setNoindex(!!blog.noindex);
     setShowForm(true);
+  };
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    if (!editingBlog && !slugTouched) setSlug(slugify(value));
+  };
+
+  const handleSlugChange = (value: string) => {
+    setSlugTouched(true);
+    setSlug(slugify(value));
   };
 
   const handlePost = async () => {
     if (!title.trim() || !description.trim()) return;
+    const finalSlug = slugify(slug) || slugify(title);
+    if (!finalSlug) { setFormError('Slug cannot be empty.'); return; }
+
     setUploadError(null);
+    setFormError(null);
     setSaving(true);
+
+    // Slug uniqueness check — surfaced as an error rather than silently
+    // renamed, since a slug must never change without the admin's say-so.
+    const dupeCheck = await fetch(
+      `${SUPABASE_URL}/rest/v1/blogs?slug=eq.${encodeURIComponent(finalSlug)}&select=id`,
+      { headers: authHeaders() }
+    ).then(r => r.json()).catch(() => []);
+    const dupe = Array.isArray(dupeCheck) ? dupeCheck.find((b: { id: string }) => b.id !== editingBlog?.id) : null;
+    if (dupe) {
+      setSaving(false);
+      setFormError(`The slug "${finalSlug}" is already used by another post. Choose a different one.`);
+      return;
+    }
 
     let image_url: string | null = editingBlog?.image_url || null;
     if (imageFile) {
-      if (!croppedBlob) {
+      if (!croppedImage) {
         setSaving(false);
         setUploadError('Image is still processing — try again in a moment.');
         return;
       }
-      const result = await uploadImage(croppedBlob);
+      const result = await uploadEncoded(croppedImage);
       if (!result.url) {
         setSaving(false);
         setUploadError(result.error || 'Image upload failed.');
@@ -180,24 +400,53 @@ export default function AdminBlogPage() {
       image_url = result.url;
     }
 
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    let author_photo_url: string | null = editingBlog?.author_photo_url || null;
+    if (authorPhotoFile && authorPhotoEncoded) {
+      const result = await uploadEncoded(authorPhotoEncoded);
+      if (!result.url) {
+        setSaving(false);
+        setUploadError(result.error || 'Author photo upload failed.');
+        return;
+      }
+      author_photo_url = result.url;
+    }
+
     const isPublished = publishMode === 'now';
     const scheduled_at = publishMode === 'schedule' && scheduledDate && scheduledTime
       ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString() : null;
 
-    const payload = { title, description, image_url, author, published: isPublished, slug, scheduled_at };
+    const payload = {
+      title, description, image_url, author, published: isPublished, slug: finalSlug, scheduled_at,
+      meta_title: metaTitle.trim() || null,
+      meta_description: metaDescription.trim() || null,
+      cover_alt: coverAlt.trim() || null,
+      category: category || null,
+      author_bio: authorBio.trim() || null,
+      author_photo_url,
+      noindex,
+    };
+
+    // If an existing post's slug just changed, leave a redirect behind —
+    // the old URL will otherwise 404 and any inbound links/ranking are lost.
+    if (editingBlog && editingBlog.slug && editingBlog.slug !== finalSlug) {
+      fetch(`${SUPABASE_URL}/rest/v1/blog_redirects`, {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify({ old_slug: editingBlog.slug, new_path: `/blog/${finalSlug}` }),
+      }).catch(() => { /* best-effort — doesn't block publishing */ });
+    }
 
     let res;
     if (editingBlog) {
       res = await fetch(`${SUPABASE_URL}/rest/v1/blogs?id=eq.${editingBlog.id}`, {
         method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
     } else {
       res = await fetch(`${SUPABASE_URL}/rest/v1/blogs`, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify(payload),
       });
     }
@@ -206,6 +455,9 @@ export default function AdminBlogPage() {
     if (res.ok) {
       setSaved(true); setTimeout(() => setSaved(false), 3000);
       setShowForm(false); setEditingBlog(null); fetchBlogs();
+    } else {
+      const body = await res.json().catch(() => null);
+      setFormError(body?.message || 'Failed to save post.');
     }
   };
 
@@ -213,7 +465,7 @@ export default function AdminBlogPage() {
     if (!confirm('Delete this post?')) return;
     await fetch(`${SUPABASE_URL}/rest/v1/blogs?id=eq.${id}`, {
       method: 'DELETE',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      headers: authHeaders(),
     });
     fetchBlogs();
   };
@@ -221,13 +473,14 @@ export default function AdminBlogPage() {
   const togglePublish = async (blog: Blog) => {
     await fetch(`${SUPABASE_URL}/rest/v1/blogs?id=eq.${blog.id}`, {
       method: 'PATCH',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ published: !blog.published }),
     });
     fetchBlogs();
   };
 
   const labelStyle: React.CSSProperties = { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: "'DM Sans', sans-serif" };
+  const counterStyle = (len: number, target: number): React.CSSProperties => ({ fontSize: 11, marginTop: 4, fontFamily: "'DM Sans', sans-serif", color: len > target ? '#f87171' : 'rgba(255,255,255,0.3)' });
 
   const previewBoxStyle = (ratio: RatioPreset): React.CSSProperties => ({
     width: `min(100%, ${(320 * ratio.width) / ratio.height}px)`,
@@ -238,6 +491,11 @@ export default function AdminBlogPage() {
     position: 'relative',
     background: 'rgba(0,0,0,0.3)',
   });
+
+  // ── Checking for an existing session ──
+  if (checkingSession) return (
+    <div style={{ minHeight: '100vh', background: '#03000a' }} />
+  );
 
   // ── Login ──
   if (!authed) return (
@@ -257,9 +515,9 @@ export default function AdminBlogPage() {
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"
             onKeyDown={e => e.key === 'Enter' && handleLogin()} className="admin-input" />
           {loginError && <p style={{ fontSize: 13, color: '#ef4444', textAlign: 'center', fontFamily: "'DM Sans', sans-serif" }}>{loginError}</p>}
-          <button onClick={handleLogin}
-            style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
-            Login
+          <button onClick={handleLogin} disabled={loggingIn}
+            style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'Syne, sans-serif', opacity: loggingIn ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            {loggingIn ? <><Loader2 size={16} className="animate-spin" /> Logging in...</> : 'Login'}
           </button>
         </div>
       </motion.div>
@@ -282,7 +540,7 @@ export default function AdminBlogPage() {
           <a href="/blog" target="_blank" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'DM Sans', sans-serif" }}>
             <ExternalLink size={13} /> View Blog
           </a>
-          <button onClick={() => setAuthed(false)}
+          <button onClick={handleLogout}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '7px 14px', color: 'rgba(255,255,255,0.6)', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
             <LogOut size={14} /> Logout
           </button>
@@ -315,10 +573,10 @@ export default function AdminBlogPage() {
 
         {/* Error toast */}
         <AnimatePresence>
-          {uploadError && (
+          {(uploadError || formError) && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: '#ef4444', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>
-              <X size={16} /> {uploadError}
+              <X size={16} /> {uploadError || formError}
             </motion.div>
           )}
         </AnimatePresence>
@@ -335,6 +593,12 @@ export default function AdminBlogPage() {
                   {editingBlog ? 'Edit Post' : 'New Blog Post'}
                 </h2>
                 <div style={{ display: 'flex', gap: 8 }}>
+                  {preview && (
+                    <button onClick={() => setMobilePreview(!mobilePreview)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '7px 14px', color: 'rgba(255,255,255,0.6)', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                      {mobilePreview ? <Monitor size={14} /> : <Smartphone size={14} />} {mobilePreview ? 'Desktop' : 'Mobile'}
+                    </button>
+                  )}
                   <button onClick={() => setPreview(!preview)}
                     style={{ display: 'flex', alignItems: 'center', gap: 6, background: preview ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${preview ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 8, padding: '7px 14px', color: preview ? '#a78bfa' : 'rgba(255,255,255,0.6)', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
                     <Eye size={14} /> {preview ? 'Edit' : 'Preview'}
@@ -348,16 +612,19 @@ export default function AdminBlogPage() {
 
               {preview ? (
                 // Preview mode
-                <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 16, overflow: 'hidden' }}>
-                  {imagePreview && (
-                    <div style={{ ...previewBoxStyle(selectedRatio), margin: 0, borderRadius: 0 }}>
-                      <img src={imagePreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ maxWidth: mobilePreview ? 390 : '100%', margin: '0 auto', border: mobilePreview ? '8px solid rgba(255,255,255,0.08)' : 'none', borderRadius: mobilePreview ? 28 : 16 }}>
+                  <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: mobilePreview ? 20 : 16, overflow: 'hidden' }}>
+                    {imagePreview && (
+                      <div style={{ ...previewBoxStyle(selectedRatio), margin: 0, borderRadius: 0, width: '100%' }}>
+                        <img src={imagePreview} alt={coverAlt || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                    <div style={{ padding: 24 }}>
+                      {category && <span style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#a78bfa', fontWeight: 700 }}>{CATEGORIES.find(c => c.value === category)?.label}</span>}
+                      <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: mobilePreview ? 20 : 24, fontWeight: 800, color: '#fff', margin: '8px 0 12px' }}>{title || 'Untitled Post'}</h1>
+                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>By {author} · Just now</p>
+                      <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontFamily: "'DM Sans', sans-serif" }}>{description || 'No content yet...'}</p>
                     </div>
-                  )}
-                  <div style={{ padding: 24 }}>
-                    <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 24, fontWeight: 800, color: '#fff', marginBottom: 12 }}>{title || 'Untitled Post'}</h1>
-                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>By {author} · Just now</p>
-                    <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontFamily: "'DM Sans', sans-serif" }}>{description || 'No content yet...'}</p>
                   </div>
                 </div>
               ) : (
@@ -367,7 +634,19 @@ export default function AdminBlogPage() {
                   {/* Title */}
                   <div>
                     <label style={labelStyle}>Title *</label>
-                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter blog title..." className="admin-input" />
+                    <input type="text" value={title} onChange={e => handleTitleChange(e.target.value)} placeholder="Enter blog title..." className="admin-input" />
+                  </div>
+
+                  {/* Slug */}
+                  <div>
+                    <label style={labelStyle}>URL slug *</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap' }}>/blog/</span>
+                      <input type="text" value={slug} onChange={e => handleSlugChange(e.target.value)} placeholder="post-slug" className="admin-input" />
+                    </div>
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>
+                      {editingBlog ? "Won't change automatically — edit it here only if you mean to move the URL." : 'Auto-filled from the title; edit it before publishing if you want something different.'}
+                    </p>
                   </div>
 
                   {/* Image upload */}
@@ -385,7 +664,7 @@ export default function AdminBlogPage() {
                     {imagePreview ? (
                       <div style={{ position: 'relative', ...previewBoxStyle(selectedRatio) }}>
                         <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <button onClick={() => { setImageFile(null); setImagePreview(null); setCroppedBlob(null); setUploadError(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                        <button onClick={() => { setImageFile(null); setImagePreview(null); setCroppedImage(null); setUploadError(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                           style={{ position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <X size={16} />
                         </button>
@@ -399,9 +678,19 @@ export default function AdminBlogPage() {
                         style={{ width: '100%', height: 110, background: 'rgba(139,92,246,0.04)', border: '2px dashed rgba(139,92,246,0.25)', borderRadius: 12, color: 'rgba(255,255,255,0.4)', fontSize: 14, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
                         <Upload size={22} style={{ color: '#a78bfa' }} />
                         <span>Click to upload cover image</span>
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>PNG, JPG, WEBP supported</span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>PNG, JPG, WEBP supported · auto-converted to WebP</span>
                       </button>
                     )}
+                    <input type="text" value={coverAlt} onChange={e => setCoverAlt(e.target.value)} placeholder="Cover image alt text (for accessibility & Google Images)"
+                      className="admin-input" style={{ marginTop: 8 }} />
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label style={labelStyle}>Category</label>
+                    <select value={category} onChange={e => setCategory(e.target.value)} className="admin-input" style={{ colorScheme: 'dark' }}>
+                      {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
                   </div>
 
                   {/* Rich text editor */}
@@ -414,20 +703,52 @@ export default function AdminBlogPage() {
                       <button className="editor-btn" onClick={() => insertFormat('\n## ')}><Heading size={12} /> H2</button>
                       <button className="editor-btn" onClick={() => insertFormat('\n### ')}><Heading size={11} /> H3</button>
                       <button className="editor-btn" onClick={() => insertFormat('\n- ')}><List size={12} /> List</button>
+                      <button className="editor-btn" onClick={handleInsertLink}><Link2 size={12} /> Link</button>
+                      <button className="editor-btn" onClick={handleInsertImageClick}><ImageIcon size={12} /> Image</button>
                       <button className="editor-btn" onClick={() => insertFormat('\n\n---\n\n')}>— Divider</button>
                       <button className="editor-btn" onClick={() => insertFormat('\n> ')}>❝ Quote</button>
                     </div>
+                    <input ref={bodyImageInputRef} type="file" accept="image/*" onChange={handleBodyImageChange} style={{ display: 'none' }} />
                     <textarea ref={textareaRef} value={description} onChange={e => setDescription(e.target.value)}
-                      placeholder="Write your blog post content here...&#10;&#10;Use **bold**, _italic_, ## Heading, - list items" className="editor-textarea" />
+                      placeholder="Write your blog post content here...&#10;&#10;Use **bold**, _italic_, ## Heading, - list items, [links](url), ![alt](image-url)" className="editor-textarea" />
                     <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>
-                      {description.length} characters · Supports markdown formatting
+                      {description.length} characters · Supports markdown formatting · Tip: add an "## FAQ" section with "### Question" sub-headings to get FAQ rich results
                     </p>
                   </div>
 
                   {/* Author */}
                   <div>
                     <label style={labelStyle}>Author</label>
-                    <input type="text" value={author} onChange={e => setAuthor(e.target.value)} className="admin-input" />
+                    <input type="text" value={author} onChange={e => setAuthor(e.target.value)} className="admin-input" style={{ marginBottom: 10 }} />
+                    <textarea value={authorBio} onChange={e => setAuthorBio(e.target.value)} placeholder="Short author bio..." rows={2} className="admin-textarea" style={{ marginBottom: 10 }} />
+                    <input ref={authorPhotoInputRef} type="file" accept="image/*" onChange={handleAuthorPhotoChange} style={{ display: 'none' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {authorPhotoPreview && (
+                        <img src={authorPhotoPreview} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                      )}
+                      <button onClick={() => authorPhotoInputRef.current?.click()}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '7px 14px', color: 'rgba(255,255,255,0.6)', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                        <Upload size={12} /> {authorPhotoPreview ? 'Change photo' : 'Upload author photo'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* SEO fields */}
+                  <div>
+                    <label style={labelStyle}>Meta title <span style={{ textTransform: 'none', letterSpacing: 0 }}>(search-result title, ~60 chars)</span></label>
+                    <input type="text" value={metaTitle} onChange={e => setMetaTitle(e.target.value)} placeholder={title || 'Falls back to the post title'} className="admin-input" />
+                    <p style={counterStyle(metaTitle.length, 60)}>{metaTitle.length}/60</p>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Meta description <span style={{ textTransform: 'none', letterSpacing: 0 }}>(~155 chars)</span></label>
+                    <textarea value={metaDescription} onChange={e => setMetaDescription(e.target.value)} rows={2} placeholder="Falls back to the start of the post body" className="admin-textarea" />
+                    <p style={counterStyle(metaDescription.length, 155)}>{metaDescription.length}/155</p>
+                  </div>
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.6)', fontFamily: "'DM Sans', sans-serif", cursor: 'pointer' }}>
+                      <input type="checkbox" checked={noindex} onChange={e => setNoindex(e.target.checked)} />
+                      noindex this post (keep it off Google — for thin/utility pages)
+                    </label>
                   </div>
 
                   {/* Publish mode */}
@@ -435,11 +756,11 @@ export default function AdminBlogPage() {
                     <label style={labelStyle}>Publish</label>
                     <div style={{ display: 'flex', gap: 8 }}>
                       {[
-                        { value: 'now', label: '🚀 Publish Now', icon: null },
-                        { value: 'draft', label: '📝 Save Draft', icon: null },
-                        { value: 'schedule', label: '⏰ Schedule', icon: null },
+                        { value: 'now', label: '🚀 Publish Now' },
+                        { value: 'draft', label: '📝 Save Draft' },
+                        { value: 'schedule', label: '⏰ Schedule' },
                       ].map(opt => (
-                        <button key={opt.value} onClick={() => setPublishMode(opt.value as any)}
+                        <button key={opt.value} onClick={() => setPublishMode(opt.value as 'now' | 'draft' | 'schedule')}
                           style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: `1px solid ${publishMode === opt.value ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.1)'}`, background: publishMode === opt.value ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)', color: publishMode === opt.value ? '#a78bfa' : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
                           {opt.label}
                         </button>
@@ -503,8 +824,9 @@ export default function AdminBlogPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontFamily: 'Syne, sans-serif', fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blog.title}</p>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontFamily: "'DM Sans', sans-serif" }}>
-                    {new Date(blog.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {blog.author}
+                    /blog/{blog.slug} · {new Date(blog.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {blog.author}
                     {blog.scheduled_at && <span style={{ color: '#a78bfa' }}> · ⏰ Scheduled</span>}
+                    {blog.noindex && <span style={{ color: '#f87171' }}> · noindex</span>}
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
@@ -528,6 +850,56 @@ export default function AdminBlogPage() {
             ))}
           </div>
         )}
+
+        {/* Redirects panel */}
+        <div style={{ marginTop: 40 }}>
+          <button onClick={() => setShowRedirects(!showRedirects)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Syne, sans-serif', padding: 0, marginBottom: 16 }}>
+            <Route size={16} /> URL Redirects ({redirects.length})
+            <ChevronDown size={14} style={{ transform: showRedirects ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
+          </button>
+
+          <AnimatePresence>
+            {showRedirects && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                style={{ overflow: 'hidden' }}>
+                <div style={{ background: 'rgba(139,92,246,0.03)', border: '1px solid rgba(139,92,246,0.12)', borderRadius: 16, padding: 20 }}>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 16, fontFamily: "'DM Sans', sans-serif" }}>
+                    Map an old blog URL to where it should send visitors now. Created automatically when a post's slug changes — add one here for anything else (e.g. a post you deleted).
+                  </p>
+
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                    <input value={newOldSlug} onChange={e => setNewOldSlug(e.target.value)} placeholder="old-slug" className="admin-input" style={{ flex: 1, minWidth: 140 }} />
+                    <input value={newPath} onChange={e => setNewPath(e.target.value)} placeholder="/blog/new-slug or any path" className="admin-input" style={{ flex: 1, minWidth: 140 }} />
+                    <button onClick={addRedirect}
+                      style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', border: 'none', borderRadius: 10, padding: '0 18px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
+                      Add
+                    </button>
+                  </div>
+                  {redirectError && <p style={{ fontSize: 12, color: '#f87171', marginBottom: 12 }}>{redirectError}</p>}
+
+                  {redirects.length === 0 ? (
+                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>No redirects yet.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {redirects.map(r => (
+                        <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'rgba(255,255,255,0.6)', fontFamily: "'DM Sans', sans-serif" }}>
+                          <span style={{ color: 'rgba(255,255,255,0.4)' }}>/blog/{r.old_slug}</span>
+                          <ExternalLink size={11} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                          <span style={{ color: '#a78bfa', flex: 1 }}>{r.new_path}</span>
+                          <button onClick={() => deleteRedirect(r.id)}
+                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex' }}>
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </main>
     </div>
   );

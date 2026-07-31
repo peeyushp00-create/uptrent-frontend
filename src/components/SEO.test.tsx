@@ -69,4 +69,12 @@ describe("SEO", () => {
       "https://www.socialrum.com/custom-image.png"
     );
   });
+
+  it("defaults og:type to website and allows overriding to article", async () => {
+    await renderSEO({ title: "Default type — SocialRum", canonical: "https://www.socialrum.com/y" });
+    expect(document.querySelector('meta[property="og:type"]')?.getAttribute("content")).toBe("website");
+
+    await renderSEO({ title: "Post — SocialRum Blog", canonical: "https://www.socialrum.com/blog/post", ogType: "article" });
+    expect(document.querySelector('meta[property="og:type"]')?.getAttribute("content")).toBe("article");
+  });
 });
