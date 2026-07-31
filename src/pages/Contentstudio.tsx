@@ -1338,6 +1338,10 @@ function VideoEditor() {
     const next = [...segments]; next.splice(idx - 1, 2, { ...prev, text: `${prev.text} ${cur.text}`.trim(), end: cur.end });
     setSegments(reindex(next));
   }
+  function deleteSeg(id: number) {
+    pushHistory();
+    setSegments(prev => reindex(prev.filter(s => s.id !== id)));
+  }
 
   async function searchPexels() {
     setPexLoading(true);
@@ -1743,6 +1747,7 @@ function VideoEditor() {
                       <Loader2 className="size-3 animate-spin" /> Converting…
                     </div>
                   )}
+                  {error && <p className="text-[11px] text-red-500 mb-2">{error}</p>}
 
                   {/* Search & replace */}
                   <SearchReplace onReplace={(find, repl) => {
@@ -1781,6 +1786,7 @@ function VideoEditor() {
                         <div className="shrink-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
                           <button onClick={() => splitSeg(s.id)} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 transition">Split</button>
                           <button onClick={() => mergeUp(s.id)} disabled={s.id === 0} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 disabled:opacity-30 transition">Merge↑</button>
+                          <button onClick={() => deleteSeg(s.id)} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-red-500 hover:border-red-400 transition">Delete</button>
                         </div>
                       </div>); })}
                   </div>
@@ -1906,21 +1912,6 @@ function VideoEditor() {
                 </div>
               )}
 
-              {hasVideo && !hasCaptions && (
-                <div className="panel p-5 text-center space-y-3">
-                  <div className="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg font-bold" style={{ background: `${PURPLE}15`, color: PURPLE }}>T</div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Auto-captions</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Transcribe your video and edit captions inline</p>
-                  </div>
-                  <button onClick={() => transcribe()} disabled={status === "uploading" || status === "transcribing"}
-                    className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-40 transition hover:opacity-90 shadow-sm"
-                    style={{ background: GRAD }}>
-                    {status === "uploading" ? "Uploading…" : status === "transcribing" ? "Transcribing…" : "Transcribe captions"}
-                  </button>
-                  {error && <p className="text-red-500 text-xs">{error}</p>}
-                </div>
-              )}
             </div>
 
             {/* right column: caption designer — Music/Overlay tabs live here too,
