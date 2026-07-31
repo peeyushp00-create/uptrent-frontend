@@ -9,7 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import {
   Pencil, Trash2, Copy, FileText, Lightbulb, Calendar as CalendarIcon, Repeat, Link2,
   Download, Loader2, Layers, Type, Palette, Circle, Sparkles, Save, Search, Undo2, Redo2, Plus,
-  Music as MusicIcon, ImagePlus, X,
+  Music as MusicIcon, ImagePlus, X, ZoomIn, ZoomOut, Film,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL;
@@ -140,6 +140,10 @@ type Tab = (typeof TABS)[number];
 
 const studioCache: { tab: Tab; planner: "week" | "month" } = { tab: "Video", planner: "week" };
 
+const TAB_ICONS: Record<Tab, React.ComponentType<{ className?: string }>> = {
+  Ideas: Lightbulb, Scripts: FileText, Video: Film, Drafts: Save, Calendar: CalendarIcon,
+};
+
 const IDEAS = [
   "AI side hustle that pays $50/day",
   "3 hooks that always go viral",
@@ -167,24 +171,35 @@ export default function StudioPage() {
       <SEO title="Studio — SocialRum" noindex />
       <div className="max-w-6xl mx-auto p-6">
         {!isVideo && (
-          <div className="mb-6">
-            <h1 className="font-heading text-2xl font-bold">Studio</h1>
-            <p className="text-sm text-muted-foreground mt-1">Your ideas, scripts, drafts and content calendar — one workspace.</p>
+          <div className="mb-6 flex items-center gap-3">
+            <div className="size-10 rounded-xl grid place-items-center text-white shadow-md shrink-0" style={{ background: GRAD }}>
+              <Sparkles className="size-4.5" />
+            </div>
+            <div>
+              <h1 className="font-heading text-2xl font-bold">Studio</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Your ideas, scripts, drafts and content calendar — one workspace.</p>
+            </div>
           </div>
         )}
 
-        <div className={`flex flex-wrap gap-2 border-b border-border ${isVideo ? "mb-3" : "mb-6"}`}>
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
-                tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+        <div className={`inline-flex flex-wrap gap-1 p-1 rounded-2xl bg-muted/60 border border-border ${isVideo ? "mb-3" : "mb-6"}`}>
+          {TABS.map((t) => {
+            const Icon = TAB_ICONS[t];
+            const active = tab === t;
+            return (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                  active ? "text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                }`}
+                style={active ? { background: GRAD } : {}}
+              >
+                <Icon className="size-3.5" />
+                {t}
+              </button>
+            );
+          })}
         </div>
 
         {tab === "Ideas" && (
@@ -245,9 +260,9 @@ export default function StudioPage() {
 
 function StudioCard({ icon: Icon, title, subtitle }: { icon: React.ComponentType<{ className?: string }>; title: string; subtitle: string }) {
   return (
-    <div className="panel p-5 flex flex-col">
+    <div className="panel p-5 flex flex-col hover:-translate-y-0.5">
       <div className="flex items-start justify-between">
-        <div className="size-9 grid place-items-center rounded-lg bg-primary/15 text-primary">
+        <div className="size-9 grid place-items-center rounded-lg text-white shadow-sm" style={{ background: GRAD }}>
           <Icon className="size-4" />
         </div>
         <StudioActions compact />
@@ -738,6 +753,11 @@ function VideoEditor() {
   const [filmstripLoading, setFilmstripLoading] = useState(false);
   const thumbVideoRef = useRef<HTMLVideoElement>(null);
 
+  // ── Timeline interactivity — zoom, hover-scrub preview, draggable playhead. ──
+  const [zoom, setZoom] = useState(1);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [scrubbingPlayhead, setScrubbingPlayhead] = useState(false);
+
   // Keep the active cache (native or roman) in sync with user edits, same
   // pattern as Lovable's editor — every existing setSegments(...) call site
   // below keeps working unchanged.
@@ -887,7 +907,8 @@ function VideoEditor() {
   const hasVideo = !!videoUrl;
   const hasCaptions = segments.length > 0;
   const hasMusic = music.key !== "none";
-  const trackWidth = Math.max(duration * PX_PER_SEC, 400);
+  const pxPerSec = PX_PER_SEC * zoom;
+  const trackWidth = Math.max(duration * pxPerSec, 400);
 
   useEffect(() => {
     const url = hostedUrl || videoUrl;
@@ -1062,13 +1083,13 @@ function VideoEditor() {
       const el = tracksRef.current; if (!el || !duration) return;
       const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left + el.scrollLeft - dragOverlay.dx;
-      const start = Math.max(0, Math.min(duration, x / PX_PER_SEC));
+      const start = Math.max(0, Math.min(duration, x / pxPerSec));
       setOverlays(prev => prev.map(o => o.id === dragOverlay.id ? { ...o, start: Math.min(start, duration - o.length) } : o));
     };
     const up = () => setDragOverlay(null);
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-  }, [dragOverlay, duration]);
+  }, [dragOverlay, duration, pxPerSec]);
 
   // music drag
   useEffect(() => {
@@ -1077,12 +1098,38 @@ function VideoEditor() {
       const el = tracksRef.current; if (!el || !duration) return;
       const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left + el.scrollLeft;
-      setMusicStart(Math.max(0, Math.min(duration, Math.round((x / PX_PER_SEC) * 10) / 10)));
+      setMusicStart(Math.max(0, Math.min(duration, Math.round((x / pxPerSec) * 10) / 10)));
     };
     const up = () => setDragMusic(false);
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-  }, [dragMusic, duration]);
+  }, [dragMusic, duration, pxPerSec]);
+
+  // playhead scrub — drag the handle to seek, live, without needing to click precisely
+  useEffect(() => {
+    if (!scrubbingPlayhead) return;
+    const move = (e: PointerEvent) => {
+      const el = tracksRef.current; const v = videoRef.current;
+      if (!el || !v || !duration) return;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left + el.scrollLeft;
+      const t = Math.max(0, Math.min(duration, x / pxPerSec));
+      v.currentTime = t; setTime(t);
+    };
+    const up = () => setScrubbingPlayhead(false);
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [scrubbingPlayhead, duration, pxPerSec]);
+
+  // keep the playhead in view while the timeline is scrolled and the video is playing
+  useEffect(() => {
+    const el = timelineRef.current; const v = videoRef.current;
+    if (!el || !v || v.paused) return;
+    const x = time * pxPerSec;
+    const margin = 40;
+    if (x < el.scrollLeft + margin) el.scrollLeft = Math.max(0, x - margin);
+    else if (x > el.scrollLeft + el.clientWidth - margin) el.scrollLeft = x - el.clientWidth + margin;
+  }, [time, pxPerSec]);
 
   // PiP drag in preview
   useEffect(() => {
@@ -1184,14 +1231,33 @@ function VideoEditor() {
   function onPause() { if (audioRef.current) audioRef.current.pause(); stopPlayheadTick(); }
 
   function onTimelineClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (dragOverlay || dragMusic) return;
+    if (dragOverlay || dragMusic || scrubbingPlayhead) return;
     const el = timelineRef.current; const v = videoRef.current;
     if (!el || !v || !duration) return;
     const rect = el.getBoundingClientRect();
     const x = e.clientX - rect.left + el.scrollLeft;
-    const t = Math.max(0, Math.min(duration, x / PX_PER_SEC));
+    const t = Math.max(0, Math.min(duration, x / pxPerSec));
     v.currentTime = t;
     setTime(t); // instant playhead move — don't wait on the next timeupdate/rAF tick
+  }
+  function onTimelineHover(e: React.MouseEvent<HTMLDivElement>) {
+    const el = timelineRef.current; if (!el || !duration) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left + el.scrollLeft;
+    setHoverTime(Math.max(0, Math.min(duration, x / pxPerSec)));
+  }
+  function onTimelineWheel(e: React.WheelEvent<HTMLDivElement>) {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const el = timelineRef.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cursorX = e.clientX - rect.left + el.scrollLeft;
+    const cursorTime = cursorX / pxPerSec;
+    setZoom(z => {
+      const nz = Math.max(0.5, Math.min(4, z * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+      requestAnimationFrame(() => { if (el) el.scrollLeft = Math.max(0, cursorTime * (PX_PER_SEC * nz) - (e.clientX - rect.left)); });
+      return nz;
+    });
   }
   function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; setTime(t); }
   function editSeg(id: number, text: string) { setSegments(prev => prev.map(s => (s.id === id ? { ...s, text } : s))); }
@@ -1553,6 +1619,7 @@ function VideoEditor() {
 
   // dark timeline styles
   const TL_BG = "#1e1e24", TL_LINE = "#3a3a44", TL_TEXT = "#cbd5e1";
+  const TRACK_COLORS = { overlays: "#fb923c", video: "#38bdf8", captions: "#a78bfa", music: "#34d399" };
 
   return (
     <div className="space-y-5">
@@ -1704,7 +1771,10 @@ function VideoEditor() {
 
             {/* center column: video — never scrolls, its natural height anchors the row */}
             <div className="space-y-4 px-1">
-              <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] mx-auto w-full" style={{ maxWidth: 240 }}>
+              <div className="relative mx-auto w-full" style={{ maxWidth: 240 }}>
+                <div className="absolute -inset-4 rounded-[2rem] opacity-40 blur-2xl pointer-events-none" style={{ background: GRAD }} />
+                <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] w-full ring-1 ring-white/10">
+
                 {/* Video — shrinks to its half when a half overlay is active */}
                 <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
                   style={{
@@ -1764,6 +1834,7 @@ function VideoEditor() {
                     </span>
                   </div>
                 )}
+                </div>
               </div>
               {music.url && <audio ref={audioRef} src={music.url} loop preload="auto" />}
               {/* Hidden — used only to seek+draw frames for the timeline filmstrip */}
@@ -2128,31 +2199,61 @@ function VideoEditor() {
           </div>
 
           {/* Timeline (dark) — always visible */}
-          <div className="rounded-2xl overflow-hidden border" style={{ background: TL_BG, borderColor: TL_LINE }}>
+          <div className="rounded-2xl overflow-hidden border shadow-lg" style={{ background: TL_BG, borderColor: TL_LINE }}>
+            <div className="h-1" style={{ background: GRAD }} />
             <div className="px-4 py-2 flex items-center justify-between" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
-              <span className="text-sm font-semibold" style={{ color: "#fff" }}>Timeline</span>
-              <span className="text-xs" style={{ color: TL_TEXT }}>{fmt(time)} / {fmt(duration)}</span>
+              <span className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "#fff" }}>
+                <Film className="size-3.5" style={{ color: TRACK_COLORS.video }} /> Timeline
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs tabular-nums" style={{ color: TL_TEXT }}>{fmt(time)} / {fmt(duration)}</span>
+                <div className="flex items-center gap-0.5 rounded-lg overflow-hidden" style={{ border: `1px solid ${TL_LINE}` }}>
+                  <button type="button" onClick={() => setZoom(z => Math.max(0.5, +(z - 0.25).toFixed(2)))}
+                    title="Zoom out" className="w-6 h-6 flex items-center justify-center hover:bg-white/10 transition text-white/80 disabled:opacity-30 disabled:cursor-not-allowed"
+                    disabled={zoom <= 0.5}>
+                    <ZoomOut className="size-3.5" />
+                  </button>
+                  <button type="button" onClick={() => setZoom(1)} title="Reset zoom"
+                    className="px-1.5 h-6 text-[10px] font-semibold tabular-nums hover:bg-white/10 transition" style={{ color: TL_TEXT, minWidth: 34 }}>
+                    {Math.round(zoom * 100)}%
+                  </button>
+                  <button type="button" onClick={() => setZoom(z => Math.min(4, +(z + 0.25).toFixed(2)))}
+                    title="Zoom in" className="w-6 h-6 flex items-center justify-center hover:bg-white/10 transition text-white/80 disabled:opacity-30 disabled:cursor-not-allowed"
+                    disabled={zoom >= 4}>
+                    <ZoomIn className="size-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="flex">
               <div className="shrink-0 w-20 text-[11px]" style={{ borderRight: `1px solid ${TL_LINE}`, color: TL_TEXT }}>
                 <div className="h-5" style={{ borderBottom: `1px solid ${TL_LINE}` }} />
-                <div className="h-10 flex items-center px-3 gap-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
-                  <button onClick={() => { setShowPex(true); setPexTab("pexels"); if (!pexItems.length) searchPexels(); }} className="text-[10px] font-semibold" style={{ color: "hsl(var(--primary))" }}>+ Add</button>
+                <div className="h-10 flex items-center px-2.5" style={{ borderBottom: `1px solid ${TL_LINE}`, borderLeft: `2px solid ${TRACK_COLORS.overlays}` }}>
+                  <button onClick={() => { setShowPex(true); setPexTab("pexels"); if (!pexItems.length) searchPexels(); }} className="text-[10px] font-semibold flex items-center gap-1 hover:opacity-80 transition" style={{ color: TRACK_COLORS.overlays }}>
+                    <ImagePlus className="size-3" /> Add
+                  </button>
                 </div>
-                <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Video</div>
-                <div className="h-10 flex items-center px-3" style={{ borderBottom: `1px solid ${TL_LINE}` }}>Transcribe</div>
-                <div className="h-10 flex items-center px-3">Music</div>
+                <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderBottom: `1px solid ${TL_LINE}`, borderLeft: `2px solid ${TRACK_COLORS.video}` }}><Film className="size-3" style={{ color: TRACK_COLORS.video }} /> Video</div>
+                <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderBottom: `1px solid ${TL_LINE}`, borderLeft: `2px solid ${TRACK_COLORS.captions}` }}><Type className="size-3" style={{ color: TRACK_COLORS.captions }} /> Captions</div>
+                <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderLeft: `2px solid ${TRACK_COLORS.music}` }}><MusicIcon className="size-3" style={{ color: TRACK_COLORS.music }} /> Music</div>
               </div>
-              <div ref={timelineRef} onClick={onTimelineClick} className="relative overflow-x-auto cursor-pointer select-none flex-1">
-                <div ref={tracksRef} style={{ width: trackWidth, position: "relative" }}>
+              <div ref={timelineRef} onClick={onTimelineClick} onWheel={onTimelineWheel}
+                onMouseMove={onTimelineHover} onMouseLeave={() => setHoverTime(null)}
+                className="relative overflow-x-auto cursor-pointer select-none flex-1 thick-scrollbar">
+                <div ref={tracksRef} style={{
+                  width: trackWidth, position: "relative",
+                  backgroundImage: `linear-gradient(to right, ${TL_LINE}80 1px, transparent 1px)`,
+                  backgroundSize: `${pxPerSec}px 100%`,
+                }}>
                   <div className="h-5 relative text-[10px]" style={{ borderBottom: `1px solid ${TL_LINE}`, color: TL_TEXT }}>
-                    {Array.from({ length: Math.ceil(duration) + 1 }).map((_, s) => (<span key={s} className="absolute top-0.5" style={{ left: s * PX_PER_SEC }}>{s}s</span>))}
+                    {Array.from({ length: Math.ceil(duration) + 1 }).map((_, s) => (<span key={s} className="absolute top-0.5" style={{ left: s * pxPerSec + 3 }}>{s}s</span>))}
                   </div>
                   {/* Overlays */}
-                  <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
+                  <div className="h-10 relative transition-colors hover:bg-white/[0.03]" style={{ borderBottom: `1px solid ${TL_LINE}`, background: `${TRACK_COLORS.overlays}0d` }}>
                     {overlays.map(o => (
-                      <div key={o.id} onPointerDown={e => { e.stopPropagation(); const el = tracksRef.current!; const rect = el.getBoundingClientRect(); const blockX = o.start * PX_PER_SEC; setDragOverlay({ id: o.id, dx: (e.clientX - rect.left + el.scrollLeft) - blockX }); setSelOverlay(o.id); }}
-                        className="absolute top-1 bottom-1 rounded overflow-hidden cursor-grab active:cursor-grabbing border-2" style={{ left: o.start * PX_PER_SEC, width: Math.max(o.length * PX_PER_SEC, 16), borderColor: selOverlay === o.id ? PURPLE : "transparent" }}>
+                      <div key={o.id} onPointerDown={e => { e.stopPropagation(); const el = tracksRef.current!; const rect = el.getBoundingClientRect(); const blockX = o.start * pxPerSec; setDragOverlay({ id: o.id, dx: (e.clientX - rect.left + el.scrollLeft) - blockX }); setSelOverlay(o.id); }}
+                        className="absolute top-1 bottom-1 rounded overflow-hidden cursor-grab active:cursor-grabbing border-2 transition-transform hover:scale-[1.02] active:scale-100"
+                        style={{ left: o.start * pxPerSec, width: Math.max(o.length * pxPerSec, 16), borderColor: selOverlay === o.id ? PURPLE : "transparent" }}>
                         <img src={o.thumb} alt="" className="w-full h-full object-cover pointer-events-none" />
                         {o.kind === "video" && <span className="absolute top-0.5 left-0.5 text-[8px] bg-black/60 text-white px-1 rounded">▶</span>}
                         <button onClick={e => { e.stopPropagation(); deleteOverlay(o.id); }} onPointerDown={e => e.stopPropagation()} className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black/70 text-white text-[9px] leading-none hover:bg-red-500">✕</button>
@@ -2160,7 +2261,7 @@ function VideoEditor() {
                     ))}
                   </div>
                   {/* Video — frame-by-frame filmstrip instead of a solid block */}
-                  <div className="h-10 p-1" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
+                  <div className="h-10 p-1" style={{ borderBottom: `1px solid ${TL_LINE}`, background: `${TRACK_COLORS.video}0d` }}>
                     <div className="relative h-full rounded-lg overflow-hidden" style={{ width: Math.max(trackWidth - 8, 60), background: "#111" }}>
                       {filmstrip.length > 0 && (
                         <div className="absolute inset-0 flex">
@@ -2180,24 +2281,48 @@ function VideoEditor() {
                     </div>
                   </div>
                   {/* Transcribe — waveform behind the caption chips */}
-                  <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
+                  <div className="h-10 relative" style={{ borderBottom: `1px solid ${TL_LINE}`, background: `${TRACK_COLORS.captions}0d` }}>
                     {waveformPeaks.length > 0 && <Waveform peaks={waveformPeaks} width={trackWidth} height={40} />}
                     {waveformLoading && waveformPeaks.length === 0 && (
                       <span className="absolute inset-0 flex items-center px-2 text-[9px] text-muted-foreground/60">Decoding audio…</span>
                     )}
-                    {segments.map(s => (<div key={s.id} className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center" style={{ left: s.start * PX_PER_SEC, width: Math.max((s.end - s.start) * PX_PER_SEC, 10), background: "hsl(var(--primary) / 0.55)", color: "hsl(var(--primary-foreground))" }}>{s.text.slice(0, 12)}</div>))}
+                    {segments.map(s => (
+                      <div key={s.id} title={s.text}
+                        onClick={e => { e.stopPropagation(); seek(s.start); }}
+                        className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center cursor-pointer transition-transform hover:scale-[1.03] hover:z-10"
+                        style={{ left: s.start * pxPerSec, width: Math.max((s.end - s.start) * pxPerSec, 10), background: activeId === s.id ? PURPLE : "hsl(var(--primary) / 0.55)", color: "hsl(var(--primary-foreground))", boxShadow: activeId === s.id ? `0 0 0 1px ${PURPLE}` : undefined }}>
+                        {s.text.slice(0, 12)}
+                      </div>
+                    ))}
                   </div>
                   {/* Music */}
-                  <div className="h-10 relative">
+                  <div className="h-10 relative transition-colors hover:bg-white/[0.03]" style={{ background: `${TRACK_COLORS.music}0d` }}>
                     {hasMusic && (
                       <div onPointerDown={e => { e.stopPropagation(); setDragMusic(true); }}
-                        className="absolute top-1 bottom-1 rounded cursor-grab active:cursor-grabbing flex items-center px-2 text-[10px] text-white font-semibold overflow-hidden"
-                        style={{ left: musicStart * PX_PER_SEC, width: Math.max((duration - musicStart) * PX_PER_SEC, 40), background: GRAD }}>
+                        className="absolute top-1 bottom-1 rounded cursor-grab active:cursor-grabbing flex items-center px-2 text-[10px] text-white font-semibold overflow-hidden transition-transform hover:scale-[1.02] active:scale-100"
+                        style={{ left: musicStart * pxPerSec, width: Math.max((duration - musicStart) * pxPerSec, 40), background: GRAD }}>
                         ♪ {music.label}
                       </div>
                     )}
                   </div>
-                  <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none" style={{ left: time * PX_PER_SEC }} />
+
+                  {/* Hover scrub preview — a faint guideline + time readout that follows the cursor */}
+                  {hoverTime != null && !scrubbingPlayhead && !dragOverlay && !dragMusic && (
+                    <>
+                      <div className="absolute top-0 bottom-0 w-px bg-white/30 pointer-events-none" style={{ left: hoverTime * pxPerSec }} />
+                      <div className="absolute -top-6 -translate-x-1/2 text-[9px] font-semibold text-white px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap"
+                        style={{ left: hoverTime * pxPerSec, background: "#000" }}>
+                        {fmt(hoverTime)}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Playhead — draggable handle for scrubbing, plus the sweep line */}
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-20" style={{ left: time * pxPerSec, boxShadow: "0 0 6px rgba(239,68,68,0.8)" }} />
+                  <div onPointerDown={e => { e.stopPropagation(); setScrubbingPlayhead(true); }}
+                    className="absolute -top-0.5 -translate-x-1/2 w-3 h-3 rounded-full bg-red-500 border-2 border-white/90 cursor-ew-resize z-30 transition-transform hover:scale-125 active:scale-110"
+                    style={{ left: time * pxPerSec, boxShadow: "0 0 8px rgba(239,68,68,0.9)" }}
+                    title="Drag to scrub" />
                 </div>
               </div>
             </div>
