@@ -11,6 +11,13 @@ const GRAD = "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)))";
 type Word = { id: number; start: number; end: number; text: string };
 type Segment = { id: number; start: number; end: number; text: string };
 type Project = { id: string; name: string; video_url: string; updated_at: string };
+type CaptionOffset = { x: number; y: number }; // percent position within the preview box (50,50 = center)
+
+const CAPTION_PRESET_OFFSET: Record<"top" | "middle" | "bottom", CaptionOffset> = {
+  top: { x: 50, y: 14 },
+  middle: { x: 50, y: 47 },
+  bottom: { x: 50, y: 86 },
+};
 
 const FONTS = [
   { key: "Poppins", label: "Poppins", css: "'Poppins', sans-serif" },
@@ -101,6 +108,8 @@ export default function VideoCaptioner() {
   const [muteOriginal, setMuteOriginal] = useState(false);
   const [uploadingMusic, setUploadingMusic] = useState(false);
   const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">("bottom");
+  const [captionOffset, setCaptionOffset] = useState<CaptionOffset | null>(null);
+  const [captionDragging, setCaptionDragging] = useState(false);
   const [showBox, setShowBox] = useState(true);
   const [textColor, setTextColor] = useState("#ffffff");
   const [boxColor, setBoxColor] = useState("#000000");
@@ -117,9 +126,11 @@ export default function VideoCaptioner() {
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const trackRef = useRef<HTMLDivElement>(null);
   const trimRef = useRef<HTMLDivElement>(null);
+  const previewBoxRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<{ id: number; pos: number } | null>(null);
 
   const hasMusic = music.key !== "none";
+  const effectiveCaptionOffset = captionOffset ?? CAPTION_PRESET_OFFSET[captionPos];
 
   const activeId = useMemo(() => {
     const seg = segments.find(s => time >= s.start && time < s.end);
@@ -148,6 +159,22 @@ export default function VideoCaptioner() {
     window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [dragging, duration]);
+
+  // Dragging the caption overlay freely around the video preview
+  useEffect(() => {
+    if (!captionDragging) return;
+    const move = (e: PointerEvent) => {
+      const el = previewBoxRef.current; if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = Math.min(96, Math.max(4, ((e.clientX - rect.left) / rect.width) * 100));
+      const y = Math.min(96, Math.max(4, ((e.clientY - rect.top) / rect.height) * 100));
+      setCaptionOffset({ x, y });
+    };
+    const up = () => setCaptionDragging(false);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [captionDragging]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0];
@@ -199,7 +226,7 @@ export default function VideoCaptioner() {
             user_id: session.user.id,
             name: (segs[0]?.text || "Untitled").slice(0, 40),
             video_url: pub.publicUrl,
-            data: { segments: segs, font: font.key, captionPos, showBox, textColor, boxColor,
+            data: { segments: segs, font: font.key, captionPos, captionOffset, showBox, textColor, boxColor,
               music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd },
           }).select("id").single();
           if (ins) { setCurrentProjectId(ins.id); loadProjects(); }
@@ -355,7 +382,7 @@ export default function VideoCaptioner() {
           duration: videoRef.current?.duration,
           trimStart, trimEnd: tEnd,
           muteOriginal,
-          captionPos, showBox, textColor, boxColor,
+          captionPos, captionOffset: effectiveCaptionOffset, showBox, textColor, boxColor,
           watermark: true, // free tier — flip to false for paid users later
           music: hasMusic && /^https?:\/\//.test(music.url || "")
             ? { url: music.url, startInVideo: musicStart, songTrim, volume, fadeIn, fadeOut }
@@ -392,7 +419,7 @@ export default function VideoCaptioner() {
 
   function currentData() {
     return {
-      segments, font: font.key, captionPos, showBox, textColor, boxColor,
+      segments, font: font.key, captionPos, captionOffset, showBox, textColor, boxColor,
       music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd,
     };
   }
@@ -423,7 +450,7 @@ export default function VideoCaptioner() {
     if (!currentProjectId || !hasProject) return;
     const t = setTimeout(() => saveProject(true), 1500);
     return () => clearTimeout(t);
-  }, [segments, font, captionPos, showBox, textColor, boxColor, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd]);
+  }, [segments, font, captionPos, captionOffset, showBox, textColor, boxColor, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, trimStart, trimEnd]);
 
   async function openProject(id: string) {
     const { data: p } = await supabase.from("caption_projects").select("*").eq("id", id).single();
@@ -434,6 +461,7 @@ export default function VideoCaptioner() {
     setSegments(d.segments || []);
     setFont(FONTS.find(f => f.key === d.font) || FONTS[0]);
     setCaptionPos(d.captionPos || "bottom");
+    setCaptionOffset(d.captionOffset || null);
     setShowBox(d.showBox ?? true);
     setTextColor(d.textColor || "#ffffff"); setBoxColor(d.boxColor || "#000000");
     setMusic(d.music || MUSIC[0]); setMusicStart(d.musicStart || 0); setSongTrim(d.songTrim || 0);
@@ -528,14 +556,19 @@ export default function VideoCaptioner() {
 
           {/* Left: preview + style + music sync */}
           <div className="md:sticky md:top-6 space-y-4">
-            <div className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
+            <div ref={previewBoxRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
               <video ref={videoRef} src={videoUrl} controls
                 onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause}
                 onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
                 className="w-full aspect-[9/16] object-contain" />
               {activeText && (
-                <div className="absolute left-0 right-0 px-3 text-center pointer-events-none"
-                  style={captionPos === "top" ? { top: "10%" } : captionPos === "middle" ? { top: "45%" } : { bottom: "10%" }}>
+                <div className="absolute px-3 text-center cursor-move touch-none select-none"
+                  style={{
+                    left: `${effectiveCaptionOffset.x}%`,
+                    top: `${effectiveCaptionOffset.y}%`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                  onPointerDown={e => { e.preventDefault(); setCaptionDragging(true); }}>
                   <span className="inline-block px-2.5 py-1 rounded-md text-sm"
                     style={{
                       fontFamily: font.css,
@@ -548,6 +581,7 @@ export default function VideoCaptioner() {
                 </div>
               )}
             </div>
+            <p className="text-[11px] text-gray-400 -mt-2">Drag the caption text to reposition it.</p>
 
             {/* Trim */}
             <div className="rounded-2xl border border-gray-100 p-4">
@@ -595,7 +629,7 @@ export default function VideoCaptioner() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Caption position</p>
                 <div className="flex gap-2">
                   {(["top", "middle", "bottom"] as const).map(p => (
-                    <button key={p} onClick={() => setCaptionPos(p)}
+                    <button key={p} onClick={() => { setCaptionPos(p); setCaptionOffset(null); }}
                       className="flex-1 px-3 py-1.5 rounded-lg border text-sm capitalize transition"
                       style={captionPos === p
                         ? { borderColor: PURPLE, color: PURPLE, background: "#F5F2FF" }
