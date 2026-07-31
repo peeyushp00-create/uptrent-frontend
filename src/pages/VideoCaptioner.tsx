@@ -2,6 +2,7 @@
 // Upload video -> transcribe -> edit captions -> style font -> add & sync music -> export.
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
+import { Play, Pause } from "lucide-react";
 import { supabase } from "../lib/supabase"; // <-- adjust import to your project
 
 const API = import.meta.env.VITE_API_URL;
@@ -121,6 +122,7 @@ export default function VideoCaptioner() {
   const [captionPos, setCaptionPos] = useState<"top" | "middle" | "bottom">("bottom");
   const [captionOffset, setCaptionOffset] = useState<CaptionOffset | null>(null);
   const [captionDragging, setCaptionDragging] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [resolution, setResolution] = useState<typeof RESOLUTIONS[number]["key"]>("sd");
   const [quality, setQuality] = useState<typeof QUALITIES[number]["key"]>("medium");
   const [showBox, setShowBox] = useState(true);
@@ -275,8 +277,9 @@ export default function VideoCaptioner() {
       }
     }
   }
-  function onPlay()  { const v = videoRef.current, a = audioRef.current; if (a && hasMusic && music.url && v && v.currentTime >= musicStart) { a.volume = volume; a.play().catch(() => {}); } }
-  function onPause() { if (audioRef.current) audioRef.current.pause(); }
+  function onPlay()  { setIsPlaying(true); const v = videoRef.current, a = audioRef.current; if (a && hasMusic && music.url && v && v.currentTime >= musicStart) { a.volume = volume; a.play().catch(() => {}); } }
+  function onPause() { setIsPlaying(false); if (audioRef.current) audioRef.current.pause(); }
+  function togglePlay() { const v = videoRef.current; if (!v) return; if (v.paused) v.play(); else v.pause(); }
 
   function seek(t: number) { if (videoRef.current) videoRef.current.currentTime = t; }
   function editSeg(id: number, text: string) {
@@ -577,11 +580,26 @@ export default function VideoCaptioner() {
 
           {/* Left: preview + style + music sync */}
           <div className="md:sticky md:top-6 space-y-4">
-            <div ref={previewBoxRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg">
-              <video ref={videoRef} src={videoUrl} controls
+            <div ref={previewBoxRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg group">
+              <video ref={videoRef} src={videoUrl}
                 onTimeUpdate={onTimeUpdate} onPlay={onPlay} onPause={onPause}
                 onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
-                className="w-full aspect-[9/16] object-contain" />
+                onClick={togglePlay}
+                className="w-full aspect-[9/16] object-contain cursor-pointer" />
+              {!isPlaying && (
+                <button onClick={togglePlay} aria-label="Play"
+                  className="absolute inset-0 flex items-center justify-center">
+                  <span className="w-14 h-14 rounded-full bg-black/50 flex items-center justify-center">
+                    <Play size={22} className="text-white ml-0.5" fill="white" />
+                  </span>
+                </button>
+              )}
+              {isPlaying && (
+                <button onClick={togglePlay} aria-label="Pause"
+                  className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                  <Pause size={16} className="text-white" fill="white" />
+                </button>
+              )}
               {segments.length > 0 && (
                 <div className="absolute px-3 text-center cursor-move touch-none select-none"
                   style={{
