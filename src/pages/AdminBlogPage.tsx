@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import {
   Plus, Trash2, Eye, EyeOff, LogOut, Loader2, CheckCircle,
   Upload, X, Edit3, Bold, Italic, List, Heading, Save,
@@ -526,6 +528,20 @@ export default function AdminBlogPage() {
     background: 'rgba(0,0,0,0.3)',
   });
 
+  // Mirrors BlogPage.tsx's rendering so "Preview" actually matches what
+  // readers will see — links, headings, and images used to show as raw
+  // markdown syntax here instead of rendering.
+  const previewMarkdownComponents: Components = {
+    h2: ({ children }) => <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: '#fff', margin: '24px 0 10px' }}>{children}</h2>,
+    h3: ({ children }) => <h3 style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, color: '#fff', margin: '20px 0 8px' }}>{children}</h3>,
+    p: ({ children }) => <p style={{ margin: '0 0 14px', lineHeight: 1.8 }}>{children}</p>,
+    ul: ({ children }) => <ul style={{ margin: '0 0 14px', paddingLeft: 20, lineHeight: 1.8 }}>{children}</ul>,
+    blockquote: ({ children }) => <blockquote style={{ borderLeft: '3px solid rgba(139,92,246,0.4)', margin: '0 0 14px', padding: '2px 0 2px 14px', color: 'rgba(255,255,255,0.55)', fontStyle: 'italic' }}>{children}</blockquote>,
+    hr: () => <hr style={{ border: 'none', borderTop: '1px solid rgba(139,92,246,0.15)', margin: '20px 0' }} />,
+    img: ({ src, alt }) => <img src={typeof src === 'string' ? src : undefined} alt={alt || ''} style={{ width: '100%', borderRadius: 12, margin: '6px 0 14px' }} />,
+    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" style={{ color: '#a78bfa', textDecoration: 'underline' }}>{children}</a>,
+  };
+
   // ── Checking for an existing session ──
   if (checkingSession) return (
     <div style={{ minHeight: '100vh', background: '#03000a' }} />
@@ -657,7 +673,11 @@ export default function AdminBlogPage() {
                       {category && <span style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#a78bfa', fontWeight: 700 }}>{CATEGORIES.find(c => c.value === category)?.label}</span>}
                       <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: mobilePreview ? 20 : 24, fontWeight: 800, color: '#fff', margin: '8px 0 12px' }}>{title || 'Untitled Post'}</h1>
                       <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>By {author} · Just now</p>
-                      <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontFamily: "'DM Sans', sans-serif" }}>{description || 'No content yet...'}</p>
+                      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', fontFamily: "'DM Sans', sans-serif" }}>
+                        {description
+                          ? <ReactMarkdown components={previewMarkdownComponents}>{description}</ReactMarkdown>
+                          : <p style={{ lineHeight: 1.8 }}>No content yet...</p>}
+                      </div>
                     </div>
                   </div>
                 </div>
