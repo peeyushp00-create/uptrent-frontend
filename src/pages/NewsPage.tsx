@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Loader2, X, RefreshCw, Sparkles, FileText, ArrowUp, Bookmark, BookmarkCheck } from "lucide-react";
+import { ExternalLink, Loader2, X, RefreshCw, ListChecks, FileText, ArrowUp, Bookmark, BookmarkCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
@@ -442,7 +442,7 @@ export default function NewsPage() {
                   {keyPoints.length > 0 && (
                     <div className="rounded-2xl p-4 space-y-3" style={{ background: '#f5f3ff' }}>
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 shrink-0" style={{ color: PRIMARY }} />
+                        <ListChecks className="w-4 h-4 shrink-0" style={{ color: PRIMARY }} />
                         <p className="text-xs font-bold uppercase tracking-wider" style={{ color: PRIMARY }}>Key Highlights</p>
                       </div>
                       {keyPoints.map((point, idx) => (

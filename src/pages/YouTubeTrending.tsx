@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { TrendingUp, Sparkles, Eye, ThumbsUp, MessageCircle, Clock, Loader2 } from "lucide-react";
+import { TrendingUp, Wand2, Eye, ThumbsUp, MessageCircle, Clock, Loader2 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import SEO from '@/components/SEO';
 import { useTheme } from "@/contexts/ThemeContext";
@@ -164,7 +164,7 @@ export default function YouTubeTrending() {
                   <button
                     onClick={() => navigate('/youtube/script', { state: { topic: v.title } })}
                     className="mt-2 self-start flex items-center gap-1 px-3 py-1.5 rounded-xl text-primary-foreground text-xs font-medium bg-gradient-to-br from-primary to-accent">
-                    <Sparkles className="w-3 h-3" />
+                    <Wand2 className="w-3 h-3" />
                     {t('scripts.generate')}
                   </button>
                 </div>

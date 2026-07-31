@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Sparkles, Settings2 } from "lucide-react";
+import { ArrowRight, Wand2, Settings2 } from "lucide-react";
 
 interface ChatInputProps {
   onSubmit: (message: string) => void;
@@ -39,7 +39,7 @@ export default function ChatInput({ onSubmit, placeholder = "How can I help you 
           disabled={!value.trim()}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <Wand2 className="w-3.5 h-3.5" />
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

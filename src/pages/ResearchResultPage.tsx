@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, Sparkles, FileText, UserPlus, Bell, BellRing, Bookmark, BookmarkCheck,
+  ArrowLeft, Bot, FileText, UserPlus, Bell, BellRing, Bookmark, BookmarkCheck,
   Flame, Eye, Target, Users, TrendingUp, BarChart2, Loader2, Globe, Rocket, ChevronDown,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -173,7 +173,7 @@ export default function ResearchResultPage() {
 
         <div className="space-y-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold uppercase tracking-wider">
-            <Sparkles className="size-3.5" /> AI Research Result
+            <Bot className="size-3.5" /> AI Research Result
           </span>
           <h1
             className="text-3xl md:text-4xl font-bold leading-[1.1] tracking-[-0.01em] text-foreground"
@@ -189,7 +189,7 @@ export default function ResearchResultPage() {
         {/* AI Summary card */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="panel p-5 space-y-4">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-            <Sparkles className="size-3.5" /> AI Summary · #{query.replace(/\s+/g, "").toUpperCase()}
+            <FileText className="size-3.5" /> AI Summary · #{query.replace(/\s+/g, "").toUpperCase()}
           </span>
 
           <p className="text-[15px] leading-relaxed text-foreground">
@@ -284,7 +284,7 @@ export default function ResearchResultPage() {
               className="panel w-full flex items-center gap-3 p-3 text-left hover:bg-accent/40 transition-colors"
             >
               <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-400">
-                <Sparkles className="size-4" />
+                <BarChart2 className="size-4" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Optional</p>

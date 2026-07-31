@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Copy, Check, Loader2, X, Sparkles, TrendingUp, Hash, Lightbulb,
+  Copy, Check, Loader2, X, TrendingUp, Hash, Lightbulb,
   User, Users, Heart, MessageCircle, BarChart2, BadgeCheck, Eye,
   Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target, Image,
   Download, Instagram, Search, Flame,
@@ -413,7 +413,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         {/* Posting Tips */}
         {result?.posting_tips?.length > 0 && (
           <div className="panel p-5">
-            <div className="flex items-center gap-2 mb-4"><Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">Posting Tips</h2></div>
+            <div className="flex items-center gap-2 mb-4"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-sm text-foreground">Posting Tips</h2></div>
             <div className="space-y-2.5">
               {result.posting_tips.map((tip: string, i: number) => (
                 <div key={i} className="flex items-start gap-3">
@@ -1170,7 +1170,7 @@ export default function InstagramAnalyzer() {
         {loading && (
           <div className="panel p-8 flex flex-col items-center gap-3">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-              <Sparkles className="w-8 h-8" style={{ color: PRIMARY }} />
+              <Search className="w-8 h-8" style={{ color: PRIMARY }} />
             </motion.div>
             <p className="text-sm font-semibold text-foreground">{t('analyzer.analyzing')} @{handle.replace('@', '')}…</p>
             <p className="text-xs text-muted-foreground">{t('analyzer.fetching')}</p>
@@ -1479,7 +1479,7 @@ export default function InstagramAnalyzer() {
             {/* Posting Tips */}
             {result?.posting_tips?.length > 0 && (
               <div className="panel p-5">
-                <div className="flex items-center gap-2 mb-4"><Sparkles className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-foreground">{t('analyzer.posting_tips')}</h2></div>
+                <div className="flex items-center gap-2 mb-4"><Lightbulb className="w-4 h-4" style={{ color: PRIMARY }} /><h2 className="font-bold text-base text-foreground">{t('analyzer.posting_tips')}</h2></div>
                 <div className="space-y-2.5">
                   {result.posting_tips.map((tip: string, i: number) => (
                     <div key={i} className="flex items-start gap-3">
@@ -1798,7 +1798,7 @@ export default function InstagramAnalyzer() {
               className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-60 hover:shadow-lg transition-all shrink-0 flex items-center gap-1.5"
               style={{ background: PRIMARY_GRAD }}
             >
-              {trendingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-3.5 h-3.5" /> Discover trends</>}
+              {trendingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><TrendingUp className="w-3.5 h-3.5" /> Discover trends</>}
             </button>
           </form>
 
@@ -1848,7 +1848,7 @@ export default function InstagramAnalyzer() {
           {trendingLoading ? (
             <div className="space-y-3">
               <div className="flex items-center gap-1.5">
-                <Sparkles className="size-3.5 text-primary" />
+                <Search className="size-3.5 text-primary" />
                 <span className="text-xs font-bold uppercase tracking-wider text-primary">Researching</span>
                 <em className="text-sm italic font-semibold text-foreground">&ldquo;{trendingKeyword}&rdquo;</em>
               </div>

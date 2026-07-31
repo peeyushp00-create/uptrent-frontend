@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Tag, Sparkles, Copy, Check, Loader2, Search, TrendingUp, Star } from "lucide-react";
+import { Tag, Wand2, Copy, Check, Loader2, Search, TrendingUp, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
@@ -83,7 +83,7 @@ export default function YouTubeSEO() {
 
         <section className="panel p-6 mb-6">
           <div className="eyebrow text-muted-foreground mb-4">
-            <Sparkles className="size-3.5 text-primary" /> Video topic
+            <Tag className="size-3.5 text-primary" /> Video topic
           </div>
           <div className="relative flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
@@ -115,7 +115,7 @@ export default function YouTubeSEO() {
               disabled={loading || !topic.trim()}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />} Generate SEO
+              {loading ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />} Generate SEO
             </button>
           </div>
         </section>

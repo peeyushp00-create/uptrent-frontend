@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Copy, Check, Loader2, Youtube, X,
-  TrendingUp, Users, Eye, Video, Sparkles, BarChart2,
+  TrendingUp, Users, Eye, Video, BarChart2,
   Target, Lightbulb, ArrowRight, Plus, Trash2, UserPlus,
   ChevronLeft,
 } from "lucide-react";
@@ -252,7 +252,7 @@ function CompetitorDetail({ competitor, onBack, onCopy, copied }: {
         {result?.competitor_insights && (
           <div className="rounded-2xl p-4" style={{ background: YT_CONTAINER, border: '1px solid hsl(var(--primary) / 0.3)' }}>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-red-500" />
+              <BarChart2 className="w-4 h-4 text-red-500" />
               <p className="text-xs font-bold uppercase tracking-wider text-red-500">Key Insight</p>
             </div>
             <p className="text-sm text-foreground leading-relaxed">{result.competitor_insights}</p>
@@ -697,7 +697,7 @@ function AnalysisResults({ result, onCopy, copied, hideStats = false }: { result
       {result.competitor_insights && (
         <div className="rounded-2xl p-4" style={{ background: YT_CONTAINER, border: '1px solid hsl(var(--primary) / 0.3)' }}>
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-red-500" />
+            <BarChart2 className="w-4 h-4 text-red-500" />
             <p className="text-xs font-bold uppercase tracking-wider text-red-500">Key Insight</p>
           </div>
           <p className="text-sm text-foreground leading-relaxed">{result.competitor_insights}</p>

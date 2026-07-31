@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import {
   User, Settings2 as SettingsIcon, Mic, MessageSquare, CreditCard, Instagram, Youtube, Globe, Check,
-  Star, Send, Square, Loader2, Sparkles as SparklesIcon, Wand2, Save, X, Keyboard,
+  Star, Send, Square, Loader2, Lightbulb, Tag, Layers, Palette, Wand2, Save, X, Keyboard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -56,7 +56,7 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
 
 const FEEDBACK_CATEGORIES = [
   { id: "general", label: "Feedback", icon: MessageSquare },
-  { id: "feature", label: "Feature Request", icon: SparklesIcon },
+  { id: "feature", label: "Feature Request", icon: Lightbulb },
   { id: "bug", label: "Bug Report", icon: Square },
   { id: "performance", label: "Performance", icon: SettingsIcon },
 ];
@@ -369,7 +369,7 @@ export default function SettingsPage() {
               <p className="text-xs text-muted-foreground text-center mt-3">Read-only access · Revoke anytime in Google Account settings</p>
             </Panel>
 
-            <Panel icon={SparklesIcon} title="Content Niches" rightSlot={<span className="text-xs text-primary">{niches.length} selected</span>}>
+            <Panel icon={Tag} title="Content Niches" rightSlot={<span className="text-xs text-primary">{niches.length} selected</span>}>
               <div className="flex flex-wrap gap-2">
                 {NICHES.map((n) => {
                   const on = niches.includes(n);
@@ -403,7 +403,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <Panel icon={SparklesIcon} title="Platform">
+            <Panel icon={Layers} title="Platform">
               <div className="grid grid-cols-3 gap-3">
                 {PLATFORMS.map((p) => {
                   const Icon = p.icon;
@@ -443,7 +443,7 @@ export default function SettingsPage() {
               </div>
             </Panel>
 
-            <Panel icon={SparklesIcon} title="Content Style">
+            <Panel icon={Palette} title="Content Style">
               <div className="space-y-2">
                 {STYLES.map((s) => {
                   const on = style === s.value;

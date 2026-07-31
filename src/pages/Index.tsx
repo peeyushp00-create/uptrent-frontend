@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, ArrowRight, X } from "lucide-react";
+import { Bot, Send, ArrowRight, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from 'react-i18next';
@@ -380,7 +380,7 @@ function ResearchAgentLoader({
       className="w-full flex flex-col items-center gap-6 text-center"
     >
       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold uppercase tracking-wider">
-        <Sparkles className="size-3.5" />
+        <Bot className="size-3.5" />
         Research agent working
       </span>
 

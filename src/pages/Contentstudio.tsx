@@ -8,7 +8,7 @@ import SEO from "@/components/SEO";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
   Pencil, Trash2, Copy, FileText, Lightbulb, Calendar as CalendarIcon, Repeat, Link2,
-  Download, Loader2, Layers, Type, Palette, Circle, Sparkles, Save, Search, Undo2, Redo2, Plus,
+  Download, Loader2, Layers, Type, Palette, Circle, Mic, Wand2, Zap, Save, Search, Undo2, Redo2, Plus,
   Music as MusicIcon, ImagePlus, X, ZoomIn, ZoomOut, Film,
 } from "lucide-react";
 
@@ -1803,7 +1803,7 @@ function VideoEditor() {
                     <button onClick={() => transcribe()} disabled={!hasVideo || status === "uploading" || status === "transcribing"} title="Re-transcribe"
                       className="shrink-0 h-8 w-8 rounded-md text-white flex items-center justify-center transition disabled:opacity-40 hover:opacity-90"
                       style={{ background: GRAD }}>
-                      {status === "transcribing" || status === "uploading" ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                      {status === "transcribing" || status === "uploading" ? <Loader2 className="size-3.5 animate-spin" /> : <Mic className="size-3.5" />}
                     </button>
                   </div>
                   {romanizing && (
@@ -1983,7 +1983,7 @@ function VideoEditor() {
             <div className="space-y-4 md:max-h-[427px] md:overflow-y-auto pr-1 thick-scrollbar">
                 <div className="panel p-4 space-y-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="size-4" style={{ color: PURPLE }} />
+                    <Wand2 className="size-4" style={{ color: PURPLE }} />
                     <h2 className="font-bold text-foreground text-sm">Caption Designer</h2>
                   </div>
 
@@ -1994,7 +1994,7 @@ function VideoEditor() {
                       ["font", Type, "Font"],
                       ["colors", Palette, "Colors"],
                       ["position", Circle, "Position"],
-                      ["animation", Sparkles, "Animation"],
+                      ["animation", Zap, "Animation"],
                       ["music", MusicIcon, "Music"],
                       ["overlay", ImagePlus, "Overlay"],
                     ] as const).map(([id, Icon, label]) => (

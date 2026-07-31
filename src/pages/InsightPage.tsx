@@ -4,7 +4,7 @@ import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Eye, Heart, Share2, MessageCircle, Bookmark,
-  Flame, Sparkles, Clock, Music2, BarChart2, ThumbsUp,
+  Flame, Wand2, Clock, Music2, BarChart2, ThumbsUp,
   Target, MousePointerClick, TrendingUp, Play, Instagram,
   Youtube, ArrowRight, CheckCircle2, Zap, Award, Hash
 } from "lucide-react";
@@ -315,7 +315,7 @@ export default function InsightPage() {
           whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
           onClick={() => navigate(isIG ? "/scripts" : "/youtube/script", { state: { topic: item.niche } })}
           className="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 text-primary-foreground bg-gradient-to-br from-primary to-accent">
-          <Sparkles className="w-4 h-4" />
+          <Wand2 className="w-4 h-4" />
           Generate {isIG ? "Reel" : "YouTube"} Script for {item.niche || 'this topic'}
           <ArrowRight className="w-4 h-4" />
         </motion.button>

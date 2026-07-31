@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { Settings2, Sparkles, X } from "lucide-react";
+import { Settings2, Shuffle, X } from "lucide-react";
 
 type Props = {
   age: number;
@@ -205,7 +205,7 @@ export function LifeCalendar({ age, onResume, resumeTitle, compact = false, cust
               title="Surprise me"
               className="text-muted-foreground/70 hover:text-foreground transition-colors"
             >
-              <Sparkles className="size-3.5" aria-hidden />
+              <Shuffle className="size-3.5" aria-hidden />
             </button>
             <button
               type="button"
