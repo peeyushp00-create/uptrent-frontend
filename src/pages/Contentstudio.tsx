@@ -43,7 +43,13 @@ const FONTS = [
 // Lovable's "Social Spark Studio" caption editor exactly. ──
 type CapPosition = "bottom" | "middle" | "top";
 type CapAnimation = "none" | "fade" | "pop" | "slide";
-type TemplateId = "minimal" | "bold" | "modern" | "podcast" | "creator" | "business" | "news" | "glow" | "sticker" | "typewriter" | "vibrant" | "romantic" | "comic" | "pixel" | "luxe";
+type TemplateId =
+  | "minimal" | "bold" | "modern" | "podcast" | "creator" | "business" | "news" | "glow" | "sticker" | "typewriter"
+  | "vibrant" | "romantic" | "comic" | "pixel" | "luxe"
+  | "neon" | "cinema" | "retro" | "elegant" | "street" | "gamer" | "fitness" | "travel" | "foodie" | "tech"
+  | "fashion" | "meme" | "documentary" | "karaoke" | "highlight" | "shadow" | "outline" | "aurora" | "cute" | "horror"
+  | "corporate" | "y2k" | "handwritten" | "cleanWhite" | "boldRed" | "skyBlue" | "goldLuxury" | "popArt" | "midnight" | "sunshine"
+  | "graffiti" | "cleanSerif" | "boldPink" | "matrix" | "royalty";
 
 type CaptionStyle = {
   fontFamily: string;
@@ -74,6 +80,42 @@ const TEMPLATES: Record<TemplateId, { label: string; style: CaptionStyle }> = {
   comic: { label: "Comic", style: { fontFamily: "'Bangers',cursive", fontSize: 2, fontWeight: 400, textColor: "#fef08a", highlightColor: "#ef4444", background: "pill", bgColor: "#1d4ed8", position: "middle", animation: "pop", uppercase: true } },
   pixel: { label: "Pixel", style: { fontFamily: "'Press Start 2P',monospace", fontSize: 0.85, fontWeight: 400, textColor: "#39ff14", highlightColor: "#22d3ee", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
   luxe: { label: "Luxe", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.3, fontWeight: 500, textColor: "#f5f5f0", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
+
+  neon: { label: "Neon", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.6, fontWeight: 800, textColor: "#22d3ee", highlightColor: "#f472b6", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
+  cinema: { label: "Cinema", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.4, fontWeight: 600, textColor: "#f5e6c8", highlightColor: "#eab308", background: "solid", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  retro: { label: "Retro", style: { fontFamily: "'Bangers',cursive", fontSize: 1.9, fontWeight: 400, textColor: "#1e293b", highlightColor: "#f97316", background: "pill", bgColor: "#fbbf24", position: "middle", animation: "pop", uppercase: true } },
+  elegant: { label: "Elegant", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.35, fontWeight: 500, textColor: "#ffffff", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
+  street: { label: "Street", style: { fontFamily: "'Anton',sans-serif", fontSize: 2.1, fontWeight: 800, textColor: "#ffffff", highlightColor: "#dc2626", background: "solid", bgColor: "#000000", position: "bottom", animation: "slide", uppercase: true } },
+  gamer: { label: "Gamer", style: { fontFamily: "'Press Start 2P',monospace", fontSize: 0.9, fontWeight: 400, textColor: "#a3e635", highlightColor: "#c084fc", background: "solid", bgColor: "#0f0f1a", position: "bottom", animation: "none", uppercase: false } },
+  fitness: { label: "Fitness", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fb923c", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: true } },
+  travel: { label: "Travel", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.4, fontWeight: 600, textColor: "#ffffff", highlightColor: "#2dd4bf", background: "pill", bgColor: "#0f172a", position: "bottom", animation: "fade", uppercase: false } },
+  foodie: { label: "Foodie", style: { fontFamily: "'Caveat',cursive", fontSize: 2.1, fontWeight: 700, textColor: "#7c2d12", highlightColor: "#dc2626", background: "pill", bgColor: "#fef3c7", position: "bottom", animation: "fade", uppercase: false } },
+  tech: { label: "Tech", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.2, fontWeight: 700, textColor: "#22d3ee", highlightColor: "#a78bfa", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  fashion: { label: "Fashion", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.5, fontWeight: 600, textColor: "#111827", highlightColor: "#f472b6", background: "solid", bgColor: "#ffffff", position: "bottom", animation: "fade", uppercase: false } },
+  meme: { label: "Meme", style: { fontFamily: "'Anton',sans-serif", fontSize: 2, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fde047", background: "", bgColor: "#000000", position: "top", animation: "none", uppercase: true } },
+  documentary: { label: "Documentary", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.1, fontWeight: 500, textColor: "#f8fafc", highlightColor: "#94a3b8", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  karaoke: { label: "Karaoke", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fde047", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
+  highlight: { label: "Highlight", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.5, fontWeight: 700, textColor: "#1e1b4b", highlightColor: "#f472b6", background: "pill", bgColor: "#fde047", position: "bottom", animation: "pop", uppercase: false } },
+  shadow: { label: "Shadow", style: { fontFamily: "'Bebas Neue',sans-serif", fontSize: 2, fontWeight: 700, textColor: "#ffffff", highlightColor: "#e5e7eb", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: true } },
+  outline: { label: "Outline", style: { fontFamily: "'Anton',sans-serif", fontSize: 1.9, fontWeight: 800, textColor: "#fefefe", highlightColor: "#000000", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: true } },
+  aurora: { label: "Aurora", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.7, fontWeight: 700, textColor: "#c084fc", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "middle", animation: "pop", uppercase: false } },
+  cute: { label: "Cute", style: { fontFamily: "'Caveat',cursive", fontSize: 2, fontWeight: 700, textColor: "#831843", highlightColor: "#f9a8d4", background: "pill", bgColor: "#fce7f3", position: "middle", animation: "fade", uppercase: false } },
+  horror: { label: "Horror", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.7, fontWeight: 400, textColor: "#dc2626", highlightColor: "#ffffff", background: "", bgColor: "#000000", position: "top", animation: "none", uppercase: true } },
+  corporate: { label: "Corporate", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.2, fontWeight: 600, textColor: "#ffffff", highlightColor: "#93c5fd", background: "solid", bgColor: "#1e3a8a", position: "bottom", animation: "fade", uppercase: false } },
+  y2k: { label: "Y2K", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.8, fontWeight: 800, textColor: "#ec4899", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "bottom", animation: "pop", uppercase: true } },
+  handwritten: { label: "Handwritten", style: { fontFamily: "'Caveat',cursive", fontSize: 1.9, fontWeight: 700, textColor: "#1f2937", highlightColor: "#f59e0b", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  cleanWhite: { label: "Clean White", style: { fontFamily: "'Inter',sans-serif", fontSize: 1.35, fontWeight: 600, textColor: "#ffffff", highlightColor: "#d1d5db", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  boldRed: { label: "Bold Red", style: { fontFamily: "'Anton',sans-serif", fontSize: 2, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fecaca", background: "solid", bgColor: "#dc2626", position: "bottom", animation: "pop", uppercase: true } },
+  skyBlue: { label: "Sky Blue", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#bae6fd", background: "pill", bgColor: "#0284c7", position: "bottom", animation: "slide", uppercase: false } },
+  goldLuxury: { label: "Gold Luxury", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.4, fontWeight: 600, textColor: "#d4af37", highlightColor: "#ffffff", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
+  popArt: { label: "Pop Art", style: { fontFamily: "'Bangers',cursive", fontSize: 1.9, fontWeight: 400, textColor: "#0f172a", highlightColor: "#dc2626", background: "pill", bgColor: "#22d3ee", position: "middle", animation: "pop", uppercase: true } },
+  midnight: { label: "Midnight", style: { fontFamily: "'Space Grotesk',sans-serif", fontSize: 1.4, fontWeight: 700, textColor: "#ffffff", highlightColor: "#818cf8", background: "solid", bgColor: "#1e1b4b", position: "bottom", animation: "fade", uppercase: false } },
+  sunshine: { label: "Sunshine", style: { fontFamily: "'Poppins',sans-serif", fontSize: 1.5, fontWeight: 700, textColor: "#78350f", highlightColor: "#dc2626", background: "pill", bgColor: "#fde047", position: "bottom", animation: "pop", uppercase: false } },
+  graffiti: { label: "Graffiti", style: { fontFamily: "'Permanent Marker',cursive", fontSize: 1.8, fontWeight: 400, textColor: "#f97316", highlightColor: "#22d3ee", background: "", bgColor: "#000000", position: "bottom", animation: "none", uppercase: false } },
+  cleanSerif: { label: "Clean Serif", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.25, fontWeight: 500, textColor: "#e5e7eb", highlightColor: "#9ca3af", background: "", bgColor: "#000000", position: "bottom", animation: "fade", uppercase: false } },
+  boldPink: { label: "Bold Pink", style: { fontFamily: "'Montserrat',sans-serif", fontSize: 1.7, fontWeight: 800, textColor: "#ffffff", highlightColor: "#fbcfe8", background: "solid", bgColor: "#db2777", position: "bottom", animation: "pop", uppercase: true } },
+  matrix: { label: "Matrix", style: { fontFamily: "'Space Mono',monospace", fontSize: 1.3, fontWeight: 700, textColor: "#22c55e", highlightColor: "#4ade80", background: "solid", bgColor: "#000000", position: "bottom", animation: "none", uppercase: true } },
+  royalty: { label: "Royalty", style: { fontFamily: "'Playfair Display',serif", fontSize: 1.45, fontWeight: 600, textColor: "#e9d5ff", highlightColor: "#d4af37", background: "", bgColor: "#000000", position: "top", animation: "fade", uppercase: false } },
 };
 
 type LangId = "auto" | "en" | "hi" | "ml" | "ta" | "te" | "kn" | "mr" | "gu" | "bn" | "pa";
