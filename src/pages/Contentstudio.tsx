@@ -39,6 +39,10 @@ const FONTS = [
   { id: "'Press Start 2P',monospace", label: "Pixel" },
 ];
 
+// A cut piece of the video track — start/end are positions in the original
+// uploaded file, not a compacted "edited" timeline (see videoClips state).
+type VideoClip = { id: string; start: number; end: number };
+
 // ── Caption style system — templates + per-property overrides, matching
 // Lovable's "Social Spark Studio" caption editor exactly. ──
 type CapPosition = "bottom" | "middle" | "top";
@@ -946,11 +950,25 @@ function VideoEditor() {
   const [dragPip, setDragPip] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [dragCaption, setDragCaption] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  // Trim: 0/0 means "use the full clip" — trimEnd only takes effect once set,
-  // same convention as duration elsewhere in this file.
-  const [trimStart, setTrimStart] = useState(() => savedStudioState?.trimStart ?? 0);
-  const [trimEnd, setTrimEnd] = useState(() => savedStudioState?.trimEnd ?? 0);
-  const [dragTrim, setDragTrim] = useState<"start" | "end" | null>(null);
+  // Video clips — the video track as a list of (start,end) ranges into the
+  // *original* uploaded file. Starts as one clip spanning the whole video;
+  // cutting splits a clip in two, deleting removes one (ripple), merging
+  // rejoins two array-adjacent clips whose ranges are still contiguous.
+  // Timeline positions stay anchored to source time (gaps show as dimmed,
+  // rather than compacting everything else) — much simpler than remapping
+  // captions/music/overlays into a second "edited timeline" coordinate space.
+  const [videoClips, setVideoClips] = useState<VideoClip[]>(() => savedStudioState?.videoClips ?? []);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [dragTrim, setDragTrim] = useState<{ clipId: string; edge: "start" | "end" } | null>(null);
+  // Music trim — musicEnd 0 means "play until the video/last clip ends".
+  const [musicEnd, setMusicEnd] = useState(() => savedStudioState?.musicEnd ?? 0);
+  const [dragMusicEnd, setDragMusicEnd] = useState(false);
+  const [musicSelected, setMusicSelected] = useState(false);
+  const [selectedCaptionId, setSelectedCaptionId] = useState<number | null>(null);
+
+  function selectClip(id: string) { setSelectedClipId(id); setMusicSelected(false); setSelectedCaptionId(null); }
+  function selectMusicTrack() { setMusicSelected(true); setSelectedClipId(null); setSelectedCaptionId(null); }
+  function selectCaptionChip(id: number) { setSelectedCaptionId(id); setSelectedClipId(null); setMusicSelected(false); }
 
   // save
   const [savedAt, setSavedAt] = useState(() => savedStudioState?.savedAt ?? "");
@@ -972,7 +990,7 @@ function VideoEditor() {
     overlays, selOverlay,
     showPex, pexTab, pexQ, pexType, pexItems, pexLoading, uploadingOverlay,
     music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, uploadingMusic, uploadedMusic,
-    trimStart, trimEnd,
+    videoClips, musicEnd,
     savedAt, projectId, saveError,
     showProjects, projects
   };
@@ -1171,6 +1189,11 @@ function VideoEditor() {
   useEffect(() => { if (videoRef.current) videoRef.current.muted = muteOriginal; }, [muteOriginal]);
   useEffect(() => { if (videoRef.current && !muteOriginal) videoRef.current.volume = originalVolume; }, [originalVolume, muteOriginal]);
   useEffect(() => { fetchProjects(); }, []);
+  // Seed a single clip spanning the whole video once its duration is known
+  // (fresh upload, or an older saved project with no videoClips yet).
+  useEffect(() => {
+    if (duration > 0 && videoClips.length === 0) setVideoClips([{ id: uid(), start: 0, end: duration }]);
+  }, [duration]); // eslint-disable-line react-hooks/exhaustive-deps -- init-once guard reads videoClips.length, not a dep
 
   // Keep a ref to saveProject so unmount cleanup always has the latest closure
   const saveProjectRef = useRef(saveProject);
@@ -1188,7 +1211,7 @@ function VideoEditor() {
     autoSaveTimerRef.current = setTimeout(() => saveProjectRef.current(), 5000);
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
   }, [hostedUrl, segments, template, style,
-      overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, trimStart, trimEnd]);
+      overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, videoClips, musicEnd]);
 
   // overlay drag
   useEffect(() => {
@@ -1218,6 +1241,20 @@ function VideoEditor() {
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [dragMusic, duration, pxPerSec]);
+
+  // music end-trim drag
+  useEffect(() => {
+    if (!dragMusicEnd) return;
+    const move = (e: PointerEvent) => {
+      const el = tracksRef.current; if (!el || !duration) return;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left + el.scrollLeft;
+      setMusicEnd(Math.max(musicStart + 0.5, Math.min(duration, x / pxPerSec)));
+    };
+    const up = () => setDragMusicEnd(false);
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [dragMusicEnd, duration, pxPerSec, musicStart]);
 
   // playhead scrub — drag the handle to seek, live, without needing to click precisely
   useEffect(() => {
@@ -1283,13 +1320,26 @@ function VideoEditor() {
       const el = tracksRef.current; if (!el || !duration) return;
       const rect = el.getBoundingClientRect();
       const t = Math.max(0, Math.min(duration, (e.clientX - rect.left + el.scrollLeft) / pxPerSec));
-      if (dragTrim === "start") setTrimStart(Math.min(t, (trimEnd || duration) - 0.2));
-      else setTrimEnd(Math.max(t, trimStart + 0.2));
+      setVideoClips(clips => {
+        const sorted = [...clips].sort((a, b) => a.start - b.start);
+        const idx = sorted.findIndex(c => c.id === dragTrim.clipId);
+        if (idx === -1) return clips;
+        const c = sorted[idx];
+        if (dragTrim.edge === "start") {
+          const min = idx > 0 ? sorted[idx - 1].end : 0;
+          const next = { ...c, start: Math.max(min, Math.min(t, c.end - 0.2)) };
+          return sorted.map((x, i) => (i === idx ? next : x));
+        } else {
+          const max = idx < sorted.length - 1 ? sorted[idx + 1].start : duration;
+          const next = { ...c, end: Math.min(max, Math.max(t, c.start + 0.2)) };
+          return sorted.map((x, i) => (i === idx ? next : x));
+        }
+      });
     };
     const up = () => setDragTrim(null);
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-  }, [dragTrim, duration, pxPerSec, trimStart, trimEnd]);
+  }, [dragTrim, duration, pxPerSec]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0]; if (!picked) return;
@@ -1344,7 +1394,8 @@ function VideoEditor() {
     setTime(v.currentTime);
     if (a && hasMusic && music.url) {
       a.volume = volume;
-      if (v.currentTime >= musicStart) {
+      const effectiveMusicEnd = musicEnd > 0 ? musicEnd : Infinity;
+      if (v.currentTime >= musicStart && v.currentTime < effectiveMusicEnd) {
         const target = songTrim + (v.currentTime - musicStart);
         if (Math.abs(a.currentTime - target) > 0.3) a.currentTime = target;
         if (a.paused && !v.paused) a.play().catch(() => {});
@@ -1359,6 +1410,15 @@ function VideoEditor() {
   function tickPlayhead() {
     const v = videoRef.current;
     if (!v || v.paused || v.ended) { playheadRafRef.current = null; return; }
+    // Jump-cut over any deleted clip range during playback, so preview plays
+    // the edited result rather than the untouched source. (Manually scrubbing
+    // into a gap still shows the original footage — only continuous playback
+    // skips it, to keep this simple.)
+    if (videoClips.length > 0 && !videoClips.some(c => v.currentTime >= c.start && v.currentTime < c.end)) {
+      const next = videoClips.find(c => c.start > v.currentTime);
+      if (next) v.currentTime = next.start;
+      else { v.pause(); playheadRafRef.current = null; return; }
+    }
     setTime(v.currentTime);
     playheadRafRef.current = requestAnimationFrame(tickPlayhead);
   }
@@ -1379,6 +1439,9 @@ function VideoEditor() {
 
   function onTimelineClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragOverlay || dragMusic || scrubbingPlayhead) return;
+    // Clicks on a clip/music/caption chip stopPropagation before reaching
+    // here, so getting here means empty timeline space was clicked.
+    setSelectedClipId(null); setMusicSelected(false); setSelectedCaptionId(null);
     const el = timelineRef.current; const v = videoRef.current;
     if (!el || !v || !duration) return;
     const rect = el.getBoundingClientRect();
@@ -1460,6 +1523,45 @@ function VideoEditor() {
     setSegments(prev => reindex(prev.filter(s => s.id !== id)));
   }
 
+  // ── Video clips: cut/merge/delete (ripple) ──
+  function cutVideoAtPlayhead() {
+    const idx = videoClips.findIndex(c => time > c.start + 0.05 && time < c.end - 0.05);
+    if (idx === -1) return; // playhead isn't usefully inside the selected (or any) clip
+    const c = videoClips[idx];
+    const left: VideoClip = { id: uid(), start: c.start, end: time };
+    const right: VideoClip = { id: uid(), start: time, end: c.end };
+    setVideoClips(clips => [...clips.slice(0, idx), left, right, ...clips.slice(idx + 1)]);
+    setSelectedClipId(right.id);
+  }
+  function deleteVideoClip(id: string) {
+    setVideoClips(clips => (clips.length > 1 ? clips.filter(c => c.id !== id) : clips));
+    if (selectedClipId === id) setSelectedClipId(null);
+  }
+  function mergeVideoClip(id: string) {
+    setVideoClips(clips => {
+      const idx = clips.findIndex(c => c.id === id);
+      if (idx === -1) return clips;
+      // Prefer merging forward (with the next clip) if contiguous, else backward.
+      if (idx < clips.length - 1 && Math.abs(clips[idx].end - clips[idx + 1].start) < 0.05) {
+        const merged: VideoClip = { id: clips[idx].id, start: clips[idx].start, end: clips[idx + 1].end };
+        return [...clips.slice(0, idx), merged, ...clips.slice(idx + 2)];
+      }
+      if (idx > 0 && Math.abs(clips[idx - 1].end - clips[idx].start) < 0.05) {
+        const merged: VideoClip = { id: clips[idx - 1].id, start: clips[idx - 1].start, end: clips[idx].end };
+        return [...clips.slice(0, idx - 1), merged, ...clips.slice(idx + 1)];
+      }
+      return clips;
+    });
+  }
+  function canMergeClip(id: string): boolean {
+    const idx = videoClips.findIndex(c => c.id === id);
+    if (idx === -1) return false;
+    const withNext = idx < videoClips.length - 1 && Math.abs(videoClips[idx].end - videoClips[idx + 1].start) < 0.05;
+    const withPrev = idx > 0 && Math.abs(videoClips[idx - 1].end - videoClips[idx].start) < 0.05;
+    return withNext || withPrev;
+  }
+  function removeMusic() { setMusic(MUSIC[0]); setMusicSelected(false); }
+
   async function searchPexels() {
     setPexLoading(true);
     try { const r = await fetch(`${API}/api/studio/pexels?q=${encodeURIComponent(pexQ || "trending")}&type=${pexType}`); const data = await r.json(); setPexItems(data.items || []); }
@@ -1530,7 +1632,7 @@ function VideoEditor() {
         user_id: session.user.id,
         name: (segments[0]?.text || file?.name || "Studio project").slice(0, 40),
         video_url: url,
-        data: { segments, template, style, wordHighlight, language, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, trimStart, trimEnd },
+        data: { segments, template, style, wordHighlight, language, overlays, music, musicStart, songTrim, volume, fadeIn, fadeOut, muteOriginal, originalVolume, videoClips, musicEnd },
         updated_at: new Date().toISOString(),
       };
       if (projectId) await supabase.from("studio_projects").update(payload).eq("id", projectId);
@@ -1568,7 +1670,8 @@ function VideoEditor() {
     setSongTrim(d.songTrim || 0); setVolume(d.volume ?? 0.25);
     setFadeIn(d.fadeIn ?? true); setFadeOut(d.fadeOut ?? true);
     setMuteOriginal(d.muteOriginal ?? false); setOriginalVolume(d.originalVolume ?? 1);
-    setTrimStart(d.trimStart || 0); setTrimEnd(d.trimEnd || 0);
+    setVideoClips(d.videoClips || []); setMusicEnd(d.musicEnd || 0);
+    setSelectedClipId(null); setMusicSelected(false); setSelectedCaptionId(null);
     setProjectId(p.id); setStatus("ready"); setError(""); setSavedAt("");
     setShowProjects(false);
   }
@@ -1619,9 +1722,11 @@ function VideoEditor() {
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d")!;
 
-    // Trim window: 0/0 in trimEnd means "use the full clip".
-    const tStart = Math.max(0, Math.min(trimStart, duration));
-    const tEnd = trimEnd > 0 && trimEnd <= duration ? trimEnd : duration;
+    // Clips to record, in order, each a (start,end) range in the source video.
+    const clips = [...videoClips].sort((a, b) => a.start - b.start);
+    if (clips.length === 0) clips.push({ id: "full", start: 0, end: duration });
+    const totalClipsDuration = clips.reduce((sum, c) => sum + (c.end - c.start), 0);
+    const effectiveMusicEnd = musicEnd > 0 ? musicEnd : Infinity;
 
     // Preload overlay images
     const imgCache: Record<string, HTMLImageElement> = {};
@@ -1662,8 +1767,9 @@ function VideoEditor() {
       const chunks: Blob[] = [];
       rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
 
-      // Seek to trim start
-      v.pause(); v.currentTime = tStart;
+      // Seek to the first clip's start
+      let clipIdx = 0;
+      v.pause(); v.currentTime = clips[0].start;
       await new Promise(r => setTimeout(r, 200));
       rec.start(200);
       await v.play();
@@ -1673,8 +1779,16 @@ function VideoEditor() {
         rec.onstop = () => resolve();
         const draw = () => {
           if (exportCancelRef.current) { v.pause(); musicAudioEl?.pause(); rec.stop(); return; }
+          const clip = clips[clipIdx];
+          if (!clip) { v.pause(); musicAudioEl?.pause(); rec.stop(); return; }
           const t = v.currentTime;
-          setExportProgress(tEnd > tStart ? Math.min(99, Math.round(((t - tStart) / (tEnd - tStart)) * 100)) : 0);
+          const elapsedBeforeThisClip = clips.slice(0, clipIdx).reduce((s, c) => s + (c.end - c.start), 0);
+          const withinClip = Math.max(0, t - clip.start);
+          setExportProgress(totalClipsDuration > 0 ? Math.min(99, Math.round(((elapsedBeforeThisClip + withinClip) / totalClipsDuration) * 100)) : 0);
+          if (musicAudioEl) {
+            if (t >= effectiveMusicEnd && !musicAudioEl.paused) musicAudioEl.pause();
+            else if (t < effectiveMusicEnd && musicAudioEl.paused && !v.paused) musicAudioEl.play().catch(() => {});
+          }
 
           ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
 
@@ -1716,9 +1830,19 @@ function VideoEditor() {
             ctx.fillStyle = style.textColor; ctx.fillText(text, x, y);
           }
 
-          if (v.ended || v.currentTime >= tEnd - 0.05) {
-            v.pause(); musicAudioEl?.pause(); rec.stop();
-          } else { requestAnimationFrame(draw); }
+          if (v.ended || t >= clip.end - 0.05) {
+            const nextClip = clips[clipIdx + 1];
+            if (!nextClip) { v.pause(); musicAudioEl?.pause(); rec.stop(); return; }
+            // Jump-cut to the next clip. Wait for the seek to actually land
+            // before drawing again — the canvas just holds its last frame
+            // for that brief gap, which reads as a normal hard cut.
+            clipIdx++;
+            const onSeeked = () => { v.removeEventListener("seeked", onSeeked); requestAnimationFrame(draw); };
+            v.addEventListener("seeked", onSeeked);
+            v.currentTime = nextClip.start;
+            return;
+          }
+          requestAnimationFrame(draw);
         };
         requestAnimationFrame(draw);
       });
@@ -2384,6 +2508,58 @@ function VideoEditor() {
                 </div>
               </div>
             </div>
+
+            {/* Contextual Cut/Merge/Delete toolbar for whatever's selected on the timeline */}
+            {(selectedClipId || musicSelected || selectedCaptionId != null) && (
+              <div className="px-4 py-1.5 flex items-center gap-2 text-xs" style={{ borderBottom: `1px solid ${TL_LINE}`, background: "rgba(255,255,255,0.02)" }}>
+                <span className="font-semibold" style={{ color: TL_TEXT }}>
+                  {selectedClipId ? "Video clip" : musicSelected ? "Music" : "Caption"} selected
+                </span>
+                <div className="flex items-center gap-1.5 ml-2">
+                  {selectedClipId && (
+                    <>
+                      <button onClick={cutVideoAtPlayhead}
+                        className="px-2 py-1 rounded border text-white/80 hover:text-white hover:border-purple-400 transition" style={{ borderColor: TL_LINE }}>
+                        ✂ Cut at playhead
+                      </button>
+                      <button onClick={() => selectedClipId && mergeVideoClip(selectedClipId)} disabled={!selectedClipId || !canMergeClip(selectedClipId)}
+                        className="px-2 py-1 rounded border text-white/80 hover:text-white hover:border-purple-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
+                        Merge
+                      </button>
+                      <button onClick={() => selectedClipId && deleteVideoClip(selectedClipId)} disabled={videoClips.length <= 1}
+                        className="px-2 py-1 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
+                        Delete
+                      </button>
+                    </>
+                  )}
+                  {musicSelected && (
+                    <button onClick={removeMusic}
+                      className="px-2 py-1 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition" style={{ borderColor: TL_LINE }}>
+                      Delete
+                    </button>
+                  )}
+                  {selectedCaptionId != null && (
+                    <>
+                      <button onClick={() => { splitSeg(selectedCaptionId); setSelectedCaptionId(null); }}
+                        className="px-2 py-1 rounded border text-white/80 hover:text-white hover:border-purple-400 transition" style={{ borderColor: TL_LINE }}>
+                        ✂ Split
+                      </button>
+                      <button onClick={() => { mergeUp(selectedCaptionId); setSelectedCaptionId(null); }} disabled={segments.findIndex(s => s.id === selectedCaptionId) <= 0}
+                        className="px-2 py-1 rounded border text-white/80 hover:text-white hover:border-purple-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
+                        Merge↑
+                      </button>
+                      <button onClick={() => { deleteSeg(selectedCaptionId); setSelectedCaptionId(null); }}
+                        className="px-2 py-1 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition" style={{ borderColor: TL_LINE }}>
+                        Delete
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => { setSelectedClipId(null); setMusicSelected(false); setSelectedCaptionId(null); }}
+                    className="px-2 py-1 rounded text-white/50 hover:text-white transition">✕</button>
+                </div>
+              </div>
+            )}
+
             <div className="flex">
               <div className="shrink-0 w-20 text-[11px]" style={{ borderRight: `1px solid ${TL_LINE}`, color: TL_TEXT }}>
                 <div className="h-5" style={{ borderBottom: `1px solid ${TL_LINE}` }} />
@@ -2394,8 +2570,8 @@ function VideoEditor() {
                 </div>
                 <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderBottom: `1px solid ${TL_LINE}`, borderLeft: `2px solid ${TRACK_COLORS.video}` }}>
                   <Film className="size-3" style={{ color: TRACK_COLORS.video }} /> Video
-                  {duration > 0 && (trimStart > 0 || (trimEnd > 0 && trimEnd < duration)) && (
-                    <span className="text-[9px] text-muted-foreground ml-auto pr-1">{fmt(trimStart)}–{fmt(trimEnd || duration)}</span>
+                  {videoClips.length > 1 && (
+                    <span className="text-[9px] text-muted-foreground ml-auto pr-1">{videoClips.length} clips</span>
                   )}
                 </div>
                 <div className="h-10 flex items-center gap-1.5 px-2.5" style={{ borderBottom: `1px solid ${TL_LINE}`, borderLeft: `2px solid ${TRACK_COLORS.captions}` }}><Type className="size-3" style={{ color: TRACK_COLORS.captions }} /> Captions</div>
@@ -2442,26 +2618,44 @@ function VideoEditor() {
                         </div>
                       )}
                       <span className="absolute bottom-0.5 left-1.5 text-[9px] text-white font-medium px-1 rounded bg-black/60 pointer-events-none max-w-[70%] truncate">{file?.name || "video.mp4"}</span>
-                      {duration > 0 && (
-                        <>
-                          {trimStart > 0 && (
-                            <div className="absolute inset-y-0 left-0 bg-black/70 pointer-events-none" style={{ width: `${(trimStart / duration) * 100}%` }} />
-                          )}
-                          {trimEnd > 0 && trimEnd < duration && (
-                            <div className="absolute inset-y-0 right-0 bg-black/70 pointer-events-none" style={{ width: `${((duration - trimEnd) / duration) * 100}%` }} />
-                          )}
-                          <div onPointerDown={e => { e.stopPropagation(); setDragTrim("start"); }}
-                            className="absolute inset-y-0 w-3 -ml-1.5 cursor-ew-resize z-10 flex items-center justify-center"
-                            style={{ left: `${(trimStart / duration) * 100}%` }}>
-                            <div className="w-1 h-6 rounded-full" style={{ background: PURPLE }} />
-                          </div>
-                          <div onPointerDown={e => { e.stopPropagation(); setDragTrim("end"); }}
-                            className="absolute inset-y-0 w-3 -ml-1.5 cursor-ew-resize z-10 flex items-center justify-center"
-                            style={{ left: `${((trimEnd || duration) / duration) * 100}%` }}>
-                            <div className="w-1 h-6 rounded-full" style={{ background: PURPLE }} />
-                          </div>
-                        </>
-                      )}
+                      {duration > 0 && (() => {
+                        const sorted = [...videoClips].sort((a, b) => a.start - b.start);
+                        const gaps: { start: number; end: number }[] = [];
+                        let cursor = 0;
+                        for (const c of sorted) { if (c.start > cursor) gaps.push({ start: cursor, end: c.start }); cursor = Math.max(cursor, c.end); }
+                        if (cursor < duration) gaps.push({ start: cursor, end: duration });
+                        return (
+                          <>
+                            {gaps.map((g, i) => (
+                              <div key={i} className="absolute inset-y-0 bg-black/70 pointer-events-none"
+                                style={{ left: `${(g.start / duration) * 100}%`, width: `${((g.end - g.start) / duration) * 100}%` }} />
+                            ))}
+                            {sorted.map(c => (
+                              <div key={c.id} onClick={e => { e.stopPropagation(); selectClip(c.id); }}
+                                className="absolute inset-y-0 cursor-pointer"
+                                style={{
+                                  left: `${(c.start / duration) * 100}%`, width: `${((c.end - c.start) / duration) * 100}%`,
+                                  border: selectedClipId === c.id ? `2px solid ${PURPLE}` : "2px solid transparent",
+                                  boxSizing: "border-box",
+                                }} />
+                            ))}
+                            {sorted.map(c => (
+                              <React.Fragment key={`${c.id}-handles`}>
+                                <div onPointerDown={e => { e.stopPropagation(); selectClip(c.id); setDragTrim({ clipId: c.id, edge: "start" }); }}
+                                  className="absolute inset-y-0 w-3 -ml-1.5 cursor-ew-resize z-10 flex items-center justify-center"
+                                  style={{ left: `${(c.start / duration) * 100}%` }}>
+                                  <div className="w-1 h-6 rounded-full" style={{ background: PURPLE }} />
+                                </div>
+                                <div onPointerDown={e => { e.stopPropagation(); selectClip(c.id); setDragTrim({ clipId: c.id, edge: "end" }); }}
+                                  className="absolute inset-y-0 w-3 -ml-1.5 cursor-ew-resize z-10 flex items-center justify-center"
+                                  style={{ left: `${(c.end / duration) * 100}%` }}>
+                                  <div className="w-1 h-6 rounded-full" style={{ background: PURPLE }} />
+                                </div>
+                              </React.Fragment>
+                            ))}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                   {/* Transcribe — waveform behind the caption chips */}
@@ -2472,9 +2666,13 @@ function VideoEditor() {
                     )}
                     {segments.map(s => (
                       <div key={s.id} title={s.text}
-                        onClick={e => { e.stopPropagation(); seek(s.start); }}
+                        onClick={e => { e.stopPropagation(); seek(s.start); selectCaptionChip(s.id); }}
                         className="absolute top-1 bottom-1 rounded overflow-hidden text-[9px] px-1 flex items-center cursor-pointer transition-transform hover:scale-[1.03] hover:z-10"
-                        style={{ left: s.start * pxPerSec, width: Math.max((s.end - s.start) * pxPerSec, 10), background: activeId === s.id ? PURPLE : "hsl(var(--primary) / 0.55)", color: "hsl(var(--primary-foreground))", boxShadow: activeId === s.id ? `0 0 0 1px ${PURPLE}` : undefined }}>
+                        style={{
+                          left: s.start * pxPerSec, width: Math.max((s.end - s.start) * pxPerSec, 10),
+                          background: activeId === s.id ? PURPLE : "hsl(var(--primary) / 0.55)", color: "hsl(var(--primary-foreground))",
+                          boxShadow: selectedCaptionId === s.id ? `0 0 0 2px white` : activeId === s.id ? `0 0 0 1px ${PURPLE}` : undefined,
+                        }}>
                         {s.text.slice(0, 12)}
                       </div>
                     ))}
@@ -2482,10 +2680,16 @@ function VideoEditor() {
                   {/* Music */}
                   <div className="h-10 relative transition-colors hover:bg-white/[0.03]" style={{ background: `${TRACK_COLORS.music}0d` }}>
                     {hasMusic && (
-                      <div onPointerDown={e => { e.stopPropagation(); setDragMusic(true); }}
+                      <div onClick={e => { e.stopPropagation(); selectMusicTrack(); }}
+                        onPointerDown={e => { e.stopPropagation(); selectMusicTrack(); setDragMusic(true); }}
                         className="absolute top-1 bottom-1 rounded cursor-grab active:cursor-grabbing flex items-center px-2 text-[10px] text-white font-semibold overflow-hidden transition-transform hover:scale-[1.02] active:scale-100"
-                        style={{ left: musicStart * pxPerSec, width: Math.max((duration - musicStart) * pxPerSec, 40), background: GRAD }}>
+                        style={{
+                          left: musicStart * pxPerSec, width: Math.max(((musicEnd || duration) - musicStart) * pxPerSec, 40), background: GRAD,
+                          outline: musicSelected ? "2px solid white" : "none", outlineOffset: -2,
+                        }}>
                         ♪ {music.label}
+                        <div onPointerDown={e => { e.stopPropagation(); selectMusicTrack(); setDragMusicEnd(true); }}
+                          className="absolute inset-y-0 right-0 w-2 cursor-ew-resize" />
                       </div>
                     )}
                   </div>
