@@ -285,7 +285,7 @@ export default function StudioPage() {
   return (
     <div className={`theme-redesign ${theme} min-h-screen bg-background text-foreground`}>
       <SEO title="Studio — SocialRum" noindex />
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-[1600px] mx-auto p-6">
         {!isVideo && (
           <div className="mb-6">
             <h1 className="font-heading text-2xl font-bold">Studio</h1>
