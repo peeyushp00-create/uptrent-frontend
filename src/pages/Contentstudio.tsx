@@ -2137,7 +2137,7 @@ function VideoEditor() {
                     onPointerDown={e => { e.preventDefault(); setDragCaption(true); }}>
                     <span
                       key={activeId}
-                      className={`inline-block ${capAnimClass}`}
+                      className={capAnimClass}
                       style={{
                         ...capWrapStyle,
                         fontFamily: style.fontFamily,
@@ -2146,6 +2146,10 @@ function VideoEditor() {
                         color: style.textColor,
                         textShadow: style.background === "" ? "0 2px 8px rgba(0,0,0,0.7)" : undefined,
                         lineHeight: 1.25,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
                       }}
                     >
                       {activeSeg ? renderActiveCaption() : previewCaptionText}
