@@ -1355,7 +1355,8 @@ function VideoEditor() {
     const picked = e.target.files?.[0]; if (!picked) return;
     setFile(picked); setVideoUrl(URL.createObjectURL(picked));
     setDuration(0); setTime(0); setSegments([]); setOverlays([]); setStatus("idle"); setError("");
-    transcribe(picked); // auto-transcribe as soon as a video is picked
+    // Transcription only starts when the user clicks the Transcribe button —
+    // no longer triggered automatically on upload.
   }
 
   async function transcribe(f?: File) {
@@ -2028,7 +2029,7 @@ function VideoEditor() {
                   <div className={`space-y-2 overflow-y-auto pr-1 ${segments.length > 0 ? "h-[75vh]" : "max-h-[75vh]"}`}>
                     {segments.length === 0 && (
                       <p className="text-xs text-muted-foreground text-center py-4">
-                        {hasVideo ? "Transcribing… captions will appear here." : "Upload a video to auto-transcribe, or add a caption manually."}
+                        {hasVideo ? "Click Transcribe above to generate captions, or add one manually." : "Upload a video, then click Transcribe, or add a caption manually."}
                       </p>
                     )}
                     {segments.map(s => { const active = s.id === activeId; return (
