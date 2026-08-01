@@ -2026,7 +2026,7 @@ function VideoEditor() {
                     <input type="range" min={-2} max={2} step={0.05} value={offset} onChange={e => setOffset(parseFloat(e.target.value))} className="w-full accent-purple-600" />
                   </div>
 
-                  <div className={`space-y-2 overflow-y-auto pr-1 thick-scrollbar ${segments.length > 0 ? "h-[45vh]" : "max-h-[45vh]"}`}>
+                  <div className={`space-y-2 overflow-y-auto pr-1 thick-scrollbar ${segments.length > 0 ? "h-[35vh]" : "max-h-[35vh]"}`}>
                     {segments.length === 0 && (
                       <p className="text-xs text-muted-foreground text-center py-4">
                         {hasVideo ? "Click Transcribe above to generate captions, or add one manually." : "Upload a video, then click Transcribe, or add a caption manually."}
