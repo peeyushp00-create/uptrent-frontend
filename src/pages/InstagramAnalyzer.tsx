@@ -63,6 +63,26 @@ const formatNum = (n: number) => {
   return n.toString();
 };
 
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="text-center">
+      <div className="font-bold text-lg text-foreground leading-none">{value}</div>
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">{label}</div>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, sub }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; sub?: string }) {
+  return (
+    <div className="panel p-3.5">
+      <Icon className="w-4 h-4 text-muted-foreground" />
+      <div className="mt-2.5 font-bold text-lg text-foreground">{value}</div>
+      <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+      {sub && <div className="text-[11px] text-muted-foreground/70 mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
 const PILLAR_COLORS = [
   { bg: PRIMARY_CONTAINER, text: PRIMARY },
   { bg: '#e8f5e9', text: '#2e7d32' },
@@ -213,45 +233,6 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 pt-4 pb-28 space-y-4">
-        {/* Profile Banner */}
-        <div className="rounded-2xl p-5" style={{ background: PRIMARY_GRAD }}>
-          <div className="flex items-center gap-3 mb-3">
-            {(() => {
-              const picSrc = result?.stats?.profile_pic_base64 ||
-                hiker?.profile?.profile_pic_url ||
-                competitor.profile_pic_url;
-              const proxiedPic = picSrc?.startsWith('data:') ? picSrc : proxyImg(picSrc);
-              return proxiedPic && !imgError ? (
-                <img src={proxiedPic} alt={competitor.username}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-white/30"
-                  onError={() => {
-                    if (picSrc && !picSrc.startsWith('data:') && !picSrc.includes('/api/instagram/img')) {
-                      // try proxy on first error
-                    } else {
-                      setImgError(true);
-                    }
-                  }} />
-              ) : (
-                <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xl border-2 border-white/30">
-                  {competitor.username[0].toUpperCase()}
-                </div>
-              );
-            })()}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="font-bold text-white text-base">@{competitor.username}</p>
-                {(competitor.is_verified || hiker?.profile?.is_verified) && <BadgeCheck className="w-4 h-4 text-blue-300" />}
-              </div>
-              {(hiker?.profile?.full_name) && (
-                <p className="text-xs text-white/80 font-semibold">{hiker.profile.full_name}</p>
-              )}
-              <p className="text-xs text-white/70 mt-0.5">{hiker ? '✓ Live data' : result?.data_source === 'real' ? '✓ Live data' : 'AI Analysis'} · Competitor</p>
-            </div>
-          </div>
-          {result?.summary && <p className="text-sm text-white/90 leading-relaxed">{result.summary}</p>}
-        </div>
-
-        {/* Stats — hiker primary, ScrapeCreators fallback */}
         {(() => {
           const stats = {
             followers: hiker?.profile?.followers ?? result?.stats?.followers,
@@ -262,58 +243,49 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
             avg_views: hiker?.profile?.avg_views ?? hiker?.stats?.avg_views,
             total_posts: hiker?.profile?.total_posts ?? result?.stats?.total_posts,
           };
-          const hasStats = stats.followers != null || stats.avg_likes != null;
-          if (!hasStats && !hikerLoading) return null;
-          if (hikerLoading && !hasStats) return null;
+          const hasEngagementStats = stats.avg_views != null || stats.avg_likes != null || stats.avg_comments != null || stats.engagement_rate != null;
+          const picSrc = result?.stats?.profile_pic_base64 || hiker?.profile?.profile_pic_url || competitor.profile_pic_url;
+          const proxiedPic = picSrc?.startsWith('data:') ? picSrc : proxyImg(picSrc);
           return (
-            <div className="panel p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <BarChart2 className="w-4 h-4" style={{ color: PRIMARY }} />
-                <h2 className="font-bold text-sm text-foreground">Profile Stats</h2>
-                <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PRIMARY_CONTAINER, color: PRIMARY }}>Live</span>
+            <>
+              {/* Profile Banner */}
+              <div className="panel p-5 flex flex-wrap items-center gap-4">
+                {proxiedPic && !imgError ? (
+                  <img src={proxiedPic} alt={competitor.username}
+                    className="w-16 h-16 rounded-full object-cover"
+                    onError={() => setImgError(true)} />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-xl">
+                    {competitor.username[0].toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-foreground text-lg">@{competitor.username}</p>
+                    {(competitor.is_verified || hiker?.profile?.is_verified) && <BadgeCheck className="w-4 h-4 text-sky-500" />}
+                  </div>
+                  {(hiker?.profile?.full_name) && (
+                    <p className="text-sm text-muted-foreground">{hiker.profile.full_name}</p>
+                  )}
+                  {result?.summary && <p className="text-xs text-muted-foreground mt-1 line-clamp-2 max-w-2xl">{result.summary}</p>}
+                </div>
+                <div className="flex items-center gap-5 text-sm">
+                  {stats.followers != null && <MiniStat label="Followers" value={formatNum(stats.followers)} />}
+                  {stats.following != null && <MiniStat label="Following" value={formatNum(stats.following)} />}
+                  {stats.total_posts != null && <MiniStat label="Posts" value={formatNum(stats.total_posts)} />}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {stats.followers != null && (
-                  <div className="rounded-xl p-3.5" style={{ background: PRIMARY_CONTAINER }}>
-                    <div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-xs text-muted-foreground">Followers</span></div>
-                    <p className="font-bold text-lg" style={{ color: PRIMARY }}>{formatNum(stats.followers)}</p>
-                  </div>
-                )}
-                {stats.following != null && (
-                  <div className="rounded-xl p-3.5" style={{ background: '#f3e5f5' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-purple-600" /><span className="text-xs text-muted-foreground">Following</span></div>
-                    <p className="font-bold text-lg text-purple-700">{formatNum(stats.following)}</p>
-                  </div>
-                )}
-                {stats.engagement_rate != null && (
-                  <div className="rounded-xl p-3.5" style={{ background: '#e8f5e9' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><TrendingUp className="w-3.5 h-3.5 text-green-600" /><span className="text-xs text-muted-foreground">Engagement</span></div>
-                    <p className="font-bold text-lg text-green-700">{stats.engagement_rate}%</p>
-                  </div>
-                )}
-                {stats.avg_views != null && (
-                  <div className="rounded-xl p-3.5" style={{ background: '#e3f2fd' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><Eye className="w-3.5 h-3.5 text-blue-600" /><span className="text-xs text-muted-foreground">Avg Views</span></div>
-                    <p className="font-bold text-lg text-blue-700">{formatNum(stats.avg_views)}</p>
-                  </div>
-                )}
-                {stats.avg_likes != null && (
-                  <div className="rounded-xl p-3.5" style={{ background: '#fce4ec' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><Heart className="w-3.5 h-3.5 text-pink-600" /><span className="text-xs text-muted-foreground">Avg Likes</span></div>
-                    <p className="font-bold text-lg text-pink-700">{formatNum(stats.avg_likes)}</p>
-                  </div>
-                )}
-                {stats.avg_comments != null && (
-                  <div className="rounded-xl p-3.5" style={{ background: '#fff3e0' }}>
-                    <div className="flex items-center gap-1.5 mb-1"><MessageCircle className="w-3.5 h-3.5 text-orange-600" /><span className="text-xs text-muted-foreground">Avg Comments</span></div>
-                    <p className="font-bold text-lg text-orange-700">{formatNum(stats.avg_comments)}</p>
-                  </div>
-                )}
-              </div>
-              {stats.total_posts && (
-                <p className="text-xs text-muted-foreground mt-3 text-center">{stats.total_posts.toLocaleString()} total posts</p>
+
+              {/* Engagement stats */}
+              {hasEngagementStats && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <StatCard icon={Eye} label="Avg views" value={formatNum(stats.avg_views ?? 0)} sub={stats.total_posts ? `over ${stats.total_posts} posts` : undefined} />
+                  <StatCard icon={Heart} label="Avg likes" value={formatNum(stats.avg_likes ?? 0)} sub="per post" />
+                  <StatCard icon={MessageCircle} label="Avg comments" value={formatNum(stats.avg_comments ?? 0)} sub="per post" />
+                  <StatCard icon={Flame} label="Engagement rate" value={stats.engagement_rate != null ? `${stats.engagement_rate}%` : '—'} sub="likes+comments / followers" />
+                </div>
               )}
-            </div>
+            </>
           );
         })()}
 
