@@ -1943,7 +1943,7 @@ function VideoEditor() {
           <div className="grid md:grid-cols-[320px_1fr_340px] gap-4 items-start">
 
             {/* left column: transcript — stays visible even before a video is added */}
-            <div className="space-y-4 md:max-h-[75vh] md:overflow-y-auto pr-1 thick-scrollbar">
+            <div className="space-y-4 md:max-h-[90vh] md:overflow-y-auto pr-1 thick-scrollbar">
                 <div className="panel p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -2013,7 +2013,7 @@ function VideoEditor() {
                     <input type="range" min={-2} max={2} step={0.05} value={offset} onChange={e => setOffset(parseFloat(e.target.value))} className="w-full accent-purple-600" />
                   </div>
 
-                  <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-[75vh] overflow-y-auto pr-1">
                     {segments.length === 0 && (
                       <p className="text-xs text-muted-foreground text-center py-4">
                         {hasVideo ? "Transcribing… captions will appear here." : "Upload a video to auto-transcribe, or add a caption manually."}
