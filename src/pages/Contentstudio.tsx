@@ -1981,10 +1981,12 @@ function VideoEditor() {
                       style={{ color: redoStack.length ? PURPLE : undefined }}>
                       <Redo2 className="size-3.5" />
                     </button>
-                    <button onClick={() => transcribe()} disabled={!hasVideo || status === "uploading" || status === "transcribing"} title="Re-transcribe"
-                      className="shrink-0 h-8 w-8 rounded-md text-white flex items-center justify-center transition disabled:opacity-40 hover:opacity-90"
+                    <button onClick={() => transcribe()} disabled={!hasVideo || status === "uploading" || status === "transcribing"}
+                      title={hasVideo ? (segments.length > 0 ? "Re-transcribe" : "Transcribe") : "Upload a video first"}
+                      className="shrink-0 h-8 px-3 rounded-md text-white text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-40 hover:opacity-90"
                       style={{ background: GRAD }}>
                       {status === "transcribing" || status === "uploading" ? <Loader2 className="size-3.5 animate-spin" /> : <Mic className="size-3.5" />}
+                      {segments.length > 0 ? "Re-transcribe" : "Transcribe"}
                     </button>
                   </div>
                   {romanizing && (
