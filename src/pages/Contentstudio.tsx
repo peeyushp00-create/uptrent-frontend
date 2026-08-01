@@ -1204,9 +1204,11 @@ function VideoEditor() {
       const lh = parseFloat(window.getComputedStyle(el).lineHeight) || rem * 16 * 1.25;
       return Math.round(el.scrollHeight / lh);
     };
+    // Hard rule: captions are always at most 2 lines, never 4 — keep shrinking
+    // until it fits, only stopping at a floor low enough it's basically never hit.
     let scale = 1;
-    while (measureLines(baseRem * scale) > 2 && scale > 0.35) {
-      scale = Math.max(0.35, scale - 0.05);
+    while (measureLines(baseRem * scale) > 2 && scale > 0.2) {
+      scale = Math.max(0.2, scale - 0.05);
     }
     setAutoFitRem(baseRem * scale);
   }, [activeSeg?.text, style.fontSize, style.fontFamily, style.fontWeight, style.uppercase, wordHighlight]);
@@ -2153,7 +2155,7 @@ function VideoEditor() {
                 ))}
                 {segments.length > 0 && (
                   <div className="absolute px-3 text-center cursor-move touch-none select-none"
-                    style={{ left: `${effectiveCapPos.x}%`, top: `${effectiveCapPos.y}%`, transform: "translate(-50%, -50%)", opacity: activeSeg ? 1 : 0.55 }}
+                    style={{ left: `${effectiveCapPos.x}%`, top: `${effectiveCapPos.y}%`, width: "92%", transform: "translate(-50%, -50%)", opacity: activeSeg ? 1 : 0.55 }}
                     onPointerDown={e => { e.preventDefault(); setDragCaption(true); }}>
                     <span
                       key={activeId}
