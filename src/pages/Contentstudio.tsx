@@ -49,6 +49,13 @@ const FONTS = [
   { id: "'Great Vibes',cursive", label: "Great Vibes" },
 ];
 
+const RATIOS: { id: string; label: string; ratio: string; maxWidth: number }[] = [
+  { id: "9:16", label: "9:16", ratio: "9/16", maxWidth: 240 },
+  { id: "4:5", label: "4:5", ratio: "4/5", maxWidth: 260 },
+  { id: "1:1", label: "1:1", ratio: "1/1", maxWidth: 300 },
+  { id: "16:9", label: "16:9", ratio: "16/9", maxWidth: 380 },
+];
+
 // A cut piece of the video track — start/end are positions in the original
 // uploaded file, not a compacted "edited" timeline (see videoClips state).
 type VideoClip = { id: string; start: number; end: number };
@@ -1034,6 +1041,8 @@ function VideoEditor() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const [previewRatioId, setPreviewRatioId] = useState("9:16");
+  const activeRatio = RATIOS.find(r => r.id === previewRatioId) || RATIOS[0];
   const audioRef = useRef<HTMLAudioElement>(null);
   const playheadRafRef = useRef<number | null>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -2095,9 +2104,20 @@ function VideoEditor() {
 
             {/* center column: video — never scrolls, its natural height anchors the row */}
             <div className="space-y-4 px-1">
-              <div className="relative mx-auto w-full" style={{ maxWidth: 240 }}>
+              <div className="flex items-center justify-center gap-1.5">
+                {RATIOS.map(r => (
+                  <button key={r.id} onClick={() => setPreviewRatioId(r.id)}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold border transition"
+                    style={previewRatioId === r.id
+                      ? { background: GRAD, color: "#fff", borderColor: "transparent" }
+                      : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+              <div className="relative mx-auto w-full" style={{ maxWidth: activeRatio.maxWidth }}>
                 <div className="absolute -inset-4 rounded-[2rem] opacity-40 blur-2xl pointer-events-none" style={{ background: GRAD }} />
-                <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg aspect-[9/16] w-full ring-1 ring-white/10 group">
+                <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg w-full ring-1 ring-white/10 group" style={{ aspectRatio: activeRatio.ratio }}>
 
                 {/* Video — shrinks to its half when a half overlay is active */}
                 <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
