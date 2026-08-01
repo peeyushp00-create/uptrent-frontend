@@ -2503,7 +2503,7 @@ function VideoEditor() {
           </div>
 
           {/* Timeline (dark) — always visible */}
-          <div className="rounded-2xl overflow-hidden border shadow-lg" style={{ background: TL_BG, borderColor: TL_LINE }}>
+          <div className="-mt-5 rounded-2xl overflow-hidden border shadow-lg" style={{ background: TL_BG, borderColor: TL_LINE }}>
             <div className="h-1" style={{ background: GRAD }} />
             <div className="px-4 py-2 flex items-center justify-between" style={{ borderBottom: `1px solid ${TL_LINE}` }}>
               <span className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "#fff" }}>
