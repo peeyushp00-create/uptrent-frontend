@@ -1956,7 +1956,7 @@ function VideoEditor() {
             {/* left column: transcript — stays visible even before a video is added.
                 Once a transcript exists, lock the height so it stays constant
                 instead of shrinking/growing with the number of caption lines. */}
-            <div className={`space-y-4 md:overflow-y-auto pr-1 thick-scrollbar ${segments.length > 0 ? "md:h-[90vh]" : "md:max-h-[90vh]"}`}>
+            <div className={`space-y-4 md:overflow-y-auto pr-1 thick-scrollbar ${segments.length > 0 ? "md:h-[50vh]" : "md:max-h-[50vh]"}`}>
                 <div className="panel p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -2026,7 +2026,7 @@ function VideoEditor() {
                     <input type="range" min={-2} max={2} step={0.05} value={offset} onChange={e => setOffset(parseFloat(e.target.value))} className="w-full accent-purple-600" />
                   </div>
 
-                  <div className={`space-y-2 overflow-y-auto pr-1 ${segments.length > 0 ? "h-[75vh]" : "max-h-[75vh]"}`}>
+                  <div className={`space-y-2 overflow-y-auto pr-1 ${segments.length > 0 ? "h-[35vh]" : "max-h-[35vh]"}`}>
                     {segments.length === 0 && (
                       <p className="text-xs text-muted-foreground text-center py-4">
                         {hasVideo ? "Click Transcribe above to generate captions, or add one manually." : "Upload a video, then click Transcribe, or add a caption manually."}
