@@ -232,7 +232,7 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
         {competitor.is_verified && <BadgeCheck className="w-4 h-4 text-blue-400 shrink-0" />}
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 pt-4 pb-28 space-y-4">
+      <div className="max-w-7xl mx-auto px-4 pt-4 pb-28 space-y-4">
         {(() => {
           const stats = {
             followers: hiker?.profile?.followers ?? result?.stats?.followers,
@@ -954,7 +954,7 @@ export default function InstagramAnalyzer() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-5xl mx-auto px-5 pt-8 pb-28 space-y-5">
+      <main className="max-w-7xl mx-auto px-5 pt-8 pb-28 space-y-5">
 
         {/* Header */}
         <div className="flex items-start justify-between gap-3 pb-5 border-b border-border">
