@@ -1951,7 +1951,7 @@ function VideoEditor() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-[380px_1fr_400px] gap-4 items-start">
+          <div className="grid md:grid-cols-[380px_1fr_380px] gap-4 items-start">
 
             {/* left column: transcript — stays visible even before a video is added.
                 Once a transcript exists, lock the height so it stays constant
@@ -2198,7 +2198,7 @@ function VideoEditor() {
 
             {/* right column: caption designer — Music/Overlay tabs live here too,
                 so this stays available even before a transcript exists. */}
-            <div className="space-y-4 md:max-h-[427px] md:overflow-y-auto pr-1 thick-scrollbar">
+            <div className={`space-y-4 md:overflow-y-auto pr-1 thick-scrollbar ${segments.length > 0 ? "md:h-[62vh]" : "md:max-h-[62vh]"}`}>
                 <div className="panel p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <Wand2 className="size-4" style={{ color: PURPLE }} />
