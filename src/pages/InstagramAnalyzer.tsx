@@ -5,7 +5,7 @@ import {
   Copy, Check, Loader2, X, TrendingUp, Hash, Lightbulb,
   User, Users, Heart, MessageCircle, BarChart2, BadgeCheck, Eye,
   Play, Music, Clock, Calendar, Plus, ChevronLeft, Trash2, UserPlus, Target, Image,
-  Download, Instagram, Search, Flame,
+  Download, Instagram, Search, Flame, ChevronDown, Globe, Rocket,
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -103,7 +103,55 @@ interface CompetitorCard {
   hikerData?: any;
 }
 
+interface PlaybookData {
+  breakdown: {
+    avgViews: number; avgLikes: number; avgComments: number;
+    avgEngagement: string | null;
+    bestPostingTime: string | null;
+    avgAgeOfViralDays: number | null;
+    viralityScore: number | null;
+    commonCTA: string;
+    sampleSize: number;
+  };
+  whyWinning: { reasons: string[]; formats: string[]; hooks: string[] } | null;
+  replicate: { hooksToSteal: string[]; videoStructure: string[] } | null;
+}
+
 // ─── Shared helpers ───────────────────────────────────────────────────────────
+
+// Collapsible card used by the View Breakdown / Why It's Winning / Replicate
+// This trio in the competitor detail view.
+function PlaybookCard({ icon: Icon, color, title, subtitle, open, onToggle, loading, children }: {
+  icon: React.ComponentType<{ className?: string }>; color: string; title: string; subtitle: string;
+  open: boolean; onToggle: () => void; loading: boolean; children: React.ReactNode;
+}) {
+  return (
+    <div className="panel p-4">
+      <button onClick={onToggle} className="w-full flex items-center justify-between gap-2 text-left">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}20`, color }}>
+            <Icon className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold text-sm text-foreground truncate">{title}</p>
+            <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
+          </div>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="mt-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…
+            </div>
+          ) : children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const getBoostType = (item: any, avgViews?: number, avgLikes?: number): string | null => {
   const caption = (item.caption || '').toLowerCase();
   const views = Number(item.views) || 0;
@@ -138,6 +186,9 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
   const [postsExpanded, setPostsExpanded] = useState(false);
   const [reelsFilter, setReelsFilter] = useState<'top' | 'latest' | 'liked' | 'viral'>('top');
   const [postsFilter, setPostsFilter] = useState<'top' | 'latest' | 'liked'>('top');
+  const [playbook, setPlaybook] = useState<PlaybookData | null>(null);
+  const [playbookLoading, setPlaybookLoading] = useState(false);
+  const [openCard, setOpenCard] = useState<'breakdown' | 'winning' | 'replicate' | null>('breakdown');
 
   const filterReels = (reels: any[]) => {
     const r = [...reels];
@@ -205,6 +256,25 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
     };
     fetchPillars();
   }, [competitor.username, result, hiker, hikerLoading]);
+
+  // Fetch the View Breakdown / Why It's Winning / Replicate This report once
+  // this competitor's reels are loaded.
+  useEffect(() => {
+    if (hikerLoading || !hiker?.reels?.length || playbook) return;
+    const fetchPlaybook = async () => {
+      setPlaybookLoading(true);
+      try {
+        const res = await fetch(`${BASE}/api/hiker/playbook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: competitor.username, reels: hiker.reels, profile: hiker.profile }),
+        });
+        if (res.ok) setPlaybook(await res.json());
+      } catch (e) { console.error(e); }
+      finally { setPlaybookLoading(false); }
+    };
+    fetchPlaybook();
+  }, [competitor.username, hiker, hikerLoading, playbook]);
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -288,6 +358,100 @@ function CompetitorDetail({ competitor, onBack, onUpdate }: {
             </>
           );
         })()}
+
+        {/* View Breakdown / Why It's Winning / Replicate This */}
+        {hiker?.reels?.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <PlaybookCard icon={BarChart2} color="#22c55e" title="View Breakdown" subtitle="The numbers behind this account"
+              open={openCard === 'breakdown'} onToggle={() => setOpenCard(openCard === 'breakdown' ? null : 'breakdown')}
+              loading={!playbook}>
+              {playbook && (
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Average views</p><p className="font-bold text-foreground text-sm">{formatNum(playbook.breakdown.avgViews)}</p></div>
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Average likes</p><p className="font-bold text-foreground text-sm">{formatNum(playbook.breakdown.avgLikes)}</p></div>
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Average comments</p><p className="font-bold text-foreground text-sm">{formatNum(playbook.breakdown.avgComments)}</p></div>
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Avg engagement</p><p className="font-bold text-foreground text-sm">{playbook.breakdown.avgEngagement ?? '—'}</p></div>
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Best posting time</p><p className="font-bold text-foreground text-sm">{playbook.breakdown.bestPostingTime ?? '—'}</p></div>
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Avg age of viral posts</p><p className="font-bold text-foreground text-sm">{playbook.breakdown.avgAgeOfViralDays != null ? `${playbook.breakdown.avgAgeOfViralDays}d` : '—'}</p></div>
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Virality score</p><p className="font-bold text-foreground text-sm">{playbook.breakdown.viralityScore != null ? `${playbook.breakdown.viralityScore}/100` : '—'}</p></div>
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Common CTA</p><p className="font-bold text-foreground text-sm">{playbook.breakdown.commonCTA}</p></div>
+                  <div><p className="text-muted-foreground uppercase tracking-wider text-[10px] font-bold mb-0.5">Sample size</p><p className="font-bold text-foreground text-sm">{playbook.breakdown.sampleSize} reels</p></div>
+                </div>
+              )}
+            </PlaybookCard>
+
+            <PlaybookCard icon={Globe} color="#ec4899" title="Why It's Winning" subtitle="What's driving the results"
+              open={openCard === 'winning'} onToggle={() => setOpenCard(openCard === 'winning' ? null : 'winning')}
+              loading={!playbook || playbookLoading}>
+              {playbook?.whyWinning ? (
+                <div className="space-y-3 text-xs">
+                  {playbook.whyWinning.reasons.length > 0 && (
+                    <div>
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1.5">Why creators are getting views</p>
+                      <ul className="space-y-1">
+                        {playbook.whyWinning.reasons.map((r, i) => (
+                          <li key={i} className="flex gap-1.5"><span style={{ color: "#ec4899" }}>•</span><span className="text-foreground">{r}</span></li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {playbook.whyWinning.formats.length > 0 && (
+                    <div>
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1.5">Winning formats</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {playbook.whyWinning.formats.map((f, i) => (
+                          <span key={i} className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: "#ec489920", color: "#ec4899" }}>{f}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {playbook.whyWinning.hooks.length > 0 && (
+                    <div>
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1.5">Winning hooks</p>
+                      <div className="space-y-1.5">
+                        {playbook.whyWinning.hooks.map((h, i) => (
+                          <div key={i} className="px-2.5 py-1.5 rounded-lg text-[11px] text-foreground" style={{ background: "hsl(var(--secondary))" }}>{h}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : !playbookLoading && <p className="text-xs text-muted-foreground">Not enough data yet.</p>}
+            </PlaybookCard>
+
+            <PlaybookCard icon={Rocket} color="#a855f7" title="Replicate This" subtitle="Your practical playbook"
+              open={openCard === 'replicate'} onToggle={() => setOpenCard(openCard === 'replicate' ? null : 'replicate')}
+              loading={!playbook || playbookLoading}>
+              {playbook?.replicate ? (
+                <div className="space-y-3 text-xs">
+                  {playbook.replicate.hooksToSteal.length > 0 && (
+                    <div>
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1.5">Hooks to steal</p>
+                      <ul className="space-y-1.5">
+                        {playbook.replicate.hooksToSteal.map((h, i) => (
+                          <li key={i} className="flex gap-1.5"><span style={{ color: "#a855f7" }}>•</span><span className="text-foreground italic">"{h}"</span></li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {playbook.replicate.videoStructure.length > 0 && (
+                    <div>
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1.5">Video structure</p>
+                      <div className="space-y-1.5">
+                        {playbook.replicate.videoStructure.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: "#a855f7" }}>{i + 1}</div>
+                            <span className="text-foreground">{s}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : !playbookLoading && <p className="text-xs text-muted-foreground">Not enough data yet.</p>}
+            </PlaybookCard>
+          </div>
+        )}
 
         {/* Niche Detection */}
         {result?.niche && (
