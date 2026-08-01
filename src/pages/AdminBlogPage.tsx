@@ -54,6 +54,7 @@ interface Blog {
   author_bio?: string;
   author_photo_url?: string;
   noindex?: boolean;
+  primary_keyword?: string;
 }
 
 interface Redirect {
@@ -115,6 +116,7 @@ export default function AdminBlogPage() {
   // New CMS fields
   const [slug, setSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
+  const [primaryKeyword, setPrimaryKeyword] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const [coverAlt, setCoverAlt] = useState('');
@@ -355,6 +357,7 @@ export default function AdminBlogPage() {
     setPublishMode('now'); setScheduledDate(''); setScheduledTime('');
     setPreview(false); setMobilePreview(false);
     setSlug(''); setSlugTouched(false);
+    setPrimaryKeyword('');
     setMetaTitle(''); setMetaDescription(''); setCoverAlt('');
     setCategory(''); setAuthorBio(''); setFont('sans');
     setAuthorPhotoFile(null); setAuthorPhotoPreview(null); setAuthorPhotoEncoded(null);
@@ -373,6 +376,7 @@ export default function AdminBlogPage() {
     // Editing an existing post: the slug is locked to its current value
     // unless the admin deliberately changes it (slugTouched=true from the start).
     setSlug(blog.slug || slugify(blog.title)); setSlugTouched(true);
+    setPrimaryKeyword(blog.primary_keyword || '');
     setMetaTitle(blog.meta_title || ''); setMetaDescription(blog.meta_description || '');
     setCoverAlt(blog.cover_alt || '');
     setCategory(blog.category || ''); setAuthorBio(blog.author_bio || '');
@@ -447,6 +451,7 @@ export default function AdminBlogPage() {
 
     const payload = {
       title, description, image_url, author, published: isPublished, slug: finalSlug, scheduled_at,
+      primary_keyword: primaryKeyword.trim() || null,
       meta_title: metaTitle.trim() || null,
       meta_description: metaDescription.trim() || null,
       cover_alt: coverAlt.trim() || null,
@@ -815,6 +820,10 @@ export default function AdminBlogPage() {
                   </div>
 
                   {/* SEO fields */}
+                  <div>
+                    <label style={labelStyle}>Primary keyword <span style={{ textTransform: 'none', letterSpacing: 0 }}>(the main term this post targets)</span></label>
+                    <input type="text" value={primaryKeyword} onChange={e => setPrimaryKeyword(e.target.value)} placeholder="e.g. instagram reels analytics" className="admin-input" />
+                  </div>
                   <div>
                     <label style={labelStyle}>Meta title <span style={{ textTransform: 'none', letterSpacing: 0 }}>(search-result title, ~60 chars)</span></label>
                     <input type="text" value={metaTitle} onChange={e => setMetaTitle(e.target.value)} placeholder={title || 'Falls back to the post title'} className="admin-input" />
