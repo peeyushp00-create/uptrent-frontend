@@ -9,7 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import {
   Pencil, Trash2, Copy, FileText, Lightbulb, Calendar as CalendarIcon, Repeat, Link2,
   Download, Loader2, Layers, Type, Palette, Circle, Mic, Wand2, Zap, Save, Search, Undo2, Redo2, Plus,
-  Music as MusicIcon, ImagePlus, X, ZoomIn, ZoomOut, Film, Play, Pause,
+  Music as MusicIcon, ImagePlus, X, ZoomIn, ZoomOut, Film, Play, Pause, Scissors, Combine,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL;
@@ -2029,9 +2029,15 @@ function VideoEditor() {
                           style={{ minHeight: 24 }}
                           onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }} />
                         <div className="shrink-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
-                          <button onClick={() => splitSeg(s.id)} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 transition">Split</button>
-                          <button onClick={() => mergeUp(s.id)} disabled={s.id === 0} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-purple-500 disabled:opacity-30 transition">Merge↑</button>
-                          <button onClick={() => deleteSeg(s.id)} className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-red-500 hover:border-red-400 transition">Delete</button>
+                          <button onClick={() => splitSeg(s.id)} title="Split" aria-label="Split" className="p-1 rounded border border-border text-muted-foreground hover:text-purple-500 transition">
+                            <Scissors className="size-3" />
+                          </button>
+                          <button onClick={() => mergeUp(s.id)} disabled={s.id === 0} title="Merge up" aria-label="Merge up" className="p-1 rounded border border-border text-muted-foreground hover:text-purple-500 disabled:opacity-30 transition">
+                            <Combine className="size-3" />
+                          </button>
+                          <button onClick={() => deleteSeg(s.id)} title="Delete" aria-label="Delete" className="p-1 rounded border border-border text-muted-foreground hover:text-red-500 hover:border-red-400 transition">
+                            <Trash2 className="size-3" />
+                          </button>
                         </div>
                       </div>); })}
                   </div>
@@ -2518,39 +2524,44 @@ function VideoEditor() {
                 <div className="flex items-center gap-1.5 ml-2">
                   {selectedClipId && (
                     <>
-                      <button onClick={cutVideoAtPlayhead}
-                        className="px-2 py-1 rounded border text-white/80 hover:text-white hover:border-purple-400 transition" style={{ borderColor: TL_LINE }}>
-                        ✂ Cut at playhead
+                      <button onClick={cutVideoAtPlayhead} title="Cut at playhead" aria-label="Cut at playhead"
+                        className="p-1.5 rounded border text-white/80 hover:text-white hover:border-purple-400 transition" style={{ borderColor: TL_LINE }}>
+                        <Scissors className="size-3.5" />
                       </button>
                       <button onClick={() => selectedClipId && mergeVideoClip(selectedClipId)} disabled={!selectedClipId || !canMergeClip(selectedClipId)}
-                        className="px-2 py-1 rounded border text-white/80 hover:text-white hover:border-purple-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
-                        Merge
+                        title="Merge" aria-label="Merge"
+                        className="p-1.5 rounded border text-white/80 hover:text-white hover:border-purple-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
+                        <Combine className="size-3.5" />
                       </button>
                       <button onClick={() => selectedClipId && deleteVideoClip(selectedClipId)} disabled={videoClips.length <= 1}
-                        className="px-2 py-1 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
-                        Delete
+                        title="Delete" aria-label="Delete"
+                        className="p-1.5 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
+                        <Trash2 className="size-3.5" />
                       </button>
                     </>
                   )}
                   {musicSelected && (
-                    <button onClick={removeMusic}
-                      className="px-2 py-1 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition" style={{ borderColor: TL_LINE }}>
-                      Delete
+                    <button onClick={removeMusic} title="Delete" aria-label="Delete"
+                      className="p-1.5 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition" style={{ borderColor: TL_LINE }}>
+                      <Trash2 className="size-3.5" />
                     </button>
                   )}
                   {selectedCaptionId != null && (
                     <>
                       <button onClick={() => { splitSeg(selectedCaptionId); setSelectedCaptionId(null); }}
-                        className="px-2 py-1 rounded border text-white/80 hover:text-white hover:border-purple-400 transition" style={{ borderColor: TL_LINE }}>
-                        ✂ Split
+                        title="Split" aria-label="Split"
+                        className="p-1.5 rounded border text-white/80 hover:text-white hover:border-purple-400 transition" style={{ borderColor: TL_LINE }}>
+                        <Scissors className="size-3.5" />
                       </button>
                       <button onClick={() => { mergeUp(selectedCaptionId); setSelectedCaptionId(null); }} disabled={segments.findIndex(s => s.id === selectedCaptionId) <= 0}
-                        className="px-2 py-1 rounded border text-white/80 hover:text-white hover:border-purple-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
-                        Merge↑
+                        title="Merge up" aria-label="Merge up"
+                        className="p-1.5 rounded border text-white/80 hover:text-white hover:border-purple-400 transition disabled:opacity-30 disabled:cursor-not-allowed" style={{ borderColor: TL_LINE }}>
+                        <Combine className="size-3.5" />
                       </button>
                       <button onClick={() => { deleteSeg(selectedCaptionId); setSelectedCaptionId(null); }}
-                        className="px-2 py-1 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition" style={{ borderColor: TL_LINE }}>
-                        Delete
+                        title="Delete" aria-label="Delete"
+                        className="p-1.5 rounded border text-red-400 hover:text-red-300 hover:border-red-400 transition" style={{ borderColor: TL_LINE }}>
+                        <Trash2 className="size-3.5" />
                       </button>
                     </>
                   )}
