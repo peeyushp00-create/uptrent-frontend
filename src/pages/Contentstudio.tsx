@@ -2,7 +2,7 @@
 // tab layout. Video tab keeps the real editor (transcribe, overlays, music, export) —
 // Ideas/Scripts/Drafts are cosmetic like Lovable's; Calendar is Lovable's real localStorage planner.
 
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo, useEffect, useLayoutEffect } from "react";
 import { supabase } from "../lib/supabase"; // adjust path if needed
 import SEO from "@/components/SEO";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -1191,6 +1191,26 @@ function VideoEditor() {
       </>
     );
   }
+  // Auto-shrink the preview caption's font size so the full text always fits
+  // within 2 lines instead of wrapping to 3-4 and getting cut off.
+  const capTextRef = useRef<HTMLSpanElement>(null);
+  const [autoFitRem, setAutoFitRem] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = capTextRef.current;
+    if (!el) return;
+    const baseRem = style.fontSize * 0.62;
+    const measureLines = (rem: number) => {
+      el.style.fontSize = `${rem}rem`;
+      const lh = parseFloat(window.getComputedStyle(el).lineHeight) || rem * 16 * 1.25;
+      return Math.round(el.scrollHeight / lh);
+    };
+    let scale = 1;
+    while (measureLines(baseRem * scale) > 2 && scale > 0.35) {
+      scale = Math.max(0.35, scale - 0.05);
+    }
+    setAutoFitRem(baseRem * scale);
+  }, [activeSeg?.text, style.fontSize, style.fontFamily, style.fontWeight, style.uppercase, wordHighlight]);
+
   const activeOverlays = useMemo(() => overlays.filter(o => time >= o.start && time < o.start + o.length), [overlays, time]);
   const activeHalfOverlay = useMemo(() => activeOverlays.find(o => o.mode === "half") || null, [activeOverlays]);
 
@@ -2137,19 +2157,16 @@ function VideoEditor() {
                     onPointerDown={e => { e.preventDefault(); setDragCaption(true); }}>
                     <span
                       key={activeId}
-                      className={capAnimClass}
+                      ref={capTextRef}
+                      className={`inline-block ${capAnimClass}`}
                       style={{
                         ...capWrapStyle,
                         fontFamily: style.fontFamily,
-                        fontSize: `${style.fontSize * 0.62}rem`,
+                        fontSize: `${autoFitRem ?? style.fontSize * 0.62}rem`,
                         fontWeight: style.fontWeight,
                         color: style.textColor,
                         textShadow: style.background === "" ? "0 2px 8px rgba(0,0,0,0.7)" : undefined,
                         lineHeight: 1.25,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
                       }}
                     >
                       {activeSeg ? renderActiveCaption() : previewCaptionText}
