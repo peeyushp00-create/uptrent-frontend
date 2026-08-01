@@ -37,6 +37,16 @@ const FONTS = [
   { id: "'Space Mono',monospace", label: "Mono" },
   { id: "'Bangers',cursive", label: "Bangers" },
   { id: "'Press Start 2P',monospace", label: "Pixel" },
+  { id: "'Oswald',sans-serif", label: "Oswald" },
+  { id: "'Archivo Black',sans-serif", label: "Archivo Black" },
+  { id: "'Fredoka',sans-serif", label: "Fredoka" },
+  { id: "'Lobster',cursive", label: "Lobster" },
+  { id: "'Righteous',cursive", label: "Righteous" },
+  { id: "'DM Serif Display',serif", label: "DM Serif" },
+  { id: "'Shrikhand',cursive", label: "Shrikhand" },
+  { id: "'Kalam',cursive", label: "Kalam" },
+  { id: "'Bungee',cursive", label: "Bungee" },
+  { id: "'Great Vibes',cursive", label: "Great Vibes" },
 ];
 
 // A cut piece of the video track — start/end are positions in the original
