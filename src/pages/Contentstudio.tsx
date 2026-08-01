@@ -1951,7 +1951,7 @@ function VideoEditor() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-[320px_1fr_340px] gap-4 items-start">
+          <div className="grid md:grid-cols-[380px_1fr_400px] gap-4 items-start">
 
             {/* left column: transcript — stays visible even before a video is added.
                 Once a transcript exists, lock the height so it stays constant
