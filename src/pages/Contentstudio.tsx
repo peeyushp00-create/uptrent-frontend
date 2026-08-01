@@ -2104,20 +2104,22 @@ function VideoEditor() {
 
             {/* center column: video — never scrolls, its natural height anchors the row */}
             <div className="space-y-4 px-1">
-              <div className="flex items-center justify-center gap-1.5">
-                {RATIOS.map(r => (
-                  <button key={r.id} onClick={() => setPreviewRatioId(r.id)}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold border transition"
-                    style={previewRatioId === r.id
-                      ? { background: GRAD, color: "#fff", borderColor: "transparent" }
-                      : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
-                    {r.label}
-                  </button>
-                ))}
-              </div>
               <div className="relative mx-auto w-full" style={{ maxWidth: activeRatio.maxWidth }}>
                 <div className="absolute -inset-4 rounded-[2rem] opacity-40 blur-2xl pointer-events-none" style={{ background: GRAD }} />
                 <div ref={previewRef} className="relative rounded-2xl overflow-hidden bg-black shadow-lg w-full ring-1 ring-white/10 group" style={{ aspectRatio: activeRatio.ratio }}>
+
+                {/* Aspect ratio switcher — floats inside the preview, top-right */}
+                <div className="absolute top-2 right-2 z-20 flex items-center gap-1 p-1 rounded-lg" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
+                  {RATIOS.map(r => (
+                    <button key={r.id} onClick={() => setPreviewRatioId(r.id)}
+                      className="px-2 py-1 rounded-md text-[10px] font-semibold transition"
+                      style={previewRatioId === r.id
+                        ? { background: GRAD, color: "#fff" }
+                        : { color: "rgba(255,255,255,0.7)" }}>
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
 
                 {/* Video — shrinks to its half when a half overlay is active */}
                 <div className="absolute left-0 w-full overflow-hidden transition-all duration-200"
