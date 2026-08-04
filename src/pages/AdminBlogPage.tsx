@@ -136,8 +136,8 @@ export default function AdminBlogPage() {
   const [redirectError, setRedirectError] = useState<string | null>(null);
 
   // Editor link/image modals (replace window.prompt — see handleInsertLink)
-  const [linkModal, setLinkModal] = useState<{ selStart: number; selEnd: number; selectedText: string; url: string } | null>(null);
-  const [imageAltModal, setImageAltModal] = useState<{ url: string; cursor: number; alt: string } | null>(null);
+  const [linkModal, setLinkModal] = useState<{ selStart: number; selEnd: number; selectedText: string; url: string; scrollTop: number } | null>(null);
+  const [imageAltModal, setImageAltModal] = useState<{ url: string; cursor: number; alt: string; scrollTop: number } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +145,7 @@ export default function AdminBlogPage() {
   const bodyImageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingCursorRef = useRef<number | null>(null);
+  const pendingScrollTopRef = useRef<number>(0);
 
   // Restore an existing admin session on mount (real Supabase session, not a
   // client-side flag) and stay in sync with sign-out from another tab.
@@ -292,15 +293,31 @@ export default function AdminBlogPage() {
   };
 
   // Rich text helpers
+  // Restoring only the character position isn't enough — React re-rendering
+  // the textarea's value resets its scrollTop to 0, so on a long post the
+  // cursor is technically correct but visually the view snaps to the top.
+  // Restoring scrollTop alongside the selection keeps the view where the
+  // admin was working.
+  const restoreCursor = (pos: number, scrollTop: number, selEnd: number = pos) => {
+    setTimeout(() => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      ta.focus();
+      ta.setSelectionRange(pos, selEnd);
+      ta.scrollTop = scrollTop;
+    }, 0);
+  };
+
   const insertFormat = (prefix: string, suffix: string = '') => {
     const ta = textareaRef.current;
     if (!ta) return;
     const start = ta.selectionStart;
     const end = ta.selectionEnd;
+    const scrollTop = ta.scrollTop;
     const selected = description.substring(start, end);
     const newText = description.substring(0, start) + prefix + selected + suffix + description.substring(end);
     setDescription(newText);
-    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + prefix.length, end + prefix.length); }, 0);
+    restoreCursor(start + prefix.length, scrollTop, end + prefix.length);
   };
 
   // window.prompt() is unreliable outside a plain top-level browser tab —
@@ -313,18 +330,20 @@ export default function AdminBlogPage() {
     const start = ta.selectionStart;
     const end = ta.selectionEnd;
     const selectedText = description.substring(start, end) || 'link text';
-    setLinkModal({ selStart: start, selEnd: end, selectedText, url: '' });
+    setLinkModal({ selStart: start, selEnd: end, selectedText, url: '', scrollTop: ta.scrollTop });
   };
 
   const confirmInsertLink = () => {
     if (!linkModal || !linkModal.url.trim()) { setLinkModal(null); return; }
     const markdown = `[${linkModal.selectedText}](${linkModal.url.trim()})`;
     setDescription(description.substring(0, linkModal.selStart) + markdown + description.substring(linkModal.selEnd));
+    restoreCursor(linkModal.selStart + markdown.length, linkModal.scrollTop);
     setLinkModal(null);
   };
 
   const handleInsertImageClick = () => {
     pendingCursorRef.current = textareaRef.current?.selectionStart ?? description.length;
+    pendingScrollTopRef.current = textareaRef.current?.scrollTop ?? 0;
     bodyImageInputRef.current?.click();
   };
 
@@ -336,7 +355,7 @@ export default function AdminBlogPage() {
       const encoded = await optimizeImage(file, 1600);
       const result = await uploadEncoded(encoded);
       if (!result.url) { setUploadError(result.error || 'Image upload failed.'); return; }
-      setImageAltModal({ url: result.url, cursor: pendingCursorRef.current ?? description.length, alt: '' });
+      setImageAltModal({ url: result.url, cursor: pendingCursorRef.current ?? description.length, alt: '', scrollTop: pendingScrollTopRef.current });
     } catch {
       setUploadError('Could not process that image. Try a different file.');
     }
@@ -346,6 +365,7 @@ export default function AdminBlogPage() {
     if (!imageAltModal) return;
     const markdown = `\n![${imageAltModal.alt}](${imageAltModal.url})\n`;
     setDescription(description.substring(0, imageAltModal.cursor) + markdown + description.substring(imageAltModal.cursor));
+    restoreCursor(imageAltModal.cursor + markdown.length, imageAltModal.scrollTop);
     setImageAltModal(null);
   };
 
