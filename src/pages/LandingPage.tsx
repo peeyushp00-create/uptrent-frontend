@@ -199,12 +199,15 @@ export default function LandingPage() {
 
   // Referral / form state
   const [step, setStep]             = useState<'form'|'questions'|'sent'|'status'>('form');
-  const [formData, setFormData]     = useState({ name:'', email:'', whatsapp:'' });
+  const [formData, setFormData]     = useState({ name:'', email:'', refCode:'' });
   const [answers, setAnswers]       = useState({ platform:'', niche:'', language:'', follower_range:'', posting_frequency:'', biggest_struggle:'', weekly_feedback_ok:false });
   const [statusData, setStatusData] = useState<any>(null);
   const [loading, setLoading]       = useState(false);
   const [errorMsg, setErrorMsg]     = useState('');
   const [copied, setCopied]         = useState(false);
+  const [shareText, setShareText]   = useState('');
+  const [sharing, setSharing]       = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [stats, setStats]           = useState<{total:number;today:number}|null>(null);
   const [dispTotal, setDispTotal]   = useState(0);
   const [dispToday, setDispToday]   = useState(0);
@@ -221,6 +224,40 @@ export default function LandingPage() {
       const r = await fetch(`${BASE}/api/waitlist/status?code=${code}`);
       const d = await r.json();
       if (r.ok) { setStatusData(d); setStep('status'); }
+    } catch {}
+  };
+
+  // Seed the editable share message once we have a referral link
+  useEffect(() => {
+    if (statusData?.referral_link && !shareText) {
+      setShareText(`I just applied for SocialRum's beta — AI that turns trending topics into ready-to-film scripts in your language. Only 50 spots. Apply here: ${statusData.referral_link}`);
+    }
+  }, [statusData, shareText]);
+
+  const handleShare = async () => {
+    if (!statusData || statusData.social_shared || sharing) return;
+    setSharing(true);
+    try {
+      const r = await fetch(`${BASE}/api/waitlist/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: statusData.referral_code }),
+      });
+      const d = await r.json();
+      if (r.ok && d.success) {
+        setStatusData((prev: any) => ({ ...prev, points: d.points, social_shared: true }));
+      }
+    } catch {}
+    setSharing(false);
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: shareText });
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2500);
+      }
     } catch {}
   };
 
@@ -303,8 +340,8 @@ export default function LandingPage() {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           name: formData.name || formData.email.split('@')[0],
-          email: formData.email, whatsapp: formData.whatsapp || null,
-          answers, ref: getStoredRef(),
+          email: formData.email,
+          answers, ref: getStoredRef() || formData.refCode.trim() || undefined,
           utm_source: p.get('utm_source')||undefined,
           utm_medium: p.get('utm_medium')||undefined,
           utm_campaign: p.get('utm_campaign')||undefined,
@@ -664,7 +701,7 @@ export default function LandingPage() {
                 <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
                   <input type="text" placeholder="Your name (optional)" value={formData.name} onChange={e => setFormData(p => ({ ...p, name:e.target.value }))} className="sr-input" />
                   <input type="email" placeholder="your@email.com *" value={formData.email} onChange={e => setFormData(p => ({ ...p, email:e.target.value }))} className="sr-input" onKeyDown={e => { if (e.key==='Enter') handleNext(); }} />
-                  <input type="text" placeholder="WhatsApp number or username (optional)" value={formData.whatsapp} onChange={e => setFormData(p => ({ ...p, whatsapp:e.target.value }))} className="sr-input" />
+                  <input type="text" placeholder="Referral code (optional)" value={formData.refCode} onChange={e => setFormData(p => ({ ...p, refCode:e.target.value }))} className="sr-input" />
                 </div>
                 {errorMsg && <p style={{ fontSize:13, color:'#ef4444', textAlign:'center', marginBottom:10 }}>{errorMsg}</p>}
                 <button onClick={handleNext} className="sr-ea-btn">Next →</button>
@@ -700,7 +737,7 @@ export default function LandingPage() {
                     <option value="">Content language *</option>
                     <option value="hindi">Hindi</option>
                     <option value="english">English</option>
-                    <option value="hinglish">Hinglish</option>
+                    <option value="malayalam">Malayalam</option>
                     <option value="tamil">Tamil</option>
                     <option value="telugu">Telugu</option>
                     <option value="bengali">Bengali</option>
@@ -771,6 +808,12 @@ export default function LandingPage() {
                   </p>
                 </div>
 
+                {/* Points */}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(139,92,246,0.05)', border:'1px solid rgba(139,92,246,0.14)', borderRadius:14, padding:'14px 16px', marginBottom:14 }}>
+                  <span style={{ fontSize:10, color:'rgba(255,255,255,0.3)', letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:'Roboto,sans-serif' }}>Your points</span>
+                  <span style={{ fontSize:20, fontWeight:800, color:'#fff', fontFamily:'Roboto,sans-serif' }}>{statusData.points||0}</span>
+                </div>
+
                 {/* Tier progress */}
                 <div style={{ background:'rgba(139,92,246,0.05)', border:'1px solid rgba(139,92,246,0.14)', borderRadius:14, padding:'14px 16px', marginBottom:14 }}>
                   <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:11, fontFamily:'Roboto,sans-serif' }}>Reward tiers</p>
@@ -822,6 +865,28 @@ export default function LandingPage() {
                     style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:10,padding:'10px',color:'rgba(255,255,255,0.5)',fontSize:12,textDecoration:'none',fontWeight:600,fontFamily:'Roboto,sans-serif' }}>
                     X (Twitter)
                   </a>
+                </div>
+
+                {/* Social share bonus */}
+                <div style={{ marginTop:14, background:'rgba(139,92,246,0.05)', border:'1px solid rgba(139,92,246,0.14)', borderRadius:14, padding:'14px 16px' }}>
+                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:9, fontFamily:'Roboto,sans-serif' }}>
+                    Share on social media <span style={{ color:'#a78bfa' }}>· +10 points</span>
+                  </p>
+                  <textarea
+                    value={shareText}
+                    onChange={e => setShareText(e.target.value)}
+                    disabled={statusData.social_shared}
+                    style={{ width:'100%', minHeight:70, resize:'vertical', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:10, padding:'10px 12px', fontSize:12, color:'#EDE0C8', fontFamily:'Roboto,sans-serif', marginBottom:8, boxSizing:'border-box' }}
+                  />
+                  <button
+                    onClick={handleShare}
+                    disabled={statusData.social_shared || sharing}
+                    style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:'100%', background: statusData.social_shared ? 'rgba(74,222,128,0.1)' : 'linear-gradient(135deg,#7c3aed,#a855f7)', border: statusData.social_shared ? '1px solid rgba(74,222,128,0.28)' : 'none', color: statusData.social_shared ? '#4ADE80' : '#fff', borderRadius:12, padding:'13px', fontWeight:700, fontSize:14, cursor: statusData.social_shared ? 'default' : 'pointer', fontFamily:'Roboto,sans-serif', boxSizing:'border-box' }}>
+                    {statusData.social_shared ? '✓ Shared — +10 points earned' : sharing ? 'Sharing...' : 'Share on Social Media'}
+                  </button>
+                  {shareCopied && (
+                    <p style={{ fontSize:11, color:'#a78bfa', textAlign:'center', marginTop:8, fontFamily:'Roboto,sans-serif' }}>Copied — paste it into your favorite app</p>
+                  )}
                 </div>
               </div>
             )}
