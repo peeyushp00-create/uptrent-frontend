@@ -267,7 +267,7 @@ export default function LandingPage() {
   useEffect(() => {
     document.title = 'SocialRum – Content Engine for Indian Creators | Scripts, Trends & Captions in Your Language';
     let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-    const content = 'AI platform for Indian creators — discover trends, write scripts in your own voice & language, and analyse competitors on Instagram & YouTube. Join the waitlist.';
+    const content = 'SocialRum is the all-in-one platform for content creators — discover trends, write scripts in your language, and analyse competitors on Instagram & YouTube. Join the waitlist.';
     if (meta) meta.setAttribute('content', content);
     else { meta = document.createElement('meta'); meta.name='description'; meta.content=content; document.head.appendChild(meta); }
   }, []);
@@ -364,7 +364,7 @@ export default function LandingPage() {
     <div className="relative min-h-screen bg-[#03000a] text-white overflow-x-hidden" style={{ fontFamily:"'Roboto',sans-serif" }}>
       <SEO
         title="SocialRum — Content Intelligence for Indian Creators"
-        description="SocialRum is an AI content platform for Indian YouTube and Instagram creators. Generate ready-to-film scripts in your language, analyze competitors, write multilingual captions, and track trending topics — free to start."
+        description="SocialRum is the all-in-one platform for content creators — generate ready-to-film scripts in your language, analyze competitors, write multilingual captions, and track trending topics. Free to start."
       />
       <JsonLd
         data={{
